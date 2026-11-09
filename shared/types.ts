@@ -71,7 +71,9 @@ export interface MarketSlot {
   x: number;
   y: number;
   traffic: number;
-  rent: number;
+  rent: number; // fast leie per dag
+  price: number; // engangspris for å ta plassen
+  risk: number; // andel av risikotillegget (1 = fullt, 0 = ingen)
   stall: StallPublic | null;
 }
 

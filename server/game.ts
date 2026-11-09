@@ -77,10 +77,12 @@ export class GameError extends Error {}
 
 type SlotDef = Omit<MarketSlot, 'stall'>;
 
+// price = engangspris for å ta plassen (betales ved leie eller flytting),
+// risk = hvor stor del av risikotillegget på leia som gjelder i gata.
 const STREETS = [
-  { street: 'hovedgate', traffic: 1.4, rent: 350, y: 1 },
-  { street: 'sidegate', traffic: 1.0, rent: 220, y: 2 },
-  { street: 'bakgate', traffic: 0.65, rent: 120, y: 3 },
+  { street: 'hovedgate', traffic: 1.4, rent: 350, price: 50_000, risk: 1, y: 1 },
+  { street: 'sidegate', traffic: 1.0, rent: 220, price: 10_000, risk: 0.5, y: 2 },
+  { street: 'bakgate', traffic: 0.65, rent: 120, price: 0, risk: 0, y: 3 },
 ] as const;
 
 export const LAYOUT: SlotDef[] = STREETS.flatMap((s, row) =>
@@ -91,6 +93,8 @@ export const LAYOUT: SlotDef[] = STREETS.flatMap((s, row) =>
     y: s.y,
     traffic: s.traffic,
     rent: s.rent,
+    price: s.price,
+    risk: s.risk,
   })),
 );
 
@@ -403,16 +407,55 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
   stallName = stallName.trim().slice(0, 32);
   if (stallName.length < 2) throw new GameError('Boden trenger et navn.');
   if (one<StallRow>(q.stallByOwner, player.id)) throw new GameError('Du har allerede en bod.');
+  if (def.price > START_CASH)
+    throw new GameError(`Plassen koster ${def.price} kr å ta over. Start i bakgata og kjøp deg opp senere.`);
 
   tx(() => {
+    let id: number;
     try {
-      db.prepare(
-        'INSERT INTO stalls (market_id, slot_index, owner_id, name, cash, reputation) VALUES (?, ?, ?, ?, ?, ?)',
-      ).run(market.id, slotIndex, player.id, stallName, START_CASH, 50);
+      id = Number(
+        db
+          .prepare('INSERT INTO stalls (market_id, slot_index, owner_id, name, cash, reputation) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(market.id, slotIndex, player.id, stallName, START_CASH - def.price, 50).lastInsertRowid,
+      );
     } catch {
       throw new GameError('Plassen er allerede tatt.');
     }
+    if (def.price > 0) q.insertTx.run(market.id, nowFor(market), 'plass', id, null, null, null, def.price);
     event(market, null, nowFor(market), `${player.name} har leid plass ${slotIndex + 1} i ${def.street}n og åpnet «${stallName}».`);
+  });
+}
+
+/**
+ * Flytter boden til en ledig plass. Engangsprisen for den nye plassen betales av kassa.
+ * Alt innhold (lager, bord, esker, kjeler, søppel, strømoppsett) henger på boden og ikke på
+ * plassen, så det blir med automatisk.
+ *
+ * NB: Flytting skal bryte alle «nabo-forbindelser». Kommer det mekanikk som kobler en bod
+ * til naboplassene (strømtyveri fra naboen, bruke naboens søppelkasse, delte avtaler osv.),
+ * må den nullstilles her.
+ */
+export function moveStall(player: PlayerRow, slotIndex: number) {
+  const market = marketOf(player);
+  const stall = one<StallRow>(q.stallByOwner, player.id);
+  if (!stall) throw new GameError('Du har ingen bod.');
+  const def = LAYOUT.find((s) => s.index === slotIndex);
+  if (!def) throw new GameError('Ukjent bodplass.');
+  if (stall.slot_index === slotIndex) throw new GameError('Boden står allerede her.');
+  if (stall.cash < def.price) throw new GameError(`Plassen koster ${def.price} kr. Du har ${Math.floor(stall.cash)} kr i kassa.`);
+
+  tx(() => {
+    try {
+      db.prepare('UPDATE stalls SET slot_index = ? WHERE id = ?').run(slotIndex, stall.id);
+    } catch {
+      throw new GameError('Plassen er allerede tatt.');
+    }
+    const t = nowFor(market);
+    if (def.price > 0) {
+      q.addCash.run(-def.price, stall.id);
+      q.insertTx.run(market.id, t, 'plass', stall.id, null, null, null, def.price);
+    }
+    event(market, null, t, `«${stall.name}» har flyttet til plass ${slotIndex + 1} i ${def.street}n.`);
   });
 }
 
@@ -1097,8 +1140,9 @@ function issueBills(market: MarketRow, t: number, s: StallRow, yesterdayRevenue:
   const dueDay = currentEdition(t).key;
   const day = seasonDay(osloParts(t));
 
-  const fixed = LAYOUT[s.slot_index].rent;
-  const risk = Math.min(Math.max(0, day) * RENT_RISK_PER_DAY, RENT_RISK_CAP);
+  const slot = LAYOUT[s.slot_index];
+  const fixed = slot.rent;
+  const risk = Math.min(Math.max(0, day) * RENT_RISK_PER_DAY, RENT_RISK_CAP) * slot.risk;
   const share = yesterdayRevenue * RENT_REVENUE_PCT;
   issueBill(market, s, t, 'rent', dueDay, fixed + risk + share);
 

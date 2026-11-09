@@ -15,6 +15,7 @@ import {
   ITEM_TYPES,
   PRODUCTS,
   PRODUCT_BY_ID,
+  START_CASH,
   STORAGE_GRID,
   TRASH_EMPTY_HOUR,
   TRASH_GRID,
@@ -662,18 +663,36 @@ function mapScreen(s: GameState): string {
     .join('');
 
   let side = '';
-  if (screen.kind === 'claim') {
+  if (screen.kind === 'claim' && !s.slots[screen.slot].stall) {
     const sl = s.slots[screen.slot];
-    side = `
-      <h2>Lei plass #${sl.index + 1}</h2>
-      <p>${sl.street[0].toUpperCase() + sl.street.slice(1)}. Trafikk ${Math.round(sl.traffic * 100)} %, leie ${kr(sl.rent)} per dag.</p>
-      <form data-form="claim" class="stack-form">
-        <label>Navn på boden <input name="stallName" required minlength="2" maxlength="32" placeholder="F.eks. Honning-Hans" data-autofocus></label>
-        <div class="row"><button>Lei boden</button><button type="button" class="ghost" data-action="map">Avbryt</button></div>
-      </form>`;
+    const facts = `<ul class="slot-facts">
+        <li><span>Gate</span><b>${sl.street[0].toUpperCase() + sl.street.slice(1)}</b></li>
+        <li><span>Trafikk</span><b>${Math.round(sl.traffic * 100)} %</b></li>
+        <li><span>Fast leie</span><b>${kr(sl.rent)} per dag</b></li>
+        <li><span>Risikotillegg</span><b>${Math.round(sl.risk * 100)} %</b></li>
+        <li><span>Engangspris</span><b>${sl.price ? kr(sl.price) : 'Gratis'}</b></li>
+      </ul>`;
+    const cancel = `<button type="button" class="ghost" data-action="map">Avbryt</button>`;
+    if (s.me.stallId === null) {
+      side =
+        sl.price > START_CASH
+          ? `<h2>Plass #${sl.index + 1}</h2>${facts}
+            <p class="muted">Du starter med ${kr(START_CASH)} og har ikke råd til denne plassen ennå. Start i bakgata og flytt hit når kassa tåler det.</p>
+            <div class="row">${cancel}</div>`
+          : `<h2>Lei plass #${sl.index + 1}</h2>${facts}
+            <form data-form="claim" class="stack-form">
+              <label>Navn på boden <input name="stallName" required minlength="2" maxlength="32" placeholder="F.eks. Honning-Hans" data-autofocus></label>
+              <div class="row"><button>Lei boden</button>${cancel}</div>
+            </form>`;
+    } else {
+      const afford = s.me.cash >= sl.price;
+      side = `<h2>Flytt til plass #${sl.index + 1}</h2>${facts}
+        <p class="muted">Alt innholdet i boden blir med: lager, bord og apparater. Eventuelle forbindelser til naboene brytes.${afford ? '' : ` Du har ${kr(s.me.cash)} i kassa og mangler ${kr(sl.price - s.me.cash)}.`}</p>
+        <div class="row"><button data-action="move-stall" ${afford ? '' : 'disabled'}>Flytt hit${sl.price ? ` for ${kr(sl.price)}` : ''}</button>${cancel}</div>`;
+    }
   } else if (s.me.stallId === null) {
     side = `<h2>Velkommen, ${esc(s.me.name)}!</h2>
-      <p>Velg en ledig plass for å leie en bod. Hovedgaten har flest kunder, men er dyrest. Du starter med 2 000 kr.</p>`;
+      <p>Velg en ledig plass for å leie en bod. Du starter med ${kr(START_CASH)}, så det blir bakgata til å begynne med. Sidegata (${kr(s.slots.find((x) => x.street === 'sidegate')!.price)}) og hovedgata (${kr(s.slots.find((x) => x.street === 'hovedgate')!.price)}) kan du kjøpe deg inn i senere – flere kunder, men høyere leie og risikotillegg.</p>`;
   } else {
     side = `<h2>Hendelser</h2>${eventList(s)}`;
   }
@@ -693,9 +712,10 @@ function mapScreen(s: GameState): string {
 
 function slotButton(s: GameState, sl: MarketSlot): string {
   if (!sl.stall) {
-    const canClaim = s.me.stallId === null;
-    return `<button class="slot free" ${canClaim ? `data-action="pick" data-slot="${sl.index}"` : 'disabled'}>
-      <span class="slot-no">#${sl.index + 1}</span><span>Ledig</span><small>${sl.rent} kr/dag</small></button>`;
+    const picked = screen.kind === 'claim' && screen.slot === sl.index;
+    return `<button class="slot free ${picked ? 'picked' : ''}" data-action="pick" data-slot="${sl.index}">
+      <span class="slot-no">#${sl.index + 1}</span><span>Ledig</span><small>${sl.rent} kr/dag</small>
+      <small class="slot-price">${sl.price ? `Kjøp: ${kr(sl.price)}` : 'Ingen engangspris'}</small></button>`;
   }
   const mine = sl.stall.id === s.me.stallId;
   // Bare salgsvarer (en kjele på bordet er ikke en vare).
@@ -1353,6 +1373,14 @@ app.addEventListener('click', (e) => {
     modal = null;
   }
   if (action === 'pick') screen = { kind: 'claim', slot: Number(el.dataset.slot) };
+  if (action === 'move-stall' && screen.kind === 'claim') {
+    void act('/api/stall/move', { slotIndex: screen.slot }, 'Boden har flyttet! 🚚').then((ok) => {
+      if (ok) {
+        screen = { kind: 'map' };
+        render();
+      }
+    });
+  }
   if (action === 'visit') screen = { kind: 'visit', stallId: Number(el.dataset.stall) };
   if (action === 'home') screen = { kind: 'stall' };
   if (action === 'map') screen = { kind: 'map' };

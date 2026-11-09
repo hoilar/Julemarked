@@ -833,6 +833,11 @@ body.night .top { background: #0c1020; }
 .slot.taken { border: 2px solid #c08a5a; background: linear-gradient(var(--red) 0 10px, var(--card) 10px); padding-top: 0.8rem; }
 .slot.mine { border-color: var(--gold); outline: 2px solid var(--gold); }
 .slot-no { font-size: 0.7rem; color: var(--muted); }
+.slot.picked { border-style: solid; border-color: var(--gold); }
+.slot-price { font-size: 0.68rem; color: var(--muted); }
+.slot-facts { list-style: none; padding: 0; margin: 0 0 0.8rem; display: grid; gap: 0.25rem; }
+.slot-facts li { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dotted var(--line); padding: 0.15rem 0; }
+.slot-facts span { color: var(--muted); }
 .slot-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
 
 /* Toast */
