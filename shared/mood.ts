@@ -20,6 +20,24 @@ export function moodFor(ratio: number, tolerance: number): Mood {
   return 'sjokk';
 }
 
+// ---------- Omdømme og «hjemmelaget» ----------
+// Omdømmet (0–100, alle starter på 50) styrer både hvor mange som kommer og hva de forventer å betale.
+
+export const START_REPUTATION = 50;
+/** «Hjemmelaget» på etiketten: kundene forventer så mye mer. */
+export const HOMEMADE_BONUS = 1.3;
+
+const clampRep = (rep: number) => Math.max(0, Math.min(100, rep));
+/** Kundestrømmen: 0,5× ved omdømme 0, 1× ved 50, 1,5× ved 100. */
+export const reputationCrowd = (rep: number) => 0.5 + clampRep(rep) / 100;
+/** Prisforventningen: 0,85× ved omdømme 0, 1× ved 50, 1,15× ved 100. */
+export const reputationPrice = (rep: number) => 0.85 + (0.3 * clampRep(rep)) / 100;
+
+/** Prisen kundene forventer for en vare, ut fra omdømmet og hva etiketten sier. */
+export function expectedPrice(basePrice: number, reputation: number, homemade: boolean): number {
+  return Math.round(basePrice * reputationPrice(reputation) * (homemade ? HOMEMADE_BONUS : 1));
+}
+
 /** Sjansen for at en kunde i dette humøret kjøper varen hen kom for. */
 export const BUY_CHANCE: Record<Mood, number> = { glad: 1, noytral: 0.6, sur: 0.2, sjokk: 0 };
 

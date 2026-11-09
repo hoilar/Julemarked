@@ -23,6 +23,8 @@ export const STORES: Store[] = [
 export const STORE_BY_ID: Record<string, Store> = Object.fromEntries(STORES.map((s) => [s.id, s]));
 
 export const SHIPPING = { standard: 20, express: 150 };
+/** Ekspressfrakt koster ingenting den første markedsdagen, så man kommer i gang. */
+export const expressPrice = (firstDay: boolean) => (firstDay ? 0 : SHIPPING.express);
 export const BAG_PRICE = 1;
 export const BAG_GRID = { cols: 4, rows: 4 };
 

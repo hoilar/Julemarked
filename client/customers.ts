@@ -48,6 +48,9 @@ function svgFor(seed: string, mood: Mood): string {
 
 const cache = new Map<string, string>();
 
+/** Et ansikt med nøytral mine – brukes på etterlysningen og for tyven ved disken. */
+export const avatarFor = (seed: string) => avatarUrl(seed, 'noytral');
+
 /** Figuren som skarp SVG (data-URL), mellomlagret per person og humør. */
 function avatarUrl(seed: string, mood: Mood): string {
   const key = `${seed}|${mood}`;
@@ -107,11 +110,18 @@ function setMood(c: Customer, mood: Mood) {
   c.img.src = avatarUrl(c.seed, mood);
 }
 
+/** Plasser bak disken som ikke er tatt av kunder, selgeren, tyven eller Tilsynsmannen. */
+function freeSpots(): number[] {
+  const taken = [...customers.map((c) => c.x), ...[...specials.values()].map((s) => s.x)];
+  return SPOTS.filter((x) => taken.every((t) => Math.abs(t - x) > 12));
+}
+
 function arrive(): Customer | null {
-  const free = SPOTS.filter((x) => customers.every((c) => Math.abs(c.x - x) > 12) && !(insurer && Math.abs(INSURER_X - x) <= 12));
+  const free = freeSpots();
   if (free.length === 0) return null;
   const el = document.createElement('div');
   el.className = 'customer enter';
+  el.dataset.action = 'suspect'; // trykk: «Angi til politiet?»
   const x = free[Math.floor(Math.random() * free.length)] + (Math.random() * 4 - 2);
   el.style.left = `${x}%`;
   el.style.setProperty('--bob', `${1.4 + Math.random() * 1.1}s`);
@@ -137,6 +147,7 @@ function arrive(): Customer | null {
     img,
     bubble,
   };
+  el.dataset.seed = c.seed;
   customers.push(c);
   layer.appendChild(el);
   update(c, offers());
@@ -160,7 +171,13 @@ function tick() {
     if (now >= c.leaveAt || (night && !c.buying && Math.random() < 0.3)) leave(c);
     else update(c, list);
   }
-  if (!night && customers.length < 4 && Math.random() < 0.35) arrive();
+  if (!night && customers.length < 4 && Math.random() < 0.35 * crowd) arrive();
+}
+
+let crowd = 1;
+/** Færre kunder i dag (f.eks. etter feil tips til politiet): 1 = som vanlig. */
+export function setCrowd(n: number) {
+  crowd = n;
 }
 
 /** NPC-kundene handler bare om dagen (samme som salget på serveren). */
@@ -169,8 +186,8 @@ const isNight = () => document.body.classList.contains('night');
 function reset() {
   for (const c of customers) c.el.remove();
   customers = [];
-  insurer?.remove();
-  insurer = null;
+  for (const s of specials.values()) s.el.remove();
+  specials.clear();
 }
 
 /**
@@ -228,40 +245,116 @@ export function insurerImage(): string {
       baseColor: ['f9c9b6'],
     } as never)
       .toString()
+      // Større lerret oppover (og litt til sidene), så lua ikke kuttes. Bunnen står på samme sted.
+      .replace('viewBox="0 0 360 360"', 'viewBox="-25 -50 410 410"')
       .replace(/<\/svg>\s*$/, `${SANTA_HAT}</svg>`);
     insurerUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
   return insurerUrl;
 }
 
+// ---------- Spesielle besøkende: selgeren, Tilsynsmannen og tyven ----------
+// De står på én plass bak disken så lenge serveren sier de er der. Kunder på plassen går.
+
+type SpecialKind = 'insurer' | 'inspector' | 'thief';
+interface Special {
+  el: HTMLDivElement;
+  x: number;
+  key: string; // hvem (tyvens ansikt) – nytt ansikt gir ny figur
+}
+const specials = new Map<SpecialKind, Special>();
+
+function showSpecial(kind: SpecialKind, key: string | null, x: number | null, build: (el: HTMLDivElement) => void) {
+  const cur = specials.get(kind);
+  if (cur && cur.key === key) return cur;
+  if (cur) {
+    specials.delete(kind);
+    cur.el.classList.add('leave');
+    setTimeout(() => cur.el.remove(), 600);
+  }
+  if (key === null) return null;
+  const spot = x ?? freeSpots()[Math.floor(Math.random() * freeSpots().length)] ?? SPOTS[2];
+  for (const c of customers.filter((c) => Math.abs(c.x - spot) <= 12)) leave(c);
+  const el = document.createElement('div');
+  el.className = 'customer enter';
+  el.style.left = `${spot}%`;
+  build(el);
+  layer.appendChild(el);
+  setTimeout(() => el.classList.remove('enter'), 700);
+  const s = { el, x: spot, key };
+  specials.set(kind, s);
+  return s;
+}
+
 const INSURER_X = 74; // står på plassen lengst til høyre
-let insurer: HTMLDivElement | null = null;
+const INSPECTOR_X = 2; // står på plassen lengst til venstre
 
 /** Viser eller sender bort forsikringsselgeren. Trykk på henne åpner tilbudet (data-action="insurer"). */
 export function showInsurer(here: boolean) {
-  if (here && !insurer) {
-    // Står en kunde på plassen hennes, går den.
-    for (const c of customers.filter((c) => Math.abs(c.x - INSURER_X) <= 12)) leave(c);
-    const el = document.createElement('div');
-    el.className = 'customer insurer enter';
+  showSpecial('insurer', here ? 'frida' : null, INSURER_X, (el) => {
+    el.classList.add('insurer', 'special');
     el.dataset.action = 'insurer';
     el.title = 'Forsikringsselgeren – trykk for å høre tilbudet';
-    el.style.left = `${INSURER_X}%`;
     el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${insurerImage()}"><div class="want">🛡️</div></div>`;
-    layer.appendChild(el);
-    insurer = el;
-    setTimeout(() => el.classList.remove('enter'), 700);
-  } else if (!here && insurer) {
-    const el = insurer;
-    insurer = null;
-    el.classList.add('leave');
-    setTimeout(() => el.remove(), 600);
+  });
+}
+
+let inspectorUrl = '';
+/** Tilsynsmannen: briller, bart, grå skjorte og en streng mine. */
+export function inspectorImage(): string {
+  if (!inspectorUrl) {
+    const svg = createAvatar(micah, {
+      seed: 'Tilsynsmannen',
+      size: 256,
+      glassesProbability: 100,
+      facialHairProbability: 100,
+      earringsProbability: 0,
+      glasses: ['square'],
+      facialHair: ['scruff'],
+      hair: ['mrClean'],
+      mouth: ['nervous'],
+      eyes: ['eyes'],
+      eyebrows: ['down'],
+      shirt: ['collared'],
+      shirtColor: ['4a5560'],
+      baseColor: ['ac6651'],
+      hairColor: ['77311d'],
+      facialHairColor: ['2c1b18'],
+      glassesColor: ['000000'],
+    } as never).toString();
+    inspectorUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
+  return inspectorUrl;
+}
+
+/** Viser eller sender bort Tilsynsmannen (data-action="inspector"). */
+export function showInspector(here: boolean) {
+  showSpecial('inspector', here ? 'tilsyn' : null, INSPECTOR_X, (el) => {
+    el.classList.add('inspector', 'special');
+    el.dataset.action = 'inspector';
+    el.title = 'Tilsynsmannen';
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${inspectorImage()}"><div class="want">📋</div></div>`;
+  });
+}
+
+/**
+ * Tyven: ser ut som en helt vanlig kunde om dagen (samme klikk: «Angi til politiet?»).
+ * Om natta sniker han seg rundt bordet. `seed` = ansiktet, null = ingen tyv her nå.
+ */
+export function showThief(seed: string | null, night: boolean) {
+  const s = showSpecial('thief', seed, null, (el) => {
+    el.dataset.action = 'suspect';
+    el.dataset.seed = seed!;
+    const list = offers();
+    const want = list.length ? list[Math.floor(Math.random() * list.length)].icon : '👀';
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${avatarFor(seed!)}"><div class="want">${want}</div></div>`;
+  });
+  s?.el.classList.toggle('sneak', night);
 }
 
 // Bare under utvikling: jmKunde() i konsollen kaller inn en kunde med en gang.
 if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV)
-  Object.assign(window, { jmKunde: arrive, jmSalg: showSale });
+  Object.assign(window, { jmKunde: arrive, jmSalg: showSale, jmTyv: showThief, jmTilsyn: showInspector });
 
 /**
  * Setter kundefeltet inn i scenen etter hver omtegning. Feltet er det samme elementet hele tiden,

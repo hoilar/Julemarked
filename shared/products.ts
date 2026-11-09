@@ -19,7 +19,39 @@ export interface Product {
   size: Size;
   sprite: number; // hvor stor varen tegnes på bordet (1 = én rute)
   craftedOnly?: boolean; // kan ikke kjøpes hos grossisten – må lages i kjelen
+  brand: string; // produsenten på etiketten når varen er kjøpt i butikk
   shady?: { exposeChance: number; reputationHit: number; lines: string[] };
+}
+
+/**
+ * Hva etiketten på en vare sier. `store` = butikkjøpt (merket), `home` = laget i kjelen din,
+ * `forged` = butikkvare der du har skrevet «Hjemmelaget» med penn. Kundene ser ikke forskjell
+ * på `home` og `forged` – det gjør Tilsynsmannen.
+ */
+export type Label = 'store' | 'home' | 'forged';
+export const isHomemade = (label: Label | undefined) => label === 'home' || label === 'forged';
+
+/** Verktøy fra Klas Olsen (1×1). Ligger under disken; hva de kan brukes til, finner man ut selv. */
+export interface Tool {
+  kind: 'tool';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  price: number;
+  size: Size;
+  blurb: string; // butikkteksten – sier med vilje ikke hva verktøyet er til
+  sheets?: number; // papirblokka: antall ark når den er ny
+}
+
+/** Et ark du har laget selv: avskrevet oppskrift eller utklipt etterlysning (1×1). */
+export interface Doc {
+  kind: 'doc';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  size: Size;
 }
 
 /** En oppbevaringseske. Tar `size` ruter under disken, men rommer et eget rutenett inni. */
@@ -106,7 +138,24 @@ export interface Policy {
   insurance: InsuranceKind;
 }
 
-export type ItemType = Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy;
+export type ItemType = Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc;
+
+// Kontorrekvisita hos Klas Olsen.
+export const TOOLS: Tool[] = [
+  { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.svg', price: 29, size: { w: 1, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
+  { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.svg', price: 49, size: { w: 1, h: 1 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
+  { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.svg', price: 79, size: { w: 1, h: 1 }, blurb: 'Skarp. Pass på fingrene.' },
+];
+export const PEN = 'penn';
+export const PAD = 'papirblokk';
+export const SCISSORS = 'saks';
+
+export const DOCS: Doc[] = [
+  { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.svg', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.svg', size: { w: 1, h: 1 } },
+];
+export const RECIPE_NOTE = 'oppskrift';
+export const WANTED = 'etterlysning';
 
 // Plassholdere med emoji til de får tegning.
 export const INGREDIENTS: Ingredient[] = [
@@ -190,6 +239,7 @@ const good = (
   wholesale: number,
   basePrice: number,
   baseDemand: number,
+  brand: string,
 ): Product => ({
   kind: 'product',
   id,
@@ -199,28 +249,29 @@ const good = (
   wholesale,
   basePrice,
   baseDemand,
+  brand,
   size: { w, h },
   sprite: w === 2 ? 2.3 : 1.15,
 });
 
 export const PRODUCTS: Product[] = [
   // --- Med egne tegninger ---
-  //   id                  navn                      emoji fil                  w  h  inn  pris  etterspørsel
-  { ...good('glogg', 'Gløgg (kopp)', '🍷', 'glogg-kopp', 1, 1, 12, 45, 2.2), craftedOnly: true }, // varmes av flaske i kjelen
-  good('pepperkake_stjerne', 'Pepperkakestjerne', '⭐', 'pepperkake-stjerne', 1, 1, 6, 25, 2.0),
-  good('pepperkake_hjerte', 'Pepperkakehjerte', '❤️', 'pepperkake-hjerte', 1, 1, 8, 35, 1.6),
-  good('drops', 'Polkadrops', '🍬', 'drops', 1, 1, 4, 15, 2.2),
-  good('karamell', 'Fløtekaramell', '🍬', 'karamell', 1, 1, 3, 12, 2.4),
-  good('julekule', 'Håndmalt julekule', '🔴', 'julekule', 1, 1, 25, 79, 0.8),
-  good('sjokolade', 'Julesjokolade', '🍫', 'sjokolade', 1, 2, 15, 49, 1.3),
-  good('konfekt', 'Konfekteske', '🍫', 'konfekt', 1, 2, 45, 149, 0.7),
-  good('gloggflaske', 'Gløgg (flaske)', '🍷', 'glogg-flaske', 1, 2, 50, 169, 0.6),
-  good('brente_mandler', 'Brente mandler', '🥜', 'brente-mandler', 2, 2, 30, 89, 1.5),
-  good('pepperkakepose', 'Pepperkaker (pose)', '🍪', 'pepperkaker-pose', 2, 2, 35, 99, 0.9),
-  good('syltetoy', 'Hjemmelaget syltetøy', '🍓', 'syltetoy', 2, 2, 35, 119, 0.7),
-  good('nisselue', 'Nisselue', '🎅', 'nisselue', 2, 2, 45, 149, 0.6),
-  good('julestrompe', 'Julestrømpe', '🧦', 'julestrompe', 2, 2, 60, 199, 0.5),
-  good('votter', 'Strikkede votter', '🧤', 'votter', 2, 2, 120, 399, 0.3),
+  //   id                  navn                      emoji fil                  w  h  inn  pris  etterspørsel  produsent
+  { ...good('glogg', 'Gløgg (kopp)', '🍷', 'glogg-kopp', 1, 1, 12, 45, 2.2, 'Glødeverket'), craftedOnly: true }, // varmes av flaske i kjelen
+  good('pepperkake_stjerne', 'Pepperkakestjerne', '⭐', 'pepperkake-stjerne', 1, 1, 6, 25, 2.0, 'Kakefabrikken'),
+  good('pepperkake_hjerte', 'Pepperkakehjerte', '❤️', 'pepperkake-hjerte', 1, 1, 8, 35, 1.6, 'Kakefabrikken'),
+  good('drops', 'Polkadrops', '🍬', 'drops', 1, 1, 4, 15, 2.2, 'Søtt & Co'),
+  good('karamell', 'Fløtekaramell', '🍬', 'karamell', 1, 1, 3, 12, 2.4, 'Søtt & Co'),
+  good('julekule', 'Håndmalt julekule', '🔴', 'julekule', 1, 1, 25, 79, 0.8, 'Pynt Import AS'),
+  good('sjokolade', 'Julesjokolade', '🍫', 'sjokolade', 1, 2, 15, 49, 1.3, 'Kakaokompaniet'),
+  good('konfekt', 'Konfekteske', '🍫', 'konfekt', 1, 2, 45, 149, 0.7, 'Kakaokompaniet'),
+  good('gloggflaske', 'Gløgg (flaske)', '🍷', 'glogg-flaske', 1, 2, 50, 169, 0.6, 'Glødeverket'),
+  good('brente_mandler', 'Brente mandler', '🥜', 'brente-mandler', 2, 2, 30, 89, 1.5, 'Mills'),
+  good('pepperkakepose', 'Pepperkaker (pose)', '🍪', 'pepperkaker-pose', 2, 2, 35, 99, 0.9, 'Kakefabrikken'),
+  good('syltetoy', 'Syltetøy', '🍓', 'syltetoy', 2, 2, 35, 119, 0.7, 'Mills'),
+  good('nisselue', 'Nisselue', '🎅', 'nisselue', 2, 2, 45, 149, 0.6, 'Pynt Import AS'),
+  good('julestrompe', 'Julestrømpe', '🧦', 'julestrompe', 2, 2, 60, 199, 0.5, 'Pynt Import AS'),
+  good('votter', 'Strikkede votter', '🧤', 'votter', 2, 2, 120, 399, 0.3, 'Strikkefabrikken'),
   // Risikovarer: legg til `shady: { exposeChance, reputationHit, lines }` på en vare
   // (se Product over) for høy margin med fare for avsløring. Ingen varer bruker det nå.
 ];
@@ -298,7 +349,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, POSEBRETTER, ...FOLDED_BAGS, ...POLICIES].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, POSEBRETTER, ...FOLDED_BAGS, ...POLICIES, ...TOOLS, ...DOCS].map((t) => [t.id, t]),
 );
 
 /** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */
@@ -309,6 +360,9 @@ export const STORAGE_GRID: GridSize = { cols: 24, rows: 6 };
 /** Søppelkassa er et eget rutenett. Alt i den forsvinner når søppelbilen kommer om natta. */
 export const TRASH_GRID: GridSize = { cols: 4, rows: 4 };
 export const TRASH_EMPTY_HOUR = 3;
+
+/** Spikeren under grenuttaket: plass til én etterlysning. */
+export const NAIL_GRID: GridSize = { cols: 1, rows: 1 };
 
 /** Nattetyver: varer som står ute på bordet mellom kl. 23 og 06 kan bli stjålet. */
 export const THEFT_FROM = 23;

@@ -148,6 +148,16 @@ if (!hasColumn('stalls', 'trash_fill')) db.exec('ALTER TABLE stalls ADD COLUMN t
 // Antall poser kastet siden forrige byråkratifond-regning (2 kr per pose).
 if (!hasColumn('stalls', 'bags_binned')) db.exec('ALTER TABLE stalls ADD COLUMN bags_binned INTEGER NOT NULL DEFAULT 0');
 
+// Etiketten på salgsvarer: NULL = butikkjøpt, 'home' = laget i kjelen, 'forged' = skrevet om med penn.
+if (!hasColumn('items', 'label')) db.exec('ALTER TABLE items ADD COLUMN label TEXT');
+// Dagen (avisutgave ÅÅÅÅMMDD) tyven ble angitt og tatt i markedet.
+if (!hasColumn('markets', 'thief_caught')) db.exec('ALTER TABLE markets ADD COLUMN thief_caught INTEGER NOT NULL DEFAULT 0');
+// Feil tips til politiet: dagen (dato ÅÅÅÅMMDD) det gir færre kunder, og hvor mange feil tips.
+if (!hasColumn('stalls', 'tip_day')) {
+  db.exec(`ALTER TABLE stalls ADD COLUMN tip_day INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE stalls ADD COLUMN tip_wrong INTEGER NOT NULL DEFAULT 0;`);
+}
+
 export function tx<T>(fn: () => T): T {
   db.exec('BEGIN');
   try {

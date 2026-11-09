@@ -1,5 +1,6 @@
 import type { Phase } from './clock.ts';
 import type { BillKind, BillStage } from './bills.ts';
+import type { Label } from './products.ts';
 
 /** En ubetalt regning i postkassa, slik klienten ser den. */
 export interface BillView {
@@ -18,7 +19,8 @@ export interface BillView {
 /** Hvor en gjenstand ligger: under disken, på bordet eller inni en eske. */
 // box = i en eske/pose; pot_in / pot_out = i kjelens råvare- eller ferdig-rutenett (boxId = kjelen).
 // transit = poser på vei fra nettbutikken; ground = levert, står ved siden av boden.
-export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground';
+// nail = hengt opp på spikeren under grenuttaket (bare etterlysninger).
+export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail';
 
 /** Dagens tilbud i en nettbutikk, med hvor mange du kan kjøpe til (lageret er per spiller). */
 export interface ShopView {
@@ -41,6 +43,11 @@ export interface Item {
   kettle?: KettleState; // bare kjeler
   folder?: { on: boolean }; // bare posebrettere
   arrives?: number; // bare poser på vei (transit): spilltid de leveres
+  label?: Label; // bare salgsvarer: hva etiketten sier (andres boder ser aldri «forged»)
+  sheets?: number; // bare papirblokka: ark igjen
+  recipe?: string; // bare avskrevne oppskrifter: oppskriftens id
+  wanted?: { seed: string; alias: string; edition: number }; // bare utklipte etterlysninger
+  cut?: boolean; // bare aviser: etterlysningen er klippet ut
   boxId: number | null; // eskens id når place = 'box'
   x: number;
   y: number;
@@ -98,7 +105,9 @@ export interface Paper {
   price: number; // strømpris i dag, kr/kWh
   headline: string;
   notices: string[];
-  recipe: { name: string; inputs: string[]; outputs: string[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»
+  recipe: { id: string; name: string; inputs: string[]; outputs: string[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»
+  /** Dagens etterlyste tyv (ansiktet tegnes fra seed). `caught` = noen har angitt ham. */
+  wanted: { seed: string; alias: string; reward: number; caught: boolean };
   /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */
   crime: {
     thefts: { stall: string; mine: boolean; lines: string[]; value: number }[];
@@ -116,7 +125,7 @@ export interface GameState {
   paper: Paper | null; // dagens utgave (null før første)
   papers: Record<number, Paper>; // innholdet i avisene spilleren har (etter utgave)
   shops: ShopView[]; // dagens nettbutikker
-  clock: { gameTime: number; phase: Phase; speed: number; label: string };
+  clock: { gameTime: number; phase: Phase; speed: number; label: string; firstDay: boolean }; // firstDay: gratis ekspress
   market: { id: number; name: string };
   /** De siste salgene til NPC-kunder i hele markedet (nyeste først). Klienten viser dem som kunder som betaler. */
   sales: { id: number; stallId: number; productId: string; qty: number; amount: number }[];
@@ -130,6 +139,10 @@ export interface GameState {
     inventory: InventoryRow[];
     items: Item[]; // alle egne gjenstander (lager, esker, bord og søppelkasse)
     bills: BillView[]; // ubetalte regninger i postkassa
+    /** Hvem som står ved boden din nå utenom vanlige kunder. thief = ansiktet (seed), uten å si at det er tyven. */
+    visitors: { thief: string | null; inspector: boolean };
+    /** Andelen kunder i dag etter feil tips til politiet i går (1 = som vanlig). */
+    crowd: number;
   };
   events: GameEvent[];
 }

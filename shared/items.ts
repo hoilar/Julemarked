@@ -1,7 +1,7 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
-import { COUNTER_GRID, ITEM_TYPES, STORAGE_GRID, TRASH_GRID } from './products.ts';
+import { COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 
 export interface Spot {
@@ -23,6 +23,7 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   if (place === 'storage') return STORAGE_GRID;
   if (place === 'counter') return COUNTER_GRID;
   if (place === 'trash') return TRASH_GRID;
+  if (place === 'nail') return NAIL_GRID;
   const box = items.find((i) => i.id === boxId);
   const t = box && ITEM_TYPES[box.typeId];
   if (place === 'box') return t?.kind === 'container' ? t.inner : null;
@@ -78,6 +79,9 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (t.kind === 'policy' && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
     return 'Forsikringsbeviset skal ligge trygt under disken (eller i søpla, hvis du vil si det opp).';
   if (t.kind === 'ingredient' && spot.place === 'counter') return 'Råvarer selges ikke – kok noe av dem først.';
+  if (spot.place === 'nail' && t.id !== WANTED) return 'Det er bare etterlysninger som henges på spikeren.';
+  if ((t.kind === 'tool' || t.kind === 'doc') && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
+    return `${t.name} er ikke til salgs – den ligger best under disken.`;
   if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
     return `Tøm ${t.name} før du kaster den.`;
   if (NESTED.has(spot.place) && spot.boxId === item.id) return 'Den kan ikke ligge i seg selv.';

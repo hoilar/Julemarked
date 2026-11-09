@@ -5,6 +5,7 @@ import type { Paper } from '../shared/types.ts';
 import { RECIPES } from '../shared/recipes.ts';
 import { hash01 } from '../shared/hash.ts';
 import { ITEM_TYPES } from '../shared/products.ts';
+import { THIEF_REWARD, thiefOf } from '../shared/crime.ts';
 
 export const PAPER_HOUR = 7;
 
@@ -125,6 +126,7 @@ export function buildPaper(
   yesterday: Yesterday | null,
   readKey: number,
   thefts: Paper['crime']['thefts'],
+  thiefCaught: boolean,
 ): Paper {
   const ed = { key, time: editionTime(key) };
   const price = powerPrice(marketId, ed.key);
@@ -138,7 +140,9 @@ export function buildPaper(
   const list = (m: Record<string, number>) =>
     Object.entries(m).map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`);
   return {
+    wanted: { ...thiefOf(marketId, ed.key), reward: THIEF_REWARD, caught: thiefCaught },
     recipe: {
+      id: r.id,
       name: r.name,
       inputs: list(r.inputs),
       outputs: list(r.outputs),

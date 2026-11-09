@@ -21,12 +21,33 @@ import {
   TRASH_GRID,
   THEFT_FROM,
   THEFT_TO,
+  TOOLS,
+  PEN,
+  PAD,
+  SCISSORS,
+  RECIPE_NOTE,
+  WANTED,
+  isHomemade,
+  type Label,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, StallPublic } from '../shared/types.ts';
-import { insurerImage, mountCustomers, showInsurer, showSale, type Offer } from './customers.ts';
+import {
+  avatarFor,
+  inspectorImage,
+  insurerImage,
+  mountCustomers,
+  setCrowd,
+  showInspector,
+  showInsurer,
+  showSale,
+  showThief,
+  type Offer,
+} from './customers.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, insurerHere } from '../shared/insurance.ts';
-import { BAG_PRICE, SHIPPING, STORES, STORE_BY_ID, packBags } from '../shared/shop.ts';
-import { moodFor, type Mood } from '../shared/mood.ts';
+import { BAG_PRICE, SHIPPING, STORES, STORE_BY_ID, expressPrice, packBags } from '../shared/shop.ts';
+import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
+import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
+import { RECIPES } from '../shared/recipes.ts';
 
 type Screen =
   | { kind: 'stall' }
@@ -38,13 +59,16 @@ type Modal =
   | null
   | { kind: 'wholesale' }
   | { kind: 'events' }
-  | { kind: 'paper'; edition: number; page: number }
   | { kind: 'mail' }
   | { kind: 'folded'; itemId: number }
   | { kind: 'insurer' }
   | { kind: 'policy'; typeId: string }
   | { kind: 'product'; productId: string }
-  | { kind: 'buy'; stallId: number; productId: string };
+  | { kind: 'buy'; stallId: number; productId: string }
+  | { kind: 'suspect'; seed: string }
+  | { kind: 'inspector' }
+  | { kind: 'doc'; itemId: number }
+  | { kind: 'tool'; itemId: number };
 
 const app = document.getElementById('app')!;
 const toastEl = document.getElementById('toast')!;
@@ -53,6 +77,11 @@ let token = localStorage.getItem('jm_token');
 let state: GameState | null = null;
 let screen: Screen = { kind: 'stall' };
 let modal: Modal = null;
+// Avisa er et eget vindu som kan dras rundt og ligger oppå scenen uten å blokkere den
+// (så du kan sammenligne etterlysningen med folka ved disken).
+let paperWin: { edition: number; page: number } | null = null;
+let paperPos: { x: number; y: number } | null = null; // px fra øvre venstre hjørne, huskes
+let paperDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
 // Åpne eske-/pose-vinduer (og søppelkassa). Rekkefølgen er stablingen: sist = øverst.
 type PanelKey = number | 'trash';
 let openPanels: PanelKey[] = [];
@@ -174,19 +203,38 @@ function tickClock() {
   const el = document.getElementById('clock');
   if (el) el.textContent = formatClock(parts);
   document.body.classList.toggle('night', phaseOf(parts.hour) === 'night');
-  // Forsikringsselgeren kommer bare til din egen bod, på faste tider.
-  showInsurer(!!shownStall && shownStall.id === state.me.stallId && insurerHere(parts.hour));
+  // Forsikringsselgeren, Tilsynsmannen og tyven kommer bare til din egen bod.
+  const home = !!shownStall && shownStall.id === state.me.stallId;
+  showInsurer(home && insurerHere(parts.hour));
+  showInspector(home && state.me.visitors.inspector);
+  showThief(home ? state.me.visitors.thief : null, phaseOf(parts.hour) === 'night');
+  setCrowd(state.me.crowd);
 }
 setInterval(tickClock, 500);
 
 // ---------- Tegning ----------
 
-/** Varene på bordet slik kundene ser dem: hver vare og prisen i forhold til normalprisen. */
+/**
+ * Varene på bordet slik kundene ser dem: hver vare og prisen i forhold til det de forventer
+ * (omdømmet til boden og om det står «Hjemmelaget» på den fremste).
+ */
 function offersOf(stall: StallPublic): Offer[] {
   return [...new Set(stall.counter.map((i) => i.typeId))].filter((id) => PRODUCT_BY_ID[id]).map((id) => {
     const p = PRODUCT_BY_ID[id];
-    return { productId: id, icon: icon(p), ratio: (stall.prices[id] ?? p.basePrice) / p.basePrice };
+    const front = stall.counter.filter((i) => i.typeId === id).sort((a, b) => b.y - a.y)[0];
+    const expected = expectedPrice(p.basePrice, stall.reputation, isHomemade(front?.label));
+    return { productId: id, icon: icon(p), ratio: (stall.prices[id] ?? p.basePrice) / expected };
   });
+}
+
+/** Navnet på etiketten: «Mills – Butikkjøpt» eller «Jule-Lars – Hjemmelaget». */
+function labelText(productId: string, label: Label | undefined, stallName: string): string {
+  return isHomemade(label) ? `${stallName} – Hjemmelaget` : `${PRODUCT_BY_ID[productId].brand} – Butikkjøpt`;
+}
+
+/** Har du verktøyet i hende (ikke i søpla eller på vei)? */
+function hasTool(s: GameState, typeId: string): Item | undefined {
+  return s.me.items.find((i) => i.typeId === typeId && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i));
 }
 
 let shownStall: StallPublic | null = null; // boden som vises nå (egen eller besøkt)
@@ -210,7 +258,7 @@ function playNewSales(s: GameState) {
 function render() {
   // Ikke tegn på nytt midt i et drag eller mens brukeren skriver i et felt.
   const active = document.activeElement;
-  if (drag || panelDrag || (active && app.contains(active) && /INPUT|SELECT/.test(active.tagName))) {
+  if (drag || panelDrag || paperDrag || (active && app.contains(active) && /INPUT|SELECT/.test(active.tagName))) {
     pendingRender = true;
     return;
   }
@@ -230,10 +278,13 @@ function render() {
       body = shownStall ? stallScene(s, shownStall, false) : mapScreen(s);
     } else body = mapScreen(s);
     // Behold rulleposisjonen i dialogen (nettbutikken er lang).
-    const scroll = app.querySelector('.modal')?.scrollTop ?? 0;
-    app.innerHTML = body + modalView(s);
-    const m = app.querySelector('.modal');
+    const scroll = app.querySelector('.modal-backdrop .modal')?.scrollTop ?? 0;
+    const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
+    app.innerHTML = body + paperWindow(s) + modalView(s);
+    const m = app.querySelector('.modal-backdrop .modal');
     if (m) m.scrollTop = scroll;
+    const pm = app.querySelector('.paper-window .modal');
+    if (pm) pm.scrollTop = paperScroll;
   }
   tickClock(); // setter dag/natt før kundene telles
   mountCustomers(app.querySelector('.scene'), shownStall ? String(shownStall.id) : null, () =>
@@ -265,13 +316,20 @@ function joinView(): string {
   </main>`;
 }
 
+/** Hva omdømmet betyr akkurat nå (vises når man holder over stjerna). */
+function reputationTitle(rep: number): string {
+  const pct = (n: number) => `${n >= 1 ? '+' : '−'}${Math.abs(Math.round((n - 1) * 100))} %`;
+  return `Omdømme ${rep} av 100. Kundestrøm ${pct(reputationCrowd(rep))}, prisene kundene forventer ${pct(reputationPrice(rep))}.`;
+}
+
 function hud(s: GameState, own: boolean): string {
   const mine = myStall(s);
   return `
     <div class="hud hud-left">
       <div id="clock">${esc(s.clock.label)}</div>
       ${s.clock.speed !== 1 ? `<span class="pill">${s.clock.speed}×</span>` : ''}
-      ${mine ? `<div class="money">💰 ${kr(s.me.cash)}</div><div>⭐ ${s.me.reputation}</div>` : ''}
+      ${mine ? `<div class="money">💰 ${kr(s.me.cash)}</div><div title="${esc(reputationTitle(s.me.reputation))}">⭐ ${s.me.reputation}</div>` : ''}
+      ${mine && s.me.crowd < 1 ? `<div class="rumour" title="Feil tips til politiet: folk holder seg unna i dag">🗣️ −${Math.round((1 - s.me.crowd) * 100)} % kunder</div>` : ''}
     </div>
     <div class="hud hud-right">
       ${own ? '<button data-action="modal" data-modal="wholesale">📦 Innkjøp</button>' : ''}
@@ -289,7 +347,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
     <div class="scene ${own ? 'own' : 'visit'}">
       <div class="tint"></div>
       ${powerView(stall, own)}
-      ${own ? mailboxView(s) + deliveriesView(s) : ''}
+      ${own ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
       <div class="sign">${esc(stall.name)}</div>
       ${counterView(stall, own)}
       ${own ? storageView(s) + trashView(s) + boxPanels(s) : visitorInfo(stall)}
@@ -346,6 +404,27 @@ function powerView(stall: StallPublic, own: boolean): string {
     ${hot(POWER_SWITCH, 'power-switch', `${power.on ? 'Slå av' : 'Slå på'} grenuttaket (trekker nå ${kw.toString().replace('.', ',')} kW)`)}
     ${POWER_SOCKETS.map((r, i) => hot(r, 'power-plug', socketLabel(i), `data-plug="${i}"`)).join('')}
   </div>`;
+}
+
+// --- Spikeren under grenuttaket: her kan etterlysningen henge ---
+
+const NAIL = { x: 1283, y: 452 }; // spikerhodet i bildepiksler (1536×1024)
+
+/** Plakaten med tyvens ansikt (avisa, spikeren og nærbildet bruker samme). */
+function posterHtml(w: { seed: string; alias: string }, reward = true): string {
+  return `<div class="poster-head">ETTERLYST</div>
+    <img src="${avatarFor(w.seed)}" alt="" draggable="false">
+    <div class="poster-name">${esc(w.alias)}</div>
+    ${reward ? `<div class="poster-reward">Dusør ${kr(THIEF_REWARD)}</div>` : ''}`;
+}
+
+function nailView(s: GameState): string {
+  const hung = s.me.items.find((i) => i.place === 'nail');
+  const poster = hung?.wanted
+    ? `<div class="nail-poster" data-drag="${hung.id}" title="Etterlysning: ${esc(hung.wanted.alias)}. Trykk for å se nærmere, dra for å ta den ned.">${posterHtml(hung.wanted, false)}</div>`
+    : '';
+  return `<div class="nail ${hung ? 'used' : ''}" data-nail style="left:${(NAIL.x / 1536) * 100}%;top:${(NAIL.y / 1024) * 100}%"
+      title="${hung ? '' : 'En spiker.'}"><span class="nail-head"></span>${poster}</div>`;
 }
 
 // --- Postkassa (flagget er oppe når det ligger en ulest avis der) ---
@@ -471,9 +550,14 @@ function gridItemView(i: Item, cols: number, rows: number): string {
     const p = i.edition ? state!.papers[i.edition] : undefined;
     const fresh = i.edition === state!.paper?.edition;
     const title = `${t.name}${p ? ` – ${p.date}` : ''}. Dobbeltklikk for å lese.`;
-    return `<div class="gitem paper-item ${t.image ? 'has-img' : ''} ${fresh ? 'fresh' : 'old'}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(t)}</div>`;
+    return `<div class="gitem paper-item ${t.image ? 'has-img' : ''} ${fresh ? 'fresh' : 'old'} ${i.cut ? 'cut' : ''}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(t)}</div>`;
   }
-  return `<div class="gitem ${t.image ? 'has-img' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)}">${sprite(t)}</div>`;
+  let title = t.name;
+  if (i.sheets !== undefined) title += ` – ${i.sheets} ark igjen`;
+  if (i.recipe) title += `: ${RECIPES.find((r) => r.id === i.recipe)?.name ?? ''}`;
+  if (i.wanted) title += `: ${i.wanted.alias}`;
+  if (i.label && PRODUCT_BY_ID[i.typeId]) title += ` (${labelText(i.typeId, i.label, myStall(state!)?.name ?? '')})`;
+  return `<div class="gitem ${t.image ? 'has-img' : ''} ${i.label === 'forged' ? 'forged' : ''}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(t)}</div>`;
 }
 
 function storageView(s: GameState): string {
@@ -771,7 +855,7 @@ function storeView(s: GameState, storeId: string): string {
     const n = cart[it.typeId] ?? 0;
     const art = t.image ? `<img src="${t.image}" alt="" draggable="false">` : `<span class="shop-emoji">${t.emoji}</span>`;
     const p = PRODUCT_BY_ID[it.typeId];
-    const sub = p ? `Kunder forventer ~${kr(p.basePrice)} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen';
+    const sub = p ? `Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen';
     return `<div class="shop-card ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
       <div class="shop-art">${art}<span class="shop-size">${t.size.w}×${t.size.h}</span></div>
       <div class="shop-name">${esc(t.name)}</div>
@@ -794,14 +878,17 @@ function storeView(s: GameState, storeId: string): string {
     .map(([typeId, qty]) => ({ typeId, qty, price: shop.items.find((i) => i.typeId === typeId)?.price ?? 0 }));
   const goodsSum = lines.reduce((n, l) => n + l.qty * l.price, 0);
   const bags = lines.length ? packBags(lines).length : 0;
-  const ship = express ? SHIPPING.express : SHIPPING.standard;
+  const expressCost = expressPrice(state!.clock.firstDay);
+  const ship = express ? expressCost : SHIPPING.standard;
   const total = goodsSum + bags * BAG_PRICE + (lines.length ? ship : 0);
+  // Før kl. 07 kommer standardleveransen samme morgen.
+  const standardWhen = osloParts(state!.clock.gameTime).hour < 7 ? 'i dag kl. 07' : 'i morgen kl. 07';
   const cartHtml = lines.length
     ? `<ul class="cart-lines">${lines.map((l) => `<li><span>${l.qty} × ${esc(ITEM_TYPES[l.typeId].name)}</span><span>${kr(l.qty * l.price)}</span></li>`).join('')}
          <li class="muted"><span>${bags} ${bags === 1 ? 'pose' : 'poser'} à ${kr(BAG_PRICE)}</span><span>${kr(bags * BAG_PRICE)}</span></li></ul>
        <div class="ship-choice">
-         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${express ? '' : 'checked'}> Standard ${kr(SHIPPING.standard)} – i morgen kl. 07</label>
-         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${kr(SHIPPING.express)} – innen 1 time</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${express ? '' : 'checked'}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : '<b>GRATIS i dag</b>'} – innen 1 time</label>
        </div>
        <div class="cart-total"><span>Totalt</span><b>${kr(total)}</b></div>
        <button class="order-btn" data-action="shop-order" data-store="${storeId}" style="--brand:${store.color};--brand-ink:${store.ink}">Bestill fra ${esc(store.name)}</button>`
@@ -846,6 +933,16 @@ function klasView(s: GameState): string {
       </form>`,
       )
       .join('')}</div>
+    <h3>Kontorrekvisita</h3>
+    <div class="wholesale">${TOOLS.map(
+      (t) => `
+      <form class="wholesale-row" data-form="supplies" data-type="${t.id}">
+        <span class="ws-name">${icon(t)} ${esc(t.name)}</span>
+        <span class="muted">${kr(t.price)} · ${esc(t.blurb)}${s.me.items.some((i) => i.typeId === t.id) ? ` · har ${s.me.items.filter((i) => i.typeId === t.id).length}` : ''}</span>
+        <input name="qty" type="number" min="1" max="5" value="1" aria-label="Antall">
+        <button class="small">Kjøp</button>
+      </form>`,
+    ).join('')}</div>
     <h3>Elektrisk</h3>
     <p class="muted">Plugges i grenuttaket. Trekker strøm så lenge bryteren er på – prisen står i avisa.</p>
     <div class="wholesale">${DEVICES.map((d) => {
@@ -893,8 +990,10 @@ function priceFeedback(price: number, cost: number, base: number): string {
 const PAPER_PAGES = ['Forside', 'Økonomi', 'Eivblås Halvstrøms hjørne', 'Kriminalitet'];
 
 /** En utgave av morgenavisa, én side om gangen. */
-function paperView(p: Paper | undefined, page: number): string {
+function paperView(s: GameState, p: Paper | undefined, page: number): string {
   if (!p) return `<h2>📰 Uleselig</h2><p class="muted">Avisa er for våt til å lese.</p>`;
+  const held = s.me.items.find((i) => i.typeId === 'avis' && i.edition === p.edition && !isTrashed(s.me.items, i));
+  const w = p.wanted;
   const price = p.price.toFixed(2).replace('.', ',');
   const level = p.price <= 0.9 ? 'lav' : p.price <= 1.8 ? 'normal' : p.price <= 3 ? 'hoy' : 'rekord';
   const y = p.yesterday;
@@ -910,6 +1009,7 @@ function paperView(p: Paper | undefined, page: number): string {
     <ul class="paper-teasers">
       <li><button class="paper-teaser" data-action="paper-page" data-page="1"><span>⚡ Strømmen koster ${price} kr/kWh i dag</span><small>Økonomi, s. 2</small></button></li>
       <li><button class="paper-teaser" data-action="paper-page" data-page="2"><span>🍲 Eivblå koker ${esc(p.recipe.name.toLowerCase())}</span><small>Eivblås Halvstrøms hjørne, s. 3</small></button></li>
+      <li><button class="paper-teaser alarm" data-action="paper-page" data-page="3"><span>🚨 ${w.caught ? `PÅGREPET: ${esc(w.alias)}` : `ETTERLYST: ${esc(w.alias)} – dusør ${kr(w.reward)}`}</span><small>Kriminalitet, s. 4</small></button></li>
       <li><button class="paper-teaser ${thefts.length ? 'alarm' : ''}" data-action="paper-page" data-page="3"><span>${
         thefts.length
           ? `🦝 Tyver herjet i natt: ${thefts.length} ${thefts.length === 1 ? 'bod' : 'boder'} rammet${thefts.some((t) => t.mine) ? ' – også din!' : ''}`
@@ -945,12 +1045,27 @@ function paperView(p: Paper | undefined, page: number): string {
       <div class="paper-kicker">🍲 Dagens oppskrift: ${esc(p.recipe.name)}</div>
       <p>Legg ${p.recipe.inputs.map(esc).join(' og ')} i kjelen. Kok på <b>styrke ${p.recipe.level}</b> i én time,
         så får du ${p.recipe.outputs.map(esc).join(' og ')}.</p>
+      ${copyRecipeButton(s, p, !!held)}
     </section>
     <blockquote class="paper-quote">«${esc(p.recipe.quote)}»<cite>– Eivblå Halvstrøm</cite></blockquote>
     <p class="paper-small">Avisa fraskriver seg ethvert ansvar for svidde kjeler.</p>`;
 
   const crime = `
     <h1 class="paper-headline">Kriminalitet</h1>
+    <section class="paper-wanted ${w.caught ? 'caught' : ''} ${held?.cut ? 'is-cut' : ''}">
+      <div class="poster">${held?.cut ? '<div class="poster-hole">✂️ Klippet ut</div>' : posterHtml(w)}</div>
+      <div class="paper-wanted-text">
+        <div class="paper-kicker">🚨 ${w.caught ? 'Pågrepet' : 'Etterlyst'}</div>
+        ${
+          w.caught
+            ? `<p><b>${esc(w.alias)}</b> er tatt etter tips fra en våken bodeier. Politiet takker for hjelpen.</p>`
+            : `<p>Politiet leter etter <b>${esc(w.alias)}</b>, som skal ha speidet på boder på markedet og ventes tilbake i natt.
+               Står personen ved disken din? Angi til politiet – dusør <b>${kr(w.reward)}</b>.</p>
+               <p class="paper-small">Feil tips skremmer kundene bort.</p>`
+        }
+        ${cutButton(s, held)}
+      </div>
+    </section>
     <section class="paper-crime">
       <div class="paper-kicker">🦝 Natt til i dag</div>
       ${
@@ -964,15 +1079,14 @@ function paperView(p: Paper | undefined, page: number): string {
                .join('')}</ul>`
           : '<p>Ingen innbrudd i natt. Politiet kjedet seg.</p>'
       }
-      <p class="paper-small">Politiet minner om at varer som står ute på bordet mellom kl. ${THEFT_FROM} og 0${THEFT_TO}, er tyvenes favoritt.</p>
-    </section>
+      <p class="paper-small">Politiet minner om at varer som står ute på bordet mellom kl. ${THEFT_FROM} og 0${THEFT_TO}, er tyvenes favoritt.</p>    </section>
     <div class="paper-kicker">🚓 Politiloggen</div>
     <p class="paper-log">${esc(p.crime.log)}</p>`;
 
   const body = [front, economy, recipe, crime][n];
   return `
   <article class="paper">
-    <header class="paper-mast">
+    <header class="paper-mast" data-paper-head title="Dra for å flytte avisa">
       <div class="paper-name">VERDENS UNDERGANG</div>
       <div class="paper-meta"><span>${esc(p.date)}</span><span>Uavhengig av alt · Kr 49,-</span></div>
     </header>
@@ -984,6 +1098,40 @@ function paperView(p: Paper | undefined, page: number): string {
       <button class="paper-turn" data-action="paper-page" data-page="${n + 1}" ${n === PAPER_PAGES.length - 1 ? 'disabled' : ''}>Neste ▶</button>
     </footer>
   </article>`;
+}
+
+/** «Skriv av oppskriften»: krever noe å skrive med og noe å skrive på. */
+function copyRecipeButton(s: GameState, p: Paper, held: boolean): string {
+  if (!held) return '';
+  const notes = s.me.items.filter((i) => i.typeId === RECIPE_NOTE && !isTrashed(s.me.items, i));
+  if (notes.some((i) => i.recipe === p.recipe.id)) return '<p class="paper-tool done">📝 Du har denne oppskriften under disken.</p>';
+  const pad = s.me.items.find((i) => i.typeId === PAD && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i) && (i.sheets ?? 0) > 0);
+  const ok = !!hasTool(s, PEN) && !!pad;
+  return `<div class="paper-tool">
+    <button class="small" data-action="copy-recipe" data-edition="${p.edition}" ${ok ? '' : 'disabled'}>📝 Skriv av oppskriften</button>
+    <small>${ok ? `${pad!.sheets} ark igjen i blokka.` : 'Du trenger noe å skrive med og noe å skrive på.'}</small>
+  </div>`;
+}
+
+/** «Klipp ut etterlysningen»: krever noe å klippe med. */
+function cutButton(s: GameState, held: Item | undefined): string {
+  if (!held || held.cut) return '';
+  const ok = !!hasTool(s, SCISSORS);
+  return `<div class="paper-tool">
+    <button class="small" data-action="cut-wanted" data-edition="${held.edition}" ${ok ? '' : 'disabled'}>✂️ Klipp ut etterlysningen</button>
+    ${ok ? '' : '<small>Du trenger noe å klippe med.</small>'}
+  </div>`;
+}
+
+/** Avisvinduet: flyttes i mastetoppen, blokkerer ikke scenen bak. */
+function paperWindow(s: GameState): string {
+  if (!paperWin) return '';
+  const pos = paperPos ? `left:${paperPos.x}px;top:${paperPos.y}px` : '';
+  return `<div class="paper-window ${paperPos ? 'placed' : ''}" style="${pos}">
+    <div class="modal card paper-modal" role="dialog" aria-label="Verdens Undergang">
+      <button class="close ghost small" data-action="close-paper" aria-label="Lukk avisa">✕</button>
+      ${paperView(s, s.papers[paperWin.edition], paperWin.page)}
+    </div></div>`;
 }
 
 /** Postkassa: ny avis (hvis ulest) og ubetalte regninger med betalknapper. */
@@ -1052,6 +1200,50 @@ function insurerView(s: GameState): string {
     <p class="muted">Premien kommer som regning i postkassa hver morgen. Du får et forsikringsbevis under disken – kaster du det i søpla, er forsikringen sagt opp. Går premien til inkasso, sier vi den opp for deg.</p>`;
 }
 
+/** Trykk på en person ved disken: «Angi til politiet?» */
+function suspectView(s: GameState, seed: string): string {
+  const hung = s.me.items.find((i) => i.place === 'nail')?.wanted;
+  const factor = Math.round((1 - WRONG_TIP_FACTOR) * 100);
+  return `<div class="suspect">
+      <div class="suspect-face"><img src="${avatarFor(seed)}" alt=""><small>Ved disken</small></div>
+      ${hung ? `<div class="suspect-face poster-mini">${posterHtml(hung, false)}<small>På spikeren</small></div>` : ''}
+    </div>
+    <h2>Angi til politiet?</h2>
+    <p>Er dette dagens etterlyste tyv? Riktig tips gir <b>${kr(THIEF_REWARD)}</b> i dusør, og tyven er tatt før natta.</p>
+    <p class="muted">Tar du feil, går ryktet: ${factor} % færre kunder neste markedsdag – og enda færre for hvert feil tips.</p>
+    <div class="row"><button data-action="tip" data-seed="${esc(seed)}">🚔 Angi til politiet</button><button class="ghost" data-action="close">La være</button></div>`;
+}
+
+function inspectorView(): string {
+  return `<div class="insurer-head"><img src="${inspectorImage()}" alt=""><div>
+      <h2>${esc(INSPECTOR.name)}</h2><div class="muted">${esc(INSPECTOR.office)}</div></div></div>
+    <p class="insurer-pitch">«Bare fortsett som normalt. Jeg skal bare se litt.»</p>
+    <p class="muted">Han skriver noe på en blokk og ser lenge på etikettene på bordet.</p>`;
+}
+
+/** Nærbilde av et verktøy eller et ark du har laget selv. */
+function itemView(s: GameState, it: Item): string {
+  const t = ITEM_TYPES[it.typeId];
+  if (it.typeId === RECIPE_NOTE) {
+    const r = RECIPES.find((x) => x.id === it.recipe);
+    if (!r) return '<p class="muted">Lappen er uleselig.</p>';
+    const list = (m: Record<string, number>) =>
+      Object.entries(m).map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${esc(ITEM_TYPES[id].name.toLowerCase())}`).join(' og ');
+    return `<div class="note-sheet"><h2>📝 ${esc(r.name)}</h2>
+      <p>${list(r.inputs)} i kjelen.<br>Styrke <b>${r.level}</b>, én time.<br>= ${list(r.outputs)}</p>
+      <small>Skrevet av fra Verdens Undergang.</small></div>`;
+  }
+  if (it.typeId === WANTED && it.wanted) {
+    return `<div class="poster big">${posterHtml(it.wanted)}</div>
+      <p class="muted">${it.place === 'nail' ? 'Henger på spikeren under grenuttaket. Dra den ned under disken hvis du vil ta den ned.' : 'Dra den opp på spikeren under grenuttaket for å henge den opp.'}</p>`;
+  }
+  const tool = TOOLS.find((x) => x.id === it.typeId);
+  return itemCard(
+    t,
+    `<h2>${esc(t.name)}</h2><p>${esc(tool?.blurb ?? '')}</p>${it.sheets !== undefined ? `<p class="muted">${it.sheets} ark igjen.</p>` : ''}`,
+  );
+}
+
 function modalView(s: GameState): string {
   if (!modal) return '';
   let inner = '';
@@ -1086,7 +1278,14 @@ function modalView(s: GameState): string {
     );
   }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
-  if (modal.kind === 'paper') inner = paperView(s.papers[modal.edition], modal.page);
+  if (modal.kind === 'suspect') inner = suspectView(s, modal.seed);
+  if (modal.kind === 'inspector') inner = inspectorView();
+  if (modal.kind === 'doc' || modal.kind === 'tool') {
+    const id = modal.itemId;
+    const it = s.me.items.find((i) => i.id === id);
+    if (!it) return '';
+    inner = itemView(s, it);
+  }
 
   if (modal.kind === 'wholesale') inner = shopView(s);
 
@@ -1095,6 +1294,27 @@ function modalView(s: GameState): string {
     const inv = s.me.inventory.find((r) => r.productId === p.id) ?? { qty: 0, onCounter: 0, avgCost: p.wholesale };
     const stored = inv.qty - inv.onCounter;
     const price = myPrice(s, p.id);
+    // Produsent: én linje per etikett (butikkjøpt, hjemmelaget, «hjemmelaget» skrevet med penn).
+    const held = s.me.items.filter((i) => i.typeId === p.id && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i));
+    const count = (l: Label) => held.filter((i) => i.label === l).length;
+    const stallName = myStall(s)?.name ?? '';
+    const pen = !!hasTool(s, PEN);
+    const groups = (['store', 'home', 'forged'] as const)
+      .filter((l) => count(l) > 0)
+      .map((l) => {
+        const action =
+          l === 'store' && pen && !p.craftedOnly
+            ? `<button class="small ghost" data-action="relabel" data-to="home" title="Skriv om etiketten med penn">✏️ Skriv «Hjemmelaget»</button>`
+            : l === 'forged' && pen
+              ? `<button class="small ghost" data-action="relabel" data-to="store" title="Skriv riktig produsent igjen">✏️ Skriv riktig</button>`
+              : '';
+        return `<li class="label-row ${l}"><div><b>${esc(labelText(p.id, l, stallName))}</b>${l === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
+            <small>${count(l)} stk · kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, l !== 'store'))}</small></div>${action}</li>`;
+      })
+      .join('');
+    // Prisreaksjonen regnes mot etiketten på flest av varene.
+    const main: Label = count('store') >= count('home') + count('forged') ? 'store' : 'home';
+    const base = expectedPrice(p.basePrice, s.me.reputation, main !== 'store');
     inner = itemCard(
       p,
       `<h2>${esc(p.name)}</h2>
@@ -1102,11 +1322,12 @@ function modalView(s: GameState): string {
         <dt>På bordet</dt><dd>${inv.onCounter}</dd>
         <dt>Under disken</dt><dd>${stored}</dd>
         <dt>Snittkost</dt><dd>${kr(inv.avgCost)}</dd>
-        <dt>Kunder forventer</dt><dd>~${kr(p.basePrice)}</dd>
+        <dt>Kunder forventer</dt><dd>~${kr(base)}</dd>
       </dl>
-      <form data-form="price" class="stack-form" data-cost="${inv.avgCost}" data-base="${p.basePrice}">
+      ${groups ? `<div class="label-head">Produsent</div><ul class="label-list">${groups}</ul>` : ''}
+      <form data-form="price" class="stack-form" data-cost="${inv.avgCost}" data-base="${base}">
         <label>Pris per stk <input name="price" type="number" min="1" max="9999" value="${price}"></label>
-        <div class="price-feedback">${priceFeedback(price, inv.avgCost, p.basePrice)}</div>
+        <div class="price-feedback">${priceFeedback(price, inv.avgCost, base)}</div>
         <button>Lagre pris</button>
       </form>
       <div class="row auto-row">
@@ -1145,7 +1366,7 @@ function modalView(s: GameState): string {
     );
   }
 
-  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'paper' ? 'paper-modal' : ''}" role="dialog">
+  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'suspect' ? 'suspect-modal' : ''}" role="dialog">
     <button class="close ghost small" data-action="close" aria-label="Lukk">✕</button>${inner}</div></div>`;
 }
 
@@ -1206,6 +1427,15 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
   }
   if (inPanel) return null; // i et vindu, men ikke over et rutenett
 
+  // Spikeren: bare etterlysninger kan henges der (litt romslig treffflate).
+  const nail = document.querySelector<HTMLElement>('[data-nail]');
+  if (nail && d.item.typeId === WANTED) {
+    const r = nail.getBoundingClientRect();
+    const pad = r.width * 1.5;
+    if (px >= r.left - pad && px <= r.right + pad && py >= r.top - pad && py <= r.bottom + r.width * 6)
+      return { place: 'nail', boxId: null, x: 0, y: 0 };
+  }
+
   // Bordet: «foten» (fremste kant midt på) avgjør plassen.
   const sc = document.querySelector('.scene')!.getBoundingClientRect();
   const footX = d.fromCounter ? px - d.grabDX + d.originW / 2 : px;
@@ -1221,8 +1451,15 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
 
 function showPreview(d: Drag | null) {
   document.querySelector('.drop-preview')?.remove();
+  const nail = document.querySelector('[data-nail]');
+  nail?.classList.remove('target', 'bad');
   if (!d?.spot) return;
   const { spot } = d;
+  if (spot.place === 'nail') {
+    nail?.classList.add('target');
+    nail?.classList.toggle('bad', !!d.error);
+    return;
+  }
   const el = document.createElement('div');
   el.className = `drop-preview ${d.error ? 'bad' : 'ok'}`;
   if (spot.place === 'counter') {
@@ -1328,7 +1565,7 @@ function endDrag(cancelled = false) {
       const now = Date.now();
       const double = lastTap?.id === d.item.id && now - lastTap.at < 400;
       lastTap = double ? null : { id: d.item.id, at: now };
-      if (double && d.item.edition) modal = { kind: 'paper', edition: d.item.edition, page: 0 };
+      if (double && d.item.edition) paperWin = { edition: d.item.edition, page: 0 };
       if (double || pendingRender) render();
       return;
     }
@@ -1336,6 +1573,8 @@ function endDrag(cancelled = false) {
     if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') togglePanel(d.item.id);
     else if (t.kind === 'folded') modal = { kind: 'folded', itemId: d.item.id };
     else if (t.kind === 'policy') modal = { kind: 'policy', typeId: t.id };
+    else if (t.kind === 'doc') modal = { kind: 'doc', itemId: d.item.id };
+    else if (t.kind === 'tool') modal = { kind: 'tool', itemId: d.item.id };
     else if (t.kind === 'ingredient')
       toast(t.id === 'svidd' ? `${t.emoji} ${t.name}. Den hører hjemme i søpla.` : `${t.emoji} ${t.name} – råvare til kjelen. Oppskriftene står i avisa.`);
     else modal = { kind: 'product', productId: t.id };
@@ -1355,7 +1594,13 @@ function endDrag(cancelled = false) {
   act(
     '/api/item/move',
     { itemId: d.item.id, ...spot },
-    toTrash ? `${t.emoji} ${t.name} havnet i søpla.` : fromTrash ? `${t.emoji} Reddet fra søpla!` : undefined,
+    toTrash
+      ? `${t.emoji} ${t.name} havnet i søpla.`
+      : fromTrash
+        ? `${t.emoji} Reddet fra søpla!`
+        : spot.place === 'nail'
+          ? '📌 Etterlysningen henger på spikeren.'
+          : undefined,
   );
 }
 
@@ -1408,6 +1653,44 @@ function endPanelDrag() {
 window.addEventListener('pointerup', endPanelDrag);
 window.addEventListener('pointercancel', endPanelDrag);
 
+// ---------- Flytte avisa ----------
+
+app.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  const target = e.target as HTMLElement;
+  if (!target.closest('[data-paper-head]') || target.closest('button')) return;
+  const win = target.closest<HTMLElement>('.paper-window');
+  if (!win) return;
+  e.preventDefault();
+  const r = win.getBoundingClientRect();
+  paperPos = { x: r.left, y: r.top };
+  win.classList.add('placed', 'moving');
+  win.style.left = `${r.left}px`;
+  win.style.top = `${r.top}px`;
+  paperDrag = { dx: e.clientX - r.left, dy: e.clientY - r.top, el: win };
+});
+
+window.addEventListener('pointermove', (e) => {
+  const p = paperDrag;
+  if (!p) return;
+  const r = p.el.getBoundingClientRect();
+  // Mastetoppen skal alltid være innenfor vinduet, så avisa kan dras tilbake.
+  const x = Math.max(60 - r.width, Math.min(window.innerWidth - 60, e.clientX - p.dx));
+  const y = Math.max(0, Math.min(window.innerHeight - 50, e.clientY - p.dy));
+  paperPos = { x, y };
+  p.el.style.left = `${x}px`;
+  p.el.style.top = `${y}px`;
+});
+
+function endPaperDrag() {
+  if (!paperDrag) return;
+  paperDrag.el.classList.remove('moving');
+  paperDrag = null;
+  if (pendingRender) render();
+}
+window.addEventListener('pointerup', endPaperDrag);
+window.addEventListener('pointercancel', endPaperDrag);
+
 // ---------- Klikk og skjema ----------
 
 app.addEventListener('click', (e) => {
@@ -1441,7 +1724,36 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'toggle-trash') togglePanel('trash');
   if (action === 'mail') modal = { kind: 'mail' };
-  if (action === 'paper-page' && modal?.kind === 'paper') modal = { ...modal, page: Number(el.dataset.page) };
+  if (action === 'paper-page' && paperWin) paperWin = { ...paperWin, page: Number(el.dataset.page) };
+  if (action === 'close-paper') paperWin = null;
+  if (action === 'copy-recipe') {
+    act('/api/paper/recipe', { edition: Number(el.dataset.edition) }, '📝 Oppskriften ligger under disken.');
+    return;
+  }
+  if (action === 'cut-wanted') {
+    act('/api/paper/cut', { edition: Number(el.dataset.edition) }, '✂️ Etterlysningen ligger under disken. Dra den opp på spikeren under grenuttaket.');
+    return;
+  }
+  if (action === 'suspect' && el.dataset.seed) modal = { kind: 'suspect', seed: el.dataset.seed };
+  if (action === 'inspector') modal = { kind: 'inspector' };
+  if (action === 'tip') {
+    const seed = el.dataset.seed!;
+    modal = null;
+    api<{ correct: boolean; reward: number; alias: string }>('/api/police/tip', { seed })
+      .then((r) =>
+        r.correct
+          ? toast(`🚔 Riktig! ${r.alias} er tatt. +${kr(r.reward)} i dusør.`)
+          : toast('🚓 Feil person – det var en helt vanlig kunde. Ryktet sprer seg …', true),
+      )
+      .catch((err) => toast((err as Error).message, true))
+      .finally(() => refresh());
+  }
+  if (action === 'relabel' && modal?.kind === 'product') {
+    const productId = modal.productId;
+    const to = el.dataset.to;
+    act('/api/label', { productId, to }, to === 'home' ? '✏️ Nå står det «Hjemmelaget» på etiketten.' : '✏️ Riktig produsent står på etiketten igjen.');
+    return;
+  }
   if (action === 'pay-bill') {
     act('/api/bill/pay', { billId: Number(el.dataset.bill) }, '✅ Regning betalt.');
     return;
@@ -1489,7 +1801,7 @@ app.addEventListener('click', (e) => {
       .filter(([, n]) => n > 0)
       .map(([typeId, qty]) => ({ typeId, qty }));
     const name = STORE_BY_ID[store].name;
-    act('/api/shop/order', { store, lines, express }, express ? `🚚 Ekspress fra ${name} – kommer innen en time.` : `📦 Bestilt fra ${name} – kommer i morgen kl. 07.`).then(
+    act('/api/shop/order', { store, lines, express }, express ? `🚚 Ekspress fra ${name} – kommer innen en time.` : `📦 Bestilt fra ${name} – kommer ${osloParts(state!.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.`).then(
       (ok) => {
         if (ok) {
           carts[store] = {};
@@ -1567,8 +1879,9 @@ app.addEventListener('input', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && (modal || openPanels.length > 0)) {
+  if (e.key === 'Escape' && (modal || paperWin || openPanels.length > 0)) {
     if (modal) modal = null;
+    else if (paperWin) paperWin = null;
     else openPanels = openPanels.slice(0, -1); // lukk det øverste vinduet
     (document.activeElement as HTMLElement | null)?.blur();
     render();
@@ -1625,6 +1938,9 @@ app.addEventListener('submit', async (e) => {
     }
   }
 });
+
+// Bare under utvikling: jmState() i konsollen gir tilstanden (f.eks. for å vise besøkende).
+if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) Object.assign(window, { jmState: () => state });
 
 // ---------- Oppstart ----------
 
