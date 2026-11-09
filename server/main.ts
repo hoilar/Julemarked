@@ -24,6 +24,8 @@ import {
   toggleSocket,
   playerFromToken,
   setPrice,
+  setFolder,
+  unfoldBag,
   payBill,
   payAllBills,
   tick,
@@ -92,6 +94,8 @@ const routes: Record<string, Handler> = {
     setKettle(p, Number(b.itemId), b.on === undefined ? undefined : !!b.on, b.level === undefined ? undefined : Number(b.level)),
   ),
   'POST /api/power/socket': action((p, b) => toggleSocket(p, Number(b.index))),
+  'POST /api/folder': action((p, b) => setFolder(p, Number(b.itemId), !!b.on)),
+  'POST /api/bag/unfold': action((p, b) => unfoldBag(p, Number(b.itemId))),
   'POST /api/item/discard': action((p, b) => {
     discardItem(p, Number(b.itemId));
   }),

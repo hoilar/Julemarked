@@ -8,6 +8,8 @@ import {
   INGREDIENTS,
   KETTLE,
   KETTLE_KW_PER_LEVEL,
+  POSEBRETTER,
+  FOLDER_KW,
   itemSocket,
   socketEntry,
   ITEM_TYPES,
@@ -34,6 +36,7 @@ type Modal =
   | { kind: 'events' }
   | { kind: 'paper'; edition: number }
   | { kind: 'mail' }
+  | { kind: 'folded'; itemId: number }
   | { kind: 'product'; productId: string }
   | { kind: 'buy'; stallId: number; productId: string };
 
@@ -317,7 +320,9 @@ function powerView(stall: StallPublic, own: boolean): string {
     if (!e) return 0;
     if (e.itemId === null) return e.device.kw;
     const k = items.find((i) => i.id === e.itemId);
-    return k?.kettle?.on ? k.kettle.level * KETTLE_KW_PER_LEVEL : 0;
+    if (k?.kettle) return k.kettle.on ? k.kettle.level * KETTLE_KW_PER_LEVEL : 0;
+    if (k?.folder) return k.folder.on ? FOLDER_KW : 0;
+    return 0;
   };
   const socketLabel = (i: number) => {
     const e = socketEntry(power.sockets[i]);
@@ -365,6 +370,23 @@ function kettleImage(i: Item, stall: StallPublic | null): string {
   return kettleHot(i, stall) ? KETTLE.images[i.kettle!.level - 1] : KETTLE.image;
 }
 
+// --- Posebretteren ---
+
+function folderPlugged(i: Item, stall: StallPublic | null): boolean {
+  return !!stall?.power.sockets.includes(itemSocket(POSEBRETTER.id, i.id));
+}
+/** Går posebretteren nå? Påslått, i en kontakt, grenuttaket på, og ikke i søpla. */
+function folderHot(i: Item, stall: StallPublic | null): boolean {
+  return !!(i.folder?.on && stall?.power.on && folderPlugged(i, stall) && i.place !== 'trash');
+}
+function folderImage(i: Item, stall: StallPublic | null): string {
+  return folderHot(i, stall) ? POSEBRETTER.imageOn : POSEBRETTER.image;
+}
+/** Felles for maskiner (kjele og posebretter): riktig bilde ut fra type og tilstand. */
+function machineImage(i: Item, stall: StallPublic | null): string {
+  return i.typeId === POSEBRETTER.id ? folderImage(i, stall) : kettleImage(i, stall);
+}
+
 // --- Leveranser: poser stablet til høyre for boden ---
 
 function deliveriesView(s: GameState): string {
@@ -403,11 +425,11 @@ function counterView(stall: StallPublic, own: boolean): string {
     .map((i) => {
       const front = i.y + i.h - 1;
       const t = ITEM_TYPES[i.typeId];
-      if (t.kind === 'kettle') {
-        // Kjelen på bordet: dras som en vare, trykk åpner kokevinduet. Kunder kan ikke kjøpe den.
+      if (t.kind === 'kettle' || t.kind === 'folder') {
+        // Maskin på bordet: dras som en vare, trykk åpner vinduet. Kunder kan ikke kjøpe den.
         const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 16}%;height:16%;--sp:${t.sprite};--scale:${rowScale(front)};z-index:${3 + front}`;
         return `<div class="citem kettle-item ${isOpen(i.id) ? 'open' : ''}" style="${style}" ${own ? `data-drag="${i.id}"` : ''} title="${esc(t.name)}">
-          <img class="sprite img" src="${kettleImage(i, stall)}" alt="" draggable="false"></div>`;
+          <img class="sprite img" src="${machineImage(i, stall)}" alt="" draggable="false"></div>`;
       }
       const p = PRODUCT_BY_ID[i.typeId];
       const attrs = own
@@ -433,9 +455,9 @@ function gridItemView(i: Item, cols: number, rows: number): string {
     return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
       ${sprite(t)}<span class="fill">${inside}</span></div>`;
   }
-  if (t.kind === 'kettle') {
+  if (t.kind === 'kettle' || t.kind === 'folder') {
     return `<div class="gitem box has-img ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
-      <img class="sprite img" src="${kettleImage(i, myStall(state!))}" alt="" draggable="false"></div>`;
+      <img class="sprite img" src="${machineImage(i, myStall(state!))}" alt="" draggable="false"></div>`;
   }
   if (t.kind === 'paper') {
     const p = i.edition ? state!.papers[i.edition] : undefined;
@@ -476,6 +498,7 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     const box = s.me.items.find((i) => i.id === key);
     const t = box && ITEM_TYPES[box.typeId];
     if (box && t?.kind === 'kettle') return kettlePanel(s, box, n);
+    if (box && t?.kind === 'folder') return folderPanel(s, box, n);
     if (!box || t?.kind !== 'container') return '';
     ({ cols, rows } = t.inner);
     title = `${icon(t)} ${esc(t.name)}`;
@@ -548,6 +571,48 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
       ${[1, 2, 3, 4]
         .map((l) => `<button class="pot-level ${st.level === l ? 'on' : ''}" data-action="kettle-level" data-kettle="${k.id}" data-level="${l}" aria-pressed="${st.level === l}">${l}</button>`)
         .join('')}
+    </div>
+    <div class="pot-status">${status}</div>
+  </div>`;
+}
+
+/** Posebretter-vinduet: tomme poser inn → sammenbretta ut, med «Brett sammen»-bryter. */
+function folderPanel(s: GameState, m: Item, n: number): string {
+  const on = !!m.folder?.on;
+  const stall = myStall(s);
+  const plugged = folderPlugged(m, stall);
+  const hot = folderHot(m, stall);
+  const grid = (place: 'pot_in' | 'pot_out', size: { cols: number; rows: number }, label: string) => `
+    <div class="pot-col">
+      <div class="pot-label">${label}</div>
+      <div class="grid box-grid" data-grid="${place}" data-box="${m.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows}">
+        ${itemsIn(s.me.items, place, m.id).map((i) => gridItemView(i, size.cols, size.rows)).join('')}
+      </div>
+    </div>`;
+  const status = !on
+    ? 'Av – legg tomme poser i venstre felt og trykk «Brett sammen»'
+    : !plugged
+      ? '⚠️ Ikke plugget i grenuttaket'
+      : !stall?.power.on
+        ? '⚠️ Grenuttaket er slått av'
+        : `🗜️ Bretter · ${FOLDER_KW.toString().replace('.', ',')} kW · én pose per time`;
+  if (!panelPos.has(m.id)) {
+    const w = (POSEBRETTER.input.cols + POSEBRETTER.output.cols) * BOX_CELL + 6;
+    const h = (POSEBRETTER.input.rows * BOX_CELL + 11) * 1.5;
+    const idx = openPanels.indexOf(m.id);
+    panelPos.set(m.id, { x: Math.max(1, 98.5 - w - idx * 2.5), y: Math.max(1, Math.min(14 + idx * 6, 98 - h)) });
+  }
+  const pos = panelPos.get(m.id)!;
+  return `
+  <div class="box-panel kettle-panel ${hot ? 'hot' : ''}" data-panel="${m.id}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${POSEBRETTER.emoji} ${esc(POSEBRETTER.name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${m.id}" aria-label="Lukk">✕</button></div>
+    <div class="pot-grids">
+      ${grid('pot_in', POSEBRETTER.input, 'Poser')}
+      <div class="pot-arrow">${hot ? '🗜️' : '➜'}</div>
+      ${grid('pot_out', POSEBRETTER.output, 'Ferdig')}
+    </div>
+    <div class="pot-controls">
+      <button class="fold-run ${on ? 'on' : ''}" data-action="folder-power" data-folder="${m.id}" aria-pressed="${on}">${on ? 'Stopp' : 'Brett sammen'}</button>
     </div>
     <div class="pot-status">${status}</div>
   </div>`;
@@ -885,6 +950,19 @@ function modalView(s: GameState): string {
   if (!modal) return '';
   let inner = '';
   if (modal.kind === 'mail') inner = mailView(s);
+
+  if (modal.kind === 'folded') {
+    const id = modal.itemId;
+    const it = s.me.items.find((i) => i.id === id);
+    const t = it && ITEM_TYPES[it.typeId];
+    if (!it || !t || t.kind !== 'folded') return '';
+    inner = itemCard(
+      t,
+      `<h2>${esc(t.name)}</h2>
+      <p class="muted">En sammenbrettet handlepose. Du kan brette den ut igjen til en vanlig pose – det krever ingen maskin.</p>
+      <div class="row auto-row"><button data-action="unfold" data-item="${it.id}">Brett ut</button></div>`,
+    );
+  }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
   if (modal.kind === 'paper') inner = paperView(s.papers[modal.edition]);
 
@@ -1133,7 +1211,8 @@ function endDrag(cancelled = false) {
       return;
     }
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
-    if (t.kind === 'container' || t.kind === 'kettle') togglePanel(d.item.id);
+    if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') togglePanel(d.item.id);
+    else if (t.kind === 'folded') modal = { kind: 'folded', itemId: d.item.id };
     else if (t.kind === 'ingredient')
       toast(t.id === 'svidd' ? `${t.emoji} ${t.name}. Den hører hjemme i søpla.` : `${t.emoji} ${t.name} – råvare til kjelen. Oppskriftene står i avisa.`);
     else modal = { kind: 'product', productId: t.id };
@@ -1309,6 +1388,22 @@ app.addEventListener('click', (e) => {
         if (!ok) refresh();
       });
     }
+  }
+  if (action === 'folder-power' && state) {
+    const m = state.me.items.find((i) => i.id === Number(el.dataset.folder));
+    if (m) {
+      const st = (m.folder ??= { on: false });
+      st.on = !st.on;
+      act('/api/folder', { itemId: m.id, on: st.on }).then((ok) => {
+        if (!ok) refresh();
+      });
+    }
+  }
+  if (action === 'unfold') {
+    act('/api/bag/unfold', { itemId: Number(el.dataset.item) }, '🛍️ Posen er brettet ut igjen.').then((ok) => {
+      if (ok) modal = null;
+    });
+    return;
   }
   if (action === 'buy-device') {
     const id = el.dataset.device!;

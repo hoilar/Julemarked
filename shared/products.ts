@@ -69,7 +69,32 @@ export interface Kettle {
   sprite: number;
 }
 
-export type ItemType = Product | Container | Newspaper | Ingredient | Kettle;
+/** Posebretter: en maskin (som kjelen) med to rutenett – poser inn, sammenbretta poser ut. */
+export interface Folder {
+  kind: 'folder';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string; // av
+  imageOn: string; // på
+  size: Size;
+  input: GridSize;
+  output: GridSize;
+  sprite: number;
+}
+
+/** En sammenbrettet handlepose (1×1). Kan brettes ut igjen til den fulle posen (`bag`) uten maskin. */
+export interface FoldedBag {
+  kind: 'folded';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  size: Size;
+  bag: string; // hvilken butikkpose den bretter ut til
+}
+
+export type ItemType = Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag;
 
 // Plassholdere med emoji til de får tegning.
 export const INGREDIENTS: Ingredient[] = [
@@ -93,6 +118,32 @@ export const KETTLE: Kettle = {
   sprite: 3.4,
 };
 export const KETTLE_KW_PER_LEVEL = 0.5;
+
+// Posebretteren: bretter sammen tomme handleposer til 1×1-klumper, én per time mens den står på.
+export const POSEBRETTER: Folder = {
+  kind: 'folder',
+  id: 'posebretter',
+  name: 'Posebretter',
+  emoji: '🗜️',
+  image: '/art/posebretter/off.svg',
+  imageOn: '/art/posebretter/on.svg',
+  size: { w: 3, h: 2 },
+  input: { cols: 4, rows: 4 }, // tomme poser (2×2) inn
+  output: { cols: 4, rows: 4 }, // sammenbretta poser (1×1) ut
+  sprite: 3,
+};
+export const FOLDER_KW = 0.3;
+
+// Sammenbretta poser – én variant per butikkpose, alle med samme hvite «klump»-grafikk.
+const FOLDED_IMG = '/art/goods/pose-brettet.svg';
+export const FOLDED_BAGS: FoldedBag[] = [
+  { kind: 'folded', id: 'kiwipose_brettet', name: 'Sammenbretta KIWI-pose', emoji: '📦', image: FOLDED_IMG, size: { w: 1, h: 1 }, bag: 'kiwipose' },
+  { kind: 'folded', id: 'extrapose_brettet', name: 'Sammenbretta Extra-pose', emoji: '📦', image: FOLDED_IMG, size: { w: 1, h: 1 }, bag: 'extrapose' },
+  { kind: 'folded', id: 'remapose_brettet', name: 'Sammenbretta REMA-pose', emoji: '📦', image: FOLDED_IMG, size: { w: 1, h: 1 }, bag: 'remapose' },
+];
+/** Butikkpose-id → sammenbretta variant, og motsatt. */
+export const FOLDED_BY_BAG: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.bag, f.id]));
+export const BAG_BY_FOLDED: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.id, f.bag]));
 
 // Avisrullen ligger på skrå og er bred, så den tar 2×1 (liggende).
 export const NEWSPAPER: Newspaper = {
@@ -195,6 +246,15 @@ export const DEVICES: Device[] = [
     effect: 'Kok gløgg, karameller, brente mandler og syltetøy (oppskrifter i avisa). 0,5 kW per styrke',
     item: 'kjele',
   },
+  {
+    id: 'posebretter',
+    name: 'Posebretter',
+    emoji: '🗜️',
+    price: 299,
+    kw: FOLDER_KW,
+    effect: 'Bretter sammen tomme handleposer til 1×1-klumper – én pose per time',
+    item: 'posebretter',
+  },
 ];
 export const DEVICE_BY_ID: Record<string, Device> = Object.fromEntries(DEVICES.map((d) => [d.id, d]));
 
@@ -215,7 +275,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, POSEBRETTER, ...FOLDED_BAGS].map((t) => [t.id, t]),
 );
 
 /** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */

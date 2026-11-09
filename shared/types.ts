@@ -39,6 +39,7 @@ export interface Item {
   place: Place;
   edition?: number; // bare aviser: hvilken utgave (ÅÅÅÅMMDD)
   kettle?: KettleState; // bare kjeler
+  folder?: { on: boolean }; // bare posebrettere
   arrives?: number; // bare poser på vei (transit): spilltid de leveres
   boxId: number | null; // eskens id når place = 'box'
   x: number;

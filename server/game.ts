@@ -12,6 +12,7 @@ import {
   seasonDay,
 } from '../shared/clock.ts';
 import {
+  contentsOf,
   findCounterSpot,
   findStorageSpot,
   findTrashSpot,
@@ -29,6 +30,10 @@ import {
   ITEM_TYPES,
   KETTLE,
   KETTLE_KW_PER_LEVEL,
+  POSEBRETTER,
+  FOLDER_KW,
+  FOLDED_BY_BAG,
+  BAG_BY_FOLDED,
   LIGHT_BOOST,
   NEWSPAPER,
   SOCKETS,
@@ -225,6 +230,7 @@ function itemsOf(stallId: number): Item[] {
     const item: Item = { id: r.id, typeId: r.type_id, place: r.place, boxId: r.box_id, x: r.x, y: r.y, w, h };
     if (r.edition) item.edition = r.edition;
     if (r.type_id === KETTLE.id) item.kettle = { on: false, level: 1, ...(r.state ? JSON.parse(r.state) : {}) };
+    if (r.type_id === POSEBRETTER.id) item.folder = { on: false, ...(r.state ? JSON.parse(r.state) : {}) };
     if (r.place === 'transit' && r.state) item.arrives = JSON.parse(r.state).arrives;
     return item;
   });
@@ -648,21 +654,32 @@ function runningKettles(s: StallRow, items: Item[]): Item[] {
   );
 }
 
-/** Hvor mange kW boden trekker nå. Kjeler trekker etter styrke, de andre apparatene fast. */
-function stallKw(s: StallRow): number {
-  const fixed = runningDevices(powerOf(s)).reduce((n, d) => n + d.kw, 0);
-  const kettles = runningKettles(s, itemsOf(s.id)).reduce((n, k) => n + k.kettle!.level * KETTLE_KW_PER_LEVEL, 0);
-  return fixed + kettles;
+/** Posebrettere som går nå: påslått, i en kontakt, grenuttaket på, og ikke i søpla. */
+function runningFolders(s: StallRow, items: Item[]): Item[] {
+  const p = powerOf(s);
+  if (!p.on) return [];
+  return items.filter(
+    (i) => i.typeId === POSEBRETTER.id && i.folder?.on && !isTrashed(items, i) && p.sockets.includes(itemSocket(POSEBRETTER.id, i.id)),
+  );
 }
 
-/** Apparater boden har som ikke står i noen kontakt (faste apparater og kjeler som ikke ligger i søpla). */
+/** Hvor mange kW boden trekker nå. Kjeler trekker etter styrke, posebrettere fast, de andre apparatene fast. */
+function stallKw(s: StallRow): number {
+  const items = itemsOf(s.id);
+  const fixed = runningDevices(powerOf(s)).reduce((n, d) => n + d.kw, 0);
+  const kettles = runningKettles(s, items).reduce((n, k) => n + k.kettle!.level * KETTLE_KW_PER_LEVEL, 0);
+  const folders = runningFolders(s, items).length * FOLDER_KW;
+  return fixed + kettles + folders;
+}
+
+/** Apparater boden har som ikke står i noen kontakt (faste apparater og gjenstands-apparater utenom søpla). */
 function loosePlugs(p: Power, items: Item[]): string[] {
   const fixed = p.devices.filter((d) => !p.sockets.includes(d));
-  const kettles = items
-    .filter((i) => i.typeId === KETTLE.id && !isTrashed(items, i))
-    .map((i) => itemSocket(KETTLE.id, i.id))
+  const machines = items
+    .filter((i) => DEVICES.some((d) => d.item === i.typeId) && !isTrashed(items, i))
+    .map((i) => itemSocket(i.typeId, i.id))
     .filter((e) => !p.sockets.includes(e));
-  return [...fixed, ...kettles];
+  return [...fixed, ...machines];
 }
 
 /** Kjøper et apparat hos Klas Olsen. Det plugges inn i første ledige kontakt. Kjeler kan man ha flere av. */
@@ -875,6 +892,58 @@ export function setKettle(player: PlayerRow, itemId: number, on: boolean | undef
     s.level = level;
   }
   db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify(s), k.id);
+}
+
+// ---------- Posebretteren ----------
+
+/** Slår posebretteren av eller på («Brett sammen»). */
+export function setFolder(player: PlayerRow, itemId: number, on: boolean) {
+  const stall = myStall(player);
+  const m = itemsOf(stall.id).find((i) => i.id === itemId && i.typeId === POSEBRETTER.id);
+  if (!m) throw new GameError('Fant ikke posebretteren.');
+  db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify({ ...m.folder, on: !!on }), m.id);
+}
+
+/** Bretter ut en sammenbrettet pose igjen – uten maskin. Den fulle posen havner under disken. */
+export function unfoldBag(player: PlayerRow, itemId: number) {
+  const stall = myStall(player);
+  tx(() => {
+    const items = itemsOf(stall.id);
+    const it = items.find((i) => i.id === itemId);
+    if (!it || ITEM_TYPES[it.typeId]?.kind !== 'folded') throw new GameError('Fant ikke en sammenbrettet pose.');
+    if (isUndelivered(items, it)) throw new GameError('Posen er ikke under disken.');
+    const bagId = BAG_BY_FOLDED[it.typeId];
+    const spot = findStorageSpot(items, bagId); // esker går bare under disken
+    if (!spot) throw new GameError('Det er ikke plass til en utbrettet pose under disken. Rydd litt først.');
+    q.deleteItem.run(it.id);
+    q.insertItem.run(stall.id, bagId, spot.place, spot.boxId, spot.x, spot.y, null);
+  });
+}
+
+/** Én spilltime for alle posebrettere på boden som står på. */
+function foldHour(market: MarketRow, s: StallRow, t: number) {
+  const items = itemsOf(s.id);
+  for (const m of runningFolders(s, items)) foldOne(market, s, t, items, m);
+}
+
+/** Én posebretter, én time: brett sammen én tom pose til en 1×1-klump i ferdig-feltet. */
+function foldOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
+  const bag = itemsIn(items, 'pot_in', m.id).find((i) => {
+    const type = ITEM_TYPES[i.typeId];
+    return type.kind === 'container' && type.shopBag && contentsOf(items, i.id).length === 0;
+  });
+  if (!bag) return;
+  const foldedId = FOLDED_BY_BAG[bag.typeId];
+  if (!foldedId) return;
+  const out = itemsIn(items, 'pot_out', m.id);
+  const free = findFree(1, 1, out, POSEBRETTER.output);
+  if (!free) {
+    event(market, s.owner_id, t, '🗜️ Posebretteren står på, men ferdig-feltet er fullt.');
+    return;
+  }
+  q.deleteItem.run(bag.id);
+  q.insertItem.run(s.id, foldedId, 'pot_out', m.id, free.x, free.y, null);
+  event(market, s.owner_id, t, `🗜️ Posebretteren brettet sammen en ${ITEM_TYPES[bag.typeId].name.toLowerCase()}.`);
 }
 
 /** Én spilltime for alle kjelene på boden som står og koker. */
@@ -1167,8 +1236,11 @@ function processHour(market: MarketRow, hour: number) {
   // Leveranser fra nettbutikkene som har kommet fram.
   deliverArrived(market, t);
 
-  // Kjelene koker døgnet rundt så lenge de står på.
-  for (const s of stalls) cookHour(market, s, t);
+  // Kjelene koker og posebrettere bretter døgnet rundt så lenge de står på.
+  for (const s of stalls) {
+    cookHour(market, s, t);
+    foldHour(market, s, t);
+  }
 
   if (parts.hour === 8) {
     event(market, null, t, `☀️ Markedet åpner. ${formatClock(parts)}.`);

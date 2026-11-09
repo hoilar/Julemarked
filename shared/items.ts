@@ -26,7 +26,7 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   const box = items.find((i) => i.id === boxId);
   const t = box && ITEM_TYPES[box.typeId];
   if (place === 'box') return t?.kind === 'container' ? t.inner : null;
-  if (t?.kind !== 'kettle') return null;
+  if (t?.kind !== 'kettle' && t?.kind !== 'folder') return null;
   return place === 'pot_in' ? t.input : t.output;
 }
 
@@ -58,11 +58,25 @@ export function isTrashed(items: Item[], item: Item): boolean {
 /** Kan gjenstanden `item` (ev. ny, uten id) ligge på `spot`? Returnerer feilmelding eller null. */
 export function placementError(items: Item[], item: { id?: number; typeId: string }, spot: Spot): string | null {
   const t = ITEM_TYPES[item.typeId];
-  if (t.kind === 'container' && spot.place !== 'storage' && spot.place !== 'trash') return 'Esker må stå under disken.';
-  if (t.kind === 'kettle' && NESTED.has(spot.place)) return 'Kjelen får ikke plass der.';
+  const boxKind = (id: number | null) => (id == null ? null : ITEM_TYPES[items.find((b) => b.id === id)?.typeId ?? '']?.kind);
+  // En tom butikkpose kan legges i posebretterens inn-felt for å brettes sammen.
+  const intoFolder = spot.place === 'pot_in' && boxKind(spot.boxId) === 'folder';
+  if (t.kind === 'container') {
+    if (intoFolder && t.shopBag) {
+      if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du bretter den sammen.`;
+    } else if (spot.place !== 'storage' && spot.place !== 'trash') {
+      return intoFolder ? 'Posebretteren tar bare tomme handleposer.' : 'Esker må stå under disken.';
+    }
+  }
+  if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'folder' && !(t.kind === 'container' && t.shopBag))
+    return 'Posebretteren tar bare tomme handleposer.';
+  if (spot.place === 'pot_out' && boxKind(spot.boxId) === 'folder' && t.kind !== 'folded')
+    return 'Her kommer bare ferdig sammenbretta poser ut.';
+  if (t.kind === 'folded' && spot.place === 'counter') return 'Sammenbretta poser er ikke til salgs.';
+  if ((t.kind === 'kettle' || t.kind === 'folder') && NESTED.has(spot.place)) return 'Maskinen får ikke plass der.';
   if (t.kind === 'paper' && spot.place === 'counter') return 'Avisa er ikke til salgs.';
   if (t.kind === 'ingredient' && spot.place === 'counter') return 'Råvarer selges ikke – kok noe av dem først.';
-  if ((t.kind === 'container' || t.kind === 'kettle') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
+  if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
     return `Tøm ${t.name} før du kaster den.`;
   if (NESTED.has(spot.place) && spot.boxId === item.id) return 'Den kan ikke ligge i seg selv.';
   if (NESTED.has(spot.place) && items.find((b) => b.id === spot.boxId)?.place === 'trash')

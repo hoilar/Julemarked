@@ -284,6 +284,8 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .pot-controls .pot-power { background: #7a1d1d; color: #ffd0c8; }
 .pot-controls .pot-power.on { background: #d93a2b; color: #fff; box-shadow: 0 0 0.6cqw rgba(255, 90, 60, 0.7); }
 .pot-controls .pot-level.on { background: #e8dc9a; color: #3b2a10; box-shadow: 0 0 0.5cqw rgba(255, 230, 140, 0.6); }
+.pot-controls .fold-run { background: #2f5d8a; color: #dbe9f7; padding: 0.3cqw 0.9cqw; }
+.pot-controls .fold-run.on { background: #3f9d6b; color: #fff; box-shadow: 0 0 0.6cqw rgba(80, 220, 150, 0.6); }
 .pot-status { color: #f5d9b0; font-size: max(10px, 0.8cqw); }
 .citem.kettle-item { align-items: flex-end; }
 .citem.kettle-item.open img { filter: drop-shadow(0 0 0.3cqw #ffe08a); }
