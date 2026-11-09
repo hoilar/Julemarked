@@ -1,4 +1,19 @@
 import type { Phase } from './clock.ts';
+import type { BillKind, BillStage } from './bills.ts';
+
+/** En ubetalt regning i postkassa, slik klienten ser den. */
+export interface BillView {
+  id: number;
+  kind: BillKind;
+  label: string;
+  emoji: string;
+  amount: number; // opprinnelig beløp
+  surcharge: number; // påløpt purring/inkasso
+  total: number; // amount + surcharge
+  stage: BillStage; // 0 forfaller i dag, 1 purret, 2 inkasso, 3 namsmann
+  daysOverdue: number;
+  dueLabel: string; // «Forfaller i dag» / «Purret» / «Inkasso» / «Namsmann»
+}
 
 /** Hvor en gjenstand ligger: under disken, på bordet eller inni en eske. */
 // box = i en eske/pose; pot_in / pot_out = i kjelens råvare- eller ferdig-rutenett (boxId = kjelen).
@@ -106,6 +121,7 @@ export interface GameState {
     reputation: number;
     inventory: InventoryRow[];
     items: Item[]; // alle egne gjenstander (lager, esker, bord og søppelkasse)
+    bills: BillView[]; // ubetalte regninger i postkassa
   };
   events: GameEvent[];
 }

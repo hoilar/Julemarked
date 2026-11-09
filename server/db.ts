@@ -97,13 +97,27 @@ CREATE TABLE IF NOT EXISTS transactions (
   id INTEGER PRIMARY KEY,
   market_id INTEGER NOT NULL,
   game_time INTEGER NOT NULL,
-  kind TEXT NOT NULL, -- wholesale | npc_sale | p2p | rent | fee
+  kind TEXT NOT NULL, -- wholesale | npc_sale | p2p | rent | power | renovasjon | byrakratifond | namsmann | fee
   from_stall INTEGER,
   to_stall INTEGER,
   product_id TEXT,
   qty INTEGER,
   amount INTEGER NOT NULL
 );
+
+-- Ubetalte regninger i postkassa. Betalte regninger slettes.
+-- due_day = utgavenøkkel (ÅÅÅÅMMDD) regningen forfalt; stage = 0 i dag, 1 purret, 2 inkasso, 3 namsmann.
+CREATE TABLE IF NOT EXISTS bills (
+  id INTEGER PRIMARY KEY,
+  market_id INTEGER NOT NULL,
+  stall_id INTEGER NOT NULL REFERENCES stalls(id),
+  kind TEXT NOT NULL,
+  due_day INTEGER NOT NULL,
+  amount INTEGER NOT NULL,
+  surcharge INTEGER NOT NULL DEFAULT 0,
+  stage INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS bills_stall ON bills (stall_id);
 `);
 
 // Hva hver spiller har kjøpt i hver nettbutikk per dag (lageret er per spiller).
@@ -131,6 +145,8 @@ if (!hasColumn('items', 'state')) db.exec('ALTER TABLE items ADD COLUMN state TE
 if (!hasColumn('items', 'edition')) db.exec('ALTER TABLE items ADD COLUMN edition INTEGER');
 if (!hasColumn('players', 'paper_read')) db.exec('ALTER TABLE players ADD COLUMN paper_read INTEGER NOT NULL DEFAULT 0');
 if (!hasColumn('stalls', 'trash_fill')) db.exec('ALTER TABLE stalls ADD COLUMN trash_fill INTEGER NOT NULL DEFAULT 0');
+// Antall poser kastet siden forrige byråkratifond-regning (2 kr per pose).
+if (!hasColumn('stalls', 'bags_binned')) db.exec('ALTER TABLE stalls ADD COLUMN bags_binned INTEGER NOT NULL DEFAULT 0');
 
 export function tx<T>(fn: () => T): T {
   db.exec('BEGIN');

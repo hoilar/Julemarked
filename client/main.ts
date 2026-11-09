@@ -17,7 +17,7 @@ import {
   TRASH_EMPTY_HOUR,
   TRASH_GRID,
 } from '../shared/products.ts';
-import type { GameState, Item, MarketSlot, Paper, ShopView, StallPublic } from '../shared/types.ts';
+import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, StallPublic } from '../shared/types.ts';
 import { mountCustomers, showSale, type Offer } from './customers.ts';
 import { BAG_PRICE, SHIPPING, STORES, STORE_BY_ID, packBags } from '../shared/shop.ts';
 import { moodFor, type Mood } from '../shared/mood.ts';
@@ -33,6 +33,7 @@ type Modal =
   | { kind: 'wholesale' }
   | { kind: 'events' }
   | { kind: 'paper'; edition: number }
+  | { kind: 'mail' }
   | { kind: 'product'; productId: string }
   | { kind: 'buy'; stallId: number; productId: string };
 
@@ -339,11 +340,15 @@ function powerView(stall: StallPublic, own: boolean): string {
 const MAILBOX = { x: 158, y: 538, w: 156, h: 210 }; // i bildepiksler (1536×1024)
 
 function mailboxView(s: GameState): string {
-  const up = !!s.paper?.unread;
-  const label = up ? 'Postkassa – ny avis!' : 'Postkassa';
+  const bills = s.me.bills.length;
+  const newPaper = !!s.paper?.unread;
+  const up = bills > 0 || newPaper;
+  const label = bills > 0 ? `Postkassa – ${bills} ubetalt ${bills === 1 ? 'regning' : 'regninger'}` : newPaper ? 'Postkassa – ny avis!' : 'Postkassa';
+  const overdue = s.me.bills.some((b) => b.stage >= 1);
+  const badge = bills > 0 ? `<span class="mailbox-badge ${overdue ? 'overdue' : ''}">${bills}</span>` : '';
   return `<img class="power-layer mailbox-layer" src="/art/postkasse-${up ? 'oppe' : 'nede'}.png" alt="" draggable="false">
-    <button class="mailbox-hot ${up ? 'new' : ''}" data-action="paper" aria-label="${label}" title="${label}"
-      style="left:${(MAILBOX.x / 1536) * 100}%;top:${(MAILBOX.y / 1024) * 100}%;width:${(MAILBOX.w / 1536) * 100}%;height:${(MAILBOX.h / 1024) * 100}%"></button>`;
+    <button class="mailbox-hot ${up ? 'new' : ''}" data-action="mail" aria-label="${label}" title="${label}"
+      style="left:${(MAILBOX.x / 1536) * 100}%;top:${(MAILBOX.y / 1024) * 100}%;width:${(MAILBOX.w / 1536) * 100}%;height:${(MAILBOX.h / 1024) * 100}%">${badge}</button>`;
 }
 
 // --- Kjelen ---
@@ -834,9 +839,52 @@ function paperView(p: Paper | undefined): string {
   </article>`;
 }
 
+/** Postkassa: ny avis (hvis ulest) og ubetalte regninger med betalknapper. */
+function mailView(s: GameState): string {
+  const bills = s.me.bills;
+  const newPaper = !!s.paper?.unread;
+  const paperRow = newPaper
+    ? `<div class="mail-row paper-row">
+        <div class="mail-main"><span class="mail-emoji">📰</span>
+          <div><div class="mail-title">Verdens Undergang</div><div class="mail-sub">Ny utgave – ${esc(s.paper!.date)}</div></div></div>
+        <button class="ghost small" data-action="paper">Hent avisa</button>
+      </div>`
+    : '';
+
+  const stageClass = (st: number) => (st >= 3 ? 'namsmann' : st === 2 ? 'inkasso' : st === 1 ? 'purret' : 'due');
+  const canAfford = (b: BillView) => s.me.cash >= b.total;
+  const rows = bills
+    .map(
+      (b) => `<div class="mail-row bill-row ${stageClass(b.stage)}">
+        <div class="mail-main"><span class="mail-emoji">${b.emoji}</span>
+          <div>
+            <div class="mail-title">${esc(b.label)}</div>
+            <div class="mail-sub"><span class="bill-stage ${stageClass(b.stage)}">${esc(b.dueLabel)}</span>${b.surcharge > 0 ? ` · ${kr(b.amount)} + ${kr(b.surcharge)} påslag` : ''}</div>
+          </div></div>
+        <div class="mail-pay">
+          <span class="bill-total">${kr(b.total)}</span>
+          <button class="small ${canAfford(b) ? '' : 'ghost'}" data-action="pay-bill" data-bill="${b.id}" ${canAfford(b) ? '' : 'disabled'}>Betal</button>
+        </div>
+      </div>`,
+    )
+    .join('');
+
+  const owed = bills.reduce((n, b) => n + b.total, 0);
+  const anyAfford = bills.some((b) => s.me.cash >= b.total);
+  const payAll = bills.length > 1 ? `<button data-action="pay-all" ${anyAfford ? '' : 'disabled'}>Betal alt du har råd til (${kr(owed)})</button>` : '';
+  const body = bills.length
+    ? `${rows}<div class="mail-foot"><span class="muted">Regninger må betales forfallsdagen. Ubetalt: purring, så inkasso, så namsmann.</span>${payAll}</div>`
+    : newPaper
+      ? ''
+      : '<p class="muted">Postkassa er tom.</p>';
+
+  return `<h2>📬 Postkassa</h2>${paperRow}${body}`;
+}
+
 function modalView(s: GameState): string {
   if (!modal) return '';
   let inner = '';
+  if (modal.kind === 'mail') inner = mailView(s);
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
   if (modal.kind === 'paper') inner = paperView(s.papers[modal.edition]);
 
@@ -1177,6 +1225,15 @@ app.addEventListener('click', (e) => {
     closePanel(k === 'trash' ? 'trash' : Number(k));
   }
   if (action === 'toggle-trash') togglePanel('trash');
+  if (action === 'mail') modal = { kind: 'mail' };
+  if (action === 'pay-bill') {
+    act('/api/bill/pay', { billId: Number(el.dataset.bill) }, '✅ Regning betalt.');
+    return;
+  }
+  if (action === 'pay-all') {
+    act('/api/bill/pay', { all: true }, '✅ Regninger betalt.');
+    return;
+  }
   if (action === 'paper') {
     if (state?.paper?.unread) {
       state.paper.unread = false; // flagget ned med en gang

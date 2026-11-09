@@ -41,7 +41,22 @@ import {
   START_CASH,
   TRASH_EMPTY_HOUR,
 } from '../shared/products.ts';
-import type { GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
+import type { BillView, GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
+import {
+  BAG_FEE,
+  BILL_META,
+  INKASSO_MIN,
+  INKASSO_PCT,
+  NAMSMANN_DAY,
+  PURRING_FEE,
+  RENOVASJON_DAILY,
+  RENT_REVENUE_PCT,
+  RENT_RISK_CAP,
+  RENT_RISK_PER_DAY,
+  STAGE_LABEL,
+  stageForDaysOverdue,
+  type BillKind,
+} from '../shared/bills.ts';
 import { priceAppeal } from '../shared/mood.ts';
 import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree } from '../shared/grid.ts';
@@ -103,6 +118,17 @@ interface StallRow {
   sockets: string; // JSON: apparat-id eller null i hver kontakt
   power_kwh: number; // påløpt siden forrige regning
   power_cost: number;
+  bags_binned: number; // poser kastet siden forrige byråkratifond-regning
+}
+interface BillRow {
+  id: number;
+  market_id: number;
+  stall_id: number;
+  kind: BillKind;
+  due_day: number;
+  amount: number;
+  surcharge: number;
+  stage: number;
 }
 interface ItemRow {
   id: number;
@@ -165,6 +191,15 @@ const q = {
      WHERE market_id = ? AND (player_id IS NULL OR player_id = ?)
      ORDER BY id DESC LIMIT 80`,
   ),
+  insertBill: db.prepare(
+    'INSERT INTO bills (market_id, stall_id, kind, due_day, amount, surcharge, stage) VALUES (?, ?, ?, ?, ?, 0, 0)',
+  ),
+  billsForStall: db.prepare('SELECT * FROM bills WHERE stall_id = ? ORDER BY due_day, id'),
+  billById: db.prepare('SELECT * FROM bills WHERE id = ?'),
+  unpaidInMarket: db.prepare('SELECT * FROM bills WHERE market_id = ? ORDER BY due_day, id'),
+  bumpBill: db.prepare('UPDATE bills SET surcharge = surcharge + ?, stage = ? WHERE id = ?'),
+  setBillAmount: db.prepare('UPDATE bills SET amount = ?, surcharge = ? WHERE id = ?'),
+  deleteBill: db.prepare('DELETE FROM bills WHERE id = ?'),
 };
 
 const one = <T>(stmt: StatementSync, ...args: SQLInputValue[]) => stmt.get(...args) as T | undefined;
@@ -569,6 +604,7 @@ export function getState(player: PlayerRow): GameState {
       reputation: Math.round(mine?.reputation ?? 0),
       inventory,
       items,
+      bills: mine ? billsFor(mine.id, currentEdition(t).key) : [],
     },
     events,
   };
@@ -926,6 +962,166 @@ export function fetchPaper(player: PlayerRow) {
   });
 }
 
+// ---------- Regninger i postkassa ----------
+
+function billView(b: BillRow, todayKey: number): BillView {
+  const d = Math.round((editionTime(todayKey) - editionTime(b.due_day)) / (24 * HOUR));
+  const meta = BILL_META[b.kind];
+  const stage = stageForDaysOverdue(d);
+  return {
+    id: b.id,
+    kind: b.kind,
+    label: meta.label,
+    emoji: meta.emoji,
+    amount: b.amount,
+    surcharge: b.surcharge,
+    total: b.amount + b.surcharge,
+    stage,
+    daysOverdue: d,
+    dueLabel: STAGE_LABEL[stage],
+  };
+}
+
+function billsFor(stallId: number, todayKey: number): BillView[] {
+  return all<BillRow>(q.billsForStall, stallId).map((b) => billView(b, todayKey));
+}
+
+/** Legger en ny regning i postkassa (ingen regning på 0 kr). */
+function issueBill(market: MarketRow, s: StallRow, t: number, kind: BillKind, dueDay: number, amount: number) {
+  const sum = Math.round(amount);
+  if (sum <= 0) return;
+  q.insertBill.run(market.id, s.id, kind, dueDay, sum);
+  const meta = BILL_META[kind];
+  event(market, s.owner_id, t, `📬 ${meta.emoji} ${meta.label}-regning i postkassa: ${sum} kr. Forfaller i dag.`);
+}
+
+/** Dagens regninger for én bod: leie, strøm, renovasjon og byråkratifond. */
+function issueBills(market: MarketRow, t: number, s: StallRow, yesterdayRevenue: number) {
+  const dueDay = currentEdition(t).key;
+  const day = seasonDay(osloParts(t));
+
+  const fixed = LAYOUT[s.slot_index].rent;
+  const risk = Math.min(Math.max(0, day) * RENT_RISK_PER_DAY, RENT_RISK_CAP);
+  const share = yesterdayRevenue * RENT_REVENUE_PCT;
+  issueBill(market, s, t, 'rent', dueDay, fixed + risk + share);
+
+  issueBill(market, s, t, 'power', dueDay, s.power_cost);
+  issueBill(market, s, t, 'renovasjon', dueDay, RENOVASJON_DAILY);
+  issueBill(market, s, t, 'byrakratifond', dueDay, s.bags_binned * BAG_FEE);
+
+  db.prepare('UPDATE stalls SET power_kwh = 0, power_cost = 0, bags_binned = 0 WHERE id = ?').run(s.id);
+}
+
+/** Purring, inkasso og namsmann på alle ubetalte regninger når en ny dag starter. */
+function escalateBills(market: MarketRow, t: number) {
+  const todayKey = currentEdition(t).key;
+  for (const b of all<BillRow>(q.unpaidInMarket, market.id)) {
+    const d = Math.round((editionTime(todayKey) - editionTime(b.due_day)) / (24 * HOUR));
+    const stage = stageForDaysOverdue(d);
+    const s = one<StallRow>(q.stallById, b.stall_id);
+    if (!s) continue;
+    const meta = BILL_META[b.kind];
+
+    if (stage >= 3) {
+      if (b.stage < 3) db.prepare('UPDATE bills SET stage = 3 WHERE id = ?').run(b.id);
+      namsmann(market, t, s, one<BillRow>(q.billById, b.id)!);
+      continue;
+    }
+    if (stage <= b.stage) continue;
+    if (stage === 1) {
+      q.bumpBill.run(PURRING_FEE, 1, b.id);
+      event(market, s.owner_id, t, `📨 Purring: ${meta.emoji} ${meta.label}-regningen på ${b.amount} kr er forfalt. Gebyr +${PURRING_FEE} kr.`);
+    } else if (stage === 2) {
+      const add = Math.max(INKASSO_MIN, Math.round(b.amount * INKASSO_PCT));
+      q.bumpBill.run(add, 2, b.id);
+      event(market, s.owner_id, t, `⚖️ ${meta.emoji} ${meta.label}-regningen har gått til inkasso. Påslag +${add} kr.`);
+    }
+  }
+}
+
+/** Namsmannen tømmer kassa og beslaglegger varer (til snittkost) til gjelda er dekket. */
+function namsmann(market: MarketRow, t: number, s: StallRow, b: BillRow) {
+  let debt = b.amount + b.surcharge;
+  const fresh = one<StallRow>(q.stallById, s.id)!;
+  let seizedCash = 0;
+  if (fresh.cash > 0 && debt > 0) {
+    seizedCash = Math.min(fresh.cash, debt);
+    q.addCash.run(-seizedCash, s.id);
+    debt -= seizedCash;
+  }
+
+  let goodsValue = 0;
+  let goodsCount = 0;
+  if (debt > 0) {
+    const items = itemsOf(s.id);
+    const costs = new Map(all<{ product_id: string; avg_cost: number }>(q.costs, s.id).map((c) => [c.product_id, c.avg_cost]));
+    const seizable = items.filter((i) => PRODUCT_BY_ID[i.typeId] && !isTrashed(items, i) && !isUndelivered(items, i));
+    for (const it of seizable) {
+      if (debt <= 0) break;
+      const val = Math.max(1, Math.round(costs.get(it.typeId) ?? PRODUCT_BY_ID[it.typeId].wholesale));
+      q.deleteItem.run(it.id);
+      goodsValue += val;
+      goodsCount++;
+      debt -= val;
+    }
+  }
+
+  const collected = seizedCash + goodsValue;
+  if (debt <= 0) q.deleteBill.run(b.id);
+  else q.setBillAmount.run(debt, 0, b.id); // behold resten, ingen nye påslag
+
+  if (collected > 0) q.insertTx.run(market.id, t, 'namsmann', s.id, null, null, goodsCount || null, collected);
+
+  const meta = BILL_META[b.kind];
+  const parts: string[] = [];
+  if (seizedCash > 0) parts.push(`${seizedCash} kr fra kassa`);
+  if (goodsCount > 0) parts.push(`${goodsCount} ${goodsCount === 1 ? 'vare' : 'varer'} (verdt ${goodsValue} kr)`);
+  const took = parts.length ? parts.join(' og ') : 'ingenting å hente';
+  const rest = debt > 0 ? ` Fortsatt ${debt} kr i gjeld – namsmannen kommer igjen.` : ' Gjelda er gjort opp.';
+  event(market, s.owner_id, t, `🧾 Namsmannen var innom for ${meta.label.toLowerCase()}gjelda og tok ${took}.${rest}`);
+}
+
+/** Betaler én regning fra kassa. */
+export function payBill(player: PlayerRow, billId: number) {
+  const market = marketOf(player);
+  tx(() => {
+    const stall = myStall(player);
+    const b = one<BillRow>(q.billById, billId);
+    if (!b || b.stall_id !== stall.id) throw new GameError('Fant ikke regningen.');
+    const total = b.amount + b.surcharge;
+    if (stall.cash < total) throw new GameError(`Du har ikke råd. Regningen er på ${total} kr.`);
+    q.addCash.run(-total, stall.id);
+    q.deleteBill.run(b.id);
+    q.insertTx.run(market.id, nowFor(market), b.kind, stall.id, null, null, null, total);
+    event(market, player.id, nowFor(market), `✅ Betalte ${BILL_META[b.kind].label.toLowerCase()}: ${total} kr.`);
+  });
+}
+
+/** Betaler alle regninger man har råd til, billigste først. */
+export function payAllBills(player: PlayerRow) {
+  const market = marketOf(player);
+  return tx(() => {
+    const stall = myStall(player);
+    let cash = stall.cash;
+    let paid = 0;
+    let total = 0;
+    const bills = all<BillRow>(q.billsForStall, stall.id).sort((a, b) => a.amount + a.surcharge - (b.amount + b.surcharge));
+    for (const b of bills) {
+      const sum = b.amount + b.surcharge;
+      if (sum > cash) continue;
+      cash -= sum;
+      total += sum;
+      paid++;
+      q.deleteBill.run(b.id);
+      q.insertTx.run(market.id, nowFor(market), b.kind, stall.id, null, null, null, sum);
+    }
+    if (paid === 0) throw new GameError('Du har ikke råd til noen av regningene.');
+    q.addCash.run(-total, stall.id);
+    event(market, player.id, nowFor(market), `✅ Betalte ${paid} ${paid === 1 ? 'regning' : 'regninger'}: ${total} kr.`);
+    return { paid, total };
+  });
+}
+
 // ---------- Tidsstyrt simulering ----------
 
 const HOUR_CURVE: Record<number, number> = {
@@ -976,22 +1172,13 @@ function processHour(market: MarketRow, hour: number) {
 
   if (parts.hour === 8) {
     event(market, null, t, `☀️ Markedet åpner. ${formatClock(parts)}.`);
-    for (const s of stalls) {
-      const rent = LAYOUT[s.slot_index].rent;
-      q.addCash.run(-rent, s.id);
-      q.insertTx.run(market.id, t, 'rent', s.id, null, null, null, rent);
-      event(market, s.owner_id, t, `Markedskontoret har trukket ${rent} kr i bodleie.`);
-      // Strømregningen for døgnet som gikk.
-      const bill = Math.round(s.power_cost);
-      if (bill > 0) {
-        q.addCash.run(-bill, s.id);
-        q.insertTx.run(market.id, t, 'power', s.id, null, null, null, bill);
-        const kwh = s.power_kwh.toFixed(1).replace('.', ',');
-        event(market, s.owner_id, t, `⚡ Strømregning: ${bill} kr for ${kwh} kWh.`);
-      }
-      db.prepare('UPDATE stalls SET power_kwh = 0, power_cost = 0 WHERE id = ?').run(s.id);
-      if (s.cash - rent - bill < 0) event(market, s.owner_id, t, '⚠️ Boden din er i minus. Banken ringer.');
-    }
+    // Først purring/inkasso/namsmann på gårsdagens ubetalte regninger …
+    escalateBills(market, t);
+    // … så dagens nye regninger (basert på gårsdagens omsetning per bod).
+    const revenue = new Map(
+      all<{ from_stall: number; amount: number }>(q.salesBetween, market.id, t - 24 * HOUR, t).map((r) => [r.from_stall, r.amount]),
+    );
+    for (const s of stalls) issueBills(market, t, s, revenue.get(s.id) ?? 0);
   }
   if (parts.hour === 21) event(market, null, t, '🌙 Dagsmarkedet stenger. Nattmarkedet våkner.');
   if (parts.hour === PAPER_HOUR) {
@@ -1003,6 +1190,12 @@ function processHour(market: MarketRow, hour: number) {
       const items = itemsOf(s.id);
       const gone = items.filter((i) => isTrashed(items, i));
       if (gone.length === 0) continue;
+      // Poser (engangs handleposer) utløser 2 kr hver til Handelens byråkratifond.
+      const bags = gone.filter((i) => {
+        const type = ITEM_TYPES[i.typeId];
+        return type.kind === 'container' && type.shopBag;
+      }).length;
+      if (bags > 0) db.prepare('UPDATE stalls SET bags_binned = bags_binned + ? WHERE id = ?').run(bags, s.id);
       for (const i of gone) q.deleteItem.run(i.id);
       // Kastede apparater (kjeler) trekkes ut av grenuttaket.
       const unplug = new Set(gone.filter((i) => DEVICES.some((d) => d.item === i.typeId)).map((i) => itemSocket(i.typeId, i.id)));

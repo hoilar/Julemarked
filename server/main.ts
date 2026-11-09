@@ -24,6 +24,8 @@ import {
   toggleSocket,
   playerFromToken,
   setPrice,
+  payBill,
+  payAllBills,
   tick,
 } from './game.ts';
 import type { Place } from '../shared/types.ts';
@@ -78,6 +80,7 @@ const routes: Record<string, Handler> = {
     moveItem(p, Number(b.itemId), String(b.place) as Place, b.boxId == null ? null : Number(b.boxId), Number(b.x), Number(b.y)),
   ),
   'POST /api/paper/fetch': action((p) => fetchPaper(p)),
+  'POST /api/bill/pay': action((p, b) => (b.all ? payAllBills(p) : payBill(p, Number(b.billId)))),
   'POST /api/device/buy': action((p, b) => buyDevice(p, String(b.deviceId))),
   'POST /api/power/switch': action((p) => togglePower(p)),
   'POST /api/shop/order': action((p, b) =>

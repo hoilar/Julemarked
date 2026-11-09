@@ -310,8 +310,44 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
   font-size: 1.6cqw;
   animation: bob 1.4s ease-in-out infinite;
 }
+.mailbox-badge {
+  position: absolute;
+  top: -1.4cqw;
+  right: -1cqw;
+  min-width: 2.6cqw;
+  height: 2.6cqw;
+  padding: 0 0.5cqw;
+  border-radius: 1.3cqw;
+  background: var(--gold);
+  color: #2b211b;
+  font-size: 1.7cqw;
+  font-weight: 800;
+  line-height: 2.6cqw;
+  text-align: center;
+  box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.35);
+}
+.mailbox-badge.overdue { background: var(--red); color: #fff; animation: bob 1.1s ease-in-out infinite; }
+
 /* Gamle aviser gulner litt */
 .gitem.paper-item.old .sprite { filter: sepia(0.6) brightness(0.9); }
+
+/* ---------- Postkassa: regninger ---------- */
+.mail-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+.mail-row:last-of-type { border-bottom: 0; }
+.mail-main { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+.mail-emoji { font-size: 1.5rem; flex: none; }
+.mail-title { font-weight: 700; }
+.mail-sub { font-size: 0.82rem; color: var(--muted); display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.mail-pay { display: flex; align-items: center; gap: 0.6rem; flex: none; }
+.bill-total { font-weight: 800; font-variant-numeric: tabular-nums; }
+.bill-stage { font-weight: 700; padding: 0.05rem 0.4rem; border-radius: 0.6rem; font-size: 0.72rem; }
+.bill-stage.due { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+.bill-stage.purret { background: color-mix(in srgb, var(--gold) 28%, transparent); color: #8a6a10; }
+.bill-stage.inkasso { background: color-mix(in srgb, var(--red) 20%, transparent); color: var(--red); }
+.bill-stage.namsmann { background: var(--red); color: #fff; }
+.bill-row.namsmann { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.mail-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.9rem; }
+.mail-foot .muted { font-size: 0.8rem; max-width: 22rem; }
 
 .modal.paper-modal { background: #f3ecdc; color: #1d1a16; max-width: 640px; }
 .modal.paper-modal .close { color: #1d1a16; }
