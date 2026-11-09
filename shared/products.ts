@@ -287,5 +287,10 @@ export const STORAGE_GRID: GridSize = { cols: 24, rows: 6 };
 export const TRASH_GRID: GridSize = { cols: 4, rows: 4 };
 export const TRASH_EMPTY_HOUR = 3;
 
+/** Nattetyver: varer som står ute på bordet mellom kl. 23 og 06 kan bli stjålet. */
+export const THEFT_FROM = 23;
+export const THEFT_TO = 6;
+export const THEFT_CHANCE = 0.04; // per vare per time (≈ 22 % for én vare som står ute hele natta)
+
 export const START_CASH = 2000;
 export const PAYMENT_FEE = 0.0175; // «Bipps»

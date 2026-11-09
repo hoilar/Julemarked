@@ -45,6 +45,9 @@ import {
   PRODUCT_BY_ID,
   START_CASH,
   TRASH_EMPTY_HOUR,
+  THEFT_CHANCE,
+  THEFT_FROM,
+  THEFT_TO,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
 import {
@@ -1191,6 +1194,50 @@ export function payAllBills(player: PlayerRow) {
   });
 }
 
+// ---------- Nattetyver ----------
+
+/** Én natt-time: hver vare som står ute på bordet, kan forsvinne. */
+function stealHour(market: MarketRow, t: number, stalls: StallRow[]) {
+  for (const s of stalls) {
+    const prices = pricesOf(s.id);
+    for (const i of itemsOf(s.id)) {
+      if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
+      if (Math.random() >= THEFT_CHANCE) continue;
+      q.deleteItem.run(i.id);
+      q.insertTx.run(market.id, t, 'theft', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
+    }
+  }
+}
+
+/** Kl. 06: fortell hver bod hva som forsvant i natt, og markedet at tyvene har vært der. */
+function theftReport(market: MarketRow, t: number) {
+  const hours = (24 - THEFT_FROM + THEFT_TO) * HOUR;
+  const rows = all<{ from_stall: number; product_id: string; qty: number; amount: number }>(
+    db.prepare(
+      `SELECT from_stall, product_id, SUM(qty) AS qty, SUM(amount) AS amount FROM transactions
+       WHERE market_id = ? AND kind = 'theft' AND game_time > ? AND game_time <= ?
+       GROUP BY from_stall, product_id`,
+    ),
+    market.id,
+    t - hours,
+    t,
+  );
+  if (rows.length === 0) return;
+  const perStall = new Map<number, typeof rows>();
+  for (const r of rows) perStall.set(r.from_stall, [...(perStall.get(r.from_stall) ?? []), r]);
+  for (const [stallId, list] of perStall) {
+    const s = one<StallRow>(q.stallById, stallId);
+    if (!s) continue;
+    const what = list
+      .map((r) => `${r.qty} ${PRODUCT_BY_ID[r.product_id]?.emoji ?? ''} ${(PRODUCT_BY_ID[r.product_id]?.name ?? r.product_id).toLowerCase()}`)
+      .join(', ');
+    const value = list.reduce((n, r) => n + r.amount, 0);
+    event(market, s.owner_id, t, `🦝 Tyver var på ferde i natt! Fra bordet ditt forsvant ${what} (verdt ${value} kr). Ta varene inn før kl. ${THEFT_FROM} neste gang.`);
+  }
+  const n = perStall.size;
+  event(market, null, t, `🦝 Nattetyver har herjet på markedet. ${n} ${n === 1 ? 'bod' : 'boder'} mistet varer fra bordet.`);
+}
+
 // ---------- Tidsstyrt simulering ----------
 
 const HOUR_CURVE: Record<number, number> = {
@@ -1279,6 +1326,13 @@ function processHour(market: MarketRow, hour: number) {
       event(market, s.owner_id, t, `🚛 Søppelbilen har tømt søppelkassa di (${gone.length} ting).`);
     }
   }
+
+  // Nattetyver: timen som nettopp gikk, var den mellom 23 og 06?
+  const passed = (parts.hour + 23) % 24;
+  if (passed >= THEFT_FROM || passed < THEFT_TO) stealHour(market, t, stalls);
+  if (parts.hour === THEFT_FROM)
+    event(market, null, t, `🦝 Klokka er ${THEFT_FROM}. Varer som står ute på bordet i natt, kan bli stjålet før kl. 0${THEFT_TO}.`);
+  if (parts.hour === THEFT_TO) theftReport(market, t);
 
   if (phaseOf(parts.hour) !== 'day') return;
 
