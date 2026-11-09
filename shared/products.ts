@@ -1,4 +1,5 @@
 import type { GridSize } from './grid.ts';
+import { INSURANCES, policyItemId, type InsuranceKind } from './insurance.ts';
 
 export interface Size {
   w: number;
@@ -94,7 +95,18 @@ export interface FoldedBag {
   bag: string; // hvilken butikkpose den bretter ut til
 }
 
-export type ItemType = Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag;
+/** Forsikringsbevis (1×1). Gjelder så lenge det ligger hos deg og ikke i søpla. */
+export interface Policy {
+  kind: 'policy';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  size: Size;
+  insurance: InsuranceKind;
+}
+
+export type ItemType = Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy;
 
 // Plassholdere med emoji til de får tegning.
 export const INGREDIENTS: Ingredient[] = [
@@ -144,6 +156,17 @@ export const FOLDED_BAGS: FoldedBag[] = [
 /** Butikkpose-id → sammenbretta variant, og motsatt. */
 export const FOLDED_BY_BAG: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.bag, f.id]));
 export const BAG_BY_FOLDED: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.id, f.bag]));
+
+// Forsikringsbevis: ett dokument per forsikring, i forsikringens farge.
+export const POLICIES: Policy[] = INSURANCES.map((d) => ({
+  kind: 'policy',
+  id: policyItemId(d.kind),
+  name: `Forsikringsbevis: ${d.label}`,
+  emoji: '📄',
+  image: `/art/forsikring/${d.kind}.svg`,
+  size: { w: 1, h: 1 },
+  insurance: d.kind,
+}));
 
 // Avisrullen ligger på skrå og er bred, så den tar 2×1 (liggende).
 export const NEWSPAPER: Newspaper = {
@@ -275,7 +298,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, POSEBRETTER, ...FOLDED_BAGS].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, POSEBRETTER, ...FOLDED_BAGS, ...POLICIES].map((t) => [t.id, t]),
 );
 
 /** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */

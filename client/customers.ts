@@ -108,7 +108,7 @@ function setMood(c: Customer, mood: Mood) {
 }
 
 function arrive(): Customer | null {
-  const free = SPOTS.filter((x) => customers.every((c) => Math.abs(c.x - x) > 12));
+  const free = SPOTS.filter((x) => customers.every((c) => Math.abs(c.x - x) > 12) && !(insurer && Math.abs(INSURER_X - x) <= 12));
   if (free.length === 0) return null;
   const el = document.createElement('div');
   el.className = 'customer enter';
@@ -169,6 +169,8 @@ const isNight = () => document.body.classList.contains('night');
 function reset() {
   for (const c of customers) c.el.remove();
   customers = [];
+  insurer?.remove();
+  insurer = null;
 }
 
 /**
@@ -191,6 +193,70 @@ export function showSale(productId: string, icon: string, units: number, amount:
   pay.textContent = `${units > 1 ? `${units}× ` : ''}+${amount} kr`;
   c.el.appendChild(pay);
   c.leaveAt = Date.now() + 1800;
+}
+
+// ---------- Forsikringsselgeren ----------
+
+// Fast utseende (DiceBear-oppsett fra designeren) + en nisselue tegnet oppå hodet.
+// Micah har ingen luer, så lua er en egen SVG-bit i samme koordinatsystem (360×360).
+const SANTA_HAT = `<g transform="translate(0,-30) rotate(-5 190 100)">
+  <path d="M82 98 C 92 50, 140 14, 200 12 C 262 10, 316 40, 336 100 L 306 104 C 296 78, 276 62, 258 58 L 292 94 Z" fill="#c8102e" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M70 94 C 140 74, 228 72, 300 90 L 298 118 C 228 102, 140 104, 74 124 Z" fill="#fff" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="330" cy="112" r="20" fill="#fff" stroke="#000" stroke-width="5"/></g>`;
+
+let insurerUrl = '';
+/** Forsikringsselgeren som bilde (data-URL). Brukes også i tilbudsvinduet. */
+export function insurerImage(): string {
+  if (!insurerUrl) {
+    const svg = createAvatar(micah, {
+      seed: 'Felix',
+      size: 256,
+      earringsProbability: 100,
+      glassesProbability: 0,
+      facialHairProbability: 0,
+      shirt: ['crew'],
+      earrings: ['hoop'],
+      hair: ['full'],
+      mouth: ['pucker'],
+      eyes: ['smilingShadow'],
+      eyebrows: ['eyelashesUp'],
+      earringColor: ['c31d1d'],
+      eyesColor: ['0c7297'],
+      eyeShadowColor: ['e0ddff', 'ffeba4', 'ffedef', 'ffffff'],
+      mouthColor: ['c50233'],
+      shirtColor: ['ba1717'],
+      baseColor: ['f9c9b6'],
+    } as never)
+      .toString()
+      .replace(/<\/svg>\s*$/, `${SANTA_HAT}</svg>`);
+    insurerUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }
+  return insurerUrl;
+}
+
+const INSURER_X = 74; // står på plassen lengst til høyre
+let insurer: HTMLDivElement | null = null;
+
+/** Viser eller sender bort forsikringsselgeren. Trykk på henne åpner tilbudet (data-action="insurer"). */
+export function showInsurer(here: boolean) {
+  if (here && !insurer) {
+    // Står en kunde på plassen hennes, går den.
+    for (const c of customers.filter((c) => Math.abs(c.x - INSURER_X) <= 12)) leave(c);
+    const el = document.createElement('div');
+    el.className = 'customer insurer enter';
+    el.dataset.action = 'insurer';
+    el.title = 'Forsikringsselgeren – trykk for å høre tilbudet';
+    el.style.left = `${INSURER_X}%`;
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${insurerImage()}"><div class="want">🛡️</div></div>`;
+    layer.appendChild(el);
+    insurer = el;
+    setTimeout(() => el.classList.remove('enter'), 700);
+  } else if (!here && insurer) {
+    const el = insurer;
+    insurer = null;
+    el.classList.add('leave');
+    setTimeout(() => el.remove(), 600);
+  }
 }
 
 // Bare under utvikling: jmKunde() i konsollen kaller inn en kunde med en gang.

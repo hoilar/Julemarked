@@ -1,5 +1,5 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
-import { findTrashSpot, gridOf, itemsIn, placementError, type Spot } from '../shared/items.ts';
+import { findTrashSpot, gridOf, isTrashed, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
 import {
   CONTAINERS,
   COUNTER_GRID,
@@ -23,7 +23,8 @@ import {
   THEFT_TO,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, StallPublic } from '../shared/types.ts';
-import { mountCustomers, showSale, type Offer } from './customers.ts';
+import { insurerImage, mountCustomers, showInsurer, showSale, type Offer } from './customers.ts';
+import { INSURANCES, INSURANCE_BY_KIND, INSURER, insurerHere } from '../shared/insurance.ts';
 import { BAG_PRICE, SHIPPING, STORES, STORE_BY_ID, packBags } from '../shared/shop.ts';
 import { moodFor, type Mood } from '../shared/mood.ts';
 
@@ -40,6 +41,8 @@ type Modal =
   | { kind: 'paper'; edition: number; page: number }
   | { kind: 'mail' }
   | { kind: 'folded'; itemId: number }
+  | { kind: 'insurer' }
+  | { kind: 'policy'; typeId: string }
   | { kind: 'product'; productId: string }
   | { kind: 'buy'; stallId: number; productId: string };
 
@@ -171,6 +174,8 @@ function tickClock() {
   const el = document.getElementById('clock');
   if (el) el.textContent = formatClock(parts);
   document.body.classList.toggle('night', phaseOf(parts.hour) === 'night');
+  // Forsikringsselgeren kommer bare til din egen bod, på faste tider.
+  showInsurer(!!shownStall && shownStall.id === state.me.stallId && insurerHere(parts.hour));
 }
 setInterval(tickClock, 500);
 
@@ -1023,6 +1028,30 @@ function mailView(s: GameState): string {
   return `<h2>📬 Postkassa</h2>${paperRow}${body}`;
 }
 
+/** Forsikringene boden har nå: bevis som ligger hos deg (ikke i søpla). */
+function myPolicies(s: GameState): Set<string> {
+  const have = new Set<string>();
+  for (const i of s.me.items) {
+    const t = ITEM_TYPES[i.typeId];
+    if (t.kind === 'policy' && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i)) have.add(t.insurance);
+  }
+  return have;
+}
+
+function insurerView(s: GameState): string {
+  const have = myPolicies(s);
+  const rows = INSURANCES.map((d) => {
+    const t = ITEM_TYPES[`bevis_${d.kind}`];
+    return `<li>${sprite(t)}<div><b>${esc(d.label)}</b> · ${kr(d.premium)}/dag<small>${esc(d.covers)}</small></div>
+      ${have.has(d.kind) ? '<span class="policy-have">✔ Har</span>' : `<button class="small" data-action="sign-policy" data-kind="${d.kind}">Tegn</button>`}</li>`;
+  }).join('');
+  return `<div class="insurer-head"><img src="${insurerImage()}" alt=""><div>
+      <h2>${esc(INSURER.name)}</h2><div class="muted">${esc(INSURER.company)}</div></div></div>
+    <p class="insurer-pitch">«Hei hei! Har du tenkt på hva som skjer hvis det verste skjer? Ikke? Det har jeg. Hele tiden.»</p>
+    <ul class="policy-list">${rows}</ul>
+    <p class="muted">Premien kommer som regning i postkassa hver morgen. Du får et forsikringsbevis under disken – kaster du det i søpla, er forsikringen sagt opp. Går premien til inkasso, sier vi den opp for deg.</p>`;
+}
+
 function modalView(s: GameState): string {
   if (!modal) return '';
   let inner = '';
@@ -1038,6 +1067,22 @@ function modalView(s: GameState): string {
       `<h2>${esc(t.name)}</h2>
       <p class="muted">En sammenbrettet handlepose. Du kan brette den ut igjen til en vanlig pose – det krever ingen maskin.</p>
       <div class="row auto-row"><button data-action="unfold" data-item="${it.id}">Brett ut</button></div>`,
+    );
+  }
+  if (modal.kind === 'insurer') inner = insurerView(s);
+  if (modal.kind === 'policy') {
+    const t = ITEM_TYPES[modal.typeId];
+    if (!t || t.kind !== 'policy') return '';
+    const d = INSURANCE_BY_KIND[t.insurance];
+    inner = itemCard(
+      t,
+      `<h2>${esc(d.label)}</h2>
+      <dl class="item-stats">
+        <dt>Dekker</dt><dd>${esc(d.covers)}</dd>
+        <dt>Premie</dt><dd>${kr(d.premium)} per dag (regning i postkassa)</dd>
+        <dt>Selskap</dt><dd>${esc(INSURER.company)}</dd>
+      </dl>
+      <p class="muted">Forsikringen gjelder så lenge beviset ligger hos deg. Vil du si den opp, kaster du beviset i søpla.</p>`,
     );
   }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
@@ -1290,6 +1335,7 @@ function endDrag(cancelled = false) {
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
     if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') togglePanel(d.item.id);
     else if (t.kind === 'folded') modal = { kind: 'folded', itemId: d.item.id };
+    else if (t.kind === 'policy') modal = { kind: 'policy', typeId: t.id };
     else if (t.kind === 'ingredient')
       toast(t.id === 'svidd' ? `${t.emoji} ${t.name}. Den hører hjemme i søpla.` : `${t.emoji} ${t.name} – råvare til kjelen. Oppskriftene står i avisa.`);
     else modal = { kind: 'product', productId: t.id };
@@ -1373,6 +1419,11 @@ app.addEventListener('click', (e) => {
     modal = null;
   }
   if (action === 'pick') screen = { kind: 'claim', slot: Number(el.dataset.slot) };
+  if (action === 'insurer') modal = { kind: 'insurer' };
+  if (action === 'sign-policy') {
+    const kind = el.dataset.kind!;
+    void act('/api/insurance/sign', { kind }, `🛡️ ${INSURANCE_BY_KIND[kind as keyof typeof INSURANCE_BY_KIND].label} tegnet!`);
+  }
   if (action === 'move-stall' && screen.kind === 'claim') {
     void act('/api/stall/move', { slotIndex: screen.slot }, 'Boden har flyttet! 🚚').then((ok) => {
       if (ok) {

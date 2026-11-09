@@ -68,6 +68,16 @@ import {
 import { priceAppeal } from '../shared/mood.ts';
 import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree } from '../shared/grid.ts';
+import {
+  INSURANCE_BY_KIND,
+  INSURER,
+  INSURER_VISITS,
+  NAMSMANN_COVER,
+  insurerHere,
+  outageFor,
+  policyItemId,
+  type InsuranceKind,
+} from '../shared/insurance.ts';
 import { BAG_PRICE, SHIPPING, STORES, STORE_BY_ID, catalog, packBags } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 
@@ -1032,6 +1042,8 @@ function cookOne(market: MarketRow, s: StallRow, t: number, items: Item[], k: It
   for (const p of spots) q.insertItem.run(s.id, p.typeId, 'pot_out', k.id, p.x, p.y, null);
   if (plan.burn) {
     event(market, s.owner_id, t, `🔥 Det lukter svidd! ${plan.recipe.name} på for høy varme ble til en svidd klump.`);
+    const used = Object.entries(plan.recipe.inputs).flatMap(([id, n]) => Array<string>(n).fill(id));
+    insurancePayout(market, s, t, 'svidd', insuredValue(s.id, used), 'råvarene i den svidde kjelen');
   } else {
     const made = Object.entries(plan.recipe.outputs)
       .map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`)
@@ -1149,6 +1161,8 @@ function issueBills(market: MarketRow, t: number, s: StallRow, yesterdayRevenue:
   issueBill(market, s, t, 'power', dueDay, s.power_cost);
   issueBill(market, s, t, 'renovasjon', dueDay, RENOVASJON_DAILY);
   issueBill(market, s, t, 'byrakratifond', dueDay, s.bags_binned * BAG_FEE);
+  const policies = activePolicies(s.id);
+  issueBill(market, s, t, 'forsikring', dueDay, [...policies].reduce((n, k) => n + INSURANCE_BY_KIND[k].premium, 0));
 
   db.prepare('UPDATE stalls SET power_kwh = 0, power_cost = 0, bags_binned = 0 WHERE id = ?').run(s.id);
 }
@@ -1176,6 +1190,7 @@ function escalateBills(market: MarketRow, t: number) {
       const add = Math.max(INKASSO_MIN, Math.round(b.amount * INKASSO_PCT));
       q.bumpBill.run(add, 2, b.id);
       event(market, s.owner_id, t, `⚖️ ${meta.emoji} ${meta.label}-regningen har gått til inkasso. Påslag +${add} kr.`);
+      if (b.kind === 'forsikring') cancelPolicies(market, s, t);
     }
   }
 }
@@ -1212,6 +1227,7 @@ function namsmann(market: MarketRow, t: number, s: StallRow, b: BillRow) {
   else q.setBillAmount.run(debt, 0, b.id); // behold resten, ingen nye påslag
 
   if (collected > 0) q.insertTx.run(market.id, t, 'namsmann', s.id, null, null, goodsCount || null, collected);
+  const refund = Math.round(collected * NAMSMANN_COVER);
 
   const meta = BILL_META[b.kind];
   const parts: string[] = [];
@@ -1220,6 +1236,69 @@ function namsmann(market: MarketRow, t: number, s: StallRow, b: BillRow) {
   const took = parts.length ? parts.join(' og ') : 'ingenting å hente';
   const rest = debt > 0 ? ` Fortsatt ${debt} kr i gjeld – namsmannen kommer igjen.` : ' Gjelda er gjort opp.';
   event(market, s.owner_id, t, `🧾 Namsmannen var innom for ${meta.label.toLowerCase()}gjelda og tok ${took}.${rest}`);
+  insurancePayout(market, s, t, 'namsmann', refund, 'namsmannbesøket');
+}
+
+// ---------- Forsikring ----------
+
+/** Forsikringene boden har: bevis som ligger hos deg (ikke i søpla, ikke på vei). */
+function activePolicies(stallId: number): Set<InsuranceKind> {
+  const items = itemsOf(stallId);
+  const kinds = new Set<InsuranceKind>();
+  for (const i of items) {
+    const t = ITEM_TYPES[i.typeId];
+    if (t.kind === 'policy' && !isTrashed(items, i) && !isUndelivered(items, i)) kinds.add(t.insurance);
+  }
+  return kinds;
+}
+
+/** Utbetaling fra forsikringen hvis boden har den. */
+function insurancePayout(market: MarketRow, s: StallRow, t: number, kind: InsuranceKind, amount: number, what: string) {
+  const sum = Math.round(amount);
+  if (sum <= 0 || !activePolicies(s.id).has(kind)) return;
+  q.addCash.run(sum, s.id);
+  q.insertTx.run(market.id, t, 'forsikring_utbetaling', s.id, null, null, null, sum);
+  event(market, s.owner_id, t, `🛡️ ${INSURANCE_BY_KIND[kind].label}en dekket ${what}: +${sum} kr fra ${INSURER.company}.`);
+}
+
+/** Ubetalt premie til inkasso: selskapet sier opp alt og tar bevisene tilbake. */
+function cancelPolicies(market: MarketRow, s: StallRow, t: number) {
+  const items = itemsOf(s.id).filter((i) => ITEM_TYPES[i.typeId].kind === 'policy');
+  if (items.length === 0) return;
+  for (const i of items) q.deleteItem.run(i.id);
+  event(market, s.owner_id, t, `✂️ ${INSURER.company} har sagt opp forsikringene dine på grunn av ubetalt premie.`);
+}
+
+/** Hva en gjenstand er verdt for forsikringen: snittkost/innkjøpspris for varer, pris for råvarer. */
+function insuredValue(stallId: number, typeIds: string[]): number {
+  const costs = new Map(all<{ product_id: string; avg_cost: number }>(q.costs, stallId).map((c) => [c.product_id, c.avg_cost]));
+  return typeIds.reduce((n, id) => {
+    const t = ITEM_TYPES[id];
+    if (t.kind === 'product') return n + (costs.get(id) ?? t.wholesale);
+    if (t.kind === 'ingredient') return n + t.price;
+    return n;
+  }, 0);
+}
+
+/** Tegner en forsikring hos forsikringsselgeren. Beviset legges under disken. */
+export function signPolicy(player: PlayerRow, kind: string) {
+  const market = marketOf(player);
+  const def = INSURANCE_BY_KIND[kind as InsuranceKind];
+  if (!def) throw new GameError('Ukjent forsikring.');
+  const t = nowFor(market);
+  if (!insurerHere(osloParts(t).hour)) {
+    const times = INSURER_VISITS.map((v) => `kl. ${String(v.from).padStart(2, '0')}`).join(' og ');
+    throw new GameError(`${INSURER.name} har gått. Hun kommer igjen ${times}.`);
+  }
+  tx(() => {
+    const stall = myStall(player);
+    if (activePolicies(stall.id).has(def.kind)) throw new GameError(`Du har allerede ${def.label.toLowerCase()}.`);
+    const typeId = policyItemId(def.kind);
+    const spot = findStorageSpot(itemsOf(stall.id), typeId);
+    if (!spot) throw new GameError('Det er ikke plass til forsikringsbeviset under disken.');
+    q.insertItem.run(stall.id, typeId, spot.place, spot.boxId, spot.x, spot.y, null);
+    event(market, player.id, t, `🛡️ Du tegnet ${def.label.toLowerCase()} (${def.premium} kr per dag). Beviset ligger under disken.`);
+  });
 }
 
 /** Betaler én regning fra kassa. */
@@ -1269,12 +1348,37 @@ export function payAllBills(player: PlayerRow) {
 function stealHour(market: MarketRow, t: number, stalls: StallRow[]) {
   for (const s of stalls) {
     const prices = pricesOf(s.id);
+    const stolen: string[] = [];
     for (const i of itemsOf(s.id)) {
       if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
       if (Math.random() >= THEFT_CHANCE) continue;
       q.deleteItem.run(i.id);
       q.insertTx.run(market.id, t, 'theft', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
+      stolen.push(i.typeId);
     }
+    if (stolen.length > 0)
+      insurancePayout(market, s, t, 'tyveri', insuredValue(s.id, stolen), `${stolen.length} ${stolen.length === 1 ? 'stjålet vare' : 'stjålne varer'}`);
+  }
+}
+
+// ---------- Strømbrudd ----------
+
+/** Strømmen går i en gate: alt som står og koker i kjelene der, blir ødelagt. */
+function startOutage(market: MarketRow, t: number, stalls: StallRow[], outage: { street: string; from: number; to: number }) {
+  event(
+    market,
+    null,
+    t,
+    `⚡ STRØMBRUDD i ${outage.street}n! Kjeler, posebrettere og lys er døde til kl. ${String(outage.to).padStart(2, '0')}.`,
+  );
+  for (const s of stalls) {
+    if (LAYOUT[s.slot_index].street !== outage.street) continue;
+    const items = itemsOf(s.id);
+    const ruined = runningKettles(s, items).flatMap((k) => itemsIn(items, 'pot_in', k.id));
+    if (ruined.length === 0) continue;
+    for (const i of ruined) q.deleteItem.run(i.id);
+    event(market, s.owner_id, t, `🥶 Kjelen ble kald midt i kokingen. ${ruined.length} ${ruined.length === 1 ? 'råvare' : 'råvarer'} ble ødelagt.`);
+    insurancePayout(market, s, t, 'strombrudd', insuredValue(s.id, ruined.map((i) => i.typeId)), 'de ødelagte råvarene');
   }
 }
 
@@ -1307,9 +1411,18 @@ function processHour(market: MarketRow, hour: number) {
   const parts = osloParts(t);
   let stalls = all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ?'), market.id);
 
+  // Dagens strømbrudd (om noe): én gate er uten strøm noen timer.
+  const outage = outageFor(market.id, currentEdition(t).key);
+  const dark = (s: StallRow) =>
+    !!outage && LAYOUT[s.slot_index].street === outage.street && parts.hour >= outage.from && parts.hour < outage.to;
+  if (outage && parts.hour === outage.from) startOutage(market, t, stalls, outage);
+  if (outage && parts.hour === outage.to)
+    event(market, null, t, `💡 Strømmen er tilbake i ${outage.street}n.`);
+
   // Strøm for timen som nettopp gikk: kW × 1 time × strømprisen i dagens avis.
   const kwhPrice = powerPrice(market.id, currentEdition(t - HOUR / 2).key);
   for (const s of stalls) {
+    if (dark(s)) continue;
     const kw = stallKw(s);
     if (kw > 0)
       db.prepare('UPDATE stalls SET power_kwh = power_kwh + ?, power_cost = power_cost + ? WHERE id = ?').run(
@@ -1325,6 +1438,7 @@ function processHour(market: MarketRow, hour: number) {
 
   // Kjelene koker og posebrettere bretter døgnet rundt så lenge de står på.
   for (const s of stalls) {
+    if (dark(s)) continue;
     cookHour(market, s, t);
     foldHour(market, s, t);
   }
@@ -1340,6 +1454,8 @@ function processHour(market: MarketRow, hour: number) {
     for (const s of stalls) issueBills(market, t, s, revenue.get(s.id) ?? 0);
   }
   if (parts.hour === 21) event(market, null, t, '🌙 Dagsmarkedet stenger. Nattmarkedet våkner.');
+  if (INSURER_VISITS.some((v) => v.from === parts.hour))
+    event(market, null, t, `🛡️ ${INSURER.name} fra ${INSURER.company} går fra bod til bod og selger forsikringer.`);
   if (parts.hour === PAPER_HOUR) {
     const price = powerPrice(market.id, currentEdition(t).key);
     event(market, null, t, `📰 Verdens Undergang ligger i postkassa. Strømpris i dag: ${price.toFixed(2).replace('.', ',')} kr/kWh.`);
@@ -1405,7 +1521,7 @@ function processHour(market: MarketRow, hour: number) {
       const competition = 1 / Math.sqrt(sellers.get(pid) ?? 1);
       // Et fullt bord trekker litt flere kunder enn én ensom vare.
       const display = Math.min(1.25, 0.85 + count * 0.04);
-      const lights = parts.hour >= DARK_FROM && runningDevices(powerOf(s)).some((d) => d.id === 'lyslenke') ? LIGHT_BOOST : 1;
+      const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(powerOf(s)).some((d) => d.id === 'lyslenke') ? LIGHT_BOOST : 1;
       const lambda = p.baseDemand * traffic * repFactor * priceFactor * curve * season * competition * display * lights;
       const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count));
       if (units <= 0) continue;

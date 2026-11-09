@@ -14,6 +14,7 @@ import {
   migrate,
   moveItem,
   moveStall,
+  signPolicy,
   discardItem,
   fetchPaper,
   buyDevice,
@@ -79,6 +80,7 @@ const routes: Record<string, Handler> = {
   'GET /api/state': (_b, req) => getState(playerFromToken(tokenOf(req))),
   'POST /api/claim': action((p, b) => claimStall(p, Number(b.slotIndex), String(b.stallName ?? ''))),
   'POST /api/stall/move': action((p, b) => moveStall(p, Number(b.slotIndex))),
+  'POST /api/insurance/sign': action((p, b) => signPolicy(p, String(b.kind ?? ''))),
   'POST /api/buy-supplies': action((p, b) => buy(p, String(b.typeId), Number(b.qty))),
   'POST /api/item/move': action((p, b) =>
     moveItem(p, Number(b.itemId), String(b.place) as Place, b.boxId == null ? null : Number(b.boxId), Number(b.x), Number(b.y)),

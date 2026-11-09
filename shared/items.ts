@@ -75,6 +75,8 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (t.kind === 'folded' && spot.place === 'counter') return 'Sammenbretta poser er ikke til salgs.';
   if ((t.kind === 'kettle' || t.kind === 'folder') && NESTED.has(spot.place)) return 'Maskinen får ikke plass der.';
   if (t.kind === 'paper' && spot.place === 'counter') return 'Avisa er ikke til salgs.';
+  if (t.kind === 'policy' && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
+    return 'Forsikringsbeviset skal ligge trygt under disken (eller i søpla, hvis du vil si det opp).';
   if (t.kind === 'ingredient' && spot.place === 'counter') return 'Råvarer selges ikke – kok noe av dem først.';
   if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
     return `Tøm ${t.name} før du kaster den.`;
