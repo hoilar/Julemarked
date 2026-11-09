@@ -373,6 +373,31 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .paper-notices { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
 .paper-notices li { margin: 0.25rem 0; }
 
+/* Sider i avisa */
+.paper-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: -0.3rem 0 0.9rem; border-bottom: 1px solid #b8ad97; padding-bottom: 0.5rem; }
+.paper .paper-tab { font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.55rem; background: transparent; color: #4a4339; border: 1px solid #b8ad97; box-shadow: none; }
+.paper .paper-tab.on { background: #1d1a16; color: #f3ecdc; border-color: #1d1a16; }
+.paper-teasers { list-style: none; margin: 0 0 0.9rem; padding: 0; border-top: 1px solid #b8ad97; }
+.paper-teasers li { border-bottom: 1px solid #b8ad97; }
+.paper .paper-teaser { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 0.8rem; text-align: left; padding: 0.55rem 0.1rem; background: transparent; color: #1d1a16; border: 0; box-shadow: none; font-family: Georgia, 'Times New Roman', serif; font-size: 1rem; font-weight: 700; }
+.paper .paper-teaser:hover span { text-decoration: underline; }
+.paper .paper-teaser small { font-family: system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; color: #6a604f; white-space: nowrap; }
+.paper .paper-teaser.alarm span { color: #8b1f25; }
+.paper-quote { margin: 0 0 0.6rem; padding: 0.4rem 0 0.4rem 0.9rem; border-left: 3px solid #8b1f25; font-size: 1.05rem; font-style: italic; }
+.paper-quote cite { display: block; margin-top: 0.3rem; font-size: 0.8rem; font-style: normal; color: #6a604f; }
+.paper-crime { background: #e6dcc6; padding: 0.6rem 0.7rem; border-left: 4px solid #8b1f25; margin-bottom: 0.8rem; }
+.paper-crime p { margin: 0.3rem 0; font-size: 0.9rem; }
+.paper-thefts { margin: 0.4rem 0; padding: 0; list-style: none; }
+.paper-thefts li { display: grid; gap: 0.1rem; padding: 0.35rem 0; border-bottom: 1px dotted #b8ad97; font-size: 0.9rem; }
+.paper-thefts li:last-child { border-bottom: 0; }
+.paper-thefts li.mine { background: #f1d6cf; margin: 0 -0.4rem; padding: 0.35rem 0.4rem; }
+.paper-thefts small { color: #6a604f; }
+.paper-you { font-family: system-ui, sans-serif; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; background: #8b1f25; color: #fff; padding: 0.05rem 0.35rem; border-radius: 0.3rem; }
+.paper-log { margin: 0.2rem 0 0; font-size: 0.9rem; }
+.paper-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 1rem; padding-top: 0.6rem; border-top: 3px double #1d1a16; font-family: system-ui, sans-serif; font-size: 0.75rem; color: #4a4339; }
+.paper .paper-turn { font-size: 0.8rem; padding: 0.3rem 0.6rem; background: #1d1a16; color: #f3ecdc; box-shadow: none; }
+.paper .paper-turn:disabled { opacity: 0.3; }
+
 /* ---------- NPC-kunder bak disken ---------- */
 /* Feltet slutter ved bakkanten av bordplata, så bordet «skjuler» resten av kroppen. */
 .customers {

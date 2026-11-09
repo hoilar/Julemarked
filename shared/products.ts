@@ -125,8 +125,8 @@ export const POSEBRETTER: Folder = {
   id: 'posebretter',
   name: 'Posebretter',
   emoji: '🗜️',
-  image: '/art/posebretter/off.svg',
-  imageOn: '/art/posebretter/on.svg',
+  image: '/art/posebretter/off.png',
+  imageOn: '/art/posebretter/on.png',
   size: { w: 3, h: 2 },
   input: { cols: 4, rows: 4 }, // tomme poser (2×2) inn
   output: { cols: 4, rows: 4 }, // sammenbretta poser (1×1) ut

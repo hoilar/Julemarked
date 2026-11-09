@@ -85,6 +85,28 @@ const NOTICES = [
   'Julestrømpe meldt savnet. Den andre strømpa ber om ro.',
 ];
 
+// Eivblå Halvstrøm har meninger om alt som koker.
+const EIVBLAA = [
+  'Det viktigste er at det koker. Resten er detaljer.',
+  'Brenner det seg, kaller vi det karamellisert.',
+  'Sukker er bare krydder med selvtillit.',
+  'Styrke fire er for folk med god innboforsikring.',
+  'En oppskrift er et forslag. Jeg har aldri fulgt et forslag.',
+  'Rør med klokka for smak, mot klokka for karakter.',
+  'Har du ikke fløte, har du heller ikke planlagt.',
+];
+
+// Politiloggen: én notis per dag, uansett hva tyvene har gjort.
+const POLICE_LOG = [
+  'En mann ble observert mens han luktet på en annen manns gløgg. Saken er henlagt.',
+  'Nisse anmeldt for å parkere sleden på fortauet. Han nekter for at det er hans slede.',
+  'Pepperkakehus revet natt til i dag. Ingen mistenkte, men mange smuler.',
+  'Politiet minner om at varer som står ute på bordet om natta, ikke er «gratis til den som finner dem».',
+  'Kvinne meldte fra om mistenkelig rasling i en søppelkasse. Det var en annen kvinne.',
+  'Julestjerne stjålet fra vindu. Vitner beskriver tyven som «tydelig ikke en vismann».',
+  'Ruspåvirket rein sendt hjem i drosje.',
+];
+
 const dateFmt = new Intl.DateTimeFormat('nb-NO', { timeZone: TIME_ZONE, weekday: 'long', day: 'numeric', month: 'long' });
 
 export interface Yesterday {
@@ -93,8 +115,17 @@ export interface Yesterday {
   mine: number | null;
 }
 
-/** Bygger en utgave. `yesterday` er salget i markedet dagen før (null den første dagen). */
-export function buildPaper(marketId: number, key: number, yesterday: Yesterday | null, readKey: number): Paper {
+/**
+ * Bygger en utgave. `yesterday` er salget i markedet dagen før (null den første dagen),
+ * `thefts` det som ble stjålet fra bordene natta før utgaven.
+ */
+export function buildPaper(
+  marketId: number,
+  key: number,
+  yesterday: Yesterday | null,
+  readKey: number,
+  thefts: Paper['crime']['thefts'],
+): Paper {
   const ed = { key, time: editionTime(key) };
   const price = powerPrice(marketId, ed.key);
   const level = HEADLINES.find((h) => price <= h.max)!;
@@ -107,7 +138,14 @@ export function buildPaper(marketId: number, key: number, yesterday: Yesterday |
   const list = (m: Record<string, number>) =>
     Object.entries(m).map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`);
   return {
-    recipe: { name: r.name, inputs: list(r.inputs), outputs: list(r.outputs), level: r.level },
+    recipe: {
+      name: r.name,
+      inputs: list(r.inputs),
+      outputs: list(r.outputs),
+      level: r.level,
+      quote: pick(EIVBLAA, hash('eivblaa', marketId, ed.key)),
+    },
+    crime: { thefts, log: pick(POLICE_LOG, hash('politi', marketId, ed.key)) },
     edition: ed.key,
     date: date[0].toUpperCase() + date.slice(1),
     price,

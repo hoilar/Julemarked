@@ -18,6 +18,8 @@ import {
   STORAGE_GRID,
   TRASH_EMPTY_HOUR,
   TRASH_GRID,
+  THEFT_FROM,
+  THEFT_TO,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, StallPublic } from '../shared/types.ts';
 import { mountCustomers, showSale, type Offer } from './customers.ts';
@@ -34,7 +36,7 @@ type Modal =
   | null
   | { kind: 'wholesale' }
   | { kind: 'events' }
-  | { kind: 'paper'; edition: number }
+  | { kind: 'paper'; edition: number; page: number }
   | { kind: 'mail' }
   | { kind: 'folded'; itemId: number }
   | { kind: 'product'; productId: string }
@@ -863,19 +865,37 @@ function priceFeedback(price: number, cost: number, base: number): string {
     <span>${MOOD_TEXT[moodFor(price / base, 1)]}</span>`;
 }
 
-/** En utgave av morgenavisa. */
-function paperView(p: Paper | undefined): string {
+const PAPER_PAGES = ['Forside', 'Økonomi', 'Eivblås Halvstrøms hjørne', 'Kriminalitet'];
+
+/** En utgave av morgenavisa, én side om gangen. */
+function paperView(p: Paper | undefined, page: number): string {
   if (!p) return `<h2>📰 Uleselig</h2><p class="muted">Avisa er for våt til å lese.</p>`;
   const price = p.price.toFixed(2).replace('.', ',');
   const level = p.price <= 0.9 ? 'lav' : p.price <= 1.8 ? 'normal' : p.price <= 3 ? 'hoy' : 'rekord';
   const y = p.yesterday;
-  return `
-  <article class="paper">
-    <header class="paper-mast">
-      <div class="paper-name">VERDENS UNDERGANG</div>
-      <div class="paper-meta"><span>${esc(p.date)}</span><span>Uavhengig av alt · Kr 49,-</span></div>
-    </header>
+  const thefts = p.crime.thefts;
+  const n = Math.max(0, Math.min(PAPER_PAGES.length - 1, page));
+
+  const tabs = `<nav class="paper-tabs">${PAPER_PAGES.map(
+    (title, i) => `<button class="paper-tab ${i === n ? 'on' : ''}" data-action="paper-page" data-page="${i}" aria-pressed="${i === n}">${esc(title)}</button>`,
+  ).join('')}</nav>`;
+
+  const front = `
     <h1 class="paper-headline">${esc(p.headline)}</h1>
+    <ul class="paper-teasers">
+      <li><button class="paper-teaser" data-action="paper-page" data-page="1"><span>⚡ Strømmen koster ${price} kr/kWh i dag</span><small>Økonomi, s. 2</small></button></li>
+      <li><button class="paper-teaser" data-action="paper-page" data-page="2"><span>🍲 Eivblå koker ${esc(p.recipe.name.toLowerCase())}</span><small>Eivblås Halvstrøms hjørne, s. 3</small></button></li>
+      <li><button class="paper-teaser ${thefts.length ? 'alarm' : ''}" data-action="paper-page" data-page="3"><span>${
+        thefts.length
+          ? `🦝 Tyver herjet i natt: ${thefts.length} ${thefts.length === 1 ? 'bod' : 'boder'} rammet${thefts.some((t) => t.mine) ? ' – også din!' : ''}`
+          : '🚓 Rolig natt på markedet'
+      }</span><small>Kriminalitet, s. 4</small></button></li>
+    </ul>
+    <div class="paper-kicker">Notiser</div>
+    <ul class="paper-notices">${p.notices.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+
+  const economy = `
+    <h1 class="paper-headline">Økonomi</h1>
     <div class="paper-cols">
       <section class="paper-power ${level}">
         <div class="paper-kicker">⚡ Strømprisen i dag</div>
@@ -892,15 +912,52 @@ function paperView(p: Paper | undefined): string {
             : '<p>Markedet åpnet i dag. Ingen tall ennå – bare håp.</p>'
         }
       </section>
-    </div>
+    </div>`;
+
+  const recipe = `
+    <h1 class="paper-headline">Eivblås Halvstrøms hjørne</h1>
     <section class="paper-recipe">
       <div class="paper-kicker">🍲 Dagens oppskrift: ${esc(p.recipe.name)}</div>
       <p>Legg ${p.recipe.inputs.map(esc).join(' og ')} i kjelen. Kok på <b>styrke ${p.recipe.level}</b> i én time,
         så får du ${p.recipe.outputs.map(esc).join(' og ')}.</p>
-      <p class="paper-small">Avisa fraskriver seg ethvert ansvar for svidde kjeler.</p>
     </section>
-    <div class="paper-kicker">Notiser</div>
-    <ul class="paper-notices">${p.notices.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>
+    <blockquote class="paper-quote">«${esc(p.recipe.quote)}»<cite>– Eivblå Halvstrøm</cite></blockquote>
+    <p class="paper-small">Avisa fraskriver seg ethvert ansvar for svidde kjeler.</p>`;
+
+  const crime = `
+    <h1 class="paper-headline">Kriminalitet</h1>
+    <section class="paper-crime">
+      <div class="paper-kicker">🦝 Natt til i dag</div>
+      ${
+        thefts.length
+          ? `<p>Nattetyver var på ferde mellom kl. ${THEFT_FROM} og 0${THEFT_TO}. Disse bodene mistet varer fra bordet:</p>
+             <ul class="paper-thefts">${thefts
+               .map(
+                 (t) => `<li class="${t.mine ? 'mine' : ''}"><div><b>«${esc(t.stall)}»</b>${t.mine ? ' <span class="paper-you">din bod</span>' : ''}</div>
+                   <span>${t.lines.map(esc).join(', ')}</span><small>Verdi ${kr(t.value)}</small></li>`,
+               )
+               .join('')}</ul>`
+          : '<p>Ingen innbrudd i natt. Politiet kjedet seg.</p>'
+      }
+      <p class="paper-small">Politiet minner om at varer som står ute på bordet mellom kl. ${THEFT_FROM} og 0${THEFT_TO}, er tyvenes favoritt.</p>
+    </section>
+    <div class="paper-kicker">🚓 Politiloggen</div>
+    <p class="paper-log">${esc(p.crime.log)}</p>`;
+
+  const body = [front, economy, recipe, crime][n];
+  return `
+  <article class="paper">
+    <header class="paper-mast">
+      <div class="paper-name">VERDENS UNDERGANG</div>
+      <div class="paper-meta"><span>${esc(p.date)}</span><span>Uavhengig av alt · Kr 49,-</span></div>
+    </header>
+    ${tabs}
+    ${body}
+    <footer class="paper-foot">
+      <button class="paper-turn" data-action="paper-page" data-page="${n - 1}" ${n === 0 ? 'disabled' : ''}>◀ Forrige</button>
+      <span>Side ${n + 1} av ${PAPER_PAGES.length}</span>
+      <button class="paper-turn" data-action="paper-page" data-page="${n + 1}" ${n === PAPER_PAGES.length - 1 ? 'disabled' : ''}>Neste ▶</button>
+    </footer>
   </article>`;
 }
 
@@ -964,7 +1021,7 @@ function modalView(s: GameState): string {
     );
   }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
-  if (modal.kind === 'paper') inner = paperView(s.papers[modal.edition]);
+  if (modal.kind === 'paper') inner = paperView(s.papers[modal.edition], modal.page);
 
   if (modal.kind === 'wholesale') inner = shopView(s);
 
@@ -1206,7 +1263,7 @@ function endDrag(cancelled = false) {
       const now = Date.now();
       const double = lastTap?.id === d.item.id && now - lastTap.at < 400;
       lastTap = double ? null : { id: d.item.id, at: now };
-      if (double && d.item.edition) modal = { kind: 'paper', edition: d.item.edition };
+      if (double && d.item.edition) modal = { kind: 'paper', edition: d.item.edition, page: 0 };
       if (double || pendingRender) render();
       return;
     }
@@ -1305,6 +1362,7 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'toggle-trash') togglePanel('trash');
   if (action === 'mail') modal = { kind: 'mail' };
+  if (action === 'paper-page' && modal?.kind === 'paper') modal = { ...modal, page: Number(el.dataset.page) };
   if (action === 'pay-bill') {
     act('/api/bill/pay', { billId: Number(el.dataset.bill) }, '✅ Regning betalt.');
     return;

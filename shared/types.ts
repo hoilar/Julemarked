@@ -96,7 +96,12 @@ export interface Paper {
   price: number; // strømpris i dag, kr/kWh
   headline: string;
   notices: string[];
-  recipe: { name: string; inputs: string[]; outputs: string[]; level: number }; // «Dagens oppskrift»
+  recipe: { name: string; inputs: string[]; outputs: string[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»
+  /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */
+  crime: {
+    thefts: { stall: string; mine: boolean; lines: string[]; value: number }[];
+    log: string;
+  };
   yesterday: {
     total: number; // alt NPC-salg i markedet i går
     best: { name: string; amount: number } | null; // boden som solgte mest

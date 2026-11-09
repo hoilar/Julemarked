@@ -1015,7 +1015,32 @@ function paperFor(market: MarketRow, player: PlayerRow, key: number, myStallId: 
       mine: myStallId === null ? null : (rows.find((r) => r.from_stall === myStallId)?.amount ?? 0),
     };
   }
-  return buildPaper(market.id, key, yesterday, player.paper_read);
+  return buildPaper(market.id, key, yesterday, player.paper_read, nightThefts(market, time, myStallId));
+}
+
+/** Det som ble stjålet fra bordene natta før en utgave (tyveriene skjer 23–06, avisa kommer 07). */
+function nightThefts(market: MarketRow, editionAt: number, myStallId: number | null): Paper['crime']['thefts'] {
+  const rows = all<{ from_stall: number; product_id: string; qty: number; amount: number }>(
+    db.prepare(
+      `SELECT from_stall, product_id, SUM(qty) AS qty, SUM(amount) AS amount FROM transactions
+       WHERE market_id = ? AND kind = 'theft' AND game_time > ? AND game_time <= ?
+       GROUP BY from_stall, product_id ORDER BY from_stall, product_id`,
+    ),
+    market.id,
+    editionAt - 12 * HOUR,
+    editionAt,
+  );
+  const perStall = new Map<number, typeof rows>();
+  for (const r of rows) perStall.set(r.from_stall, [...(perStall.get(r.from_stall) ?? []), r]);
+  return [...perStall].map(([stallId, list]) => ({
+    stall: one<StallRow>(q.stallById, stallId)?.name ?? 'En bod som ikke finnes lenger',
+    mine: stallId === myStallId,
+    lines: list.map((r) => {
+      const p = PRODUCT_BY_ID[r.product_id];
+      return `${r.qty} ${p?.emoji ?? ''} ${(p?.name ?? r.product_id).toLowerCase()}`;
+    }),
+    value: list.reduce((n, r) => n + r.amount, 0),
+  }));
 }
 
 /** Henter dagens avis fra postkassa: den legges under disken (1×2), og flagget går ned. */
@@ -1209,35 +1234,6 @@ function stealHour(market: MarketRow, t: number, stalls: StallRow[]) {
   }
 }
 
-/** Kl. 06: fortell hver bod hva som forsvant i natt, og markedet at tyvene har vært der. */
-function theftReport(market: MarketRow, t: number) {
-  const hours = (24 - THEFT_FROM + THEFT_TO) * HOUR;
-  const rows = all<{ from_stall: number; product_id: string; qty: number; amount: number }>(
-    db.prepare(
-      `SELECT from_stall, product_id, SUM(qty) AS qty, SUM(amount) AS amount FROM transactions
-       WHERE market_id = ? AND kind = 'theft' AND game_time > ? AND game_time <= ?
-       GROUP BY from_stall, product_id`,
-    ),
-    market.id,
-    t - hours,
-    t,
-  );
-  if (rows.length === 0) return;
-  const perStall = new Map<number, typeof rows>();
-  for (const r of rows) perStall.set(r.from_stall, [...(perStall.get(r.from_stall) ?? []), r]);
-  for (const [stallId, list] of perStall) {
-    const s = one<StallRow>(q.stallById, stallId);
-    if (!s) continue;
-    const what = list
-      .map((r) => `${r.qty} ${PRODUCT_BY_ID[r.product_id]?.emoji ?? ''} ${(PRODUCT_BY_ID[r.product_id]?.name ?? r.product_id).toLowerCase()}`)
-      .join(', ');
-    const value = list.reduce((n, r) => n + r.amount, 0);
-    event(market, s.owner_id, t, `🦝 Tyver var på ferde i natt! Fra bordet ditt forsvant ${what} (verdt ${value} kr). Ta varene inn før kl. ${THEFT_FROM} neste gang.`);
-  }
-  const n = perStall.size;
-  event(market, null, t, `🦝 Nattetyver har herjet på markedet. ${n} ${n === 1 ? 'bod' : 'boder'} mistet varer fra bordet.`);
-}
-
 // ---------- Tidsstyrt simulering ----------
 
 const HOUR_CURVE: Record<number, number> = {
@@ -1332,7 +1328,6 @@ function processHour(market: MarketRow, hour: number) {
   if (passed >= THEFT_FROM || passed < THEFT_TO) stealHour(market, t, stalls);
   if (parts.hour === THEFT_FROM)
     event(market, null, t, `🦝 Klokka er ${THEFT_FROM}. Varer som står ute på bordet i natt, kan bli stjålet før kl. 0${THEFT_TO}.`);
-  if (parts.hour === THEFT_TO) theftReport(market, t);
 
   if (phaseOf(parts.hour) !== 'day') return;
 
