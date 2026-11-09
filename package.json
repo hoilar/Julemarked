@@ -1,0 +1,25 @@
+{
+  "name": "julemarked",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,client -c red,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --watch --disable-warning=ExperimentalWarning server/main.ts --dev",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "node server/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "concurrently": "^9.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.0.0"
+  }
+}

@@ -1,0 +1,790 @@
+:root {
+  --bg: #f6efe4;
+  --card: #fffaf2;
+  --ink: #2b211b;
+  --muted: #7a6a5c;
+  --red: #b3262d;
+  --green: #2f6b4f;
+  --gold: #d9a441;
+  --line: #e4d6c3;
+  --shadow: 0 2px 0 rgba(60, 35, 20, 0.12);
+  color-scheme: light;
+}
+
+body.night {
+  --bg: #141a2b;
+  --card: #1e2740;
+  --ink: #f1e9dc;
+  --muted: #a7a2b5;
+  --line: #34405f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+h1, h2, h3 { margin: 0 0 0.6rem; line-height: 1.2; }
+h2 { font-size: 1.15rem; }
+
+button {
+  font: inherit;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  background: var(--red);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+button:hover { filter: brightness(1.08); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.small { padding: 0.3rem 0.6rem; font-size: 0.85rem; }
+button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+
+input, select {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--ink);
+  min-width: 0;
+}
+label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; }
+.muted { color: var(--muted); font-weight: normal; }
+.row { display: flex; gap: 0.5rem; align-items: center; }
+.stack-form { display: flex; flex-direction: column; gap: 0.8rem; }
+
+.pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 99px;
+  background: var(--gold);
+  color: #2b211b;
+  vertical-align: middle;
+}
+.pill.risky { background: #f1c4c0; color: #7b1d1d; }
+
+/* ---------- Innlogging ---------- */
+
+.join { max-width: 380px; margin: 12vh auto; padding: 0 16px; text-align: center; }
+.join h1 { font-size: 2rem; }
+.tagline { color: var(--muted); margin-top: -0.3rem; }
+.join form { display: flex; flex-direction: column; gap: 0.8rem; text-align: left; }
+
+/* ---------- Bodscenen: fyller hele vinduet ---------- */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  background: #1a1630 url('/art/bg-jm.jpg') center bottom / cover no-repeat;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.scene {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  /* Hele bildet synlig, så stort som vinduet tillater (3:2). */
+  width: min(100vw, 150dvh);
+  aspect-ratio: 3 / 2;
+  background: url('/art/bod_selger.png') center / 100% 100% no-repeat;
+  container-type: inline-size;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(20, 30, 90, 0);
+  transition: background 1.2s;
+}
+body.night .tint { background: rgba(20, 30, 90, 0.28); }
+.stage > .tint { z-index: 0; }
+/* Bodens tone skal bare treffe selve boden, ikke bakgrunnen som synes gjennom. */
+.scene > .tint {
+  -webkit-mask: url('/art/bod_selger.png') center / 100% 100% no-repeat;
+  mask: url('/art/bod_selger.png') center / 100% 100% no-repeat;
+}
+.scene { z-index: 1; }
+
+/* Søppelkassa står på bakken til venstre for boden. */
+.trash {
+  position: absolute;
+  left: 8.3%;
+  bottom: 1%;
+  width: 7.5%;
+  aspect-ratio: 802 / 1264; /* samme utsnitt som soppelkasse-tom/full.png */
+  z-index: 4;
+  display: grid;
+  place-items: end center;
+  transition: transform 0.12s;
+}
+.trash .sprite { font-size: 7cqw; line-height: 1; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.6)); }
+.trash img.sprite { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+body.dragging .trash { outline: 0.2cqw dashed rgba(255, 230, 180, 0.5); outline-offset: 0.3cqw; border-radius: 0.6cqw; }
+.trash.hot { transform: scale(1.12) rotate(-4deg); }
+body.dragging .trash.hot { outline: 0.25cqw solid #7fe39a; }
+body.dragging .trash.hot.bad { outline-color: #ff7b7b; transform: scale(1.05) rotate(3deg); }
+/* ---------- Grenuttaket (lag i full bodstørrelse) ---------- */
+.power { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.power-layer { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+body.night .power-layer { filter: brightness(0.85); }
+/* Ting som lyser (på-lampa, lyslenka) dempes ikke om natta – de gløder litt i stedet */
+.power-layer.glow { filter: drop-shadow(0 0 0.4cqw rgba(255, 210, 120, 0.55)); }
+body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120, 0.8)); }
+.power-hot {
+  position: absolute;
+  pointer-events: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0.3cqw;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+.power-hot:hover { outline: 0.15cqw solid rgba(255, 224, 138, 0.8); }
+
+/* ---------- Vareoppslag: bilde til venstre, info til høyre ---------- */
+.modal:has(.item-card) { max-width: 600px; }
+.item-card { display: grid; grid-template-columns: 200px 1fr; gap: 1.2rem; align-items: start; }
+.item-art {
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 40%, #fff7e6, #ead9bd);
+  border: 1px solid var(--line);
+}
+.item-art img { width: 100%; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 6px 6px rgba(60, 35, 20, 0.25)); }
+.item-art-emoji { font-size: 6rem; line-height: 1.2; }
+.item-size { font-size: 0.75rem; color: #7a6a5c; }
+.item-info h2 { margin-bottom: 0.5rem; }
+.item-stats { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.8rem; margin: 0 0 0.9rem; font-size: 0.9rem; }
+.item-stats dt { color: var(--muted); }
+.item-stats dd { margin: 0; font-weight: 600; }
+.price-feedback { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.85rem; color: var(--muted); min-height: 2.6em; }
+.price-feedback .loss { color: var(--red); font-weight: 700; }
+@media (max-width: 520px) {
+  .item-card { grid-template-columns: 1fr; }
+  .item-art { max-width: 180px; justify-self: center; }
+}
+
+/* ---------- Leveranser ved boden ---------- */
+.deliveries { position: absolute; left: 86.5%; bottom: 3%; width: 7cqw; height: 22cqw; z-index: 3; pointer-events: none; }
+.delivery-bag {
+  position: absolute;
+  width: 6.4cqw;
+  height: 6.4cqw;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: translate 0.12s;
+}
+.delivery-bag:hover { translate: 0 -0.4cqw; filter: drop-shadow(0 0 0.4cqw #ffe08a); }
+.delivery-bag img.sprite { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.55)); }
+.delivery-bag span.sprite { font-size: 5cqw; }
+.delivery-more, .delivery-coming {
+  position: absolute;
+  right: -1cqw;
+  bottom: -1.6cqw;
+  padding: 0.1cqw 0.5cqw;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: max(10px, 0.85cqw);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.delivery-coming { right: auto; left: 0; }
+
+/* ---------- Nettbutikkene ---------- */
+.modal { max-height: 88dvh; overflow-y: auto; }
+.modal:has(.shop-tabs) { max-width: 760px; }
+.shop-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.8rem; position: sticky; top: -1rem; z-index: 2; background: var(--card); padding: 0.4rem 0; }
+.shop-tab { background: var(--card); color: var(--brand); border: 2px solid var(--brand); box-shadow: none; font-weight: 800; }
+.shop-tab.on { background: var(--brand); color: var(--brand-ink); }
+.shop-tab.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
+.store-banner { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; border-radius: 10px; background: var(--brand); color: var(--brand-ink); margin-bottom: 0.4rem; }
+.store-banner b { font-size: 1.5rem; letter-spacing: 0.02em; }
+.store-banner span { font-style: italic; font-size: 0.85rem; opacity: 0.9; }
+.store-banner.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.6rem; }
+.shop-card { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.shop-card.incart { border-color: var(--green); box-shadow: 0 0 0 2px rgba(47, 107, 79, 0.25); }
+.shop-card.soldout { opacity: 0.45; }
+.shop-art { position: relative; display: grid; place-items: center; aspect-ratio: 1; border-radius: 8px; background: radial-gradient(circle at 50% 40%, #fff7e6, #ead9bd); }
+.shop-art img { width: 82%; height: 82%; object-fit: contain; image-rendering: pixelated; }
+.shop-emoji { font-size: 3.6rem; }
+.shop-size { position: absolute; right: 0.3rem; bottom: 0.2rem; font-size: 0.7rem; color: #7a6a5c; }
+.shop-name { font-weight: 700; line-height: 1.2; margin-top: 0.3rem; }
+.shop-sub { font-size: 0.75rem; color: var(--muted); }
+.shop-price { font-size: 1.25rem; font-weight: 900; }
+.shop-stock { font-size: 0.75rem; color: var(--muted); }
+.shop-qty { display: flex; align-items: center; justify-content: space-between; margin-top: 0.3rem; }
+.shop-qty span { font-weight: 800; min-width: 2ch; text-align: center; }
+.shop-qty button { min-width: 2.2rem; }
+.cart { margin-top: 1rem; padding: 0.8rem 1rem; border: 2px solid var(--line); border-radius: 10px; background: var(--card); }
+.cart-bar {
+  position: sticky;
+  bottom: -1rem;
+  margin: 0.8rem -1rem -1rem;
+  padding: 0.6rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-radius: 0 0 12px 12px;
+}
+.cart-bar button { background: var(--brand-ink); color: var(--brand); font-weight: 800; }
+.cart-bar small { opacity: 0.85; }
+.cart h3 { margin-top: 0; }
+.cart-lines { list-style: none; margin: 0 0 0.5rem; padding: 0; font-size: 0.9rem; max-height: 8rem; overflow-y: auto; }
+.cart-lines li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.1rem 0; }
+.ship-choice { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; margin-bottom: 0.4rem; }
+.ship-choice label { flex-direction: row; align-items: center; gap: 0.4rem; }
+.cart-total { display: flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 0.5rem; }
+.order-btn { width: 100%; background: var(--brand); color: var(--brand-ink); font-weight: 800; }
+
+/* ---------- Kjelen ---------- */
+.kettle-panel.hot { border-color: #e0753a; box-shadow: 0 1cqw 2cqw rgba(0, 0, 0, 0.6), 0 0 1.2cqw rgba(255, 120, 40, 0.35); }
+.pot-grids { display: flex; align-items: center; gap: 0.6cqw; }
+.pot-col { display: flex; flex-direction: column; gap: 0.25cqw; }
+.pot-label { color: #c9a98a; font-size: max(9px, 0.75cqw); text-transform: uppercase; letter-spacing: 0.08em; }
+.pot-arrow { color: #f5d9b0; font-size: 1.6cqw; padding-top: 1cqw; }
+.pot-controls { display: flex; gap: 0.35cqw; align-items: center; }
+.pot-controls button {
+  min-width: 2.2cqw;
+  padding: 0.25cqw 0.5cqw;
+  font-size: max(11px, 0.95cqw);
+  font-weight: 800;
+  background: #3a3a3f;
+  color: #cfcfcf;
+  border: 1px solid #55555c;
+  box-shadow: inset 0 -0.15cqw 0 rgba(0, 0, 0, 0.4);
+}
+.pot-controls .pot-power { background: #7a1d1d; color: #ffd0c8; }
+.pot-controls .pot-power.on { background: #d93a2b; color: #fff; box-shadow: 0 0 0.6cqw rgba(255, 90, 60, 0.7); }
+.pot-controls .pot-level.on { background: #e8dc9a; color: #3b2a10; box-shadow: 0 0 0.5cqw rgba(255, 230, 140, 0.6); }
+.pot-status { color: #f5d9b0; font-size: max(10px, 0.8cqw); }
+.citem.kettle-item { align-items: flex-end; }
+.citem.kettle-item.open img { filter: drop-shadow(0 0 0.3cqw #ffe08a); }
+
+/* ---------- Postkassa og avisa ---------- */
+.mailbox-layer { z-index: 0; }
+.mailbox-hot {
+  position: absolute;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5cqw;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+.mailbox-hot:hover { outline: 0.15cqw solid rgba(255, 224, 138, 0.8); }
+.mailbox-hot.new::after {
+  content: '📰';
+  position: absolute;
+  top: -1.6cqw;
+  left: 50%;
+  translate: -50% 0;
+  font-size: 1.6cqw;
+  animation: bob 1.4s ease-in-out infinite;
+}
+/* Gamle aviser gulner litt */
+.gitem.paper-item.old .sprite { filter: sepia(0.6) brightness(0.9); }
+
+.modal.paper-modal { background: #f3ecdc; color: #1d1a16; max-width: 640px; }
+.modal.paper-modal .close { color: #1d1a16; }
+.paper { font-family: Georgia, 'Times New Roman', serif; }
+.paper-mast { border-bottom: 3px double #1d1a16; padding-bottom: 0.4rem; margin-bottom: 0.8rem; text-align: center; }
+.paper-name { font-size: clamp(1.6rem, 6vw, 2.6rem); font-weight: 900; letter-spacing: 0.04em; line-height: 1; }
+.paper-meta { display: flex; justify-content: space-between; font-size: 0.75rem; font-style: italic; margin-top: 0.35rem; color: #4a4339; }
+.paper-headline { font-size: clamp(1.3rem, 4.5vw, 1.9rem); line-height: 1.1; margin: 0 0 0.9rem; text-transform: none; }
+.paper-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-bottom: 1px solid #b8ad97; padding-bottom: 0.8rem; margin-bottom: 0.8rem; }
+@media (max-width: 520px) { .paper-cols { grid-template-columns: 1fr; } }
+.paper-cols p { margin: 0.3rem 0; font-size: 0.9rem; }
+.paper-kicker { font-family: system-ui, sans-serif; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #8b1f25; margin-bottom: 0.2rem; }
+.paper-power { background: #e6dcc6; padding: 0.6rem 0.7rem; border-left: 4px solid #6b8f5a; }
+.paper-power.hoy { border-left-color: #d9a441; }
+.paper-power.rekord { border-left-color: #b3262d; background: #f1d6cf; }
+.paper-price { font-size: 2rem; font-weight: 900; line-height: 1.1; }
+.paper-price small { font-size: 0.9rem; font-weight: 600; }
+.paper-recipe { border: 1px dashed #8b7d63; padding: 0.5rem 0.7rem; margin-bottom: 0.8rem; background: #efe6d1; }
+.paper-recipe p { margin: 0.25rem 0; font-size: 0.9rem; }
+.paper-small { font-size: 0.72rem !important; font-style: italic; color: #6a604f; }
+.paper-notices { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
+.paper-notices li { margin: 0.25rem 0; }
+
+/* ---------- NPC-kunder bak disken ---------- */
+/* Feltet slutter ved bakkanten av bordplata, så bordet «skjuler» resten av kroppen. */
+.customers {
+  position: absolute;
+  left: 20.5%;
+  width: 59%;
+  top: 20%;
+  height: 46%; /* ned til y ≈ 676 px: over den 5 px mørke kanten på bordplata */
+  overflow: hidden;
+  pointer-events: none;
+}
+.customer {
+  position: absolute;
+  bottom: -1.2cqw; /* brystet forsvinner bak bordet, skuldrene synes */
+  width: 13cqw;
+  aspect-ratio: 1;
+  transition: transform 0.6s ease-in, opacity 0.6s;
+}
+.customer.enter { animation: rise 0.7s ease-out; }
+.customer.leave { transform: translateY(105%); }
+@keyframes rise { from { transform: translateY(105%); } to { transform: translateY(0); } }
+.customer .bob { width: 100%; height: 100%; animation: bob var(--bob, 1.8s) ease-in-out var(--delay, 0s) infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.45cqw); } }
+.customer[data-mood='sjokk'] .bob { animation: shock 0.35s ease-in-out infinite; }
+@keyframes shock { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-0.25cqw); } 75% { transform: translateX(0.25cqw); } }
+.customer img {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0.3cqw 0.4cqw rgba(0, 0, 0, 0.45));
+}
+body.night .customers { filter: brightness(0.8) saturate(0.9); }
+/* Snakkeboble med varen kunden vil ha */
+.customer .want {
+  position: absolute;
+  top: 4%;
+  right: 2%;
+  display: grid;
+  place-items: center;
+  width: 3.2cqw;
+  height: 3.2cqw;
+  border-radius: 50%;
+  background: #fff7e6;
+  border: 0.15cqw solid #c9a46a;
+  font-size: 1.8cqw;
+  line-height: 1;
+  box-shadow: 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.35);
+}
+.customer .want img.icon { width: 80%; height: 80%; object-fit: contain; image-rendering: pixelated; }
+.customer[data-mood='sjokk'] .want { background: #ffd9d4; border-color: #d9534f; }
+/* Betalt! */
+.customer .paid {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% 0;
+  z-index: 2;
+  padding: 0.15cqw 0.6cqw;
+  border-radius: 99px;
+  background: #2f6b4f;
+  color: #fff;
+  font-weight: 800;
+  font-size: max(10px, 1cqw);
+  white-space: nowrap;
+  animation: paid 1.8s ease-out forwards;
+}
+@keyframes paid { from { transform: translateY(0); opacity: 1; } 70% { opacity: 1; } to { transform: translateY(-3cqw); opacity: 0; } }
+
+.credits { margin-top: 2rem; font-size: 0.75rem; color: var(--muted); }
+
+.trash { cursor: pointer; }
+.trash.open { outline: 0.2cqw solid #ffe08a; outline-offset: 0.3cqw; border-radius: 0.6cqw; }
+.trash-panel { background: #26302a; border-color: #5d7a63; }
+.trash-note { color: #c9d8c4; font-size: max(10px, 0.8cqw); text-align: center; }
+.trash.full .sprite { animation: stink 1.6s ease-in-out infinite; }
+@keyframes stink { 0%, 100% { rotate: 0deg; } 50% { rotate: -3deg; } }
+
+/* Stående mobil: zoom inn så boden fyller bredden (de svarte kantene beskjæres). */
+@media (max-aspect-ratio: 1/1) {
+  .scene { width: 135vw; }
+}
+
+/* HUD og ticker ligger i vinduets hjørner, utenfor selve bildet. */
+.hud {
+  position: absolute;
+  top: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #fff;
+  font-size: clamp(12px, 1.2vw, 17px);
+  text-shadow: 0 1px 2px #000;
+}
+.hud-left { left: 16px; flex-direction: column; align-items: flex-start; gap: 2px; }
+.hud-left #clock { font-weight: 700; font-variant-numeric: tabular-nums; }
+.hud-left .money { font-weight: 700; color: #ffe08a; }
+.hud-right { right: 16px; }
+.hud button { font-size: inherit; padding: 0.5em 0.8em; background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.25); }
+.hud button:hover { background: rgba(179, 38, 45, 0.9); }
+
+/* Navnet er brent inn i skiltbrettet i bildet (x 667–867, y 244–298). */
+.sign {
+  position: absolute;
+  left: 43.4%;
+  top: 23.8%;
+  width: 13%;
+  height: 5.3%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 0 0.6cqw;
+  color: #4a2410;
+  font-weight: 800;
+  font-size: max(11px, 1.45cqw);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0.08cqw 0 rgba(255, 220, 160, 0.55);
+}
+
+/* ---------- Bordet: rutenett 24×4 på bordplata ---------- */
+.counter-layer { position: absolute; inset: 0; pointer-events: none; }
+.table-grid {
+  position: absolute;
+  background-image:
+    linear-gradient(to right, rgba(255, 230, 180, 0.13) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 230, 180, 0.13) 1px, transparent 1px);
+  background-size: calc(100% / 24) calc(100% / 4);
+  transition: background-color 0.15s;
+}
+body.dragging .table-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 230, 180, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 230, 180, 0.35) 1px, transparent 1px);
+}
+
+.citem {
+  position: absolute;
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  touch-action: none;
+}
+.scene.own .citem { cursor: grab; }
+.scene.visit .citem { cursor: pointer; }
+.citem .sprite {
+  font-size: calc(var(--sp, 1) * 2.3cqw);
+  line-height: 1;
+  transform: scale(var(--scale, 1));
+  transform-origin: bottom center;
+  filter: drop-shadow(0 0.3cqw 0.2cqw rgba(0, 0, 0, 0.55));
+  transition: translate 0.12s;
+}
+.citem:hover .sprite { translate: 0 -0.25cqw; }
+.citem .tag {
+  position: absolute;
+  bottom: -0.5cqw;
+  left: 60%;
+  z-index: 1;
+  background: #fff7e6;
+  color: #8b1f25;
+  font-weight: 800;
+  font-size: max(9px, 0.8cqw);
+  padding: 0.05cqw 0.35cqw;
+  border-radius: 0.3cqw;
+  border: 1px solid #c9a46a;
+  transform: rotate(-6deg);
+  white-space: nowrap;
+}
+.lifted { opacity: 0.25; }
+
+/* ---------- Rutenett under disken og i esker ---------- */
+.grid {
+  position: absolute;
+  border-radius: 0.4cqw;
+  background-color: rgba(28, 10, 6, 0.82);
+  background-image:
+    linear-gradient(to right, rgba(255, 220, 170, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 220, 170, 0.1) 1px, transparent 1px);
+  background-size: calc(100% / var(--cols)) calc(100% / var(--rows));
+}
+.storage {
+  z-index: 4;
+  background-color: rgba(28, 10, 6, 0.55); /* det røde forhenget skimtes bak */
+  box-shadow: inset 0 0.5cqw 1cqw rgba(0, 0, 0, 0.6), 0 0 0 0.25cqw #6b4224;
+}
+.storage-label {
+  position: absolute;
+  bottom: 100%;
+  left: 0.5cqw;
+  margin-bottom: 0.25cqw;
+  padding: 0.1cqw 0.6cqw;
+  border-radius: 0.3cqw 0.3cqw 0 0;
+  background: #6b4224;
+  color: #f5d9b0;
+  font-size: max(9px, 0.8cqw);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.empty-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-size: max(11px, 1cqw);
+}
+
+.gitem {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  cursor: grab;
+}
+.gitem::before {
+  content: '';
+  position: absolute;
+  inset: 0.12cqw;
+  border-radius: 0.25cqw;
+  background: rgba(255, 245, 225, 0.1);
+  border: 1px solid rgba(255, 230, 180, 0.22);
+}
+.gitem:hover::before { background: rgba(255, 245, 225, 0.2); }
+.gitem .sprite {
+  position: relative;
+  font-size: calc(var(--min, 1) * 1.9cqw);
+  line-height: 1;
+  filter: drop-shadow(0 0.15cqw 0.15cqw rgba(0, 0, 0, 0.5));
+}
+/* Esker ser ut som esker */
+.gitem.box::before {
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(0, 0, 0, 0.15) 46% 54%, transparent 54%),
+    linear-gradient(#c79a62, #9c6b3c);
+  border: 1px solid #5d3b20;
+  box-shadow: inset 0 0 0 0.15cqw rgba(255, 230, 190, 0.25);
+}
+.gitem.box.open::before { outline: 0.2cqw solid #ffe08a; }
+
+/* Gjenstander med eget bilde: bildet fyller ruta, uten kasse-bakgrunn. */
+.gitem.has-img::before { background: none; border: none; box-shadow: none; }
+.gitem.box.has-img.open::before { outline-offset: -0.1cqw; border-radius: 0.4cqw; }
+img.sprite {
+  position: relative;
+  display: block;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
+}
+.gitem.box.has-img .sprite { opacity: 1; font-size: inherit; }
+.citem img.sprite { width: calc(var(--sp, 1) * 2.3cqw); height: auto; }
+img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.3em; image-rendering: pixelated; }
+.gitem.box .sprite { font-size: 2.6cqw; opacity: 0.85; }
+.gitem.box .fill {
+  position: absolute;
+  right: 0.4cqw;
+  bottom: 0.25cqw;
+  color: #fff;
+  font-weight: 800;
+  font-size: max(9px, 0.85cqw);
+  text-shadow: 0 1px 2px #000;
+}
+
+/* Åpne esker/poser: egne vinduer som kan dras i tittellinjen (plass settes i main.ts) */
+.box-panel {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqw;
+  padding: 0.6cqw;
+  border-radius: 0.6cqw;
+  background: #3b2414;
+  border: 0.2cqw solid #8a5a35;
+  box-shadow: 0 1cqw 2cqw rgba(0, 0, 0, 0.6);
+}
+.box-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6cqw; color: #f5d9b0; font-size: max(11px, 0.95cqw); font-weight: 700; cursor: grab; touch-action: none; }
+.box-head button { color: #f5d9b0; border-color: rgba(255, 230, 180, 0.3); padding: 0.1em 0.5em; cursor: pointer; }
+.box-panel.moving { box-shadow: 0 1.6cqw 3cqw rgba(0, 0, 0, 0.7); }
+.box-panel.moving .box-head { cursor: grabbing; }
+.box-grid { position: relative; }
+.unpack { display: flex; gap: 0.35cqw; flex-wrap: wrap; }
+.unpack button { font-size: max(10px, 0.8cqw); padding: 0.2cqw 0.6cqw; }
+.unpack button.ghost { color: #f5d9b0; border-color: rgba(255, 230, 180, 0.35); }
+
+/* Forhåndsvisning av hvor en gjenstand havner */
+.drop-preview {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: 0.2cqw;
+}
+.drop-preview.ok { background: rgba(120, 220, 140, 0.35); outline: 0.15cqw solid #7fe39a; }
+.drop-preview.bad { background: rgba(230, 80, 80, 0.35); outline: 0.15cqw solid #ff7b7b; }
+
+.visitor-info {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 80%;
+  z-index: 4;
+  padding: 1cqw;
+  border-radius: 0.6cqw;
+  background: rgba(30, 6, 8, 0.6);
+  color: #f5d9b0;
+  text-align: center;
+  font-size: max(12px, 1.2cqw);
+}
+.visitor-info .muted { color: #c9a98a; }
+
+.ticker {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 10;
+  max-width: calc(100% - 32px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #f5d9b0;
+  font-size: clamp(11px, 1vw, 15px);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+/* Klonen som følger pekeren (ligger i scenen, så cqw-enhetene stemmer) */
+.ghost-item {
+  position: absolute !important;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 1cqw 0.8cqw rgba(0, 0, 0, 0.6));
+}
+
+.auto-row { margin-top: 0.8rem; flex-wrap: wrap; }
+.modal h3 { margin-top: 1.2rem; font-size: 1rem; }
+
+body.dragging, body.dragging * { cursor: grabbing !important; }
+
+/* ---------- Dialoger ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 85dvh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.modal .close { position: absolute; top: 0.6rem; right: 0.6rem; }
+
+.wholesale { display: flex; flex-direction: column; }
+.wholesale-row {
+  display: grid;
+  grid-template-columns: 1fr 4.2rem auto;
+  gap: 0.2rem 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.wholesale-row .ws-name { font-weight: 600; }
+.wholesale-row .muted { grid-column: 1; grid-row: 2; font-size: 0.8rem; }
+.wholesale-row input { grid-row: 1 / 3; grid-column: 2; }
+.wholesale-row button { grid-row: 1 / 3; grid-column: 3; }
+
+.events { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+.events li { padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
+.events li.private { color: var(--green); }
+body.night .events li.private { color: #9fd3b4; }
+.events time { color: var(--muted); font-size: 0.75rem; margin-right: 0.3rem; }
+
+/* ---------- Markedskartet ---------- */
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 16px;
+  background: var(--green);
+  color: #fff;
+}
+body.night .top { background: #0c1020; }
+.top #clock { margin-left: 0.5rem; font-variant-numeric: tabular-nums; }
+.stats { display: flex; gap: 1rem; align-items: center; }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.2fr) minmax(280px, 1fr);
+  gap: 1rem;
+  padding: 1rem 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: start;
+}
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+.panel .events { max-height: 60dvh; overflow-y: auto; }
+
+.street { margin-bottom: 0.8rem; }
+.street-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.3rem; }
+.stalls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-height: 74px;
+  padding: 0.4rem 0.25rem;
+  font-size: 0.8rem;
+  text-align: center;
+  background: var(--card);
+  color: var(--ink);
+  border: 2px dashed var(--line);
+  box-shadow: none;
+}
+.slot.taken { border: 2px solid #c08a5a; background: linear-gradient(var(--red) 0 10px, var(--card) 10px); padding-top: 0.8rem; }
+.slot.mine { border-color: var(--gold); outline: 2px solid var(--gold); }
+.slot-no { font-size: 0.7rem; color: var(--muted); }
+.slot-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
+
+/* Toast */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translate(-50%, 120px);
+  z-index: 200;
+  background: var(--green);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: transform 0.25s;
+  max-width: calc(100% - 32px);
+}
+#toast.show { transform: translate(-50%, 0); }
+#toast.error { background: var(--red); }
