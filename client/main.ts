@@ -938,7 +938,7 @@ function carCell(s: GameState, car: Item): string {
     <span class="car-cell-pct ${b && pct < 95 ? 'low' : ''}">🔋 ${b ? `${pct} %` : 'Tom'}</span></div>`;
 }
 
-/** Bilbildene er 384×288. Åpningen i bagasjerommet (målt på de åpne bildene), der rutenettet tegnes. */
+/** Åpningen i bagasjerommet (der rutenettet tegnes), målt i 384×288-skala. Bildene er 1152×864 (3×), samme beskjæring. */
 const CAR_ART = { w: 384, h: 288 };
 const TRUNK_HOLE: Record<string, { x: number; y: number; w: number; h: number }> = {
   bil_tennis: { x: 128, y: 142, w: 128, h: 58 },
@@ -2117,18 +2117,21 @@ function itemView(s: GameState, it: Item): string {
       </div><p class="muted">${it.note.kind === 'code' ? 'Fire siffer på en lapp. Hvem vet hva de låser opp.' : 'Et notat skrevet med penn.'} Kast den i søpla hvis du vil bli kvitt den – men husk at søpla er åpen for alle.</p>`;
   }
   if (it.typeId === IMPRINT && it.key) {
-    const can = hasTool(s, KEY_MACHINE) && hasTool(s, BLANK_KEY);
+    const can = s.me.items.some((i) => i.typeId === KEY_MACHINE && !i.keyJob && !isTrashed(s.me.items, i)) && hasTool(s, BLANK_KEY);
     return itemCard(t, `<h2>🧼 Såpeavtrykk</h2><p>Et skarpt avtrykk av nøkkelen til «${esc(it.key.stallName)}», trykket ned i et såpestykke.</p>
-      <p class="muted">Kan bare brukes én gang. En nøkkelmaskin og en blank nøkkel gjør det om til en kopinøkkel.</p>
-      <div class="row auto-row"><button data-action="copy-key" data-item="${it.id}" ${can ? '' : 'disabled title="Du trenger nøkkelmaskin og en blank nøkkel"'}>🛠️ Lag nøkkel</button></div>`);
+      <p class="muted">Kan bare brukes én gang. Legg det i nøkkelmaskinen sammen med en blank nøkkel – en time senere har du en kopinøkkel.</p>
+      <div class="row auto-row"><button data-action="copy-key" data-item="${it.id}" ${can ? '' : 'disabled title="Du trenger en ledig nøkkelmaskin og en blank nøkkel"'}>🛠️ Legg i nøkkelmaskinen</button></div>`);
   }
   if (it.typeId === COPY_KEY && it.key)
     return itemCard(t, `<h2>🔑 Kopinøkkel</h2><p>Passer i hengelåsen til «${esc(it.key.stallName)}».</p>
       <p class="muted">Når boden er stengt, kan du låse deg inn og snoke bak disken. Eieren vet ingenting – med mindre noen finner sporet.</p>`);
+  if (it.typeId === KEY_MACHINE && it.keyJob)
+    return itemCard(t, `<h2>${esc(t.name)}</h2><p>🛠️ Filer en kopinøkkel til «${esc(it.keyJob.stallName)}».</p>
+      <p class="muted">Ferdig kl. ${hhmm(it.keyJob.until)}. Kopinøkkelen legges under disken.</p>`);
   if (it.typeId === KEY_MACHINE) {
     const imprints = s.me.items.filter((i) => i.typeId === IMPRINT && i.key && !isTrashed(s.me.items, i));
     const list = imprints.length
-      ? imprints.map((i) => `<button data-action="copy-key" data-item="${i.id}" ${hasTool(s, BLANK_KEY) ? '' : 'disabled title="Du trenger en blank nøkkel"'}>🔑 Kopier nøkkelen til «${esc(i.key!.stallName)}»</button>`).join('')
+      ? imprints.map((i) => `<button data-action="copy-key" data-item="${i.id}" ${hasTool(s, BLANK_KEY) ? '' : 'disabled title="Du trenger en blank nøkkel"'}>🧼 Legg i avtrykket til «${esc(i.key!.stallName)}» (1 time)</button>`).join('')
       : '<p class="muted">Du har ingen såpeavtrykk.</p>';
     return itemCard(t, `<h2>${esc(t.name)}</h2><p>${esc((t as { blurb?: string }).blurb ?? '')}</p><div class="plug-choices">${list}</div>`);
   }
@@ -2772,7 +2775,7 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'copy-key') {
-    void act('/api/key/copy', { itemId: Number(el.dataset.item) }, '🔑 Kopinøkkelen er klar.').then((ok) => {
+    void act('/api/key/copy', { itemId: Number(el.dataset.item) }, '🛠️ Nøkkelmaskinen er i gang – kopinøkkelen er ferdig om en time.').then((ok) => {
       if (ok) modal = null;
       render();
     });

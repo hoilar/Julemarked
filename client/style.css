@@ -1365,7 +1365,7 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
   color: #fff;
 }
 .car .sprite { font-size: 8cqw; line-height: 1; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.6)); }
-.car img.sprite { width: 100%; object-fit: contain; image-rendering: pixelated; }
+.car img.sprite { width: 100%; object-fit: contain; image-rendering: auto; } /* høyoppløst bilde som skaleres ned: mykt, ikke hakkete */
 .car small, .car.away small { font-size: 0.75cqw; background: rgba(20, 16, 40, 0.75); padding: 0.1cqw 0.4cqw; border-radius: 0.4cqw; white-space: nowrap; }
 .car small { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); pointer-events: auto; }
 .car-hit { position: absolute; left: 24%; right: 24%; bottom: 4%; height: 62%; pointer-events: auto; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }

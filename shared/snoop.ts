@@ -27,3 +27,4 @@ export const IMPRINT = 'sapeavtrykk';
 export const BLANK_KEY = 'blank_nokkel';
 export const KEY_MACHINE = 'nokkelmaskin';
 export const COPY_KEY = 'kopinokkel';
+export const KEY_COPY_HOURS = 1; // nøkkelmaskinen bruker en time på en kopi

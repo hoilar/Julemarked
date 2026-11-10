@@ -157,6 +157,7 @@ import {
   COPY_KEY,
   IMPRINT,
   KEY_MACHINE,
+  KEY_COPY_HOURS,
   OWN_TRACE_COMP,
   POLICE,
   SNOOP_BAN_HOURS,
@@ -409,6 +410,10 @@ function itemsOf(stallId: number): Item[] {
       item.wanted = { seed: st.seed, alias: String(st.alias ?? ''), edition: r.edition };
     if (r.type_id === NEWSPAPER.id && st.cut) item.cut = true;
     if (isSafe(r.type_id)) item.safe = { locked: st.locked !== false };
+    if (r.type_id === KEY_MACHINE && st.job && typeof (st.job as { until?: unknown }).until === 'number') {
+      const job = st.job as { stallName: string; until: number };
+      item.keyJob = { stallName: String(job.stallName ?? ''), until: job.until };
+    }
     if ((r.type_id === IMPRINT || r.type_id === COPY_KEY) && typeof st.stallId === 'number')
       item.key = { stallId: st.stallId, stallName: String(st.stallName ?? '') };
     if ((r.type_id === CODE_NOTE || r.type_id === TEXT_NOTE) && typeof st.text === 'string')
@@ -1099,7 +1104,15 @@ function snoopCaught(market: MarketRow, player: PlayerRow, mine: StallRow, other
   const { fine } = punishSnooper(market, mine, t, value);
   snoops.delete(player.id);
   snoopBans.set(`${player.id}:${other.id}`, t + SNOOP_BAN_HOURS * HOUR);
-  const text = `🫐 ${POLICE.name} tok deg mens du ${doing} hos «${other.name}». Det du hadde tatt, er levert tilbake. Bot ${fine} kr og omdømme −${SNOOP_REP_HIT}.`;
+  // Låste du deg inn i en stengt bod, tar de kopinøkkelen(e) til den boden.
+  let keyNote = '';
+  if (other.sign === 'closed') {
+    const mineItems = itemsOf(mine.id);
+    const keys = mineItems.filter((i) => i.typeId === COPY_KEY && i.key?.stallId === other.id);
+    for (const k of keys) q.deleteItem.run(k.id);
+    if (keys.length) keyNote = ` De tok også kopinøkkelen${keys.length > 1 ? 'e' : ''}.`;
+  }
+  const text = `🫐 ${POLICE.name} tok deg mens du ${doing} hos «${other.name}». Det du hadde tatt, er levert tilbake. Bot ${fine} kr og omdømme −${SNOOP_REP_HIT}.${keyNote}`;
   event(market, player.id, t, text);
   event(market, other.owner_id, t, `🫐 ${POLICE.name} tok noen som snoket bak disken din. Det de hadde tatt, ligger under disken igjen.`);
   event(market, null, t, `🫐 ${POLICE.name} tok «${mine.name}» i å snoke bak disken hos «${other.name}».`);
@@ -1264,18 +1277,41 @@ export function snoopEnd(player: PlayerRow) {
 export function copyKey(player: PlayerRow, imprintId: number) {
   const market = marketOf(player);
   const mine = myStall(player);
-  tx(() => {
+  const t = nowFor(market);
+  return tx(() => {
     const items = itemsOf(mine.id);
-    if (!holds(items, KEY_MACHINE)) throw new GameError('Du har ingen nøkkelmaskin.');
+    const machines = items.filter((i) => i.typeId === KEY_MACHINE && !isTrashed(items, i) && !isUndelivered(items, i));
+    if (!machines.length) throw new GameError('Du har ingen nøkkelmaskin.');
+    const machine = machines.find((m) => !m.keyJob);
+    if (!machine) throw new GameError('Nøkkelmaskinen holder allerede på med en kopi.');
     const imprint = items.find((i) => i.id === imprintId && i.typeId === IMPRINT && !isTrashed(items, i));
     if (!imprint?.key) throw new GameError('Fant ikke avtrykket.');
     const blank = holds(items, BLANK_KEY);
     if (!blank) throw new GameError('Du trenger en blank nøkkel. Fyren bak containeren har sånne.');
+    // Såpeavtrykket og nøkkelemnet går inn i maskinen; kopien er ferdig om en time.
     q.deleteItem.run(blank.id);
-    q.setState.run(JSON.stringify(imprint.key), imprint.id);
-    db.prepare('UPDATE items SET type_id = ? WHERE id = ?').run(COPY_KEY, imprint.id);
-    event(market, player.id, nowFor(market), `🔑 Nøkkelmaskinen surret og filte. Du har en kopinøkkel til «${imprint.key.stallName}».`);
+    q.deleteItem.run(imprint.id);
+    const until = t + KEY_COPY_HOURS * HOUR;
+    saveState(machine.id, { job: { ...imprint.key, until } });
+    event(market, player.id, t, `🛠️ Såpeavtrykket og en blank nøkkel er i nøkkelmaskinen. Kopinøkkelen til «${imprint.key.stallName}» er ferdig kl. ${formatClock(osloParts(until)).replace(/^.* kl\. /, '')}.`);
+    return { until };
   });
+}
+
+/** Ferdige kopier i nøkkelmaskinene: kopinøkkelen legges under disken (venter hvis det ikke er plass). */
+function finishKeyJobs(market: MarketRow, s: StallRow, t: number) {
+  const items = itemsOf(s.id);
+  for (const m of items.filter((i) => i.typeId === KEY_MACHINE && i.keyJob && i.keyJob.until <= t)) {
+    const st = rawState(m.id) as { job?: { stallId: number; stallName: string } };
+    if (!st.job) continue;
+    const spot = findStorageSpot(items, COPY_KEY);
+    if (!spot) continue;
+    const res = q.insertItem.run(s.id, COPY_KEY, spot.place, spot.boxId, spot.x, spot.y, null);
+    q.setState.run(JSON.stringify({ stallId: st.job.stallId, stallName: st.job.stallName }), Number(res.lastInsertRowid));
+    saveState(m.id, {});
+    items.push({ id: Number(res.lastInsertRowid), typeId: COPY_KEY, ...spot, w: 1, h: 1 });
+    event(market, s.owner_id, m.keyJob!.until, `🔑 Nøkkelmaskinen er ferdig: kopinøkkelen til «${st.job.stallName}» ligger under disken.`);
+  }
 }
 
 /**
@@ -1321,6 +1357,7 @@ export function moveItem(player: PlayerRow, itemId: number, place: Place, boxId:
   const item = items.find((i) => i.id === itemId);
   if (!item) throw new GameError('Fant ikke gjenstanden.');
   const target = items.find((b) => b.id === boxId);
+  if (item.keyJob && place === 'trash') throw new GameError('Nøkkelmaskinen holder på med en kopi. Vent til den er ferdig.');
   if (carOf(items, item) || (place === 'box' && target && (isCar(target.typeId) || carOf(items, target)))) notAway(stall, nowFor(marketOf(player)));
   if (isUndelivered(items, item)) throw new GameError('Posen står ved boden. Trykk på den for å ta den inn.');
   const spot: Spot = { place, boxId: NESTED.has(place) ? boxId : null, x: int(x, 'plass'), y: int(y, 'plass') };
@@ -1337,6 +1374,7 @@ export function discardItem(player: PlayerRow, itemId: number): string {
   if (!item) throw new GameError('Fant ikke gjenstanden.');
   if (isUndelivered(items, item)) throw new GameError('Posen står ved boden. Trykk på den for å ta den inn.');
   if (isCar(item.typeId)) throw new GameError('Bilen kaster du ikke. Vil du ha en annen, bytt den inn i Bilbutikken.');
+  if (item.keyJob) throw new GameError('Nøkkelmaskinen holder på med en kopi. Vent til den er ferdig.');
   if (items.some((i) => i.place === 'box' && i.boxId === item.id)) throw new GameError(`Tøm ${ITEM_TYPES[item.typeId].name} før du kaster den.`);
   if (item.place === 'trash') throw new GameError('Den ligger allerede i søpla.');
   if (item.typeId === PHONE) throw new GameError('Telefonen kaster du ikke – den trenger du.');
@@ -1458,6 +1496,7 @@ export function getState(player: PlayerRow): GameState {
     finishTrip(market, mine, t);
     mine = one<StallRow>(q.stallByOwner, player.id);
   }
+  if (mine) finishKeyJobs(market, mine, t);
   const items = mine ? itemsOf(mine.id) : [];
   const trip = mine ? tripOf(mine) : null;
   const costs = new Map(
@@ -3288,6 +3327,8 @@ function processHour(market: MarketRow, hour: number) {
   const t = hour * HOUR;
   const parts = osloParts(t);
   for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ? AND car_trip IS NOT NULL'), market.id)) finishTrip(market, s, t);
+  for (const s of all<StallRow>(db.prepare("SELECT DISTINCT s.* FROM stalls s JOIN items i ON i.stall_id = s.id WHERE s.market_id = ? AND i.type_id = 'nokkelmaskin' AND i.state LIKE '%\"job\"%'"), market.id))
+    finishKeyJobs(market, s, t);
   let stalls = all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ?'), market.id);
 
   // Dagens strømbrudd (om noe): én gate er uten strøm noen timer.

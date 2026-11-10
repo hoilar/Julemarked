@@ -25,7 +25,8 @@ Planlegging av nye varer, råvarer og gameplay.
 - Hver snoke-runde legger igjen **ett spor** i en tilfeldig rute under disken (forenkling: ikke oppå disken ennå). Sporet varer i 24 timer.
 - Eieren finner det med «🔍 Let etter spor» ved lageret: trykk rute for rute. Funnet gir dusør etter gata pluss 200 kr, det som ble tatt kommer tilbake (det snokeren fortsatt har), og snokeren får samme straff som over.
 - **Nøkkelen** har en fast plass ved «Under disken». Den henger der når skiltet er Åpent eller Selvbetjent, og er borte (🔒) når boden er stengt.
-- **Såpestykke** (19 kr hos Klas Olsen) gir et såpeavtrykk av nøkkelen når du snoker og nøkkelen henger der. **Nøkkelmaskinen** (900 kr, noen dager) og **blanke nøkler** (30 kr) får du hos Fyren. Maskinen gjør avtrykk + blank nøkkel om til en kopinøkkel, som kan brukes så mange ganger du vil.
+- **Såpestykke** (19 kr hos Klas Olsen) gir et såpeavtrykk av nøkkelen når du snoker og nøkkelen henger der. **Nøkkelmaskinen** (900 kr, noen dager) og **blanke nøkler** (30 kr) får du hos Fyren. Såpeavtrykket og en blank nøkkel legges i maskinen, og en time senere ligger kopinøkkelen under disken. Maskinen tar én kopi om gangen. Kopinøkkelen kan brukes så mange ganger du vil.
+- Blir du tatt av Tyttebærpolitiet i en **stengt** bod (der du låste deg inn), tar de også kopinøkkelen til den boden.
 - Safer kan ikke bæres bort eller brytes opp – bare åpnes med koden.
 
 **Valg i steg 4:** Fyren tar kontant fra kassa. Han leverer kl. 04 – etter søppelbilen kl. 03 – så varene ligger i den åpne søppelkassa hele dagen til du henter dem. Det som ikke får plass, kommer neste natt. Oppskriften på hjemmebrent står i SMS-ene hans, og oppskriften på «merkevotter» følger med første falske logo; luguberte oppskrifter står aldri i avisa. Tilsynsmannen finner luguberte varer overalt (bord, under disken, esker, søpla) unntatt i en låst safe: beslag, bot 2 × verdien og −20 omdømme.

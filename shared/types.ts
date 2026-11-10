@@ -62,6 +62,7 @@ export interface Item {
   safe?: { locked: boolean }; // bare safer (koden sendes aldri til nettleseren)
   note?: { kind: 'code' | 'text'; text: string }; // bare kodelapper og notater
   key?: { stallId: number; stallName: string }; // bare såpeavtrykk og kopinøkler: hvilken bod de passer til
+  keyJob?: { stallName: string; until: number }; // bare nøkkelmaskinen: kopien den holder på med (ferdig da)
   boxId: number | null; // eskens id når place = 'box'
   x: number;
   y: number;
