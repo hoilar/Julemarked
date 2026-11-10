@@ -167,6 +167,7 @@ export interface Electric {
   blurb: string;
   max?: number; // hvor mange man kan eie
   fusebox?: FuseboxKind; // sikringsbokser: hva slags sikringer den har
+  imageOff?: string; // bilde når boden er uten strøm (grenuttaket av eller hovedsikringen gått)
   dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
 }
 
@@ -485,6 +486,7 @@ export const FUSEBOX: Electric = {
   price: 449,
   size: { w: 2, h: 2 },
   blurb: 'En skrusikring for hvert apparat, og en måler som viser hvor mye strøm boden har brukt.',
+  imageOff: '/art/elektro/sikringsboks-av.png',
   max: 1,
   fusebox: 'screw',
 };
@@ -493,7 +495,7 @@ export const FUSEBOX_AUTO: Electric = {
   id: 'sikringsboks_automat',
   name: 'Sikringsboks med automatsikringer',
   emoji: '🎛️',
-  image: '/art/elektro/sikringsboks.png',
+  image: '/art/elektro/sikringsboks-automat.png',
   price: 1499,
   size: { w: 2, h: 2 },
   blurb: 'Går en sikring, vipper du den bare opp igjen. Ingen skrusikringer å kjøpe.',
@@ -505,7 +507,8 @@ export const FUSEBOX_SMART: Electric = {
   id: 'sikringsboks_smart',
   name: 'Smart sikringsboks',
   emoji: '🎛️',
-  image: '/art/elektro/sikringsboks.png',
+  image: '/art/elektro/sikringsboks-smart.png',
+  imageOff: '/art/elektro/sikringsboks-smart-av.png',
   price: 2499,
   size: { w: 2, h: 2 },
   blurb: 'Automatsikringer som slår seg på igjen av seg selv når strømmen er tilbake.',
@@ -518,7 +521,7 @@ export const FUSEBOX_BYPASS: Electric = {
   id: 'sikringsboks_bypass',
   name: 'Sikringsboks, forbikoblet',
   emoji: '🎛️',
-  image: '/art/elektro/sikringsboks.png',
+  image: '/art/elektro/sikringsboks-bypass.png',
   price: 700,
   size: { w: 2, h: 2 },
   blurb: 'Koblet forbi både sikringene og måleren. Gratis strøm, ingenting ryker – helt til Tilsynsmannen ser den.',
@@ -768,7 +771,7 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
   // Dokumentmappa: bare papirer. Fire faner du kan gi navn, 5×5 i hver (inner er fanene stablet: 5×20).
-  { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', price: 129, size: { w: 2, h: 3 }, inner: { cols: 5, rows: 20 }, docFolder: { tabs: 4, tabGrid: { cols: 5, rows: 5 } } },
+  { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', image: '/art/verktoy/dokumentmappe.png', price: 129, size: { w: 2, h: 3 }, inner: { cols: 5, rows: 20 }, docFolder: { tabs: 4, tabGrid: { cols: 5, rows: 5 } } },
   // Ryggsekken bæres på ryggen og rommer like mye som en pappkartong.
   { kind: 'container', id: 'ryggsekk', name: 'Ryggsekk', emoji: '🎒', image: '/art/ryggsekk.png', price: 249, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 }, backpack: true },
   // Bilene (shared/car.ts): bagasjerommet er rutenettet inni. Kjøpes i Bilbutikken, ikke hos Klas Olsen.

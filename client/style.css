@@ -1374,11 +1374,19 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .trunk { position: absolute; z-index: 1; pointer-events: auto; }
 /* Dokumentmappa */
 .doc-folder { background: #4a3a26; border-color: #8a6a40; }
-.folder-tabs { display: flex; gap: 0.2cqw; margin: 0.2cqw 0 -0.1cqw; }
-.folder-tab { flex: 1; min-width: 0; font-size: max(9px, 0.7cqw); padding: 0.15cqw 0.3cqw; border-radius: 0.4cqw 0.4cqw 0 0; background: #6b5434; color: #f5e6c8; border: 0; box-shadow: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.folder-tab.on { background: #e9dcc0; color: #3a2a14; font-weight: 700; }
+/* Bildet av den åpne mappa (640×768): fanene ligger i y 100–137 og x 34–606, kremarket i x 40–598 og y 137–732. */
+.folder-sheet { position: relative; aspect-ratio: 640 / 768; background: url('/art/verktoy/dokumentmappe-apen.png') center / 100% 100% no-repeat; image-rendering: pixelated; margin-top: 0.3cqw; }
+/* Fanene over mappa, i samme farger som de tegnede fanene (rød, blå, grønn, gul). */
+.folder-tabs { display: flex; gap: 0.2cqw; margin-top: 0.3cqw; }
+.folder-tab { flex: 1; min-width: 0; font-size: max(9px, 0.65cqw); line-height: 1.1; padding: 0.2cqw 0.25cqw; border: 0; border-radius: 0.35cqw 0.35cqw 0 0; box-shadow: none; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.6; }
+.folder-tab:nth-child(1) { background: #b8423a; }
+.folder-tab:nth-child(2) { background: #4a7bb7; }
+.folder-tab:nth-child(3) { background: #6b9a55; }
+.folder-tab:nth-child(4) { background: #d4a72c; color: #2a1d0c; }
+.folder-tab.on { opacity: 1; font-weight: 700; transform: translateY(0.1cqw); }
+.folder-tab:hover { opacity: 0.9; }
 .folder-tab small { opacity: 0.7; }
-.folder-grid { background-color: rgba(233, 220, 192, 0.92); }
+.folder-sheet .folder-grid { position: absolute; left: 6.25%; top: 20.2%; width: 87.2%; height: 72.7%; background-color: transparent; }
 /* Automatsikringer */
 .breakers { list-style: none; margin: 0.4cqw 0 0; padding: 0; display: grid; gap: 0.3cqw; }
 .breaker { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 0.5cqw; font-size: 0.85cqw; padding: 0.2cqw 0.3cqw; border-radius: 0.3cqw; background: rgba(255, 255, 255, 0.05); }

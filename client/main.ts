@@ -877,7 +877,10 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   if (i.coupon) title += `: ${i.coupon.pct} % på ${ITEM_TYPES[i.coupon.productId].name.toLowerCase()} (${STORE_BY_ID[i.coupon.store].name}, ${dayRange(i.coupon.from, i.coupon.to)})`;
   if (i.giftcard) title += `: ${kr(i.giftcard.value)}`;
   if (i.label && PRODUCT_BY_ID[i.typeId]) title += ` (${labelText(i.typeId, i.label, myStall(state!)?.name ?? '')})`;
-  return `<div class="gitem ${t.image ? 'has-img' : ''} ${i.label === 'forged' ? 'forged' : ''}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(t)}</div>`;
+  const power = myStall(state!)?.power;
+  const off = (ITEM_TYPES[i.typeId] as { imageOff?: string }).imageOff;
+  const dark = !!off && (!power?.on || power.blown);
+  return `<div class="gitem ${t.image ? 'has-img' : ''} ${i.label === 'forged' ? 'forged' : ''}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(dark ? { emoji: t.emoji, image: off } : t)}</div>`;
 }
 
 function storageView(s: GameState): string {
@@ -1055,9 +1058,10 @@ function docFolderPanel(s: GameState, box: Item, n: number): string {
   return `
   <div class="box-panel doc-folder" data-panel="${key}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
     <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(t)} ${esc(t.name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${key}" aria-label="Lukk">✕</button></div>
-    <div class="folder-tabs">${tabs}</div>
-    <div class="grid box-grid folder-grid" data-grid="box" data-box="${box.id}" data-yoff="${off}" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">${items}</div>
-    <div class="meter-sub muted">Bare papirer: dokumenter, lapper, oppskrifter, utklipp, kuponger og aviser.</div>
+    <div class="folder-tabs" style="width:${(cols * BOX_CELL) / 0.872}cqw">${tabs}</div>
+    <div class="folder-sheet" style="width:${(cols * BOX_CELL) / 0.872}cqw">
+      <div class="grid box-grid folder-grid" data-grid="box" data-box="${box.id}" data-yoff="${off}" style="--cols:${cols};--rows:${rows}">${items}</div>
+    </div>
   </div>`;
 }
 

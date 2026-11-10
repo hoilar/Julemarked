@@ -827,9 +827,36 @@ Klar til innlegging i filene under; spillfiler, kode og klikkfelt er ikke endret
 | `art/devices/alarm-pa.png` | 1536×1024 | Samme alarm, plassert identisk, med blinklyset tent rødt og en svak rød glød rundt (det er dette tyven ser). |
 | `art/devices/ikon-alarm.png` | 128×128 | Ikon til Klas Olsen og grenuttaket: alarmboksen med det røde lyset tent. |
 
-### Bestilt: sikringsbokser og dokumentmappe
+### Ferdig laget: sikringsbokser og dokumentmappe
 
-I spillet bruker de tre nye sikringsboksene i dag samme bilde som den vanlige, og dokumentmappa vises med 🗂️. Den vanlige og den smarte skal ha **to bilder hver: på og av** (av = grenuttaket er slått av eller hovedsikringen har gått), med samme beskjæring. Samme pikselstil som elektro og verktøy, uten lesbar tekst.
+**✅ Alle åtte PNG-originaler er ferdige i `GFX_assets/ChatGPT`:**
+`sikringsboks.png`, `sikringsboks-av.png`, `sikringsboks-smart.png`,
+`sikringsboks-smart-av.png`, `sikringsboks-automat.png`, `sikringsboks-bypass.png`,
+`dokumentmappe.png` og `dokumentmappe-apen.png`.
+Samme nøytrale pikselstil som elektro og verktøy, med mørke konturer, få materialtoner,
+rette hovedakser etter gridet og uten lesbar tekst, tall eller julepynt.
+
+Alle seks sikringsboksbilder er **1254×1254 px / 2×2**. Den vanlige er en gammel
+grå metallboks med åtte porselenssikringer i to rader og mekanisk måler med uleselige
+tallhjulmerker. `sikringsboks.png` er på med rød lampe; av-varianten har mørk lampe.
+Den smarte boksen er hvit med fire svarte vippebrytere, mørkt display av og grønt
+display med enkle statusblokker på. Av/på-parene har samme lerret og plassering.
+Automatboksen er ren grå med en rad åtte svarte vippebrytere. Bypassboksen har
+slitt grått kabinett, skjevt lukket deksel, tape og tykk kobberfarget ledning langs utsiden.
+Den forrige sikringsboksoriginalen er bevart som `sikringsboks-forrige.png`.
+
+Lukket dokumentmappe er **1024×1536 px / 2×3**, brun med strikk og fire tomme faner:
+rød, blå, grønn og gul fra venstre. Åpen mappe er **1280×1536 px / 5:6**, sett rett
+ovenfra, med samme fanefarger og et stort kremhvitt innerfelt med svake rutelinjer.
+Ingen navn eller innhold er tegnet inn; spillet legger dette over bakgrunnen.
+Originalen før formattilpasning er bevart som `dokumentmappe-apen-original.png`.
+
+Alle åtte er kontrollert for transparent ytterområde og hele silhuetter, samt på mørk
+bakgrunn og i nedskalert oversikt med 128 px visningsfelt på lys bakgrunn.
+Oversikter: `sikringsbokser-mappe-oversikt.jpg` og `sikringsbokser-mappe-liten.jpg`.
+Prompter fra bildegeneratoren: `sikringsbokser-mappe-prompter.json`.
+Kontrolldata: `sikringsbokser-mappe-kontroll.json`. Klar til innlegging med
+nearest-neighbor-skalering; spillfiler og kode er ikke endret i denne leveransen.
 
 | Fil i spillet | Størrelse | Motiv |
 |---|---|---|
@@ -844,7 +871,7 @@ I spillet bruker de tre nye sikringsboksene i dag samme bilde som den vanlige, o
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Bestilt: sikringsbokser og dokumentmappe» | ⏳ Bestilt (samme bilde / emoji til de er klare) |
+| Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Ferdig laget: sikringsbokser og dokumentmappe» | ✅ i bruk: `art/elektro/sikringsboks{,-av,-smart,-smart-av,-automat,-bypass}.png` (2×2, av-bildet når boden er uten strøm), `art/verktoy/dokumentmappe.png` (2×3) og `dokumentmappe-apen.png` (640×768, bakgrunn i vinduet; fanenavnene står på fargede knapper over) |
 | Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |
 | Fire kjøretøy (inkludert elektrisk varebil, lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)» | ✅ i bruk: `art/biler/bil-{tennis,toforr,highass,fuzz}{,-apen}.png` (384×288, felles beskjæring så størrelsen mellom bilene stemmer), `art/ryggsekk.png` (3×3), `art/telefon/app-bilbutikken.png` |
 | Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Ferdig laget: såpe og nøkler (snoking)» | ✅ i bruk: `art/verktoy/{sapestykke,sapeavtrykk,blank-nokkel,kopinokkel}.png` (1×1), `art/verktoy/nokkelmaskin.png` (2×2) |
