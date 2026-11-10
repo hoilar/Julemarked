@@ -9,10 +9,10 @@ Planlegging av nye varer, råvarer og gameplay.
 - Det du tar fra andres søplekasser og bak andres disk, havner i det du bærer. Uten pose eller ryggsekk får du ikke med deg noe (unntatt en tom pose, som du tar i hånda).
 - **Ryggsekken** (249 kr hos Klas Olsen) rommer 4×6, som en pappkartong.
 - **Bilen** står parkert til venstre for boden. Den er en gjenstand med bagasjerommet som rutenett. Trykk på bilen for å åpne bagasjerommet. Esker og poser kan stå der, men ikke safer.
-- **Handletur:** i nettbutikken velger du «🚗 Hent selv». Det koster bensin i stedet for frakt (ID Fuzz bruker ett fulladet batteri, som blir tomt). Skiltet snus til Stengt, og du er borte så mange minutter som bilen tar.
+- **Handletur:** i nettbutikken velger du «🚗 Hent selv». Det koster bensin i stedet for frakt. ID Fuzz har en egen batteriplass (vises når bagasjerommet er åpent); en tur bruker det et standard batteri rommer (2 kWh), så Batteri+ holder til to turer. Skiltet snus til Stengt, og du er borte så mange minutter som bilen tar.
 - Varene legges i eskene i bagasjerommet først, så i nye poser der. Er det ikke plass til alt, kan du ikke kjøre.
 - Mens du er ute, kan du ikke snu skiltet, snoke, kjøre en ny tur eller røre bagasjerommet. Når du er tilbake, ligger varene i bilen, og skiltet står fortsatt på Stengt.
-- **Bilbutikken** er en ny app på telefonen. Den gamle bilen tas i innbytte for halv pris, og bagasjerommet må være tomt.
+- **Bilbutikken** er en egen fane i nettbutikken (ved siden av Klas Olsen). Den gamle bilen tas i innbytte for halv pris, og bagasjerommet må være tomt.
 - **Bilen er privat.** Andre spillere kan ikke se den, snoke i den eller bryte seg inn i den. Tilsynsmannen kan likevel finne luguberte varer i bagasjerommet (bare en låst safe stopper ham), så bilen er ikke et sikkert gjemmested.
 - **Bensinprisen** er 16–22 kr/l. Noen perioder på tre dager er den 2,4 ganger så dyr. Prisen står i Bilbutikken og i kassa i nettbutikken.
 

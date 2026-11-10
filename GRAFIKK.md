@@ -795,7 +795,7 @@ Originalene er klare til innlegging; spillfiler og kode er ikke endret i denne l
 | `art/biler/bil-highass.png` + `bil-highass-apen.png` | ca. 4:3 | Toyota HighAss 2014: høy, bred SUV i sølvgrått, reservehjul på bakluka. I dag 🚙. |
 | `art/biler/bil-fuzz.png` + `bil-fuzz-apen.png` | ca. 4:3 | ID Fuzz: moderne elektrisk **varebil** i hvitt, høyt tak og stor loddrett bakluke, avrundede hjørner, lysstripe bak og ladeluke. Sett rett bakfra. |
 | `art/ryggsekk.png` | 3×3 | Slitt tursekk i rødt og grått med lommer og stropper. I dag 🎒. |
-| `art/telefon/app-bilbutikken.png` | 128×128 | App-ikon i samme stil som de andre: en liten bil på kremfarget ramme. I dag 🚗. |
+| `art/telefon/app-bilbutikken.png` | 128×128 | App-ikon i samme stil som de andre: en liten bil på kremfarget ramme. **Brukes ikke lenger** – Bilbutikken ble en fane i nettbutikken. |
 
 ### Ferdig laget: alarmsystem
 

@@ -3,7 +3,7 @@
 import { findFree, fits, type GridSize } from './grid.ts';
 import { CELL_GRID, FOLDER_BY_ID, PHONE, FUSE, FUSEBOX, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
-import { BACKPACK } from './car.ts';
+import { BACKPACK, CAR_BY_ID } from './car.ts';
 
 export interface Spot {
   place: Place;
@@ -31,7 +31,8 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   const t = box && ITEM_TYPES[box.typeId];
   if (place === 'box') return t?.kind === 'container' ? t.inner : null;
   if (place === 'fuse') return t?.id === FUSEBOX.id ? FUSE_GRID : null;
-  if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' ? CELL_GRID : null;
+  // Batteriplass: maskinene, og elbilen (ID Fuzz).
+  if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' || CAR_BY_ID[t?.id ?? '']?.fuel === 'batteri' ? CELL_GRID : null;
   if (t?.kind === 'charger') return place === 'pot_in' ? t.input : null;
   if (t?.kind !== 'kettle' && t?.kind !== 'folder' && t?.kind !== 'maker') return null;
   return place === 'pot_in' ? t.input : t.output;

@@ -226,6 +226,9 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .store-banner b { font-size: 1.5rem; letter-spacing: 0.02em; }
 .store-banner span { font-style: italic; font-size: 0.85rem; opacity: 0.9; }
 .store-banner.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
+.shop-tab.bil, .store-banner.bil { --brand: #2f4f6f; --brand-ink: #e8f1ff; }
+.fuel-line { margin: 0.4rem 0; }
+.fuel-line.dear b { color: #c0392b; }
 .phone-widget.license { display: grid; gap: 0.3rem; }
 .phone-widget.license.ok b { color: #2f8a3e; }
 .phone-widget.license.banned b { color: #c0392b; }
@@ -1369,6 +1372,10 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car-hit:hover { background: none; }
 .car img.sprite { display: block; }
 .trunk { position: absolute; z-index: 1; pointer-events: auto; }
+.car-cell { position: absolute; left: 73%; top: 50%; width: 6.5%; z-index: 1; pointer-events: auto; display: grid; gap: 0.2cqw; justify-items: center; }
+.car-cell .cell-grid { position: relative; width: 100%; aspect-ratio: 1; }
+.car-cell-pct { font-size: 0.7cqw; background: rgba(20, 16, 40, 0.75); padding: 0 0.3cqw; border-radius: 0.3cqw; white-space: nowrap; }
+.car-cell-pct.low { color: #ff9a7a; }
 .trunk .trunk-grid { inset: 0; border-radius: 0; background-color: rgba(10, 10, 16, 0.35); }
 .car.away { cursor: default; }
 .car-tracks { font-size: 3cqw; opacity: 0.7; }

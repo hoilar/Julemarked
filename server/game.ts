@@ -2061,10 +2061,11 @@ function planTrip(market: MarketRow, s: StallRow, items: Item[], storeId: string
   const fuel = tripFuelCost(spec, fuelPrice(market.id, currentEdition(t).key));
   let battery: Item | undefined;
   if (spec.fuel === 'batteri') {
-    battery = items
-      .filter((i) => i.typeId === CAR_BATTERY && !isTrashed(items, i) && !isUndelivered(items, i) && (i.charge ?? 0) >= capacityOf(CAR_BATTERY) * CAR_BATTERY_FULL)
-      .sort((a, b) => Number(a.place === 'cell') - Number(b.place === 'cell'))[0];
-    if (!battery) throw new GameError(`${spec.name} trenger ett fulladet batteri per tur. Lad et i ladestasjonen.`);
+    // Batteriet står i batteriplassen på bilen. En tur bruker det et standard batteri rommer (et større batteri holder til flere turer).
+    battery = items.find((i) => i.place === 'cell' && i.boxId === car.id && isBattery(i.typeId));
+    if (!battery) throw new GameError(`Sett et batteri i batteriplassen på ${spec.name} (åpne bagasjerommet).`);
+    if ((battery.charge ?? 0) < capacityOf(CAR_BATTERY) * CAR_BATTERY_FULL)
+      throw new GameError(`Batteriet i ${spec.name} har for lite strøm til en tur. Lad det i ladestasjonen.`);
   }
   const plan: CarTrip = {
     store: storeId,
@@ -2076,7 +2077,7 @@ function planTrip(market: MarketRow, s: StallRow, items: Item[], storeId: string
 }
 
 function startTrip(market: MarketRow, s: StallRow, trip: ReturnType<typeof planTrip>, t: number) {
-  if (trip.battery) saveState(trip.battery.id, { charge: 0 });
+  if (trip.battery) saveState(trip.battery.id, { charge: Math.max(0, Math.round(((trip.battery.charge ?? 0) - capacityOf(CAR_BATTERY)) * 100) / 100) });
   db.prepare("UPDATE stalls SET car_trip = ?, sign = 'closed' WHERE id = ?").run(JSON.stringify(trip.plan), s.id);
   const back = formatClock(osloParts(trip.plan.until)).replace(/^.* kl\. /, '');
   const store = STORE_BY_ID[trip.plan.store].name;

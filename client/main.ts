@@ -146,7 +146,7 @@ let modal: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: ligger bak disken (eller i hjørnet), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'bil' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' = 'home';
 let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
 let phonePos: { x: number; y: number } | null = null;
 let phoneDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
@@ -532,31 +532,8 @@ function phoneWindow(s: GameState): string {
       .join('')}</ul>
     <button class="dealer-send" data-action="dealer-send" ${cartSum > 0 && s.me.cash >= cartSum ? '' : 'disabled'}>📱 Send SMS · ${kr(cartSum)} kontant</button>
     <p class="phone-empty">Luguberte varer selger bare om natta (kl. 21–08). ${esc(INSPECTOR.name)} leter under disken – en låst safe ser han ikke inn i.</p>`;
-  // Bilbutikken: bytt bil, og dagens bensinpris.
-  const myCar = s.me.items.find((i) => i.place === 'car');
-  const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
-  const tradeIn = carSpec ? Math.round(carSpec.price * TRADE_IN) : 0;
-  const trunkSize = (id: string) => {
-    const t = ITEM_TYPES[id];
-    return t.kind === 'container' ? `${t.inner.cols}×${t.inner.rows}` : '';
-  };
-  const fuelInfo = (c: (typeof CARS)[number]) => (c.fuel === 'bensin' ? `${c.liters} l bensin per tur (${kr(tripFuelCost(c, s.me.car.fuelPrice))} i dag)` : '1 fulladet batteri per tur');
-  const bil = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('bilbutikken').replace('<img ', '<img class="title-icon" ')} Bilbutikken</b></div>
-    <div class="phone-widget fuel ${s.me.car.fuelExpensive ? 'dear' : ''}"><small>Bensin i dag</small><b>${s.me.car.fuelPrice.toFixed(2).replace('.', ',')} kr/l</b>
-      ${s.me.car.fuelExpensive ? '<small>⚠️ Dyr periode – det varer noen dager.</small>' : '<small>Prisen byttes kl. 07.</small>'}</div>
-    <div class="phone-kicker">Bilene</div>
-    <ul class="car-list">${CARS.map((c) => {
-      const mine = c.id === myCar?.typeId;
-      const cost = c.price - tradeIn;
-      return `<li class="${mine ? 'mine' : ''}"><span class="car-what"><span class="car-emoji">${sprite(ITEM_TYPES[c.id])}</span>
-          <span><b>${esc(c.name)}</b><small>${c.minutes} min borte · bagasjerom ${trunkSize(c.id)} (${esc(c.trunkNote)}) · ${fuelInfo(c)}</small><small class="muted">${esc(c.blurb)}</small></span></span>
-        ${mine ? '<span class="pill">Din bil</span>' : `<button class="small" data-action="buy-car" data-car="${c.id}" ${s.me.cash >= cost ? '' : 'disabled'} title="${tradeIn ? `${kr(c.price)} minus ${kr(tradeIn)} i innbytte` : ''}">${cost > 0 ? kr(cost) : cost < 0 ? `Få ${kr(-cost)}` : 'Bytt'}</button>`}</li>`;
-    }).join('')}</ul>
-    <p class="phone-empty">Den gamle bilen tas i innbytte for halv pris. Bagasjerommet må være tomt før du bytter.</p>`;
   const body =
-    phonePage === 'bil'
-      ? bil
-      : phonePage === 'meldinger'
+    phonePage === 'meldinger'
       ? meldinger
       : phonePage === 'kommunen'
       ? kommunen
@@ -585,7 +562,6 @@ function phoneWindow(s: GameState): string {
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
            ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length) : ''}
-           ${mine ? app('phone-page', appIcon('bilbutikken'), 'Bilbutikken', 'data-page="bil"') : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -943,13 +919,23 @@ function carView(s: GameState): string {
     const gw = cell * cols, gh = cell * rows;
     const gx = hole.x + (hole.w - gw) / 2, gy = hole.y + hole.h - gh;
     const items = itemsIn(s.me.items, 'box', car.id).map((i) => gridItemView(i, cols, rows)).join('');
-    trunk = `<div class="trunk" data-panel="${car.id}" style="left:${(gx / CAR_ART.w) * 100}%;top:${(gy / CAR_ART.h) * 100}%;width:${(gw / CAR_ART.w) * 100}%;height:${(gh / CAR_ART.h) * 100}%">
+    trunk = carCell(s, car) + `<div class="trunk" data-panel="${car.id}" style="left:${(gx / CAR_ART.w) * 100}%;top:${(gy / CAR_ART.h) * 100}%;width:${(gw / CAR_ART.w) * 100}%;height:${(gh / CAR_ART.h) * 100}%">
       <div class="grid trunk-grid" data-grid="box" data-box="${car.id}" style="--cols:${cols};--rows:${rows}">${items}</div></div>`;
   }
   return `<div class="car ${open ? 'open' : ''}">
     ${carSprite(t, open)}
     <button class="car-hit" data-action="open-car" data-item="${car.id}" aria-label="Bagasjerommet" title="${esc(spec?.name ?? 'Bilen')} – ${n ? `${n} ting i bagasjerommet` : 'tomt bagasjerom'}. Trykk for å ${open ? 'lukke' : 'åpne'}."></button>
     ${trunk}</div>`;
+}
+
+/** Batteriplassen på elbilen (ID Fuzz): ett batteri per tur. Vises når bagasjerommet er åpent. */
+function carCell(s: GameState, car: Item): string {
+  if (CAR_BY_ID[car.typeId]?.fuel !== 'batteri') return '';
+  const b = itemsIn(s.me.items, 'cell', car.id)[0];
+  const pct = b ? batteryPct(b) : 0;
+  return `<div class="car-cell" title="Batteriplass: dra et batteri hit. En tur bruker et standard batteri (2 kWh).">
+    <div class="grid cell-grid" data-grid="cell" data-box="${car.id}" style="--cols:1;--rows:1">${b ? gridItemView(b, 1, 1) : ''}</div>
+    <span class="car-cell-pct ${b && pct < 95 ? 'low' : ''}">🔋 ${b ? `${pct} %` : 'Tom'}</span></div>`;
 }
 
 /** Bilbildene er 384×288. Åpningen i bagasjerommet (målt på de åpne bildene), der rutenettet tegnes. */
@@ -1535,7 +1521,7 @@ function eventList(s: GameState): string {
 
 // ---------- Nettbutikkene ----------
 
-type ShopTab = 'kiwi' | 'rema' | 'extra' | 'klas';
+type ShopTab = 'kiwi' | 'rema' | 'extra' | 'klas' | 'bil';
 let shopTab: ShopTab = 'kiwi';
 const carts: Record<string, Record<string, number>> = {}; // butikk → vare → antall
 let shipMode: 'standard' | 'express' | 'car' = 'standard';
@@ -1561,10 +1547,42 @@ function shopView(s: GameState): string {
     ...STORES.map((st) => `<button class="shop-tab ${shopTab === st.id ? 'on' : ''}" data-action="shop-tab" data-tab="${st.id}"
         style="--brand:${st.color};--brand-ink:${st.ink}">${esc(st.name)}${Object.values(cartOf(st.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`),
     `<button class="shop-tab klas ${shopTab === 'klas' ? 'on' : ''}" data-action="shop-tab" data-tab="klas">Klas Olsen</button>`,
+    `<button class="shop-tab bil ${shopTab === 'bil' ? 'on' : ''}" data-action="shop-tab" data-tab="bil">Bilbutikken</button>`,
   ].join('');
   // Toppen (tittel, faner) står fast; bare varene scroller.
   return `<div class="shop-head"><h2>${appIcon('nettbutikk').replace('<img ', '<img class="title-icon" ')} Innkjøp</h2><nav class="shop-tabs">${tabs}</nav></div>
-    <div class="shop-body">${shopTab === 'klas' ? klasView(s) : storeView(s, shopTab)}</div>`;
+    <div class="shop-body">${shopTab === 'klas' ? klasView(s) : shopTab === 'bil' ? carShopView(s) : storeView(s, shopTab)}</div>`;
+}
+
+/** Bilbutikken: bytt bil (den gamle tas i innbytte), og dagens bensinpris. */
+function carShopView(s: GameState): string {
+  const myCar = s.me.items.find((i) => i.place === 'car');
+  const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
+  const tradeIn = carSpec ? Math.round(carSpec.price * TRADE_IN) : 0;
+  const fuelInfo = (c: (typeof CARS)[number]) =>
+    c.fuel === 'bensin' ? `${c.liters} l bensin per tur (${kr(tripFuelCost(c, s.me.car.fuelPrice))} i dag)` : '2 kWh fra batteriet per tur';
+  const cards = CARS.map((c) => {
+    const t = ITEM_TYPES[c.id];
+    const inner = t.kind === 'container' ? `${t.inner.cols}×${t.inner.rows}` : '';
+    const mine = c.id === myCar?.typeId;
+    const cost = c.price - tradeIn;
+    const buy = mine
+      ? '<span class="pill">Din bil</span>'
+      : `<button class="small" data-action="buy-car" data-car="${c.id}" ${s.me.cash >= cost ? '' : 'disabled'}>${cost > 0 ? `Kjøp for ${kr(cost)}` : cost < 0 ? `Bytt og få ${kr(-cost)}` : 'Bytt'}</button>`;
+    return klasCard({
+      name: c.name,
+      image: t.image,
+      emoji: t.emoji,
+      price: c.price,
+      sub: `${c.minutes} min borte · bagasjerom ${inner} (${esc(c.trunkNote)}) · ${fuelInfo(c)}<br><span class="muted">${esc(c.blurb)}</span>`,
+      buy,
+    });
+  });
+  return `
+    <header class="store-banner bil"><b>Bilbutikken</b><span>Brukt, men ærlig. Nesten.</span></header>
+    <p class="fuel-line ${s.me.car.fuelExpensive ? 'dear' : ''}">⛽ Bensin i dag: <b>${s.me.car.fuelPrice.toFixed(2).replace('.', ',')} kr/l</b> ${s.me.car.fuelExpensive ? '– ⚠️ dyr periode, det varer noen dager.' : '– prisen byttes kl. 07.'}</p>
+    <p class="muted">Den gamle bilen tas i innbytte for halv pris${tradeIn ? ` (${kr(tradeIn)} for ${esc(carSpec!.name)})` : ''}. Bagasjerommet må være tomt før du bytter.</p>
+    <div class="shop-grid">${cards.join('')}</div>`;
 }
 
 function storeView(s: GameState, storeId: string): string {
@@ -2352,6 +2370,9 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
   if (!inPanel) {
     for (const el of document.querySelectorAll<HTMLElement>('[data-carry-slot]'))
       if (inside(el.getBoundingClientRect(), px, py)) return { place: 'carry', boxId: null, x: Number(el.dataset.carrySlot), y: 0 };
+    // Batteriplassen på elbilen.
+    for (const el of document.querySelectorAll<HTMLElement>('.car-cell [data-grid="cell"]'))
+      if (inside(el.getBoundingClientRect(), px, py)) return { place: 'cell', boxId: Number(el.dataset.box), x: 0, y: 0 };
     if (screen.kind !== 'stall') return null;
     grids = [...document.querySelectorAll<HTMLElement>('[data-grid="storage"]')];
   }
@@ -2428,7 +2449,7 @@ function showPreview(d: Drag | null) {
       width: `${(d.item.w / grid.cols) * 100}%`,
       height: `${(d.item.h / grid.rows) * 100}%`,
     });
-    const sel = spot.place === 'box' ? `[data-grid="box"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
+    const sel = spot.place === 'box' || spot.place === 'cell' ? `[data-grid="${spot.place}"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
     document.querySelector(sel)?.appendChild(el);
   }
 }
@@ -2791,7 +2812,7 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'bil' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' ? p : 'home';
   }
   if (action === 'autogiro' && state) {
     const on = !state.me.autogiro;
