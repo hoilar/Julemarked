@@ -594,8 +594,13 @@ i spillet (id `fyll`).
 | `safran` | Lite glass med røde safrantråder. Sjelden. |
 | `alpakkagarn` | Nøste med mykt, lodent alpakkagarn i beige. Sjelden. |
 
-**Sjelden-merke:** nettbutikken viser foreløpig et gullbånd i CSS («★ Sjelden»). Et eget lite
-ikon (gullstjerne/segl, 1×1) kan lages senere hvis vi vil ha det i grafikkstilen.
+**✅ Sjelden-merke ferdig laget:** `GFX_assets/ChatGPT/sjelden-merke.png`, transparent
+**128×128 px / 1×1 rute**. Lite, rettvendt gullsegl med tagget kant og preget stjerne,
+uten tekst, bånd eller bakgrunn. Samme grove pikselstil, mørkebrune kontur og varme
+gulltoner som varene. Stor original: `sjelden-merke-original.png` (1254×1254 px).
+Skalert med nearest neighbor og kontrollert ved 128, 64 og 32 px.
+Oversikt: `sjelden-merke-oversikt.jpg`. Prompt: `sjelden-merke-prompt.json`.
+✅ I bruk i spillet: `art/sjelden-merke.png`, som et lite segl med «Sjelden» på kortene i nettbutikken.
 
 ### Bestilt: alkohol og Kommunen-appen
 

@@ -1359,7 +1359,7 @@ function storeView(s: GameState, storeId: string): string {
     return `<div class="shop-card ${it.deal ? 'deal' : ''} ${isRare(it.typeId) ? 'rare' : ''} ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
       <div class="shop-art">${art}<span class="shop-size">${t.size.w}×${t.size.h}</span>
         ${it.deal ? `<span class="deal-ribbon">TILBUD<b>−${it.deal} %</b></span>` : ''}
-        ${isRare(it.typeId) ? '<span class="rare-ribbon" title="Finnes bare noen dager, og bare noen få">★ Sjelden</span>' : ''}
+        ${isRare(it.typeId) ? '<span class="rare-ribbon" title="Sjelden: finnes bare noen dager, og bare noen få"><img src="/art/sjelden-merke.png" alt="" draggable="false">Sjelden</span>' : ''}
         ${coupon ? `<span class="coupon-flag" title="Du har en kupong: ${coupon.pct} % på denne varen">🎟️ −${coupon.pct} %</span>` : ''}</div>
       <div class="shop-name">${esc(t.name)}</div>
       <div class="shop-sub">${sub}</div>
