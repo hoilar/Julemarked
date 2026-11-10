@@ -25,7 +25,7 @@ import {
   findCarrySpot,
   carOf,
 } from '../shared/items.ts';
-import { CAR_BATTERY, CAR_BATTERY_FULL, CAR_BY_ID, START_CAR, TRADE_IN, fuelExpensive, fuelPrice, isCar, tripFuelCost } from '../shared/car.ts';
+import { DUMP, tripPlaceName, CAR_BATTERY, CAR_BATTERY_FULL, CAR_BY_ID, START_CAR, TRADE_IN, fuelExpensive, fuelPrice, isCar, tripFuelCost } from '../shared/car.ts';
 import {
   DARK_FROM,
   DEVICES,
@@ -2170,7 +2170,7 @@ function tripOf(s: StallRow): CarTrip | null {
 function notAway(s: StallRow, t: number) {
   const trip = tripOf(s);
   if (trip && trip.until > t)
-    throw new GameError(`Du er ute og handler med bilen. Tilbake kl. ${formatClock(osloParts(trip.until)).replace(/^.* kl\. /, '')}.`);
+    throw new GameError(`Du er ute med bilen. Tilbake kl. ${formatClock(osloParts(trip.until)).replace(/^.* kl\. /, '')}.`);
 }
 
 /** Bilen boden har (står alltid parkert ved boden). */
@@ -2228,16 +2228,7 @@ function planTrip(market: MarketRow, s: StallRow, items: Item[], storeId: string
     newBags.push({ typeId: bagType, ...at, taken: [{ x: 0, y: 0, w, h }] });
     goods.push({ typeId, box: { bag: newBags.length - 1 }, x: 0, y: 0 });
   }
-  // Drivstoff: bensin etter dagens pris, eller ett fulladet batteri (elbilen).
-  const fuel = tripFuelCost(spec, fuelPrice(market.id, currentEdition(t).key));
-  let battery: Item | undefined;
-  if (spec.fuel === 'batteri') {
-    // Batteriet står i batteriplassen på bilen. En tur bruker det et standard batteri rommer (et større batteri holder til flere turer).
-    battery = items.find((i) => i.place === 'cell' && i.boxId === car.id && isBattery(i.typeId));
-    if (!battery) throw new GameError(`Sett et batteri i batteriplassen på ${spec.name} (åpne bagasjerommet).`);
-    if ((battery.charge ?? 0) < capacityOf(CAR_BATTERY) * CAR_BATTERY_FULL)
-      throw new GameError(`Batteriet i ${spec.name} har for lite strøm til en tur. Lad det i ladestasjonen.`);
-  }
+  const { fuel, battery } = tripFuel(market, items, car, t);
   const plan: CarTrip = {
     store: storeId,
     until: t + spec.minutes * 60_000,
@@ -2247,12 +2238,54 @@ function planTrip(market: MarketRow, s: StallRow, items: Item[], storeId: string
   return { plan, fuel, battery, spec };
 }
 
-function startTrip(market: MarketRow, s: StallRow, trip: ReturnType<typeof planTrip>, t: number) {
+/** Drivstoff til en tur: bensin etter dagens pris, eller 2 kWh fra batteriet i batteriplassen (elbilen). */
+function tripFuel(market: MarketRow, items: Item[], car: Item, t: number): { fuel: number; battery?: Item } {
+  const spec = CAR_BY_ID[car.typeId];
+  const fuel = tripFuelCost(spec, fuelPrice(market.id, currentEdition(t).key));
+  if (spec.fuel !== 'batteri') return { fuel };
+  // Batteriet står i batteriplassen på bilen. En tur bruker det et standard batteri rommer (et større batteri holder til flere turer).
+  const battery = items.find((i) => i.place === 'cell' && i.boxId === car.id && isBattery(i.typeId));
+  if (!battery) throw new GameError(`Sett et batteri i batteriplassen på ${spec.name} (åpne bagasjerommet).`);
+  if ((battery.charge ?? 0) < capacityOf(CAR_BATTERY) * CAR_BATTERY_FULL)
+    throw new GameError(`Batteriet i ${spec.name} har for lite strøm til en tur. Lad det i ladestasjonen.`);
+  return { fuel, battery };
+}
+
+/**
+ * Kjører søpla til gjenbruksstasjonen med bilen: søppelkassa tømmes med en gang, og der er alt gratis
+ * (ingen avgift til byråkratifondet for poser). Koster en tur – bensin og tid borte, boden stengt.
+ */
+export function dumpTrash(player: PlayerRow) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    notAway(stall, t);
+    const items = itemsOf(stall.id);
+    const car = carItem(items);
+    if (!car) throw new GameError('Du har ingen bil.');
+    const spec = CAR_BY_ID[car.typeId];
+    const gone = items.filter((i) => isTrashed(items, i));
+    if (gone.length === 0) throw new GameError('Søppelkassa er tom.');
+    const { fuel, battery } = tripFuel(market, items, car, t);
+    if (stall.cash < fuel) throw new GameError(`Du har ikke råd til bensinen (${fuel} kr).`);
+    q.addCash.run(-fuel, stall.id);
+    for (const i of gone) q.deleteItem.run(i.id);
+    cleanPower(stall);
+    const plan: CarTrip = { store: DUMP.id, until: t + spec.minutes * 60_000, bags: [], goods: [] };
+    startTrip(market, stall, { plan, fuel, battery, spec }, t);
+    q.insertTx.run(market.id, t, 'wholesale', stall.id, null, DUMP.id, gone.length, fuel);
+    return { count: gone.length, fuel, back: plan.until };
+  });
+}
+
+function startTrip(market: MarketRow, s: StallRow, trip: { plan: CarTrip; fuel: number; battery?: Item; spec: (typeof CAR_BY_ID)[string] }, t: number) {
   if (trip.battery) saveState(trip.battery.id, { charge: Math.max(0, Math.round(((trip.battery.charge ?? 0) - capacityOf(CAR_BATTERY)) * 100) / 100) });
   db.prepare("UPDATE stalls SET car_trip = ?, sign = 'closed' WHERE id = ?").run(JSON.stringify(trip.plan), s.id);
   const back = formatClock(osloParts(trip.plan.until)).replace(/^.* kl\. /, '');
-  const store = STORE_BY_ID[trip.plan.store].name;
-  event(market, s.owner_id, t, `🚗 Du kjørte til ${store} med ${trip.spec.name}${trip.fuel ? ` (${trip.fuel} kr i bensin)` : ' (ett batteri)'}. Boden er stengt til du er tilbake kl. ${back}.`);
+  const store = tripPlaceName(trip.plan.store, STORE_BY_ID);
+  const load = trip.plan.store === DUMP.id ? ' med søpla' : '';
+  event(market, s.owner_id, t, `🚗 Du kjørte til ${store}${load} med ${trip.spec.name}${trip.fuel ? ` (${trip.fuel} kr i bensin)` : ' (2 kWh fra batteriet)'}. Boden er stengt til du er tilbake kl. ${back}.`);
   if (s.sign !== 'closed') event(market, null, t, `🪧 «${s.name}» har snudd skiltet: ${SIGN_LABEL.closed}.`);
 }
 
@@ -2270,7 +2303,14 @@ function finishTrip(market: MarketRow, s: StallRow, t: number) {
       }
     }
     db.prepare('UPDATE stalls SET car_trip = NULL WHERE id = ?').run(s.id);
-    event(market, s.owner_id, trip.until, `🚗 Du er tilbake fra ${STORE_BY_ID[trip.store]?.name ?? 'butikken'}. Varene ligger i bagasjerommet. Husk å snu skiltet.`);
+    event(
+      market,
+      s.owner_id,
+      trip.until,
+      trip.store === DUMP.id
+        ? '🚗 Du er tilbake fra gjenbruksstasjonen. Søpla er levert, gratis. Husk å snu skiltet.'
+        : `🚗 Du er tilbake fra ${tripPlaceName(trip.store, STORE_BY_ID)}. Varene ligger i bagasjerommet. Husk å snu skiltet.`,
+    );
   });
 }
 

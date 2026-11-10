@@ -12,6 +12,7 @@ Planlegging av nye varer, råvarer og gameplay.
 - **Handletur:** i nettbutikken velger du «🚗 Hent selv». Det koster bensin i stedet for frakt. ID Fuzz har en egen batteriplass (vises når bagasjerommet er åpent); en tur bruker det et standard batteri rommer (2 kWh), så Batteri+ holder til to turer. Skiltet snus til Stengt, og du er borte så mange minutter som bilen tar.
 - Varene legges i eskene i bagasjerommet først, så i nye poser der. Er det ikke plass til alt, kan du ikke kjøre.
 - Mens du er ute, kan du ikke snu skiltet, snoke, kjøre en ny tur eller røre bagasjerommet. Når du er tilbake, ligger varene i bilen, og skiltet står fortsatt på Stengt.
+- **Kjør søpla bort:** i søppelkassa er det en knapp som kjører alt til gjenbruksstasjonen. Det koster en tur (bensin, eller 2 kWh for ID Fuzz) og boden er stengt like lenge, men søppelkassa tømmes med en gang, og poser koster ingenting i avgift der.
 - **Bilbutikken** er en egen fane i nettbutikken (ved siden av Klas Olsen). Den gamle bilen tas i innbytte for halv pris, og bagasjerommet må være tomt.
 - **Bilen er privat.** Andre spillere kan ikke se den, snoke i den eller bryte seg inn i den. Tilsynsmannen kan likevel finne luguberte varer i bagasjerommet (bare en låst safe stopper ham), så bilen er ikke et sikkert gjemmested.
 - **Bensinprisen** er 16–22 kr/l. Noen perioder på tre dager er den 2,4 ganger så dyr. Prisen står i Bilbutikken og i kassa i nettbutikken.

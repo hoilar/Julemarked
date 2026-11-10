@@ -22,6 +22,10 @@ export const CARS: CarSpec[] = [
 ];
 export const CAR_BY_ID: Record<string, CarSpec> = Object.fromEntries(CARS.map((c) => [c.id, c]));
 export const START_CAR = 'bil_tennis';
+/** Kjør søpla bort: gjenbruksstasjonen tar alt gratis (ingen avgift for poser). */
+export const DUMP = { id: 'gjenbruk', name: 'Gjenbruksstasjonen' };
+/** Navnet på der bilen kjører (en nettbutikk eller gjenbruksstasjonen). */
+export const tripPlaceName = (id: string, stores: Record<string, { name: string }>) => (id === DUMP.id ? DUMP.name : (stores[id]?.name ?? 'butikken'));
 export const isCar = (typeId: string) => !!CAR_BY_ID[typeId];
 
 /** Bilbutikken tar den gamle bilen i innbytte for denne andelen av prisen. */

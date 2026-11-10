@@ -867,10 +867,47 @@ nearest-neighbor-skalering; spillfiler og kode er ikke endret i denne leveransen
 | `art/verktoy/dokumentmappe.png` | 2×3 (stående) | Lukket dokumentmappe i brun papp/skinn med strikk rundt og fire fargede faner som stikker opp på toppen. |
 | `art/verktoy/dokumentmappe-apen.png` | ca. 5×6 (bakgrunn til vinduet) | Den åpne mappa sett ovenfra: kremhvitt innerark med svake rutelinjer, fire faner langs toppen (tomme – navnene skrives av spillet). Brukes som bakgrunn i vinduet. |
 
+### Ferdig laget: små ting i grensesnittet
+
+**✅ Alle seks PNG-er er ferdige i `GFX_assets/ChatGPT`:** `nokkel-krok.png`,
+`nokkel-krok-tom.png`, `baere-hand.png`, `baere-sekk.png`, `parkering-tom.png`
+og `spor.png`. Samme grove pikselstil og rette hovedakser etter gridet, uten tekst.
+De fem små ikonene er **128×128 px**, parkeringsplassen **384×288 px / 4:3**.
+Store genererte kilder er bevart med samme filnavn pluss `-original.png`.
+
+Nøkkelkroken er i messing på en liten treplate, med en loddrett hengende nøkkel.
+Tom-varianten beholder krok, treplate, plassering og lerret, med lukket hengelås
+ved siden av. Bæreplassene er lyse hånd-/sekkomriss med transparent innside og
+halvgjennomsiktige streker (maks omtrent 55 % alfa). Sporikonet er et lyst,
+skittent støvelavtrykk med tydelige sålemønster og litt gjennomsiktighet (maks
+omtrent 75 % alfa). Alfakanalene inneholder allerede dempingen.
+
+Parkeringsbildet har nedtråkket snø, slaps og to hjulspor i nederste del, resten
+av lerretet er gjennomsiktig. Plasseringen er kontrollert mot dagens bilbilde.
+**Behold hele 4:3-lerretet ved innlegging**, slik at bakkelinjen beholdes; ikke
+beskjær bildet tett rundt snøflekken. Bilen er bare med i kontrolloversikten,
+ikke i selve `parkering-tom.png`.
+
+Alle seks er kontrollert for transparent ytterområde og hele silhuetter. Småikonene
+er visuelt kontrollert ved 128, 64, 32 og 24 px. Skalert med nearest neighbor.
+Oversikt: `sma-grensesnitt-oversikt.jpg`. Prompter fra bildegeneratoren:
+`sma-grensesnitt-prompter.json`. Kontrolldata: `sma-grensesnitt-kontroll.json`.
+Klare til innlegging i filene under; spillfilene og koden er ikke endret i denne leveransen.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/nokkel-krok.png` | 128×128 | Nøkkelplassen ved «Under disken»: en liten messingkrok skrudd i treverk med bodens nøkkel hengende på. Vises når boden er Åpen eller Selvbetjent. I dag 🔑. |
+| `art/nokkel-krok-tom.png` | 128×128 | Samme krok uten nøkkel, med en lukket hengelås ved siden av. Vises når boden er stengt. Samme beskjæring som over. I dag 🔒. |
+| `art/baere-hand.png` | 128×128 | Tom bæreplass for hånda: et lyst, halvgjennomsiktig omriss av en åpen hånd (som en «plass her»-markering). I dag ✋. |
+| `art/baere-sekk.png` | 128×128 | Tom plass på ryggen: lyst, halvgjennomsiktig omriss av en ryggsekk. I dag 🎒. |
+| `art/biler/parkering-tom.png` | 384×288 (samme lerret som bilene, 4:3) | Tom parkeringsplass når bilen er ute og handler: nedtråkket snø med to tydelige hjulspor og litt slaps. Samme plassering og bakkelinje som bilbildene, ingen bil. I dag 💨. |
+| `art/verktoy/spor.png` | 128×128 | Spor etter snoking, som vises i ruta der du finner det med lupa: et skittent fotavtrykk eller fingeravtrykk, litt gjennomsiktig. I dag en rød rute. |
+
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
+| Nøkkelkrok (med/uten nøkkel), tomme bæreplasser (hånd, sekk), tom parkeringsplass og spor | se «Ferdig laget: små ting i grensesnittet» | ✅ Alle seks PNG-er ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
 | Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Ferdig laget: sikringsbokser og dokumentmappe» | ✅ i bruk: `art/elektro/sikringsboks{,-av,-smart,-smart-av,-automat,-bypass}.png` (2×2, av-bildet når boden er uten strøm), `art/verktoy/dokumentmappe.png` (2×3) og `dokumentmappe-apen.png` (640×768, bakgrunn i vinduet; fanenavnene står på fargede knapper over) |
 | Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |
 | Fire kjøretøy (inkludert elektrisk varebil, lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)» | ✅ i bruk: `art/biler/bil-{tennis,toforr,highass,fuzz}{,-apen}.png` (384×288, felles beskjæring så størrelsen mellom bilene stemmer), `art/ryggsekk.png` (3×3), `art/telefon/app-bilbutikken.png` |

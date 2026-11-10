@@ -1,6 +1,6 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { findTrashSpot, gridOf, isTrashed, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
-import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost } from '../shared/car.ts';
+import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
   LOUPE,
@@ -902,6 +902,17 @@ function boxPanels(s: GameState, carriedOnly = false): string {
     .join('');
 }
 
+/** «Kjør søpla bort» i søppelkassa: en tur med bilen til gjenbruksstasjonen. */
+function dumpButton(s: GameState): string {
+  const car = s.me.items.find((i) => i.place === 'car');
+  const spec = car && CAR_BY_ID[car.typeId];
+  const n = itemsIn(s.me.items, 'trash', null).length;
+  if (!spec || n === 0) return '';
+  if (s.me.car.trip) return '<div class="trash-note muted">🚗 Bilen er ute.</div>';
+  const cost = spec.fuel === 'bensin' ? kr(tripFuelCost(spec, s.me.car.fuelPrice)) : '2 kWh';
+  return `<button class="small dump-btn" data-action="trash-dump" title="Boden stenges i ${spec.minutes} min. Gjenbruksstasjonen tar alt gratis – ingen avgift for poser.">🚗 Kjør søpla bort · ${cost}</button>`;
+}
+
 const hhmm = (t: number) => formatClock(osloParts(t)).replace(/^.* kl\. /, '');
 
 /** Bilen bakfra: med åpent bagasjerom når vinduet for bagasjerommet er åpent. */
@@ -917,7 +928,7 @@ function carView(s: GameState): string {
   const spec = CAR_BY_ID[car.typeId];
   const trip = s.me.car.trip;
   if (trip)
-    return `<div class="car away" title="Du er ute og handler hos ${esc(STORE_BY_ID[trip.store]?.name ?? 'butikken')}"><span class="car-tracks">💨</span><small>Ute og handler · tilbake kl. ${hhmm(trip.until)}</small></div>`;
+    return `<div class="car away" title="Du er ute og kjører til ${esc(tripPlaceName(trip.store, STORE_BY_ID))}"><span class="car-tracks">💨</span><small>${trip.store === 'gjenbruk' ? 'På gjenbruksstasjonen' : 'Ute og handler'} · tilbake kl. ${hhmm(trip.until)}</small></div>`;
   const t = ITEM_TYPES[car.typeId];
   const open = isOpen(car.id);
   const n = itemsIn(s.me.items, 'box', car.id).length;
@@ -981,7 +992,7 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     ({ cols, rows } = TRASH_GRID);
     title = `${icon(TRASH)} Søppelkasse`;
     grid = `data-grid="trash"`;
-    extra = `<div class="trash-note">🚛 Tømmes kl. 0${TRASH_EMPTY_HOUR} i natt</div>`;
+    extra = `<div class="trash-note">🚛 Tømmes kl. 0${TRASH_EMPTY_HOUR} i natt</div>${dumpButton(s)}`;
     cls = 'trash-panel';
   } else {
     const box = s.me.items.find((i) => i.id === key);
@@ -2893,6 +2904,10 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'phone-close') phoneOpen = false;
   if (action === 'open-car') togglePanel(Number(el.dataset.item));
+  if (action === 'trash-dump') {
+    if (confirm('Kjøre søpla til gjenbruksstasjonen? Boden er stengt mens du er borte.')) void act('/api/trash/dump', {}, '🚗 Søpla er lastet i bilen – du kjører til gjenbruksstasjonen.');
+    return;
+  }
   if (action === 'folder-tab') {
     const boxId = Number(el.dataset.box);
     const tab = Number(el.dataset.tab);

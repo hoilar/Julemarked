@@ -1372,6 +1372,7 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car-hit:hover { background: none; }
 .car img.sprite { display: block; }
 .trunk { position: absolute; z-index: 1; pointer-events: auto; }
+.dump-btn { margin-top: 0.3cqw; font-size: max(10px, 0.75cqw); }
 /* Dokumentmappa */
 .doc-folder { background: #4a3a26; border-color: #8a6a40; }
 /* Bildet av den åpne mappa (640×768): fanene ligger i y 100–137 og x 34–606, kremarket i x 40–598 og y 137–732. */
