@@ -60,6 +60,7 @@ export interface Item {
   cut?: boolean; // bare aviser: etterlysningen er klippet ut
   safe?: { locked: boolean }; // bare safer (koden sendes aldri til nettleseren)
   note?: { kind: 'code' | 'text'; text: string }; // bare kodelapper og notater
+  key?: { stallId: number; stallName: string }; // bare såpeavtrykk og kopinøkler: hvilken bod de passer til
   boxId: number | null; // eskens id når place = 'box'
   x: number;
   y: number;
@@ -73,6 +74,27 @@ export interface Power {
   sockets: (string | null)[]; // apparat-id i hver av de fire kontaktene
   devices: string[]; // apparater boden eier (i en kontakt eller ikke)
   blown: boolean; // hovedsikringen har gått (bare uten sikringsboks): ingen strøm før den byttes
+}
+
+/** Det du ser når du snoker bak disken hos en annen. */
+export interface SnoopView {
+  stallId: number;
+  stallName: string;
+  key: boolean; // nøkkelen henger på plassen sin (boden er ikke stengt)
+  items: {
+    id: number;
+    typeId: string;
+    where: string; // «Under disken», «I pappkartong», «I safen»
+    takeable: boolean;
+    locked?: boolean; // safer: låst
+    note?: string; // lapper og notater: det som står på dem
+  }[];
+}
+
+/** Svar fra snoke-handlinger: ny utsikt, eller at Tyttebærpolitiet tok deg. */
+export interface SnoopResult {
+  view?: SnoopView;
+  caught?: string;
 }
 
 export interface StallPublic {

@@ -238,6 +238,21 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .sms.out { justify-self: end; background: #2f7de1; color: #fff; border-bottom-right-radius: 4px; }
 .dealer-offer { list-style: none; margin: 0.2rem 0 0.5rem; padding: 0; display: grid; gap: 0.3rem; }
 .dealer-offer li { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; padding: 0.3rem 0.4rem; border-radius: 10px; background: rgba(255, 255, 255, 0.12); }
+/* Snoking, nøkkelplassen og lupemodus (steg 5) */
+.snoop-btn { margin-top: 0.4em; }
+.snoop-key { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5em; }
+.snoop-list small { display: block; color: var(--muted, #888); font-size: 0.8em; }
+.snoop-safe { display: flex; gap: 0.3em; }
+.snoop-safe input { width: 4.5em; text-align: center; letter-spacing: 0.2em; }
+.key-hook { position: absolute; transform: translateY(-100%); margin-top: -0.25cqw; display: flex; align-items: flex-end; gap: 0.4cqw; z-index: 5; }
+.key-hook button { font-size: 0.85cqw; padding: 0.15cqw 0.6cqw; }
+.key-slot { width: 1.9cqw; height: 1.9cqw; display: grid; place-items: center; border: 0.15cqw dashed rgba(255,255,255,0.4); border-radius: 0.3cqw 0.3cqw 0 0; background: #6b4224; font-size: 1.1cqw; line-height: 1; }
+.key-slot.has { border-style: solid; border-color: rgba(255, 215, 120, 0.7); }
+.loupe-mode-btn.on { background: #ffe9a8; color: #3a2a00; }
+.storage.loupe-on { cursor: zoom-in; outline: 2px dashed #ffe9a8; }
+.storage.loupe-on .gitem { pointer-events: none; opacity: 0.55; }
+.loupe-mark { position: absolute; background: rgba(255, 255, 255, 0.18); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); pointer-events: none; }
+.loupe-mark.found { background: rgba(255, 80, 60, 0.55); box-shadow: inset 0 0 0 2px #ff5a3c; }
 .dealer-what { display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; }
 .dealer-what .icon { width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; }
 .dealer-what small { display: block; opacity: 0.75; font-size: 0.7rem; }

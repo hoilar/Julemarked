@@ -160,6 +160,8 @@ if (!hasColumn('stalls', 'tip_day')) {
 // Kunder du har solgt til selv (eller som sa nei), så samme kunde ikke kan brukes to ganger.
 // Bestillinger hos Fyren bak containeren: leveres i søppelkassa kl. 04. lines = JSON [{typeId, qty}] som ikke er levert ennå.
 db.exec('CREATE TABLE IF NOT EXISTS dealer_orders (id INTEGER PRIMARY KEY, stall_id INTEGER NOT NULL, day INTEGER NOT NULL, lines TEXT NOT NULL, ordered TEXT NOT NULL, deliver_at INTEGER NOT NULL, delivered INTEGER NOT NULL DEFAULT 0)');
+// Spor etter snoking under disken (steg 5). taken = gjenstandene som ble tatt [{id, typeId}].
+db.exec('CREATE TABLE IF NOT EXISTS snoop_traces (id INTEGER PRIMARY KEY, market_id INTEGER NOT NULL, stall_id INTEGER NOT NULL, snooper_stall_id INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, created_at INTEGER NOT NULL, taken TEXT NOT NULL DEFAULT \'[]\', resolved INTEGER NOT NULL DEFAULT 0)');
 db.exec('CREATE TABLE IF NOT EXISTS leads_used (stall_id INTEGER NOT NULL, lead TEXT NOT NULL, PRIMARY KEY (stall_id, lead))');
 // Lageret under disken ble 28 ruter bredt (to nye kolonner på hver side): flytt det som lå der to ruter mot høyre, én gang.
 if (!hasColumn('stalls', 'storage_wide')) {

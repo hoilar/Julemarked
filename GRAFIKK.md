@@ -684,10 +684,30 @@ Klar til `art/verktoy/skjenkebevilling.png`; spillfilene er ikke endret i denne 
 | `art/verktoy/lupe.png` | 1×1 | Forstørrelsesglass med messingkant og treskaft, liggende vannrett langs gridet. |
 | `art/verktoy/skjenkebevilling.png` | 1×1 | Offisielt dokument fra kommunen: kremhvitt ark med rødt voksesegl og et lite kommunevåpen-aktig skjold (samme som Kommunen-ikonet), uleselige tekstlinjer. Ligger i postkassa. |
 
-### Bestilt: luguberte varer og Meldinger-appen
+### Ferdig laget: luguberte varer og Meldinger-appen
 
-I spillet med emoji som plassholder (`noArt` i `shared/products.ts`). Samme stil som de andre varene,
-men gjerne litt skummelt og shabby. Ingen ekte merkenavn, logoer eller lesbar tekst.
+**✅ Alle ni PNG-originaler er ferdige i `GFX_assets/ChatGPT`:**
+`smuglersigaretter.png`, `piratfilm.png`, `kinaputter.png`, `juletre-tyv.png`,
+`hjemmebrent.png`, `merkevotter.png`, `gjaer.png`, `falsk-logo.png` og `app-meldinger.png`.
+Samme grove pikselstil, varme palett og mørkebrune kontur som de andre varene,
+med et litt slitt og shabby uttrykk. Ingen ekte merkenavn eller logoer, og ingen
+lesbare ord eller tall. Hovedaksene følger gridet; grantreet og flasken står loddrett.
+
+Kvadratiske originaler er **1254×1254 px**, grantreet **1024×1536 px / 2×3** og
+hjemmebrentflasken **887×1774 px / 1×2**. Merkevottene er et 2×2-par, resten av
+de kvadratiske bildene er 1×1. Falsk-logo og merkevotter deler samme oppfunne
+motiv: to sammenlenkede gullfargede romber på lilla stoff med frynsete kanter.
+Meldinger har grønn snakkeboble med solbriller på samme kremfargede ramme som appsettet.
+
+Alle ni er kontrollert for transparent ytterområde og hele silhuetter, samt visuelt
+over mørk bakgrunn og i en nedskalert oversikt med 128 px visningsfelt på lys bakgrunn.
+Svært svak alfa-støy er fjernet; øvrig gjennomsiktighet er bevart.
+Oversikter: `luguberte-meldinger-oversikt.jpg` og `luguberte-meldinger-liten.jpg`.
+Prompter fra bildegeneratoren: `luguberte-meldinger-prompter.json`.
+Kontrolldata: `luguberte-meldinger-kontroll.json`.
+Originalene er klare til innlegging; spillfiler og kode er ikke endret i denne leveransen.
+Ved innlegging skaleres bildene med nearest neighbor til mappene under, og `noArt`
+fjernes fra varene i `shared/products.ts`.
 
 **Varer** → `client/public/art/goods/<fil>.png`
 
@@ -708,15 +728,29 @@ men gjerne litt skummelt og shabby. Ingen ekte merkenavn, logoer eller lesbar te
 | `falsk-logo` | Et lite stoffmerke med en glinsende, oppfunnet luksuslogo, litt frynsete kanter. |
 
 **App-ikon** → `client/public/art/telefon/app-meldinger.png` (samme stil som de andre app-ikonene):
-en grønn snakkeboble, gjerne med et lite par solbriller i hjørnet. I dag vises 💬.
+en grønn snakkeboble med et lite par solbriller i hjørnet. Original ferdig:
+`GFX_assets/ChatGPT/app-meldinger.png`, klar til å erstatte 💬.
+
+### Bestilt: såpe og nøkler (snoking)
+
+I spillet med emoji som plassholder. Samme pikselstil som verktøyene, uten lesbar tekst.
+
+| Fil i spillet | Rutenett | Motiv |
+|---|---|---|
+| `art/verktoy/sapestykke.png` | 1×1 | Et hvitt, litt avrundet såpestykke. Ren og uskyldig. I dag 🧼. |
+| `art/verktoy/sapeavtrykk.png` | 1×1 | Samme såpestykke med et tydelig nøkkelformet avtrykk trykket ned i. I dag 🧼. |
+| `art/verktoy/blank-nokkel.png` | 1×1 | Et blankt messing-nøkkelemne uten tagger, liggende vannrett. I dag 🗝️. |
+| `art/verktoy/kopinokkel.png` | 1×1 | En litt grovt filt messingnøkkel med ferske filemerker, liggende vannrett. I dag 🔑. |
+| `art/verktoy/nokkelmaskin.png` | 2×2 | Liten, skitten nøkkelkopieringsmaskin med skrustikke, sveiv og fil – litt shabby, fra Fyren. I dag 🛠️. |
 
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Bestilt: luguberte varer og Meldinger-appen» | ⏳ Bestilt (emoji til de er klare) |
-| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ Alle sju PNG-originaler ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
-| Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ✅ Original ferdig: `GFX_assets/ChatGPT/skjenkebevilling.png`, klar til `art/verktoy/skjenkebevilling.png` |
+| Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Bestilt: såpe og nøkler (snoking)» | ⏳ Bestilt (emoji til de er klare) |
+| 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Ferdig laget: luguberte varer og Meldinger-appen» | ✅ Alle ni PNG-originaler ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
+| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ i bruk: `art/safe-liten{,-apen}.png` (2×2), `art/safe-stor{,-apen}.png` (3×4, åpent bilde når safen er låst opp), `art/verktoy/{kodelapp,notat,lupe}.png` |
+| Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ✅ i bruk: `art/verktoy/skjenkebevilling.png` |
 | 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |
 | 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |

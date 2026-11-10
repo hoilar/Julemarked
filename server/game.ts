@@ -147,6 +147,25 @@ import {
   totalKw,
 } from '../shared/power.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
+import type { SnoopResult, SnoopView } from '../shared/types.ts';
+import {
+  ALARM_SNOOP_FACTOR,
+  BLANK_KEY,
+  COPY_KEY,
+  IMPRINT,
+  KEY_MACHINE,
+  OWN_TRACE_COMP,
+  POLICE,
+  SNOOP_BAN_HOURS,
+  SNOOP_FINE_FACTOR,
+  SNOOP_FINE_MIN,
+  SNOOP_MINUTES,
+  SNOOP_REP_HIT,
+  SNOOP_RISK,
+  SNOOP_RISK_MAX,
+  SOAP,
+  TRACE_HOURS,
+} from '../shared/snoop.ts';
 import {
   BAG_FEE,
   BILL_META,
@@ -378,6 +397,8 @@ function itemsOf(stallId: number): Item[] {
       item.wanted = { seed: st.seed, alias: String(st.alias ?? ''), edition: r.edition };
     if (r.type_id === NEWSPAPER.id && st.cut) item.cut = true;
     if (isSafe(r.type_id)) item.safe = { locked: st.locked !== false };
+    if ((r.type_id === IMPRINT || r.type_id === COPY_KEY) && typeof st.stallId === 'number')
+      item.key = { stallId: st.stallId, stallName: String(st.stallName ?? '') };
     if ((r.type_id === CODE_NOTE || r.type_id === TEXT_NOTE) && typeof st.text === 'string')
       item.note = { kind: r.type_id === CODE_NOTE ? 'code' : 'text', text: st.text };
     if (r.type_id === NEWSPAPER.id && Array.isArray(st.coupons)) item.cutCoupons = st.coupons as number[];
@@ -804,6 +825,7 @@ export function buy(player: PlayerRow, typeId: string, qty: number) {
   if (!t || t.kind === 'paper' || t.kind === 'kettle' || (t.kind === 'ingredient' && t.price <= 0))
     throw new GameError('Ukjent vare.');
   // Varer og råvarer kjøpes i nettbutikkene nå; her (Klas Olsen) er det esker og kontorrekvisita.
+  if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
   if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery'))
     throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
   if (int(qty, 'antall') < 1 || qty > 100) throw new GameError('Ugyldig antall.');
@@ -951,6 +973,312 @@ export function useLoupe(player: PlayerRow, stallId: number, productId: string):
     event(market, player.id, t, `🔍 Du avslørte ${n} med falsk «Hjemmelaget»-etikett hos «${other.name}». Dusør ${reward} kr!`);
     event(market, null, t, `🔍 En våken kunde avslørte falske «hjemmelaget»-etiketter hos «${other.name}».`);
     return { forged: forged.length, reward };
+  });
+}
+
+// ---------- Snoking under disken, spor og nøkler (steg 5) ----------
+// Andre spillere kan snoke bak disken når boden er Selvbetjent eller «Åpent» uten noen bak disken,
+// eller når den er stengt og de har en kopinøkkel. Hver handling kan Tyttebærpolitiet se. Snokeren
+// legger igjen et usynlig spor i én rute under disken; eieren kan finne det med forstørrelsesglasset.
+
+interface SnoopSession {
+  stallId: number;
+  traceId: number;
+  until: number; // ekte ms
+  unlocked: Set<number>; // safer du har tastet riktig kode på i denne runden
+}
+const snoops = new Map<number, SnoopSession>(); // spiller → pågående snoke-runde
+const snoopBans = new Map<string, number>(); // «spiller:bod» → spilltid da du kan snoke der igjen
+
+interface TraceRow {
+  id: number;
+  market_id: number;
+  stall_id: number;
+  snooper_stall_id: number;
+  x: number;
+  y: number;
+  created_at: number;
+  taken: string;
+  resolved: number;
+}
+type Taken = { id: number; typeId: string }[];
+
+/** Hva en gjenstand er verdt når boten regnes ut: det kundene forventer å betale, ellers innkjøpsprisen. */
+function itemValue(typeId: string, reputation: number): number {
+  const p = PRODUCT_BY_ID[typeId];
+  if (p) return expectedPrice(p.basePrice, reputation, true);
+  const t = ITEM_TYPES[typeId] as { price?: number };
+  return typeof t.price === 'number' && t.price > 0 ? t.price : 20;
+}
+
+const keyFor = (items: Item[], stallId: number) =>
+  items.find((i) => i.typeId === COPY_KEY && i.key?.stallId === stallId && !isTrashed(items, i) && !isUndelivered(items, i));
+
+/** Kan du snoke hos `other` nå? Gir hvordan boden står (for risikoen), ellers feilmelding. */
+function snoopAccess(market: MarketRow, player: PlayerRow, mine: StallRow, other: StallRow, t: number): Exclude<Serving, 'open'> {
+  if (other.market_id !== market.id) throw new GameError('Fant ikke boden.');
+  if (other.id === mine.id) throw new GameError('Det er din egen bod.');
+  const ban = snoopBans.get(`${player.id}:${other.id}`);
+  if (ban && ban > t) throw new GameError(`${POLICE.name} har øye med deg. Hold deg unna den boden en stund.`);
+  const serving = servingOf(other);
+  if (serving === 'open') throw new GameError('Eieren står bak disken.');
+  if (serving === 'closed' && !keyFor(itemsOf(mine.id), other.id)) throw new GameError('Boden er stengt, og hengelåsen er låst.');
+  return serving;
+}
+
+function snoopRisk(market: MarketRow, other: StallRow, serving: Exclude<Serving, 'open'>, t: number): number {
+  return Math.min(SNOOP_RISK_MAX, SNOOP_RISK[serving] * (alarmOn(market, other, t) ? ALARM_SNOOP_FACTOR : 1));
+}
+
+/** Gir tilbake det som ble tatt (det snokeren fortsatt har), til eierens lager. Returnerer verdien og antallet. */
+function returnTaken(trace: TraceRow, owner: StallRow): { value: number; returned: number } {
+  const taken = JSON.parse(trace.taken) as Taken;
+  const value = taken.reduce((n, x) => n + itemValue(x.typeId, owner.reputation), 0);
+  const theirs = itemsOf(trace.snooper_stall_id);
+  let returned = 0;
+  for (const x of taken) {
+    const it = theirs.find((i) => i.id === x.id);
+    if (!it) continue; // solgt eller borte
+    if (theirs.some((i) => NESTED.has(i.place) && i.boxId === it.id)) continue;
+    const spot = findStorageSpot(itemsOf(owner.id), it.typeId);
+    if (!spot) continue;
+    db.prepare('UPDATE items SET stall_id = ?, place = ?, box_id = ?, x = ?, y = ? WHERE id = ?').run(owner.id, spot.place, spot.boxId, spot.x, spot.y, it.id);
+    returned++;
+  }
+  return { value, returned };
+}
+
+/** Bot, omdømme og avisoppslag for snokeren. */
+function punishSnooper(market: MarketRow, snooper: StallRow, t: number, value: number): { fine: number } {
+  const fine = Math.max(SNOOP_FINE_MIN, Math.round(value * SNOOP_FINE_FACTOR));
+  issueBill(market, snooper, t, 'bot', currentEdition(t).key, fine);
+  q.setReputation.run(Math.max(0, snooper.reputation - SNOOP_REP_HIT), snooper.id);
+  return { fine };
+}
+
+/** Tyttebærpolitiet tok deg: det du har tatt går tilbake, bot og omdømme, og alle får vite det. */
+function snoopCaught(market: MarketRow, player: PlayerRow, mine: StallRow, other: StallRow, sess: SnoopSession | null, t: number, doing: string): SnoopResult {
+  let value = 0;
+  if (sess) {
+    const trace = one<TraceRow>(db.prepare('SELECT * FROM snoop_traces WHERE id = ?'), sess.traceId);
+    if (trace) {
+      value = returnTaken(trace, other).value;
+      db.prepare('UPDATE snoop_traces SET resolved = 1 WHERE id = ?').run(trace.id);
+    }
+  }
+  const { fine } = punishSnooper(market, mine, t, value);
+  snoops.delete(player.id);
+  snoopBans.set(`${player.id}:${other.id}`, t + SNOOP_BAN_HOURS * HOUR);
+  const text = `🫐 ${POLICE.name} tok deg mens du ${doing} hos «${other.name}». Det du hadde tatt, er levert tilbake. Bot ${fine} kr og omdømme −${SNOOP_REP_HIT}.`;
+  event(market, player.id, t, text);
+  event(market, other.owner_id, t, `🫐 ${POLICE.name} tok noen som snoket bak disken din. Det de hadde tatt, ligger under disken igjen.`);
+  event(market, null, t, `🫐 ${POLICE.name} tok «${mine.name}» i å snoke bak disken hos «${other.name}».`);
+  return { caught: text };
+}
+
+/** Er gjenstanden noe du kan ta med deg fra en annens bod? Null = ja, ellers hvorfor ikke. */
+function snoopTakeError(items: Item[], it: Item): string | null {
+  const t = ITEM_TYPES[it.typeId];
+  if (t.kind === 'policy' || t.id === LICENSE_DOC) return 'Det står på et annet navn.';
+  if (t.id === PHONE) return 'Telefonen er låst med kode. Den lar du ligge.';
+  if (t.kind === 'container') {
+    if (isSafe(t.id)) return 'Safen er altfor tung å bære.';
+    if (items.some((i) => NESTED.has(i.place) && i.boxId === it.id)) return 'Det ligger noe oppi den.';
+    return null;
+  }
+  if (t.kind === 'product' || t.kind === 'ingredient' || t.kind === 'doc' || t.kind === 'tool' || t.kind === 'battery') return null;
+  return 'Den er for stor og klumpete å ta med.';
+}
+
+function snoopView(other: StallRow, sess: SnoopSession): SnoopView {
+  const items = itemsOf(other.id);
+  const out: SnoopView['items'] = [];
+  const add = (it: Item, where: string) => {
+    const t = ITEM_TYPES[it.typeId];
+    out.push({
+      id: it.id,
+      typeId: it.typeId,
+      where,
+      takeable: snoopTakeError(items, it) === null,
+      ...(it.safe ? { locked: !sess.unlocked.has(it.id) } : {}),
+      ...(it.note ? { note: it.note.text } : {}),
+      ...(it.key ? { note: `Passer til «${it.key.stallName}»` } : {}),
+    });
+    if (t.kind !== 'container') return;
+    if (it.safe && !sess.unlocked.has(it.id)) return;
+    for (const c of items.filter((i) => i.place === 'box' && i.boxId === it.id)) add(c, it.safe ? 'I safen' : `I ${t.name.toLowerCase()}`);
+  };
+  for (const it of items.filter((i) => i.place === 'storage')) add(it, 'Under disken');
+  return { stallId: other.id, stallName: other.name, key: other.sign !== 'closed', items: out };
+}
+
+/** Hent pågående snoke-runde hos `stallId`, eller kast. */
+function snoopSession(player: PlayerRow, stallId: number): SnoopSession {
+  const sess = snoops.get(player.id);
+  if (!sess || sess.stallId !== stallId || sess.until < Date.now()) throw new GameError('Du står ikke bak disken der lenger. Titt inn på nytt.');
+  return sess;
+}
+
+/** Titter bak disken hos en annen. Legger igjen et spor under disken. */
+export function snoopStart(player: PlayerRow, stallId: number): SnoopResult {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other) throw new GameError('Fant ikke boden.');
+    const serving = snoopAccess(market, player, mine, other, t);
+    const old = snoops.get(player.id);
+    if (old && old.stallId === stallId && old.until > Date.now()) return { view: snoopView(other, old) };
+    if (Math.random() < snoopRisk(market, other, serving, t)) return snoopCaught(market, player, mine, other, null, t, 'tittet bak disken');
+    const x = Math.floor(Math.random() * STORAGE_GRID.cols);
+    const y = Math.floor(Math.random() * STORAGE_GRID.rows);
+    const res = db
+      .prepare('INSERT INTO snoop_traces (market_id, stall_id, snooper_stall_id, x, y, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(market.id, other.id, mine.id, x, y, t);
+    const sess: SnoopSession = { stallId, traceId: Number(res.lastInsertRowid), until: Date.now() + SNOOP_MINUTES * 60_000, unlocked: new Set() };
+    snoops.set(player.id, sess);
+    event(market, player.id, t, `🕵️ Du tittet bak disken hos «${other.name}».`);
+    return { view: snoopView(other, sess) };
+  });
+}
+
+/** Tar noe med fra under disken (eller fra en eske/åpnet safe) hos en annen. */
+export function snoopTake(player: PlayerRow, stallId: number, itemId: number): SnoopResult {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other) throw new GameError('Fant ikke boden.');
+    const serving = snoopAccess(market, player, mine, other, t);
+    const sess = snoopSession(player, stallId);
+    const seen = snoopView(other, sess).items.find((i) => i.id === itemId);
+    if (!seen) throw new GameError('Den ligger ikke der lenger.');
+    const items = itemsOf(other.id);
+    const it = items.find((i) => i.id === itemId)!;
+    const err = snoopTakeError(items, it);
+    if (err) throw new GameError(err);
+    const spot = findStorageSpot(itemsOf(mine.id), it.typeId);
+    if (!spot) throw new GameError('Det er ikke plass til den under disken din.');
+    const name = ITEM_TYPES[it.typeId].name.toLowerCase();
+    if (Math.random() < snoopRisk(market, other, serving, t)) return snoopCaught(market, player, mine, other, sess, t, `tok ${name}`);
+    db.prepare('UPDATE items SET stall_id = ?, place = ?, box_id = ?, x = ?, y = ? WHERE id = ?').run(mine.id, spot.place, spot.boxId, spot.x, spot.y, it.id);
+    const trace = one<TraceRow>(db.prepare('SELECT * FROM snoop_traces WHERE id = ?'), sess.traceId);
+    if (trace) {
+      const taken = JSON.parse(trace.taken) as Taken;
+      taken.push({ id: it.id, typeId: it.typeId });
+      db.prepare('UPDATE snoop_traces SET taken = ? WHERE id = ?').run(JSON.stringify(taken), trace.id);
+    }
+    event(market, player.id, t, `🕵️ Du tok ${name} fra under disken hos «${other.name}». Den ligger under disken din.`);
+    return { view: snoopView(other, sess) };
+  });
+}
+
+/** Taster en kode på en annens safe. Feil kode kan Tyttebærpolitiet se. */
+export function snoopSafe(player: PlayerRow, stallId: number, safeId: number, code: string): SnoopResult {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  if (!/^\d{4}$/.test(String(code))) throw new GameError('Koden er fire siffer.');
+  const wrong = tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other) throw new GameError('Fant ikke boden.');
+    const serving = snoopAccess(market, player, mine, other, t);
+    const sess = snoopSession(player, stallId);
+    const safe = itemsOf(other.id).find((i) => i.id === safeId && isSafe(i.typeId) && i.place === 'storage');
+    if (!safe) throw new GameError('Fant ikke safen.');
+    if (rawState(safe.id).code === code) {
+      sess.unlocked.add(safe.id);
+      return { view: snoopView(other, sess) } as SnoopResult;
+    }
+    if (Math.random() < snoopRisk(market, other, serving, t)) return snoopCaught(market, player, mine, other, sess, t, 'prøvde å åpne safen');
+    return null;
+  });
+  if (!wrong) throw new GameError('Feil kode. Safen er fortsatt låst.');
+  return wrong;
+}
+
+/** Tar avtrykk av nøkkelen til boden i et såpestykke (bare når nøkkelen henger der). */
+export function snoopImprint(player: PlayerRow, stallId: number): SnoopResult {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other) throw new GameError('Fant ikke boden.');
+    const serving = snoopAccess(market, player, mine, other, t);
+    const sess = snoopSession(player, stallId);
+    if (other.sign === 'closed') throw new GameError('Nøkkelen er ikke her – eieren har den med seg.');
+    const items = itemsOf(mine.id);
+    const soap = holds(items, SOAP);
+    if (!soap) throw new GameError('Du har ikke noe såpestykke.');
+    if (Math.random() < snoopRisk(market, other, serving, t)) return snoopCaught(market, player, mine, other, sess, t, 'tok avtrykk av nøkkelen');
+    q.deleteItem.run(soap.id);
+    const left = itemsOf(mine.id);
+    const spot = findStorageSpot(left, IMPRINT);
+    if (!spot) throw new GameError('Det er ikke plass til avtrykket under disken din.');
+    insertItem(mine.id, left, IMPRINT, spot);
+    q.setState.run(JSON.stringify({ stallId: other.id, stallName: other.name }), left[left.length - 1].id);
+    event(market, player.id, t, `🧼 Du trykket nøkkelen til «${other.name}» ned i såpestykket. Avtrykket ligger under disken din.`);
+    return { view: snoopView(other, sess) };
+  });
+}
+
+export function snoopEnd(player: PlayerRow) {
+  snoops.delete(player.id);
+}
+
+/** Lager en kopinøkkel i nøkkelmaskinen: et såpeavtrykk og en blank nøkkel blir til en nøkkel. */
+export function copyKey(player: PlayerRow, imprintId: number) {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  tx(() => {
+    const items = itemsOf(mine.id);
+    if (!holds(items, KEY_MACHINE)) throw new GameError('Du har ingen nøkkelmaskin.');
+    const imprint = items.find((i) => i.id === imprintId && i.typeId === IMPRINT && !isTrashed(items, i));
+    if (!imprint?.key) throw new GameError('Fant ikke avtrykket.');
+    const blank = holds(items, BLANK_KEY);
+    if (!blank) throw new GameError('Du trenger en blank nøkkel. Fyren bak containeren har sånne.');
+    q.deleteItem.run(blank.id);
+    q.setState.run(JSON.stringify(imprint.key), imprint.id);
+    db.prepare('UPDATE items SET type_id = ? WHERE id = ?').run(COPY_KEY, imprint.id);
+    event(market, player.id, nowFor(market), `🔑 Nøkkelmaskinen surret og filte. Du har en kopinøkkel til «${imprint.key.stallName}».`);
+  });
+}
+
+/**
+ * Undersøker én rute under din egen disk med forstørrelsesglasset. Finner du et spor:
+ * det snokeren tok kommer tilbake, du får dusør etter gata pluss kompensasjon, og snokeren
+ * får bot (2 × verdien), mister omdømme og havner i avisa.
+ */
+export function loupeCell(player: PlayerRow, x: number, y: number): { found: boolean; reward: number; returned: number } {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  if (int(x, 'x') < 0 || int(y, 'y') < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) throw new GameError('Utenfor rutenettet.');
+  return tx(() => {
+    if (!holds(itemsOf(mine.id), LOUPE)) throw new GameError('Du har ikke noe forstørrelsesglass.');
+    const trace = one<TraceRow>(
+      db.prepare('SELECT * FROM snoop_traces WHERE stall_id = ? AND x = ? AND y = ? AND resolved = 0 AND created_at > ? ORDER BY id LIMIT 1'),
+      mine.id,
+      x,
+      y,
+      t - TRACE_HOURS * HOUR,
+    );
+    if (!trace) return { found: false, reward: 0, returned: 0 };
+    db.prepare('UPDATE snoop_traces SET resolved = 1 WHERE id = ?').run(trace.id);
+    const snooper = one<StallRow>(q.stallById, trace.snooper_stall_id);
+    const { value, returned } = returnTaken(trace, mine);
+    const reward = FINDER_REWARD[LAYOUT[mine.slot_index].street] + OWN_TRACE_COMP;
+    q.addCash.run(reward, mine.id);
+    if (snooper) {
+      const { fine } = punishSnooper(market, snooper, t, value);
+      event(market, snooper.owner_id, t, `🔍 «${mine.name}» fant sporet ditt under disken sin. Bot ${fine} kr og omdømme −${SNOOP_REP_HIT}.${returned ? ' Det du tok, er levert tilbake.' : ''}`);
+      event(market, null, t, `🔍 «${mine.name}» fant spor etter snoking under disken. Sporet ledet til «${snooper.name}».`);
+    }
+    event(market, player.id, t, `🔍 Du fant et spor under disken! Det var «${snooper?.name ?? 'noen'}». Dusør og kompensasjon ${reward} kr${returned ? `, og ${returned} ting er levert tilbake` : ''}.`);
+    return { found: true, reward, returned };
   });
 }
 
@@ -2834,6 +3162,7 @@ function processHour(market: MarketRow, hour: number) {
     event(market, null, t, `📰 Verdens Undergang ligger i postkassa. Strømpris i dag: ${price.toFixed(2).replace('.', ',')} kr/kWh.`);
   }
   deliverDealer(market, t);
+  db.prepare('DELETE FROM snoop_traces WHERE market_id = ? AND created_at < ?').run(market.id, t - TRACE_HOURS * HOUR); // sporene blir borte etter et døgn
   if (parts.hour === TRASH_EMPTY_HOUR) {
     for (const s of stalls) {
       const items = itemsOf(s.id);

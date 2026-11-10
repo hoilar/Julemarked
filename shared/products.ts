@@ -45,6 +45,7 @@ export interface Tool {
   size: Size;
   blurb: string; // butikkteksten – sier med vilje ikke hva verktøyet er til
   sheets?: number; // papirblokka: antall ark når den er ny
+  dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
 }
 
 /** Et ark du har laget selv: avskrevet oppskrift eller utklipt etterlysning (1×1). */
@@ -69,6 +70,7 @@ export interface Container {
   inner: GridSize;
   shopBag?: boolean; // butikkpose: kommer med leveranser, selges ikke hos Klas Olsen
   safe?: boolean; // safe: låst med en firesifret kode (kodelappen følger med)
+  imageOpen?: string; // bilde når safen er låst opp
 }
 
 /** Avisa fra postkassa. Kan ikke kjøpes eller selges; hver gjenstand er én utgave. */
@@ -223,8 +225,12 @@ export const TOOLS: Tool[] = [
   { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.png', price: 49, size: { w: 1, h: 1 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
   { kind: 'tool', id: 'skrutrekker', name: 'Skrutrekker', emoji: '🪛', image: '/art/elektro/skrutrekker.png', price: 89, size: { w: 2, h: 1 }, blurb: 'Stjerne og flat. Passer til det meste med skruer i.' },
   { kind: 'tool', id: 'telefon', name: 'Smarttelefon', emoji: '📱', image: '/art/telefon/telefon.png', price: 499, size: { w: 1, h: 2 }, blurb: 'Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden.' },
-  { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', price: 129, size: { w: 1, h: 1 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
+  { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', image: '/art/verktoy/lupe.png', price: 129, size: { w: 1, h: 1 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
   { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 1, h: 1 }, blurb: 'Skarp. Pass på fingrene.' },
+  { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', price: 19, size: { w: 1, h: 1 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
+  // Fra Fyren bak containeren (selges ikke hos Klas Olsen):
+  { kind: 'tool', id: 'nokkelmaskin', name: 'Nøkkelmaskin', emoji: '🛠️', price: 900, size: { w: 2, h: 2 }, blurb: 'Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk.', dealerOnly: true },
+  { kind: 'tool', id: 'blank_nokkel', name: 'Blank nøkkel', emoji: '🗝️', price: 30, size: { w: 1, h: 1 }, blurb: 'Et nøkkelemne uten tagger.', dealerOnly: true },
 ];
 export const PEN = 'penn';
 export const PAD = 'papirblokk';
@@ -244,9 +250,11 @@ export const PHONE = 'telefon';
 
 export const DOCS: Doc[] = [
   { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'skjenkebevilling', name: 'Skjenkebevilling', emoji: '📜', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'kodelapp', name: 'Kodelapp', emoji: '🔢', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'notat', name: 'Notat', emoji: '🗒️', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'skjenkebevilling', name: 'Skjenkebevilling', emoji: '📜', image: '/art/verktoy/skjenkebevilling.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'kodelapp', name: 'Kodelapp', emoji: '🔢', image: '/art/verktoy/kodelapp.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'notat', name: 'Notat', emoji: '🗒️', image: '/art/verktoy/notat.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'sapeavtrykk', name: 'Såpeavtrykk', emoji: '🧼', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'kopinokkel', name: 'Kopinøkkel', emoji: '🔑', size: { w: 1, h: 1 } },
   { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.png', size: { w: 1, h: 1 } },
 ];
 // Rabattkupong (klippet ut av avisa) og gavekort fra butikkenes selgere.
@@ -710,8 +718,8 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'remapose', name: 'REMA-pose', emoji: '🛍️', image: '/art/rema-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
   { kind: 'container', id: 'kartong', name: 'Pappkartong', emoji: '📦', image: '/art/kartong.png', price: 49, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 } },
   // Safer: låst med en firesifret kode (kodelappen følger med). Id-en «safe» er den lille.
-  { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', price: 599, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, safe: true },
-  { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
+  { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', image: '/art/safe-liten.png', imageOpen: '/art/safe-liten-apen.png', price: 599, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, safe: true },
+  { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
 ];
 

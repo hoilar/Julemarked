@@ -2,7 +2,19 @@
 
 Planlegging av nye varer, råvarer og gameplay.
 
-**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Steg 3 er bygget – åpne søplekasser, safe med PIN-kode og kodelapp, egne lapper og notater, og forstørrelsesglass mot falske varer. Steg 4 er bygget – Fyren bak containeren (Meldinger-appen, kontant betaling, levering i søppelkassa kl. 04), seks luguberte varer, gjær og falsk logo, nattsalg (kl. 21–08) og at Tilsynsmannen leter under disken (ikke i låst safe). Snoking, spor, nøkler, bæring og bil er ikke bygget.
+**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Steg 3 er bygget – åpne søplekasser, safe med PIN-kode og kodelapp, egne lapper og notater, og forstørrelsesglass mot falske varer. Steg 4 er bygget – Fyren bak containeren (Meldinger-appen, kontant betaling, levering i søppelkassa kl. 04), seks luguberte varer, gjær og falsk logo, nattsalg (kl. 21–08) og at Tilsynsmannen leter under disken (ikke i låst safe). Steg 5 er bygget – snoking bak disken, Tyttebærpolitiet, spor og forstørrelsesglass, nøkkelplassen, såpeavtrykk, nøkkelmaskin og kopinøkkel. Bæring og bil er ikke bygget.
+
+**Valg i steg 5** (tallene står i `shared/snoop.ts`):
+- Du snoker fra en annens bod med knappen «🕵️ Snok bak disken». Det går når boden er Selvbetjent eller «Åpent» uten noen bak disken, og når den er stengt hvis du har kopinøkkel til den.
+- Bak disken ser du det som ligger under disken og i eskene. Lapper og notater kan leses. Låste safer kan du taste kode på.
+- Telefonen, safer, forsikringsbevis og skjenkebevillingen kan ikke tas. Det du tar, havner under disken din (forenkling til bæring er bygget).
+- **Tyttebærpolitiet** kan ta deg ved hver handling: når du titter inn, tar noe, tar avtrykk eller taster feil kode. Risikoen er 12 % ved Selvbetjent, 6 % ved «Åpent» uten folk og 8 % i en stengt bod. Alarm på boden ganger risikoen med 2,5.
+- Blir du tatt: det du har tatt går tilbake, bot 2 × verdien (minst 300 kr), omdømme −15, hendelse for hele markedet, og du kan ikke snoke i den boden på 12 timer.
+- Hver snoke-runde legger igjen **ett spor** i en tilfeldig rute under disken (forenkling: ikke oppå disken ennå). Sporet varer i 24 timer.
+- Eieren finner det med «🔍 Let etter spor» ved lageret: trykk rute for rute. Funnet gir dusør etter gata pluss 200 kr, det som ble tatt kommer tilbake (det snokeren fortsatt har), og snokeren får samme straff som over.
+- **Nøkkelen** har en fast plass ved «Under disken». Den henger der når skiltet er Åpent eller Selvbetjent, og er borte (🔒) når boden er stengt.
+- **Såpestykke** (19 kr hos Klas Olsen) gir et såpeavtrykk av nøkkelen når du snoker og nøkkelen henger der. **Nøkkelmaskinen** (900 kr, noen dager) og **blanke nøkler** (30 kr) får du hos Fyren. Maskinen gjør avtrykk + blank nøkkel om til en kopinøkkel, som kan brukes så mange ganger du vil.
+- Safer kan ikke bæres bort eller brytes opp – bare åpnes med koden.
 
 **Valg i steg 4:** Fyren tar kontant fra kassa. Han leverer kl. 04 – etter søppelbilen kl. 03 – så varene ligger i den åpne søppelkassa hele dagen til du henter dem. Det som ikke får plass, kommer neste natt. Oppskriften på hjemmebrent står i SMS-ene hans, og oppskriften på «merkevotter» følger med første falske logo; luguberte oppskrifter står aldri i avisa. Tilsynsmannen finner luguberte varer overalt (bord, under disken, esker, søpla) unntatt i en låst safe: beslag, bot 2 × verdien og −20 omdømme.
 
@@ -88,8 +100,6 @@ Prisene justeres etter hvert som vi tester.
 
 ## Åpne spørsmål
 
-- Kan en safe brytes opp (f.eks. med verktøy) eller bæres bort?
-- Hvor stor er risikoen for å bli tatt av Tyttebærpolitiet, og hva er straffen?
 - Kan man se andres bil og bryte seg inn i den?
 
 ## 🍷 Alkohol

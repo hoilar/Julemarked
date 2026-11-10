@@ -54,7 +54,8 @@ import {
   isHomemade,
   type Label,
 } from '../shared/products.ts';
-import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, StallPublic } from '../shared/types.ts';
+import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
+import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS } from '../shared/snoop.ts';
 import {
   avatarFor,
   inspectorImage,
@@ -125,7 +126,12 @@ type Modal =
   | { kind: 'tool'; itemId: number }
   | { kind: 'plug'; strip: number | null; index: number }
   | { kind: 'safe'; itemId: number }
-  | { kind: 'othertrash'; stallId: number };
+  | { kind: 'othertrash'; stallId: number }
+  | { kind: 'snoop'; view: SnoopView | null; caught?: string };
+
+// Forstørrelsesglasset under din egen disk: ruter du har sjekket (nøkkel «x,y» → fant spor?).
+let loupeMode = false;
+const loupeChecked = new Map<string, boolean>();
 
 const app = document.getElementById('app')!;
 const toastEl = document.getElementById('toast')!;
@@ -584,7 +590,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${shopSign(s, stall, own)}
       ${own ? '' : sellerView(stall)}
       ${counterView(stall, own)}
-      ${own ? storageView(s) + trashView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall)}
+      ${own ? storageView(s) + keyHookView(s) + trashView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall)}
     </div>
     ${own ? '' : phoneSprite(s, false)}
   </div>`;
@@ -817,7 +823,7 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   if (t.kind === 'container') {
     const inside = state!.me.items.filter((x) => x.place === 'box' && x.boxId === i.id).length;
     return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
-      ${sprite(t)}<span class="fill">${inside}</span></div>`;
+      ${sprite(t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t)}<span class="fill">${inside}</span></div>`;
   }
   if (t.kind === 'battery') {
     const pct = batteryPct(i);
@@ -870,9 +876,9 @@ function storageView(s: GameState): string {
   const items = itemsIn(s.me.items, 'storage', null).map((i) => gridItemView(i, cols, rows)).join('');
   const style = `left:${STORAGE.left}%;top:${STORAGE.top}%;width:${STORAGE.cell * cols}%;aspect-ratio:${cols}/${rows};--cols:${cols};--rows:${rows}`;
   return `
-  <div class="storage grid" data-grid="storage" style="${style}">
+  <div class="storage grid ${loupeMode ? 'loupe-on' : ''}" data-grid="storage" style="${style}">
     <div class="storage-label">Under disken</div>
-    ${items}
+    ${items}${loupeMarks()}
     ${s.me.items.length === 0 ? '<button class="small empty-hint" data-action="modal" data-modal="wholesale">Tomt. Kjøp inn varer.</button>' : ''}
   </div>`;
 }
@@ -1272,7 +1278,83 @@ function otherTrashView(stall: StallPublic): string {
 
 function visitorInfo(stall: StallPublic): string {
   return `<div class="visitor-info"><div>👤 ${esc(stall.ownerName)} · ⭐ ${stall.reputation}</div>
-    <div class="muted">Trykk på en vare for å kjøpe.</div></div>`;
+    <div class="muted">Trykk på en vare for å kjøpe.</div>${snoopButton(stall)}</div>`;
+}
+
+/** Snok bak disken: når boden er Selvbetjent, «Åpent» uten noen bak disken, eller stengt og du har kopinøkkel. */
+function snoopButton(stall: StallPublic): string {
+  if (!state?.me.stallId) return '';
+  const key = state.me.items.some((i) => i.typeId === COPY_KEY && i.key?.stallId === stall.id && !isTrashed(state!.me.items, i));
+  if (stall.serving === 'self' || stall.serving === 'away')
+    return `<button class="small ghost snoop-btn" data-action="snoop" data-stall="${stall.id}" title="Ingen ser deg … kanskje. ${POLICE.name} går runder.">🕵️ Snok bak disken</button>`;
+  if (stall.serving === 'closed' && key)
+    return `<button class="small ghost snoop-btn" data-action="snoop" data-stall="${stall.id}" title="Kopinøkkelen passer i hengelåsen.">🔑 Lås opp med kopinøkkelen</button>`;
+  return '';
+}
+
+function snoopModal(s: GameState, view: SnoopView | null, caught?: string): string {
+  if (caught) return `<h2>🫐 ${POLICE.name}!</h2><p>${esc(caught.replace(/^🫐 /, ''))}</p><div class="row auto-row"><button data-action="close">Au</button></div>`;
+  if (!view) return '<p class="muted">Titter bak disken …</p>';
+  const soap = hasTool(s, SOAP);
+  const rows = view.items
+    .map((i) => {
+      const t = ITEM_TYPES[i.typeId];
+      const what = `<span class="trash-thing">${icon(t)} ${esc(t.name)}<small>${esc(i.where)}${i.note ? ` · «${esc(i.note)}»` : ''}</small></span>`;
+      if (i.locked)
+        return `<li>${what}<form data-form="snoop-safe" data-safe="${i.id}" class="snoop-safe"><input name="code" inputmode="numeric" pattern="\\d{4}" maxlength="4" autocomplete="off" placeholder="••••" required><button class="small">Prøv</button></form></li>`;
+      return `<li>${what}${i.takeable ? `<button class="small" data-action="snoop-take" data-item="${i.id}">Ta med</button>` : ''}</li>`;
+    })
+    .join('');
+  const key = view.key
+    ? `<p class="snoop-key">🔑 Nøkkelen til hengelåsen henger på plassen sin.
+        ${soap ? '<button class="small" data-action="snoop-imprint">🧼 Ta avtrykk i såpe</button>' : '<span class="muted">Med et såpestykke kunne du tatt avtrykk av den.</span>'}</p>`
+    : '';
+  return `<h2>🕵️ Bak disken hos «${esc(view.stallName)}»</h2>
+    <p class="muted">Det du tar, havner under disken din. Alt du gjør, kan ${POLICE.name} se – og du legger igjen spor.</p>
+    ${key}
+    ${rows ? `<ul class="trash-list snoop-list">${rows}</ul>` : '<p class="muted">Tomt under disken.</p>'}
+    <div class="row auto-row"><button class="ghost" data-action="close">Gå ut igjen</button></div>`;
+}
+
+/** Utfører en snoke-handling og oppdaterer vinduet (eller viser at du ble tatt). */
+async function snoopAct(path: string, body: Record<string, unknown>, ok?: string) {
+  try {
+    const r = await api<SnoopResult>(path, body);
+    if (r.caught) {
+      modal = { kind: 'snoop', view: null, caught: r.caught };
+      toast(`🫐 ${POLICE.name} tok deg!`, true);
+    } else if (r.view) {
+      modal = { kind: 'snoop', view: r.view };
+      if (ok) toast(ok);
+    }
+  } catch (err) {
+    toast((err as Error).message, true);
+  }
+  await refresh();
+}
+
+/** Nøkkelplassen og forstørrelsesglasset ved lageret ditt. */
+function keyHookView(s: GameState): string {
+  const stall = myStall(s);
+  if (!stall) return '';
+  const hasKey = stall.sign !== 'closed';
+  const loupe = hasTool(s, LOUPE)
+    ? `<button class="small ghost loupe-mode-btn ${loupeMode ? 'on' : ''}" data-action="loupe-mode" title="Undersøk rutene under disken én og én etter spor fra snokere">🔍 ${loupeMode ? 'Ferdig' : 'Let etter spor'}</button>`
+    : '';
+  return `<div class="key-hook" style="left:${STORAGE.left + 8.6}%;top:${STORAGE.top}%">
+    <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}">${hasKey ? '🔑' : '🔒'}</div>
+    ${loupe}</div>`;
+}
+
+function loupeMarks(): string {
+  if (!loupeMode) return '';
+  const { cols, rows } = STORAGE_GRID;
+  return [...loupeChecked]
+    .map(([k, found]) => {
+      const [x, y] = k.split(',').map(Number);
+      return `<div class="loupe-mark ${found ? 'found' : ''}" style="left:${(x / cols) * 100}%;top:${(y / rows) * 100}%;width:${100 / cols}%;height:${100 / rows}%"></div>`;
+    })
+    .join('');
 }
 
 // --- Kart ---
@@ -1513,7 +1595,7 @@ function klasView(s: GameState): string {
   const boxes = CONTAINERS.filter((c) => !c.shopBag).map((c) =>
     klasCard({ name: c.name, image: c.image, emoji: c.emoji, size: c.size, price: c.price, sub: `Rommer ${c.inner.cols}×${c.inner.rows} (${c.inner.cols * c.inner.rows} ruter)`, have: has(c.id), buy: form(c.id) }),
   );
-  const tools = TOOLS.filter((t) => t.id !== PHONE).map((t) =>
+  const tools = TOOLS.filter((t) => t.id !== PHONE && !t.dealerOnly).map((t) =>
     klasCard({ name: t.name, image: t.image, emoji: t.emoji, size: t.size, price: t.price, sub: esc(t.blurb), have: has(t.id), buy: form(t.id) }),
   );
   // Maskiner er gjenstander (man kan ha flere); lyslenka og alarmen henger på boden (bare én).
@@ -1920,6 +2002,25 @@ function itemView(s: GameState, it: Item): string {
       ${it.note.kind === 'code' ? `<div class="note-code">${esc(it.note.text)}</div>` : `<p class="note-text">${esc(it.note.text)}</p>`}
       </div><p class="muted">${it.note.kind === 'code' ? 'Fire siffer på en lapp. Hvem vet hva de låser opp.' : 'Et notat skrevet med penn.'} Kast den i søpla hvis du vil bli kvitt den – men husk at søpla er åpen for alle.</p>`;
   }
+  if (it.typeId === IMPRINT && it.key) {
+    const can = hasTool(s, KEY_MACHINE) && hasTool(s, BLANK_KEY);
+    return itemCard(t, `<h2>🧼 Såpeavtrykk</h2><p>Et skarpt avtrykk av nøkkelen til «${esc(it.key.stallName)}», trykket ned i et såpestykke.</p>
+      <p class="muted">Kan bare brukes én gang. En nøkkelmaskin og en blank nøkkel gjør det om til en kopinøkkel.</p>
+      <div class="row auto-row"><button data-action="copy-key" data-item="${it.id}" ${can ? '' : 'disabled title="Du trenger nøkkelmaskin og en blank nøkkel"'}>🛠️ Lag nøkkel</button></div>`);
+  }
+  if (it.typeId === COPY_KEY && it.key)
+    return itemCard(t, `<h2>🔑 Kopinøkkel</h2><p>Passer i hengelåsen til «${esc(it.key.stallName)}».</p>
+      <p class="muted">Når boden er stengt, kan du låse deg inn og snoke bak disken. Eieren vet ingenting – med mindre noen finner sporet.</p>`);
+  if (it.typeId === KEY_MACHINE) {
+    const imprints = s.me.items.filter((i) => i.typeId === IMPRINT && i.key && !isTrashed(s.me.items, i));
+    const list = imprints.length
+      ? imprints.map((i) => `<button data-action="copy-key" data-item="${i.id}" ${hasTool(s, BLANK_KEY) ? '' : 'disabled title="Du trenger en blank nøkkel"'}>🔑 Kopier nøkkelen til «${esc(i.key!.stallName)}»</button>`).join('')
+      : '<p class="muted">Du har ingen såpeavtrykk.</p>';
+    return itemCard(t, `<h2>${esc(t.name)}</h2><p>${esc((t as { blurb?: string }).blurb ?? '')}</p><div class="plug-choices">${list}</div>`);
+  }
+  if (it.typeId === LOUPE)
+    return itemCard(t, `<h2>${esc(t.name)}</h2><p>Med forstørrelsesglasset kan du avsløre falske «Hjemmelaget»-etiketter hos andre (trykk på en vare på bordet deres).</p>
+      <p class="muted">Har noen snoket under disken din, ligger det et spor i én av rutene der i ${TRACE_HOURS} timer. Trykk «🔍 Let etter spor» ved lageret og undersøk rute for rute.</p>`);
   const tool = TOOLS.find((x) => x.id === it.typeId);
   // Papirblokka: skriv en kodelapp eller et notat (krever penn).
   const write =
@@ -2006,6 +2107,7 @@ function modalView(s: GameState): string {
         <button>Lås opp</button>
       </form>`;
   }
+  if (modal.kind === 'snoop') inner = snoopModal(s, modal.view, modal.caught);
   if (modal.kind === 'othertrash') {
     const id = modal.stallId;
     const st = s.slots.find((x) => x.stall?.id === id)?.stall;
@@ -2475,13 +2577,83 @@ window.addEventListener('pointercancel', endPhoneDrag);
 
 // ---------- Klikk og skjema ----------
 
+function loupeCellAt(e: MouseEvent): { x: number; y: number } | null {
+  if (!loupeMode) return null;
+  const grid = (e.target as HTMLElement).closest<HTMLElement>('[data-grid="storage"]');
+  if (!grid) return null;
+  const r = grid.getBoundingClientRect();
+  const x = Math.floor(((e.clientX - r.left) / r.width) * STORAGE_GRID.cols);
+  const y = Math.floor(((e.clientY - r.top) / r.height) * STORAGE_GRID.rows);
+  if (x < 0 || y < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) return null;
+  return { x, y };
+}
+app.addEventListener(
+  'pointerdown',
+  (e) => {
+    if (!loupeCellAt(e)) return;
+    e.preventDefault();
+    e.stopPropagation(); // ikke start dra-og-slipp i lupemodus
+  },
+  { capture: true },
+);
+app.addEventListener(
+  'click',
+  (e) => {
+    const cell = loupeCellAt(e);
+    if (!cell) return;
+    e.stopPropagation();
+    const k = `${cell.x},${cell.y}`;
+    if (loupeChecked.has(k)) return;
+    void (async () => {
+      try {
+        const r = await api<{ found: boolean; reward: number; returned: number }>('/api/loupe/cell', cell);
+        loupeChecked.set(k, r.found);
+        if (r.found) toast(`🔍 Spor! Noen har snoket her. Dusør og kompensasjon ${kr(r.reward)}${r.returned ? `, ${r.returned} ting levert tilbake` : ''}.`);
+      } catch (err) {
+        toast((err as Error).message, true);
+      }
+      await refresh();
+    })();
+  },
+  { capture: true },
+);
+
 app.addEventListener('click', (e) => {
   const el = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
   if (!el) return;
   const action = el.dataset.action;
   if (action === 'close') {
     if (e.target !== el && el.classList.contains('modal-backdrop')) return; // klikk inni dialogen
+    if (modal?.kind === 'snoop') void api('/api/snoop/end', {}).catch(() => {});
     modal = null;
+  }
+  if (action === 'snoop') {
+    const stallId = Number(el.dataset.stall);
+    modal = { kind: 'snoop', view: null };
+    render();
+    void snoopAct('/api/snoop/start', { stallId });
+    return;
+  }
+  if (action === 'snoop-take' && modal?.kind === 'snoop' && modal.view) {
+    void snoopAct('/api/snoop/take', { stallId: modal.view.stallId, itemId: Number(el.dataset.item) }, '🕵️ Tatt med – den ligger under disken din.');
+    return;
+  }
+  if (action === 'snoop-imprint' && modal?.kind === 'snoop' && modal.view) {
+    void snoopAct('/api/snoop/imprint', { stallId: modal.view.stallId }, '🧼 Avtrykket ligger under disken din.');
+    return;
+  }
+  if (action === 'copy-key') {
+    void act('/api/key/copy', { itemId: Number(el.dataset.item) }, '🔑 Kopinøkkelen er klar.').then((ok) => {
+      if (ok) modal = null;
+      render();
+    });
+    return;
+  }
+  if (action === 'loupe-mode') {
+    loupeMode = !loupeMode;
+    if (!loupeMode) loupeChecked.clear();
+    render();
+    return;
   }
   if (action === 'pick') screen = { kind: 'claim', slot: Number(el.dataset.slot) };
   if (action === 'insurer') modal = { kind: 'insurer' };
@@ -2798,6 +2970,7 @@ document.addEventListener('keydown', (e) => {
     return render();
   }
   if (e.key === 'Escape' && (modal || paperWin || openPanels.length > 0)) {
+    if (modal?.kind === 'snoop') void api('/api/snoop/end', {}).catch(() => {});
     if (modal) modal = null;
     else if (paperWin) paperWin = null;
     else openPanels = openPanels.slice(0, -1); // lukk det øverste vinduet
@@ -2843,6 +3016,11 @@ app.addEventListener('submit', async (e) => {
         openPanel(itemId);
         render();
       }
+      break;
+    }
+    case 'snoop-safe': {
+      if (modal?.kind !== 'snoop' || !modal.view) return;
+      await snoopAct('/api/snoop/safe', { stallId: modal.view.stallId, safeId: Number(form.dataset.safe), code: String(data.code ?? '') }, '🔓 Safen gikk opp!');
       break;
     }
     case 'note':
