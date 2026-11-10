@@ -73,6 +73,7 @@ import { BAG_PRICE, KLAS_DELIVERY, SHIPPING, STORES, STORE_BY_ID, expressPrice, 
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
+import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange } from '../shared/deals.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
@@ -1329,7 +1330,7 @@ function storeView(s: GameState, storeId: string): string {
     const n = cart[it.typeId] ?? 0;
     const art = t.image ? `<img src="${t.image}" alt="" draggable="false">` : `<span class="shop-emoji">${t.emoji}</span>`;
     const p = PRODUCT_BY_ID[it.typeId];
-    const sub = p ? `Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen';
+    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen';
     const coupon = bestCoupon(s, storeId, it.typeId);
     return `<div class="shop-card ${it.deal ? 'deal' : ''} ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
       <div class="shop-art">${art}<span class="shop-size">${t.size.w}×${t.size.h}</span>
@@ -1395,7 +1396,10 @@ function storeView(s: GameState, storeId: string): string {
     <h3>Råvarer</h3>
     <div class="shop-grid">${ingredients.map(card).join('')}</div>
     <h3>Dagens varer</h3>
-    <div class="shop-grid">${goods.map(card).join('')}</div>
+    ${CATEGORIES.map((c) => {
+      const inCat = goods.filter((i) => PRODUCT_BY_ID[i.typeId]?.category === c.id);
+      return inCat.length ? `<h4 class="cat-head">${c.emoji} ${esc(c.label)}</h4><div class="shop-grid">${inCat.map(card).join('')}</div>` : '';
+    }).join('')}
     <div class="cart" id="cart">
       <h3>🛒 Handlekurv</h3>
       ${cartHtml}
@@ -1472,7 +1476,7 @@ function klasView(s: GameState): string {
     ${section('Elektrisk', '', electric)}
     ${section('Batterier', '', batteries)}
     ${section('Oppbevaring', 'Esker tar litt plass under disken, men rommer mer inni.', boxes)}
-    ${section('Kontorrekvisita', '', tools)}`;
+    ${section('🧰 Verktøy', '', tools)}`;
 }
 
 /** Vareoppslag: stort bilde til venstre, info og handlinger til høyre. */
@@ -1926,6 +1930,7 @@ function modalView(s: GameState): string {
     inner = itemCard(
       p,
       `<h2>${esc(p.name)}</h2>
+      <p class="cat-pill">${categoryLabel(p.category)}</p>
       <dl class="item-stats">
         <dt>På bordet</dt><dd>${inv.onCounter}</dd>
         <dt>Under disken</dt><dd>${stored}</dd>
@@ -1955,6 +1960,7 @@ function modalView(s: GameState): string {
     inner = itemCard(
       p,
       `<h2>${esc(p.name)}</h2>
+      <p class="cat-pill">${categoryLabel(p.category)}</p>
       <dl class="item-stats">
         <dt>Pris</dt><dd><strong>${kr(price)}</strong> per stk</dd>
         <dt>På bordet</dt><dd>${count} hos «${esc(stall.name)}»</dd>

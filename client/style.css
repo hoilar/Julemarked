@@ -226,6 +226,8 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .store-banner b { font-size: 1.5rem; letter-spacing: 0.02em; }
 .store-banner span { font-style: italic; font-size: 0.85rem; opacity: 0.9; }
 .store-banner.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
+.cat-head { margin: 0.9rem 0 0.4rem; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.cat-pill { display: inline-block; margin: -0.3rem 0 0.5rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: rgba(127, 127, 127, 0.15); font-size: 0.8rem; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.6rem; }
 .shop-card { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
 .shop-card.incart { border-color: var(--green); box-shadow: 0 0 0 2px rgba(47, 107, 79, 0.25); }

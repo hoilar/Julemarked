@@ -1,3 +1,4 @@
+import type { Category } from './categories.ts';
 import type { GridSize } from './grid.ts';
 import { INSURANCES, policyItemId, type InsuranceKind } from './insurance.ts';
 
@@ -20,6 +21,7 @@ export interface Product {
   sprite: number; // hvor stor varen tegnes på bordet (1 = én rute)
   craftedOnly?: boolean; // kan ikke kjøpes hos grossisten – må lages i kjelen
   brand: string; // produsenten på etiketten når varen er kjøpt i butikk
+  category: Category; // se shared/categories.ts
   shady?: { exposeChance: number; reputationHit: number; lines: string[] };
 }
 
@@ -505,6 +507,7 @@ const good = (
   basePrice: number,
   baseDemand: number,
   brand: string,
+  category: Category,
 ): Product => ({
   kind: 'product',
   id,
@@ -515,28 +518,29 @@ const good = (
   basePrice,
   baseDemand,
   brand,
+  category,
   size: { w, h },
   sprite: w === 2 ? 2.3 : 1.15,
 });
 
 export const PRODUCTS: Product[] = [
   // --- Med egne tegninger ---
-  //   id                  navn                      emoji fil                  w  h  inn  pris  etterspørsel  produsent
-  { ...good('glogg', 'Gløgg (kopp)', '🍷', 'glogg-kopp', 1, 1, 12, 45, 2.2, 'Glødeverket'), craftedOnly: true }, // varmes av flaske i kjelen
-  good('pepperkake_stjerne', 'Pepperkakestjerne', '⭐', 'pepperkake-stjerne', 1, 1, 6, 25, 2.0, 'Kakefabrikken'),
-  good('pepperkake_hjerte', 'Pepperkakehjerte', '❤️', 'pepperkake-hjerte', 1, 1, 8, 35, 1.6, 'Kakefabrikken'),
-  good('drops', 'Polkadrops', '🍬', 'drops', 1, 1, 4, 15, 2.2, 'Søtt & Co'),
-  good('karamell', 'Fløtekaramell', '🍬', 'karamell', 1, 1, 3, 12, 2.4, 'Søtt & Co'),
-  good('julekule', 'Håndmalt julekule', '🔴', 'julekule', 1, 1, 25, 79, 0.8, 'Pynt Import AS'),
-  good('sjokolade', 'Julesjokolade', '🍫', 'sjokolade', 1, 2, 15, 49, 1.3, 'Kakaokompaniet'),
-  good('konfekt', 'Konfekteske', '🍫', 'konfekt', 1, 2, 45, 149, 0.7, 'Kakaokompaniet'),
-  good('gloggflaske', 'Gløgg (flaske)', '🍷', 'glogg-flaske', 1, 2, 50, 169, 0.6, 'Glødeverket'),
-  good('brente_mandler', 'Brente mandler', '🥜', 'brente-mandler', 2, 2, 30, 89, 1.5, 'Mills'),
-  good('pepperkakepose', 'Pepperkaker (pose)', '🍪', 'pepperkaker-pose', 2, 2, 35, 99, 0.9, 'Kakefabrikken'),
-  good('syltetoy', 'Syltetøy', '🍓', 'syltetoy', 2, 2, 35, 119, 0.7, 'Mills'),
-  good('nisselue', 'Nisselue', '🎅', 'nisselue', 2, 2, 45, 149, 0.6, 'Pynt Import AS'),
-  good('julestrompe', 'Julestrømpe', '🧦', 'julestrompe', 2, 2, 60, 199, 0.5, 'Pynt Import AS'),
-  good('votter', 'Strikkede votter', '🧤', 'votter', 2, 2, 120, 399, 0.3, 'Strikkefabrikken'),
+  //   id                  navn                      emoji fil                  w  h  inn  pris  etterspørsel  produsent  kategori
+  { ...good('glogg', 'Gløgg (kopp)', '🍷', 'glogg-kopp', 1, 1, 12, 45, 2.2, 'Glødeverket', 'drikke'), craftedOnly: true }, // varmes av flaske i kjelen
+  good('pepperkake_stjerne', 'Pepperkakestjerne', '⭐', 'pepperkake-stjerne', 1, 1, 6, 25, 2.0, 'Kakefabrikken', 'kaker'),
+  good('pepperkake_hjerte', 'Pepperkakehjerte', '❤️', 'pepperkake-hjerte', 1, 1, 8, 35, 1.6, 'Kakefabrikken', 'kaker'),
+  good('drops', 'Polkadrops', '🍬', 'drops', 1, 1, 4, 15, 2.2, 'Søtt & Co', 'godteri'),
+  good('karamell', 'Fløtekaramell', '🍬', 'karamell', 1, 1, 3, 12, 2.4, 'Søtt & Co', 'godteri'),
+  good('julekule', 'Håndmalt julekule', '🔴', 'julekule', 1, 1, 25, 79, 0.8, 'Pynt Import AS', 'dekor'),
+  good('sjokolade', 'Julesjokolade', '🍫', 'sjokolade', 1, 2, 15, 49, 1.3, 'Kakaokompaniet', 'godteri'),
+  good('konfekt', 'Konfekteske', '🍫', 'konfekt', 1, 2, 45, 149, 0.7, 'Kakaokompaniet', 'godteri'),
+  good('gloggflaske', 'Gløgg (flaske)', '🍷', 'glogg-flaske', 1, 2, 50, 169, 0.6, 'Glødeverket', 'drikke'),
+  good('brente_mandler', 'Brente mandler', '🥜', 'brente-mandler', 2, 2, 30, 89, 1.5, 'Mills', 'godteri'),
+  good('pepperkakepose', 'Pepperkaker (pose)', '🍪', 'pepperkaker-pose', 2, 2, 35, 99, 0.9, 'Kakefabrikken', 'kaker'),
+  good('syltetoy', 'Syltetøy', '🍓', 'syltetoy', 2, 2, 35, 119, 0.7, 'Mills', 'mat'),
+  good('nisselue', 'Nisselue', '🎅', 'nisselue', 2, 2, 45, 149, 0.6, 'Pynt Import AS', 'klaer'),
+  good('julestrompe', 'Julestrømpe', '🧦', 'julestrompe', 2, 2, 60, 199, 0.5, 'Pynt Import AS', 'dekor'),
+  good('votter', 'Strikkede votter', '🧤', 'votter', 2, 2, 120, 399, 0.3, 'Strikkefabrikken', 'klaer'),
   // Risikovarer: legg til `shady: { exposeChance, reputationHit, lines }` på en vare
   // (se Product over) for høy margin med fare for avsløring. Ingen varer bruker det nå.
 ];
