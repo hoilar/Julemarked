@@ -541,14 +541,14 @@ function phoneWindow(s: GameState): string {
     return t.kind === 'container' ? `${t.inner.cols}×${t.inner.rows}` : '';
   };
   const fuelInfo = (c: (typeof CARS)[number]) => (c.fuel === 'bensin' ? `${c.liters} l bensin per tur (${kr(tripFuelCost(c, s.me.car.fuelPrice))} i dag)` : '1 fulladet batteri per tur');
-  const bil = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>🚗 Bilbutikken</b></div>
+  const bil = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('bilbutikken').replace('<img ', '<img class="title-icon" ')} Bilbutikken</b></div>
     <div class="phone-widget fuel ${s.me.car.fuelExpensive ? 'dear' : ''}"><small>Bensin i dag</small><b>${s.me.car.fuelPrice.toFixed(2).replace('.', ',')} kr/l</b>
       ${s.me.car.fuelExpensive ? '<small>⚠️ Dyr periode – det varer noen dager.</small>' : '<small>Prisen byttes kl. 07.</small>'}</div>
     <div class="phone-kicker">Bilene</div>
     <ul class="car-list">${CARS.map((c) => {
       const mine = c.id === myCar?.typeId;
       const cost = c.price - tradeIn;
-      return `<li class="${mine ? 'mine' : ''}"><span class="car-what"><span class="car-emoji">${ITEM_TYPES[c.id].emoji}</span>
+      return `<li class="${mine ? 'mine' : ''}"><span class="car-what"><span class="car-emoji">${sprite(ITEM_TYPES[c.id])}</span>
           <span><b>${esc(c.name)}</b><small>${c.minutes} min borte · bagasjerom ${trunkSize(c.id)} (${esc(c.trunkNote)}) · ${fuelInfo(c)}</small><small class="muted">${esc(c.blurb)}</small></span></span>
         ${mine ? '<span class="pill">Din bil</span>' : `<button class="small" data-action="buy-car" data-car="${c.id}" ${s.me.cash >= cost ? '' : 'disabled'} title="${tradeIn ? `${kr(c.price)} minus ${kr(tradeIn)} i innbytte` : ''}">${cost > 0 ? kr(cost) : cost < 0 ? `Få ${kr(-cost)}` : 'Bytt'}</button>`}</li>`;
     }).join('')}</ul>
@@ -585,7 +585,7 @@ function phoneWindow(s: GameState): string {
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
            ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length) : ''}
-           ${mine ? app('phone-page', '<span class="app-emoji">🚗</span>', 'Bilbutikken', 'data-page="bil"') : ''}
+           ${mine ? app('phone-page', appIcon('bilbutikken'), 'Bilbutikken', 'data-page="bil"') : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -917,6 +917,12 @@ function boxPanels(s: GameState, carriedOnly = false): string {
 
 const hhmm = (t: number) => formatClock(osloParts(t)).replace(/^.* kl\. /, '');
 
+/** Bilen bakfra: med åpent bagasjerom når vinduet for bagasjerommet er åpent. */
+function carSprite(t: (typeof ITEM_TYPES)[string], open: boolean): string {
+  const img = t.kind === 'container' && open && t.imageOpen ? t.imageOpen : t.image;
+  return sprite({ emoji: t.emoji, image: img });
+}
+
 /** Bilen din står parkert til venstre (du ser baksiden). Trykk for å åpne bagasjerommet. */
 function carView(s: GameState): string {
   const car = s.me.items.find((i) => i.place === 'car');
@@ -927,7 +933,7 @@ function carView(s: GameState): string {
     return `<div class="car away" title="Du er ute og handler hos ${esc(STORE_BY_ID[trip.store]?.name ?? 'butikken')}"><span class="car-tracks">💨</span><small>Ute og handler · tilbake kl. ${hhmm(trip.until)}</small></div>`;
   const n = itemsIn(s.me.items, 'box', car.id).length;
   return `<button class="car ${isOpen(car.id) ? 'open' : ''}" data-action="open-car" data-item="${car.id}" title="${esc(spec?.name ?? 'Bilen')} – trykk for å åpne bagasjerommet">
-    ${sprite(ITEM_TYPES[car.typeId])}<small>${n ? `${n} i bagasjerommet` : 'Bagasjerom'}</small></button>`;
+    ${carSprite(ITEM_TYPES[car.typeId], isOpen(car.id))}<small>${n ? `${n} i bagasjerommet` : 'Bagasjerom'}</small></button>`;
 }
 
 /** Det du bærer: en pose i hver hånd og ryggsekken på ryggen. Dra en pose eller sekk hit. */
@@ -1605,9 +1611,7 @@ function storeView(s: GameState, storeId: string): string {
        <div class="ship-choice">
          <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
          <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : '<b>GRATIS i dag</b>'} – innen 1 time</label>
-         ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}"><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}>
-           🚗 Hent selv med ${esc(carSpec.name)} – ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin${s.me.car.fuelExpensive ? ' (dyr bensin nå)' : ''}` : '1 fulladet batteri'}, ingen frakt
-           <small>Boden stenges i ${carSpec.minutes} min mens du er borte. Varene legges i bagasjerommet – i eskene der først, så i poser.</small></label>` : ''}
+         ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}" title="${esc(carSpec.name)}: ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin` : '1 fulladet batteri'}. Boden stenges i ${carSpec.minutes} min, og varene legges i bagasjerommet."><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}> 🚗 Hent selv</label>` : ''}
        </div>
        <div class="cart-total"><span>Totalt</span><b>${kr(total)}</b></div>
        <button class="order-btn" data-action="shop-order" data-store="${storeId}" style="--brand:${store.color};--brand-ink:${store.ink}">Bestill fra ${esc(store.name)}</button>`

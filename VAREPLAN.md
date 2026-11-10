@@ -13,6 +13,7 @@ Planlegging av nye varer, råvarer og gameplay.
 - Varene legges i eskene i bagasjerommet først, så i nye poser der. Er det ikke plass til alt, kan du ikke kjøre.
 - Mens du er ute, kan du ikke snu skiltet, snoke, kjøre en ny tur eller røre bagasjerommet. Når du er tilbake, ligger varene i bilen, og skiltet står fortsatt på Stengt.
 - **Bilbutikken** er en ny app på telefonen. Den gamle bilen tas i innbytte for halv pris, og bagasjerommet må være tomt.
+- **Bilen er privat.** Andre spillere kan ikke se den, snoke i den eller bryte seg inn i den. Tilsynsmannen kan likevel finne luguberte varer i bagasjerommet (bare en låst safe stopper ham), så bilen er ikke et sikkert gjemmested.
 - **Bensinprisen** er 16–22 kr/l. Noen perioder på tre dager er den 2,4 ganger så dyr. Prisen står i Bilbutikken og i kassa i nettbutikken.
 
 **Valg i steg 5** (tallene står i `shared/snoop.ts`):
@@ -111,7 +112,7 @@ Prisene justeres etter hvert som vi tester.
 
 ## Åpne spørsmål
 
-- Kan man se andres bil og bryte seg inn i den?
+- Ingen akkurat nå.
 
 ## 🍷 Alkohol
 

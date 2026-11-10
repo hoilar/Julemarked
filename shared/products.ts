@@ -70,7 +70,7 @@ export interface Container {
   inner: GridSize;
   shopBag?: boolean; // butikkpose: kommer med leveranser, selges ikke hos Klas Olsen
   safe?: boolean; // safe: låst med en firesifret kode (kodelappen følger med)
-  imageOpen?: string; // bilde når safen er låst opp
+  imageOpen?: string; // bilde når safen er låst opp (bilen: bagasjerommet åpent)
   backpack?: boolean; // ryggsekk: bæres på ryggen
   car?: boolean; // bilen: står parkert ved boden, inner = bagasjerommet
 }
@@ -717,12 +717,12 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
   // Ryggsekken bæres på ryggen og rommer like mye som en pappkartong.
-  { kind: 'container', id: 'ryggsekk', name: 'Ryggsekk', emoji: '🎒', price: 249, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 }, backpack: true },
+  { kind: 'container', id: 'ryggsekk', name: 'Ryggsekk', emoji: '🎒', image: '/art/ryggsekk.png', price: 249, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 }, backpack: true },
   // Bilene (shared/car.ts): bagasjerommet er rutenettet inni. Kjøpes i Bilbutikken, ikke hos Klas Olsen.
-  { kind: 'container', id: 'bil_tennis', name: 'WV Tennis 1995', emoji: '🚗', price: 0, size: { w: 4, h: 4 }, inner: { cols: 4, rows: 4 }, car: true },
-  { kind: 'container', id: 'bil_toforr', name: 'Volvo Toførr 2004', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 3 }, car: true },
-  { kind: 'container', id: 'bil_highass', name: 'Toyota HighAss 2014', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 8, rows: 4 }, car: true },
-  { kind: 'container', id: 'bil_fuzz', name: 'ID Fuzz', emoji: '🚘', price: 0, size: { w: 4, h: 4 }, inner: { cols: 8, rows: 4 }, car: true },
+  { kind: 'container', id: 'bil_tennis', image: '/art/biler/bil-tennis.png', imageOpen: '/art/biler/bil-tennis-apen.png', name: 'WV Tennis 1995', emoji: '🚗', price: 0, size: { w: 4, h: 4 }, inner: { cols: 4, rows: 4 }, car: true },
+  { kind: 'container', id: 'bil_toforr', image: '/art/biler/bil-toforr.png', imageOpen: '/art/biler/bil-toforr-apen.png', name: 'Volvo Toførr 2004', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 3 }, car: true },
+  { kind: 'container', id: 'bil_highass', image: '/art/biler/bil-highass.png', imageOpen: '/art/biler/bil-highass-apen.png', name: 'Toyota HighAss 2014', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 8, rows: 4 }, car: true },
+  { kind: 'container', id: 'bil_fuzz', image: '/art/biler/bil-fuzz.png', imageOpen: '/art/biler/bil-fuzz-apen.png', name: 'ID Fuzz', emoji: '🚘', price: 0, size: { w: 4, h: 4 }, inner: { cols: 8, rows: 4 }, car: true },
 ];
 
 /**

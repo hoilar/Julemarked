@@ -761,25 +761,59 @@ spillfilene og koden er ikke endret i denne leveransen. Skaler med nearest neigh
 | `art/verktoy/kopinokkel.png` | 1×1 | En litt grovt filt messingnøkkel med ferske filemerker, liggende vannrett. I dag 🔑. |
 | `art/verktoy/nokkelmaskin.png` | 2×2 | Liten, skitten nøkkelkopieringsmaskin med skrustikke, sveiv og fil – litt shabby, fra Fyren. I dag 🛠️. |
 
-### Bestilt: bilene, ryggsekken og Bilbutikken (steg 6)
+### Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)
 
-I spillet med emoji som plassholder. Samme pikselstil, uten lesbar tekst, ekte bilmerker eller skilt.
-Bilene sees **rett bakfra** (de står parkert til venstre for boden), med to bilder per bil: bagasjerommet lukket og åpent (samme beskjæring).
+**✅ Alle ti transparente PNG-originaler er ferdige i `GFX_assets/ChatGPT`:**
+`bil-tennis.png`, `bil-tennis-apen.png`, `bil-toforr.png`, `bil-toforr-apen.png`,
+`bil-highass.png`, `bil-highass-apen.png`, `bil-fuzz.png`, `bil-fuzz-apen.png`,
+`ryggsekk.png` og `app-bilbutikken.png`.
+Samme grove pikselstil, mørkebrune kontur og varme materialtoner som de øvrige
+varene, uten lesbar tekst, ekte bilmerker eller registreringsnummer.
+
+Bilene sees **rett bakfra**, med vannrett støtfanger og hjulgrunnlinje, uten
+skråstilt trekvartvinkel. Alle åtte bilbilder er **1448×1086 px / 4:3**.
+Hvert bilpar har samme lerret og plassering av karosseriet, med plass over taket
+til åpen bakluke. SUV-ens reservehjul følger bakluken. Bagasjerommene er tomme.
+**ID Fuzz er en hvit elektrisk varebil**, med høyt tak, stor loddrett bakluke og
+lysstripe bak; både lukket og åpen versjon er laget som varebil etter presiseringen.
+Behold lerretet eller bruk samme felles beskjæring for begge bilder i hvert par,
+inkludert plassen til åpen bakluke, så bilen ikke flytter seg ved bildebytte.
+
+Ryggsekken er en slitt rød/grå tursekk, **1254×1254 px / 3×3** som stor original.
+Bilbutikken-ikonet er **1254×1254 px**, med en liten blå bil på samme kremfargede
+ramme som de øvrige appene; klart til nearest-neighbor-skalering til 128×128 px.
+Alle ti er kontrollert for transparent ytterområde, hele silhuetter og lesbarhet
+i nedskalert oversikt. Oversikter: `biler-ryggsekk-oversikt.jpg` og
+`biler-ryggsekk-liten.jpg`. Prompter fra bildegeneratoren:
+`biler-ryggsekk-prompter.json`. Kontrolldata: `biler-ryggsekk-kontroll.json`.
+Originalene er klare til innlegging; spillfiler og kode er ikke endret i denne leveransen.
 
 | Fil i spillet | Størrelse | Motiv |
 |---|---|---|
 | `art/biler/bil-tennis.png` + `bil-tennis-apen.png` | ca. 4:3 | WV Tennis 1995: liten, rusten kompaktbil i falmet rødt, bulkete støtfanger. I dag 🚗. |
 | `art/biler/bil-toforr.png` + `bil-toforr-apen.png` | ca. 4:3 | Volvo Toførr 2004: lang, lav stasjonsvogn i mørkeblått, kantete baklys. I dag 🚙. |
 | `art/biler/bil-highass.png` + `bil-highass-apen.png` | ca. 4:3 | Toyota HighAss 2014: høy, bred SUV i sølvgrått, reservehjul på bakluka. I dag 🚙. |
-| `art/biler/bil-fuzz.png` + `bil-fuzz-apen.png` | ca. 4:3 | ID Fuzz: rund, moderne elbil i hvitt med lysstripe bak, ladeluke. I dag 🚘. |
+| `art/biler/bil-fuzz.png` + `bil-fuzz-apen.png` | ca. 4:3 | ID Fuzz: moderne elektrisk **varebil** i hvitt, høyt tak og stor loddrett bakluke, avrundede hjørner, lysstripe bak og ladeluke. Sett rett bakfra. |
 | `art/ryggsekk.png` | 3×3 | Slitt tursekk i rødt og grått med lommer og stropper. I dag 🎒. |
 | `art/telefon/app-bilbutikken.png` | 128×128 | App-ikon i samme stil som de andre: en liten bil på kremfarget ramme. I dag 🚗. |
+
+### Bestilt: alarmsystem
+
+Alarmen (349 kr hos Klas Olsen) henger på boden og vises i dag ikke i det hele tatt. Den lages som **lag over hele boden**
+(1536×1024, alt annet gjennomsiktig), akkurat som lyslenkene, og må passe nøyaktig på samme bod.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/devices/alarm-av.png` | 1536×1024 | En liten hvit alarmboks med rund sirene/blinklys på toppen, skrudd fast **øverst på venstre stolpe, rett under taket** (over «Stengt»-skiltet). Tynn grå ledning ned langs stolpen. Blinklyset er mørkt. |
+| `art/devices/alarm-pa.png` | 1536×1024 | Samme alarm, plassert identisk, med blinklyset tent rødt og en svak rød glød rundt (det er dette tyven ser). |
+| `art/devices/ikon-alarm.png` | 128×128 | Ikon til Klas Olsen og grenuttaket: alarmboksen med det røde lyset tent. |
 
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Fire biler (lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Bestilt: bilene, ryggsekken og Bilbutikken (steg 6)» | ⏳ Bestilt (emoji til de er klare) |
+| Alarmsystem på boden (av + på) | se «Bestilt: alarmsystem» | ⏳ Bestilt (vises ikke i dag) |
+| Fire kjøretøy (inkludert elektrisk varebil, lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)» | ✅ i bruk: `art/biler/bil-{tennis,toforr,highass,fuzz}{,-apen}.png` (384×288, felles beskjæring så størrelsen mellom bilene stemmer), `art/ryggsekk.png` (3×3), `art/telefon/app-bilbutikken.png` |
 | Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Ferdig laget: såpe og nøkler (snoking)» | ✅ i bruk: `art/verktoy/{sapestykke,sapeavtrykk,blank-nokkel,kopinokkel}.png` (1×1), `art/verktoy/nokkelmaskin.png` (2×2) |
 | 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Ferdig laget: luguberte varer og Meldinger-appen» | ✅ i bruk: `art/goods/{smuglersigaretter,piratfilm,kinaputter,juletre-tyv,hjemmebrent,merkevotter}.png`, `art/ravarer/{gjaer,falsk-logo}.png`, `art/telefon/app-meldinger.png` |
 | To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ i bruk: `art/safe-liten{,-apen}.png` (2×2), `art/safe-stor{,-apen}.png` (3×4, åpent bilde når safen er låst opp), `art/verktoy/{kodelapp,notat,lupe}.png` |

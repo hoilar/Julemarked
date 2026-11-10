@@ -1351,10 +1351,10 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 /* ---------- Steg 6: bilen og det du bærer ---------- */
 .car {
   position: absolute;
-  left: 0.6%;
-  top: 72%;
-  width: 5%;
-  z-index: 5;
+  left: -2.5%;
+  bottom: 13%;
+  width: 17%;
+  z-index: 3;
   display: grid;
   justify-items: center;
   gap: 0.2cqw;
@@ -1365,9 +1365,10 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
   cursor: pointer;
   color: #fff;
 }
-.car .sprite { font-size: 5cqw; line-height: 1; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.6)); }
+.car .sprite { font-size: 8cqw; line-height: 1; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.6)); }
 .car img.sprite { width: 100%; object-fit: contain; image-rendering: pixelated; }
 .car small, .car.away small { font-size: 0.75cqw; background: rgba(20, 16, 40, 0.75); padding: 0.1cqw 0.4cqw; border-radius: 0.4cqw; white-space: nowrap; }
+.car small { order: -1; }
 .car.open { outline: 0.2cqw solid #ffe08a; outline-offset: 0.3cqw; border-radius: 0.6cqw; }
 .car.away { cursor: default; }
 .car-tracks { font-size: 3cqw; opacity: 0.7; }
@@ -1411,5 +1412,6 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car-list li.mine { outline: 1px solid rgba(255, 233, 168, 0.6); }
 .car-what { flex: 1; min-width: 0; display: flex; gap: 0.4rem; align-items: flex-start; font-size: 0.78rem; }
 .car-what small { display: block; font-size: 0.68rem; opacity: 0.8; }
-.car-emoji { font-size: 1.5rem; line-height: 1; }
+.car-emoji { font-size: 1.5rem; line-height: 1; width: 3.2rem; flex: none; }
+.car-emoji img.sprite { width: 100%; image-rendering: pixelated; }
 .ship-choice label small { display: block; margin-left: 1.5rem; opacity: 0.75; font-size: 0.8em; }
