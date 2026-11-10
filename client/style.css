@@ -229,6 +229,8 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .phone-widget.license { display: grid; gap: 0.3rem; }
 .phone-widget.license.ok b { color: #2f8a3e; }
 .phone-widget.license.banned b { color: #c0392b; }
+.phone-widget.license.pending b { color: #c58a12; }
+.license-doc { border: 3px double #8a6d2b; }
 .phone-widget.license button { justify-self: start; margin-top: 0.2rem; }
 .phone-rules { margin: 0.5rem 0 0; padding-left: 1.1rem; font-size: 0.78rem; line-height: 1.35; }
 .phone-rules li { margin-bottom: 0.3rem; }

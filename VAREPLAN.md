@@ -11,6 +11,7 @@ Kategoriene finnes i `shared/categories.ts`. ★ = sjelden: dukker bare opp noen
 
 - **Kategorier:** Dekor, Klær, Leketøy, Kaker, Godteri, Mat, Drikke, Alkohol, Lugubert, Verktøy.
 - **Alkohol** krever **skjenkebevilling**. Den kjøpes i en ny app, «Kommunen», på telefonen, og gjelder resten av markedet (ingen dagsavgift). Pris foreløpig **1 500 kr** (`shared/liquor.ts`).
+  - Bevillingen kommer som et **dokument i postkassa kl. 07 morgenen etter** at du har søkt. Den gjelder så lenge du har dokumentet; kaster du det, er bevillingen borte. Ved inndragning tar Tilsynsmannen med seg dokumentet. Andre kan ikke ta det fra søpla di (det står på ditt navn).
   - Kundene kjøper alkohol uansett tid og bevilling – det er Tilsynsmannen som håndhever reglene når han sjekker bordet.
   - Alkohol er bare lov å selge **etter kl. 15:00**.
   - Selger du alkohol før kl. 15:00 og Tilsynsmannen ser det, blir bevillingen **inndratt**. Du kan ikke kjøpe ny før det har gått **2 dager**.

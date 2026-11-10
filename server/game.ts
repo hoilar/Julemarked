@@ -80,6 +80,7 @@ import {
   LOUPE,
   isSafe,
   CODE_NOTE,
+  LICENSE_DOC,
   TEXT_NOTE,
   NOTE_MAX,
   type Label,
@@ -248,7 +249,8 @@ interface StallRow {
   sign: SignMode;
   microplastic: number; // mikroplast funnet i søpla (kr/dag til byråkratifondet)
   autogiro: number; // 1 = AvtaleGiro på
-  liquor_license: number; // 1 = har skjenkebevilling
+  liquor_license: number; // gammel kolonne (1 = hadde bevilling før den ble et dokument)
+  liquor_order: number; // avisutgaven bevillingen ble bestilt (0 = ingen på vei)
   liquor_ban: number; // spilltid (ms) da man kan kjøpe ny bevilling etter inndragning
   main_blown: number; // 1 = hovedsikringen har gått
 }
@@ -544,6 +546,13 @@ export function migrate() {
         else q.moveItem.run('storage', null, Math.max(0, Math.min(STORAGE_GRID.cols - i.w, i.x - 1)), i.y, i.id);
       }
       db.prepare('UPDATE stalls SET storage_26 = 1 WHERE id = ?').run(s.id);
+    }
+    // Skjenkebevillingen er nå et dokument: de som hadde den, får dokumentet under disken.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE liquor_license = 1'))) {
+      const items = itemsOf(s.id);
+      const spot = findStorageSpot(items, LICENSE_DOC);
+      if (spot) q.insertItem.run(s.id, LICENSE_DOC, spot.place, spot.boxId, spot.x, spot.y, null);
+      db.prepare('UPDATE stalls SET liquor_license = 0 WHERE id = ?').run(s.id);
     }
     // Avisa ligger nå i postkassa som en gjenstand.
     for (const m of all<MarketRow>(db.prepare('SELECT * FROM markets'))) deliverPapers(m, nowFor(m));
@@ -896,6 +905,7 @@ export function takeFromTrash(player: PlayerRow, stallId: number, itemId: number
     if (!item) throw new GameError('Den ligger ikke i søpla lenger.');
     const t = ITEM_TYPES[item.typeId];
     if (t.kind === 'policy') throw new GameError('Forsikringsbeviset står på et annet navn.');
+    if (t.id === LICENSE_DOC) throw new GameError('Skjenkebevillingen står på et annet navn.');
     if (theirs.some((i) => i.boxId === item.id)) throw new GameError('Det ligger noe oppi den. Det får du ikke med deg.');
     const spot = findStorageSpot(itemsOf(mine.id), item.typeId);
     if (!spot) throw new GameError('Det er ikke plass til den under disken din.');
@@ -1136,7 +1146,7 @@ export function getState(player: PlayerRow): GameState {
       crowd: mine && mine.tip_day === dateKey(t) ? tipPenalty(mine.tip_wrong) : 1,
       gift: mine ? giftFor(market, mine, t) : null,
       autogiro: !!mine?.autogiro,
-      license: { has: !!mine?.liquor_license, bannedUntil: mine && mine.liquor_ban > t ? mine.liquor_ban : null },
+      license: { has: hasLicense(items), pending: !!mine?.liquor_order, bannedUntil: mine && mine.liquor_ban > t ? mine.liquor_ban : null },
       mailPaper: items.some((i) => i.place === 'mail'),
       leads: mine && servingOf(mine) === 'open' ? leadsFor(market, mine, t).filter((l) => l.until > t) : [],
       meter: mine
@@ -1926,9 +1936,27 @@ export function fetchPaper(player: PlayerRow) {
 }
 
 /** Legger dagens avis i postkassa til boder som ikke har fått den ennå. Er postkassa full, ryker den eldste. */
+/** Har boden skjenkebevillingen (dokumentet, ikke i søpla)? */
+const hasLicense = (items: Item[]) => items.some((i) => i.typeId === LICENSE_DOC && !isTrashed(items, i));
+
+/** Bestilte skjenkebevillinger kommer i postkassa sammen med avisa (morgenen etter bestillingen). */
+function deliverLicenses(market: MarketRow, t: number) {
+  const key = currentEdition(t).key;
+  for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ? AND liquor_order > 0 AND liquor_order < ?'), market.id, key)) {
+    const items = itemsOf(s.id);
+    const mailSpot = findFree(1, 1, items.filter((i) => i.place === 'mail'), MAIL_GRID);
+    const spot = mailSpot ? { place: 'mail' as const, boxId: null, ...mailSpot } : findStorageSpot(items, LICENSE_DOC);
+    if (!spot) continue; // ingen plass verken i postkassa eller under disken: prøver igjen neste morgen
+    q.insertItem.run(s.id, LICENSE_DOC, spot.place, spot.boxId, spot.x, spot.y, null);
+    db.prepare('UPDATE stalls SET liquor_order = 0 WHERE id = ?').run(s.id);
+    event(market, s.owner_id, t, `📜 Skjenkebevillingen fra kommunen ligger i ${spot.place === 'mail' ? 'postkassa' : 'boden (postkassa var full)'}. Du kan selge alkohol etter kl. ${LIQUOR_FROM_HOUR}.`);
+  }
+}
+
 function deliverPapers(market: MarketRow, t: number) {
   const ed = currentEdition(t);
   if (ed.time < market.game_start - HOUR) return;
+  deliverLicenses(market, t);
   for (const s of all<StallRow & { paper_read: number }>(
     db.prepare('SELECT s.*, p.paper_read FROM stalls s JOIN players p ON p.id = s.owner_id WHERE s.market_id = ?'),
     market.id,
@@ -2337,13 +2365,15 @@ export function buyLicense(player: PlayerRow) {
   const t = nowFor(market);
   tx(() => {
     const stall = myStall(player);
-    if (stall.liquor_license) throw new GameError('Du har allerede skjenkebevilling.');
+    if (hasLicense(itemsOf(stall.id))) throw new GameError('Du har allerede skjenkebevilling.');
+    const when = osloParts(t).hour < PAPER_HOUR ? 'i dag' : 'i morgen';
+    if (stall.liquor_order) throw new GameError(`Søknaden er sendt. Bevillingen kommer i postkassa ${when} kl. 07.`);
     if (stall.liquor_ban > t)
       throw new GameError(`Bevillingen din er inndratt. Du kan søke om ny ${formatClock(osloParts(stall.liquor_ban))}.`);
     if (stall.cash < LICENSE_PRICE) throw new GameError(`Du har ikke råd. Skjenkebevillingen koster ${LICENSE_PRICE} kr.`);
     q.addCash.run(-LICENSE_PRICE, stall.id);
-    db.prepare('UPDATE stalls SET liquor_license = 1 WHERE id = ?').run(stall.id);
-    event(market, player.id, t, `🏛️ Du fikk skjenkebevilling (${LICENSE_PRICE} kr). Husk: alkohol selges bare etter kl. ${LIQUOR_FROM_HOUR}.`);
+    db.prepare('UPDATE stalls SET liquor_order = ? WHERE id = ?').run(currentEdition(t).key, stall.id);
+    event(market, player.id, t, `🏛️ Søknaden om skjenkebevilling er betalt (${LICENSE_PRICE} kr). Bevillingen kommer i postkassa ${when} kl. 07.`);
   });
 }
 
@@ -2476,8 +2506,9 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
   const forged = itemsOf(s.id).filter((i) => i.place === 'counter' && i.label === 'forged');
   // Alkohol på bordet: uten bevilling er det ulovlig; med bevilling bare før kl. 15 (timen han sto der).
   const liquor = itemsOf(s.id).filter((i) => i.place === 'counter' && isAlcohol(i.typeId));
-  const liquorIllegal = liquor.length > 0 && !fresh.liquor_license;
-  const liquorEarly = liquor.length > 0 && !!fresh.liquor_license && hour < LIQUOR_FROM_HOUR;
+  const licensed = hasLicense(itemsOf(s.id));
+  const liquorIllegal = liquor.length > 0 && !licensed;
+  const liquorEarly = liquor.length > 0 && licensed && hour < LIQUOR_FROM_HOUR;
   const tampered = fresh.meter_tamper > 0.01;
   // Mikroplast i søpla: +1 kr per stk til byråkratifondet hver dag resten av spillet.
   const all_ = itemsOf(s.id);
@@ -2523,7 +2554,8 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
   }
   if (liquorEarly) {
     const until = t + LICENSE_BAN_DAYS * 24 * HOUR;
-    db.prepare('UPDATE stalls SET liquor_license = 0, liquor_ban = ? WHERE id = ?').run(until, s.id);
+    db.prepare('UPDATE stalls SET liquor_ban = ? WHERE id = ?').run(until, s.id);
+    for (const i of itemsOf(s.id).filter((i) => i.typeId === LICENSE_DOC)) q.deleteItem.run(i.id); // han tar med seg dokumentet
     rep = Math.max(0, rep - LICENSE_REVOKE_REP_HIT);
     event(
       market,

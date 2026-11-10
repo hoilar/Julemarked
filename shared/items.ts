@@ -93,7 +93,7 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (spot.place === 'pot_out' && boxKind(spot.boxId) === 'maker' && items.find((i) => i.id === item.id)?.boxId !== spot.boxId)
     return 'Her kommer det ferdige ut.';
   if (spot.place === 'fuse' && t.id !== FUSE.id) return 'Her passer bare en skrusikring.';
-  if (spot.place === 'mail' && t.id !== NEWSPAPER.id) return 'I postkassa ligger det bare aviser.';
+  if (spot.place === 'mail' && t.id !== NEWSPAPER.id && t.id !== 'skjenkebevilling') return 'I postkassa ligger det bare post.';
   if (t.id === FUSEBOX.id && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0) return 'Ta ut sikringene før du kaster sikringsboksen.';
   if (t.id === PHONE && spot.place === 'trash') return 'Telefonen kaster du ikke – den trenger du.';
   // Låst safe: ingenting inn eller ut før den er låst opp med koden.

@@ -1,4 +1,5 @@
-// Alkohol og skjenkebevilling. Bevillingen kjøpes i Kommunen-appen og gjelder resten av markedet.
+// Alkohol og skjenkebevilling. Bevillingen søkes og betales i Kommunen-appen, og kommer som et
+// dokument i postkassa kl. 07 dagen etter. Den gjelder så lenge du har dokumentet (ikke i søpla).
 // Alkohol er bare lov å selge etter kl. 15. Tilsynsmannen sjekker bordet når han går:
 //  - uten bevilling: varene beslaglegges, bot (2 × det kundene forventer å betale), avisoppslag og omdømme
 //  - med bevilling, men før kl. 15: bevillingen inndras, og du kan ikke kjøpe ny før om 2 dager

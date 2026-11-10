@@ -170,6 +170,8 @@ if (!hasColumn('stalls', 'microplastic')) db.exec('ALTER TABLE stalls ADD COLUMN
 if (!hasColumn('stalls', 'autogiro')) db.exec('ALTER TABLE stalls ADD COLUMN autogiro INTEGER NOT NULL DEFAULT 0');
 // Skjenkebevilling: 1 = har den. liquor_ban = spilltid (ms) da man kan kjøpe ny etter inndragning.
 if (!hasColumn('stalls', 'liquor_license')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_license INTEGER NOT NULL DEFAULT 0');
+// Bestilt skjenkebevilling: avisutgaven (ÅÅÅÅMMDD) den ble bestilt; kommer i postkassa neste morgen. 0 = ingen.
+if (!hasColumn('stalls', 'liquor_order')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_order INTEGER NOT NULL DEFAULT 0');
 if (!hasColumn('stalls', 'liquor_ban')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_ban INTEGER NOT NULL DEFAULT 0');
 // Hovedsikringen (uten egen sikringsboks): 1 = gått, ingen strøm før den byttes.
 if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN main_blown INTEGER NOT NULL DEFAULT 0');

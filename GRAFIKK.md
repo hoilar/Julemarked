@@ -640,8 +640,31 @@ app-ikonene): et lite rådhus med flagg og kommunevåpen-aktig skjold. Original 
 
 ### Bestilt: safe, lapper og forstørrelsesglass
 
-I spillet med emoji som plassholder til bildene er klare. Samme stil som verktøyene: én gjenstand,
-sett litt ovenfra, gjennomsiktig bakgrunn, ingen lesbar tekst eller tall.
+**✅ De sju bestilte bildene av safer, kodelapp, notat og lupe er ferdige i
+`GFX_assets/ChatGPT`.** Samme nøytrale pikselstil som verktøyene, uten julepynt,
+lesbar tekst eller tall. Hovedkantene følger gridet; lupen ligger vannrett med
+messinginnfattet linse til venstre og treskaft til høyre.
+
+`safe-liten.png` og `safe-liten-apen.png` er **1254×1254 px / 2×2**, i sort stål
+med kodehjul og lite håndtak. `safe-stor.png` og `safe-stor-apen.png` er
+**1086×1448 px / 3×4**, i matt grått stål med kodehjul, rattformet håndtak og nagler.
+Den lille safen er tom inni; den store har to tomme hyller. Dørene åpnes mot venstre.
+Hvert par har samme lerret, størrelse og plassering av safekroppen. Behold hele
+lerretet eller bruk **samme felles beskjæring for begge bilder i paret**, inkludert
+plassen for åpen dør, slik at safen ikke flytter seg når bildene byttes.
+
+`kodelapp.png`, `notat.png` og `lupe.png` er **1254×1254 px / 1×1** som store
+originaler. Kodelappen er gul med fire uleselige blyantmerker. Notatet har linjer,
+revet toppkant og håndskriftkrusseduller. Alle sju er kontrollert for transparent
+ytterområde og hele silhuetter; lapper og lupe er også kontrollert ved 128 og 64 px.
+
+Oversikt: `safe-lapper-lupe-oversikt.jpg`. Liten visning på lys bakgrunn:
+`safe-lapper-lupe-liten.jpg`. Prompter fra bildegeneratoren:
+`safe-lapper-lupe-prompter.json`. Kontrolldata: `safe-lapper-lupe-kontroll.json`.
+Originalene er klare til innlegging og nearest-neighbor-skalering til spillfilene
+under; spillfiler og kode er ikke endret i denne leveransen.
+
+**Gjenstår i denne listen:** skjenkebevillingen, som er bestilt separat i tabellen under.
 
 | Fil i spillet | Rutenett | Motiv |
 |---|---|---|
@@ -652,12 +675,14 @@ sett litt ovenfra, gjennomsiktig bakgrunn, ingen lesbar tekst eller tall.
 | `art/verktoy/kodelapp.png` | 1×1 | Liten gul lapp, litt krøllet, med fire uleselige blyant-«siffer» (ingen ekte tall). |
 | `art/verktoy/notat.png` | 1×1 | Linjert notatark revet fra en blokk, med håndskrift-krusseduller (ingen lesbar tekst). |
 | `art/verktoy/lupe.png` | 1×1 | Forstørrelsesglass med messingkant og treskaft, liggende vannrett langs gridet. |
+| `art/verktoy/skjenkebevilling.png` | 1×1 | Offisielt dokument fra kommunen: kremhvitt ark med rødt voksesegl og et lite kommunevåpen-aktig skjold (samme som Kommunen-ikonet), uleselige tekstlinjer. Ligger i postkassa. |
 
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ⏳ Bestilt (emoji til de er klare) |
+| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ Alle sju PNG-originaler ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
+| Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ⏳ Bestilt: `art/verktoy/skjenkebevilling.png` |
 | 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |
 | 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |

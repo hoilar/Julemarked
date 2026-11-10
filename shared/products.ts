@@ -235,6 +235,7 @@ export const isSafe = (typeId: string) => {
   return t?.kind === 'container' && !!t.safe;
 };
 export const CODE_NOTE = 'kodelapp';
+export const LICENSE_DOC = 'skjenkebevilling'; // dokumentet fra kommunen – bevillingen gjelder så lenge du har det
 export const TEXT_NOTE = 'notat';
 export const NOTE_MAX = 140; // tegn på et notat
 export const SCREWDRIVER = 'skrutrekker';
@@ -242,6 +243,7 @@ export const PHONE = 'telefon';
 
 export const DOCS: Doc[] = [
   { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'skjenkebevilling', name: 'Skjenkebevilling', emoji: '📜', size: { w: 1, h: 1 } },
   { kind: 'doc', id: 'kodelapp', name: 'Kodelapp', emoji: '🔢', size: { w: 1, h: 1 } },
   { kind: 'doc', id: 'notat', name: 'Notat', emoji: '🗒️', size: { w: 1, h: 1 } },
   { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.png', size: { w: 1, h: 1 } },

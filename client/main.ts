@@ -3,6 +3,7 @@ import { findTrashSpot, gridOf, isTrashed, isUndelivered, itemsIn, placementErro
 import {
   CONTAINERS,
   LOUPE,
+  LICENSE_DOC,
   NOTE_MAX,
   COUNTER_GRID,
   DEVICES,
@@ -475,10 +476,12 @@ function phoneWindow(s: GameState): string {
   const lic = s.me.license;
   const kommunen = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('kommunen').replace('<img ', '<img class="title-icon" ')} Kommunen</b></div>
     <div class="phone-kicker">Skjenkebevilling</div>
-    <div class="phone-widget license ${lic.has ? 'ok' : lic.bannedUntil ? 'banned' : ''}">
+    <div class="phone-widget license ${lic.has ? 'ok' : lic.pending ? 'pending' : lic.bannedUntil ? 'banned' : ''}">
       ${
         lic.has
-          ? '<b>✅ Du har skjenkebevilling</b><small>Gjelder resten av markedet.</small>'
+          ? '<b>✅ Du har skjenkebevilling</b><small>Gjelder så lenge du har dokumentet. Kaster du det, er bevillingen borte.</small>'
+          : lic.pending
+            ? `<b>📨 Søknaden er betalt</b><small>Bevillingen kommer som et dokument i postkassa ${osloParts(s.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.</small>`
           : lic.bannedUntil
             ? `<b>⛔ Inndratt</b><small>Du kan søke om ny ${esc(formatClock(osloParts(lic.bannedUntil)))}.</small>`
             : `<b>Ingen bevilling</b><small>Koster ${kr(LICENSE_PRICE)}, én gang.</small>
@@ -487,6 +490,7 @@ function phoneWindow(s: GameState): string {
     </div>
     <ul class="phone-rules">
       <li>Alkohol (vin, sprit, cider og sterk gløgg) krever skjenkebevilling.</li>
+      <li>Bevillingen kommer som et dokument i postkassa morgenen etter at du har søkt.</li>
       <li>Alkohol er bare lov å selge <b>etter kl. ${LIQUOR_FROM_HOUR}</b>.</li>
       <li>Ser Tilsynsmannen alkohol på bordet før kl. ${LIQUOR_FROM_HOUR}, blir bevillingen inndratt i ${LICENSE_BAN_DAYS} dager.</li>
       <li>Uten bevilling blir alkoholen beslaglagt, og du får bot på det dobbelte av verdien.</li>
@@ -1091,7 +1095,7 @@ function mailPanel(s: GameState, n: number): string {
   return `
   <div class="box-panel mail-panel" data-panel="mail" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
     <div class="box-head" data-panel-head title="Dra for å flytte"><span>📬 Postkassa</span><button class="small ghost" data-action="close-box" data-panel-key="mail" aria-label="Lukk">✕</button></div>
-    <div class="pot-label">Aviser – dra ut, dobbeltklikk for å lese</div>
+    <div class="pot-label">Aviser og post – dra ut, dobbeltklikk avisa for å lese</div>
     <div class="grid box-grid" data-grid="mail" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">${papers}</div>
     <div class="pot-label">Regninger</div>
     <div class="mail-bills">${envelopes || '<div class="muted mail-empty">Ingen regninger. 🎉</div>'}</div>
@@ -1870,6 +1874,14 @@ function itemView(s: GameState, it: Item): string {
     return `<div class="poster big">${posterHtml(it.wanted)}</div>
       <p class="muted">${it.place === 'nail' ? 'Henger på spikeren under grenuttaket. Dra den ned under disken hvis du vil ta den ned.' : 'Dra den opp på spikeren under grenuttaket for å henge den opp.'}</p>`;
   }
+  if (it.typeId === LICENSE_DOC) {
+    const stallName = myStall(s)?.name ?? '';
+    return `<div class="note-sheet license-doc"><h2>📜 Skjenkebevilling</h2>
+      <p>Kommunen gir med dette «${esc(stallName)}» bevilling til å selge alkohol på julemarkedet.</p>
+      <p><b>Salg er bare tillatt etter kl. ${LIQUOR_FROM_HOUR}.</b> Brudd fører til at bevillingen inndras.</p>
+      <small>Gjelder så lenge dokumentet er i bodens besittelse.</small></div>
+      <p class="muted">Kaster du dokumentet, er bevillingen borte – og søpla er åpen for alle.</p>`;
+  }
   if (it.note) {
     return `<div class="note-sheet ${it.note.kind === 'code' ? 'code' : ''}">
       ${it.note.kind === 'code' ? `<div class="note-code">${esc(it.note.text)}</div>` : `<p class="note-text">${esc(it.note.text)}</p>`}
@@ -2555,7 +2567,7 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'buy-license') {
-    act('/api/license/buy', {}, '🏛️ Du har skjenkebevilling!');
+    act('/api/license/buy', {}, '🏛️ Søknaden er betalt. Bevillingen kommer i postkassa kl. 07.');
     return;
   }
   if (action === 'pay-all') {
