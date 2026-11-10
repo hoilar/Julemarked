@@ -78,7 +78,7 @@ import {
   WANTED,
   isHomemade,
   LOUPE,
-  SAFE,
+  isSafe,
   CODE_NOTE,
   TEXT_NOTE,
   NOTE_MAX,
@@ -374,7 +374,7 @@ function itemsOf(stallId: number): Item[] {
     if (r.type_id === WANTED && r.edition && typeof st.seed === 'string')
       item.wanted = { seed: st.seed, alias: String(st.alias ?? ''), edition: r.edition };
     if (r.type_id === NEWSPAPER.id && st.cut) item.cut = true;
-    if (r.type_id === SAFE) item.safe = { locked: st.locked !== false };
+    if (isSafe(r.type_id)) item.safe = { locked: st.locked !== false };
     if ((r.type_id === CODE_NOTE || r.type_id === TEXT_NOTE) && typeof st.text === 'string')
       item.note = { kind: r.type_id === CODE_NOTE ? 'code' : 'text', text: st.text };
     if (r.type_id === NEWSPAPER.id && Array.isArray(st.coupons)) item.cutCoupons = st.coupons as number[];
@@ -811,7 +811,7 @@ export function buy(player: PlayerRow, typeId: string, qty: number) {
     q.setCash.run(stall.cash - cost, stall.id);
     storeNew(stall.id, typeId, qty);
     if (typeId === FUSEBOX.id) syncFuseSlots(stall.id, true); // leveres med sikringer til det som står i kontaktene
-    if (typeId === SAFE) armSafes(stall.id);
+    if (isSafe(typeId)) armSafes(stall.id);
     q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, typeId, qty, cost);
   });
 }
@@ -826,7 +826,7 @@ const rawState = (itemId: number): Record<string, unknown> => {
 /** Nye safer får en tilfeldig firesifret kode, og en kodelapp med koden legges under disken. */
 function armSafes(stallId: number) {
   const items = itemsOf(stallId);
-  for (const s of items.filter((i) => i.typeId === SAFE)) {
+  for (const s of items.filter((i) => isSafe(i.typeId))) {
     if (typeof rawState(s.id).code === 'string') continue;
     const code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
     q.setState.run(JSON.stringify({ code, locked: true }), s.id);
@@ -839,7 +839,7 @@ function armSafes(stallId: number) {
 
 function ownSafe(player: PlayerRow, itemId: number) {
   const stall = myStall(player);
-  const safe = itemsOf(stall.id).find((i) => i.id === itemId && i.typeId === SAFE);
+  const safe = itemsOf(stall.id).find((i) => i.id === itemId && isSafe(i.typeId));
   if (!safe) throw new GameError('Fant ikke safen.');
   return { stall, safe };
 }

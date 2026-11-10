@@ -229,7 +229,11 @@ export const PEN = 'penn';
 export const PAD = 'papirblokk';
 export const SCISSORS = 'saks';
 export const LOUPE = 'lupe';
-export const SAFE = 'safe';
+/** Er dette en safe (liten eller stor)? */
+export const isSafe = (typeId: string) => {
+  const t = ITEM_TYPES[typeId];
+  return t?.kind === 'container' && !!t.safe;
+};
 export const CODE_NOTE = 'kodelapp';
 export const TEXT_NOTE = 'notat';
 export const NOTE_MAX = 140; // tegn på et notat
@@ -669,7 +673,9 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'extrapose', name: 'Extra-pose', emoji: '🛍️', image: '/art/extra-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
   { kind: 'container', id: 'remapose', name: 'REMA-pose', emoji: '🛍️', image: '/art/rema-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
   { kind: 'container', id: 'kartong', name: 'Pappkartong', emoji: '📦', image: '/art/kartong.png', price: 49, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 } },
-  { kind: 'container', id: 'safe', name: 'Safe', emoji: '🔐', price: 599, size: { w: 2, h: 2 }, inner: { cols: 3, rows: 3 }, safe: true },
+  // Safer: låst med en firesifret kode (kodelappen følger med). Id-en «safe» er den lille.
+  { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', price: 599, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, safe: true },
+  { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
 ];
 

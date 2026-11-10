@@ -645,8 +645,10 @@ sett litt ovenfra, gjennomsiktig bakgrunn, ingen lesbar tekst eller tall.
 
 | Fil i spillet | Rutenett | Motiv |
 |---|---|---|
-| `art/safe.png` | 2×2 | Liten, tung stålsafe i mørk grønngrå med messinghjul for kode og et lite håndtak. Døra lukket. |
-| `art/safe-apen.png` | 2×2 | Samme safe med døra åpen (samme beskjæring som den lukkede, så de kan byttes). |
+| `art/safe-liten.png` | 2×2 | Liten, tung safe i **sort stål** med kodehjul og et lite håndtak. Døra lukket. Rommer 4×4 inni. |
+| `art/safe-liten-apen.png` | 2×2 | Samme lille sorte safe med døra åpen (samme beskjæring som den lukkede, så de kan byttes). |
+| `art/safe-stor.png` | 3×4 (stående) | Stor, høy safe i **matt grått stål** med kodehjul, stort rattformet håndtak og nagler langs kanten. Døra lukket. Rommer 6×6 inni. |
+| `art/safe-stor-apen.png` | 3×4 (stående) | Samme store grå safe med døra åpen og hyller inni (samme beskjæring som den lukkede). |
 | `art/verktoy/kodelapp.png` | 1×1 | Liten gul lapp, litt krøllet, med fire uleselige blyant-«siffer» (ingen ekte tall). |
 | `art/verktoy/notat.png` | 1×1 | Linjert notatark revet fra en blokk, med håndskrift-krusseduller (ingen lesbar tekst). |
 | `art/verktoy/lupe.png` | 1×1 | Forstørrelsesglass med messingkant og treskaft, liggende vannrett langs gridet. |
@@ -655,7 +657,7 @@ sett litt ovenfra, gjennomsiktig bakgrunn, ingen lesbar tekst eller tall.
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Safe (lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ⏳ Bestilt (emoji til de er klare) |
+| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ⏳ Bestilt (emoji til de er klare) |
 | 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |
 | 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |
