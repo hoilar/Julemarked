@@ -2,6 +2,8 @@ import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { findTrashSpot, gridOf, isTrashed, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
 import {
   CONTAINERS,
+  LOUPE,
+  NOTE_MAX,
   COUNTER_GRID,
   DEVICES,
   DEVICE_BY_ID,
@@ -119,7 +121,9 @@ type Modal =
   | { kind: 'inspector' }
   | { kind: 'doc'; itemId: number }
   | { kind: 'tool'; itemId: number }
-  | { kind: 'plug'; strip: number | null; index: number };
+  | { kind: 'plug'; strip: number | null; index: number }
+  | { kind: 'safe'; itemId: number }
+  | { kind: 'othertrash'; stallId: number };
 
 const app = document.getElementById('app')!;
 const toastEl = document.getElementById('toast')!;
@@ -157,7 +161,12 @@ const panelKeyOf = (v: string | undefined): PanelKey => (v === 'trash' || v === 
 let openPanels: PanelKey[] = [];
 const panelPos = new Map<PanelKey, { x: number; y: number }>(); // venstre/topp i % av scenen, huskes
 const isOpen = (k: PanelKey) => openPanels.includes(k);
-const closePanel = (k: PanelKey) => (openPanels = openPanels.filter((x) => x !== k));
+const closePanel = (k: PanelKey) => {
+  openPanels = openPanels.filter((x) => x !== k);
+  // En safe låses når vinduet lukkes.
+  const it = typeof k === 'number' ? state?.me.items.find((i) => i.id === k) : undefined;
+  if (it?.safe && !it.safe.locked) void act('/api/safe/lock', { itemId: it.id });
+};
 const openPanel = (k: PanelKey) => (openPanels = [...openPanels.filter((x) => x !== k), k]); // legger øverst
 const togglePanel = (k: PanelKey) => (isOpen(k) ? closePanel(k) : openPanel(k));
 // Grenuttaket på høyre stolpe (tilstanden kommer fra serveren: stall.power).
@@ -464,7 +473,7 @@ function phoneWindow(s: GameState): string {
     <p class="phone-empty">Ubetalt: purring dagen etter, så inkasso, så namsmann.</p>`;
   // Kommunen: skjenkebevilling.
   const lic = s.me.license;
-  const kommunen = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>🏛️ Kommunen</b></div>
+  const kommunen = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('kommunen').replace('<img ', '<img class="title-icon" ')} Kommunen</b></div>
     <div class="phone-kicker">Skjenkebevilling</div>
     <div class="phone-widget license ${lic.has ? 'ok' : lic.bannedUntil ? 'banned' : ''}">
       ${
@@ -508,7 +517,7 @@ function phoneWindow(s: GameState): string {
            ${home ? app('map', appIcon('markedet'), 'Markedet') : mine ? app('home', appIcon('minbod'), 'Min bod') : app('map', appIcon('markedet'), 'Markedet')}
            ${app('phone-page', appIcon('varsler'), 'Varsler', 'data-page="events"', unreadCount(s))}
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
-           ${mine ? app('phone-page', '<span class="app-emoji">🏛️</span>', 'Kommunen', 'data-page="kommunen"') : ''}
+           ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -538,7 +547,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${shopSign(s, stall, own)}
       ${own ? '' : sellerView(stall)}
       ${counterView(stall, own)}
-      ${own ? storageView(s) + trashView(s) + boxPanels(s) : visitorInfo(stall)}
+      ${own ? storageView(s) + trashView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall)}
     </div>
     ${own ? '' : phoneSprite(s, false)}
   </div>`;
@@ -1218,6 +1227,12 @@ function trashDrop(item: Item): { spot: Spot | null; error: string | null } {
   return { spot, error: placementError(state!.me.items, item, spot) };
 }
 
+/** Søppelkassa ved en annens bod. Den er åpen for alle – trykk for å se hva som ligger der. */
+function otherTrashView(stall: StallPublic): string {
+  const n = stall.trash.length;
+  return `<div class="trash visit" data-action="other-trash" data-stall="${stall.id}" title="Søppelkassa – ${n ? `${n} ting` : 'tom'}. Trykk for å se oppi.">${sprite(n ? TRASH_FULL : TRASH)}</div>`;
+}
+
 function visitorInfo(stall: StallPublic): string {
   return `<div class="visitor-info"><div>👤 ${esc(stall.ownerName)} · ⭐ ${stall.reputation}</div>
     <div class="muted">Trykk på en vare for å kjøpe.</div></div>`;
@@ -1855,10 +1870,24 @@ function itemView(s: GameState, it: Item): string {
     return `<div class="poster big">${posterHtml(it.wanted)}</div>
       <p class="muted">${it.place === 'nail' ? 'Henger på spikeren under grenuttaket. Dra den ned under disken hvis du vil ta den ned.' : 'Dra den opp på spikeren under grenuttaket for å henge den opp.'}</p>`;
   }
+  if (it.note) {
+    return `<div class="note-sheet ${it.note.kind === 'code' ? 'code' : ''}">
+      ${it.note.kind === 'code' ? `<div class="note-code">${esc(it.note.text)}</div>` : `<p class="note-text">${esc(it.note.text)}</p>`}
+      </div><p class="muted">${it.note.kind === 'code' ? 'Fire siffer på en lapp. Hvem vet hva de låser opp.' : 'Et notat skrevet med penn.'} Kast den i søpla hvis du vil bli kvitt den – men husk at søpla er åpen for alle.</p>`;
+  }
   const tool = TOOLS.find((x) => x.id === it.typeId);
+  // Papirblokka: skriv en kodelapp eller et notat (krever penn).
+  const write =
+    it.typeId === PAD && (it.sheets ?? 0) > 0
+      ? `<form data-form="note" class="stack-form note-form">
+          <label>Skriv på et ark <select name="kind"><option value="text">Notat</option><option value="code">Kodelapp (fire siffer)</option></select></label>
+          <input name="text" maxlength="${NOTE_MAX}" placeholder="Hva skal stå på lappen?" required>
+          <button ${hasTool(s, PEN) ? '' : 'disabled title="Du trenger en penn"'}>✏️ Skriv lapp</button>
+        </form>`
+      : '';
   return itemCard(
     t,
-    `<h2>${esc(t.name)}</h2><p>${esc(tool?.blurb ?? '')}</p>${it.sheets !== undefined ? `<p class="muted">${it.sheets} ark igjen.</p>` : ''}`,
+    `<h2>${esc(t.name)}</h2><p>${esc(tool?.blurb ?? '')}</p>${it.sheets !== undefined ? `<p class="muted">${it.sheets} ark igjen.</p>` : ''}${write}`,
   );
 }
 
@@ -1925,6 +1954,27 @@ function modalView(s: GameState): string {
   }
 
   if (modal.kind === 'wholesale') inner = shopView(s);
+  if (modal.kind === 'safe') {
+    inner = `<h2>🔐 Safen er låst</h2><p class="muted">Tast den firesifrede koden. Står den på en kodelapp et sted?</p>
+      <form data-form="safe" class="stack-form safe-form">
+        <input name="code" inputmode="numeric" pattern="\\d{4}" maxlength="4" autocomplete="off" placeholder="••••" required autofocus>
+        <button>Lås opp</button>
+      </form>`;
+  }
+  if (modal.kind === 'othertrash') {
+    const id = modal.stallId;
+    const st = s.slots.find((x) => x.stall?.id === id)?.stall;
+    if (!st) return '';
+    const list = st.trash.length
+      ? `<ul class="trash-list">${st.trash
+          .map((i) => {
+            const tt = ITEM_TYPES[i.typeId];
+            return `<li><span class="trash-thing">${icon(tt)} ${esc(tt.name)}</span><button class="small" data-action="take-trash" data-stall="${id}" data-item="${i.id}">Ta med</button></li>`;
+          })
+          .join('')}</ul>`
+      : '<p class="muted">Søppelkassa er tom.</p>';
+    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, havner under disken din.</p>${list}`;
+  }
 
   if (modal.kind === 'product') {
     const p = PRODUCT_BY_ID[modal.productId];
@@ -1978,6 +2028,9 @@ function modalView(s: GameState): string {
 
   if (modal.kind === 'buy') {
     const { stallId, productId } = modal;
+    const loupe = hasTool(s, LOUPE)
+      ? `<button class="ghost loupe-btn" data-action="loupe" data-stall="${stallId}" data-product="${productId}">🔍 Undersøk med forstørrelsesglasset</button>`
+      : '';
     const stall = s.slots.find((x) => x.stall?.id === stallId)?.stall;
     const p = PRODUCT_BY_ID[productId];
     const count = stall?.counter.filter((i) => i.typeId === productId).length ?? 0;
@@ -2002,7 +2055,7 @@ function modalView(s: GameState): string {
                  <button>Kjøp</button>
                  <p class="muted">Varene må få plass under disken din.</p>
                </form>`
-      }`,
+      }${loupe}`,
     );
   }
 
@@ -2210,7 +2263,8 @@ function endDrag(cancelled = false) {
       return;
     }
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
-    if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger') togglePanel(d.item.id);
+    if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
+    else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger') togglePanel(d.item.id);
     else if (t.kind === 'battery')
       toast(`🔋 ${t.name}: ${batteryPct(d.item)} % (${String(Math.round((d.item.charge ?? 0) * 10) / 10).replace('.', ',')} av ${capacityOf(d.item.typeId)} kWh). Dra det til batteriplassen på en maskin, eller i ladestasjonen.`);
     else if (t.kind === 'folded') modal = { kind: 'folded', itemId: d.item.id };
@@ -2483,6 +2537,23 @@ app.addEventListener('click', (e) => {
     act('/api/bill/pay', { billId: Number(el.dataset.bill) }, '✅ Regning betalt.');
     return;
   }
+  if (action === 'other-trash') modal = { kind: 'othertrash', stallId: Number(el.dataset.stall) };
+  if (action === 'take-trash') {
+    act('/api/trash/take', { stallId: Number(el.dataset.stall), itemId: Number(el.dataset.item) }, '🗑️ Tatt med – den ligger under disken din.');
+    return;
+  }
+  if (action === 'loupe') {
+    void (async () => {
+      try {
+        const r = (await api('/api/loupe', { stallId: Number(el.dataset.stall), productId: el.dataset.product })) as { forged: number; reward: number };
+        toast(r.forged ? `🔍 Falsk «Hjemmelaget»-etikett! Dusør ${kr(r.reward)}.` : '🔍 Alt ser ekte ut.');
+      } catch (err) {
+        toast((err as Error).message, true);
+      }
+      await refresh();
+    })();
+    return;
+  }
   if (action === 'buy-license') {
     act('/api/license/buy', {}, '🏛️ Du har skjenkebevilling!');
     return;
@@ -2705,6 +2776,20 @@ app.addEventListener('submit', async (e) => {
       }
       break;
     }
+    case 'safe': {
+      if (modal?.kind !== 'safe') return;
+      const itemId = modal.itemId;
+      const ok = await act('/api/safe/open', { itemId, code: String(data.code ?? '') }, '🔓 Safen er låst opp.');
+      if (ok) {
+        modal = null;
+        openPanel(itemId);
+        render();
+      }
+      break;
+    }
+    case 'note':
+      await act('/api/note/write', { kind: data.kind === 'code' ? 'code' : 'text', text: data.text }, '✏️ Lappen ligger under disken.');
+      break;
     case 'supplies':
       await act('/api/buy-supplies', { typeId: form.dataset.type, qty: Number(data.qty) }, `🚚 Levert under disken (levering ${kr(KLAS_DELIVERY)}).`);
       break;

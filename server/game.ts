@@ -77,6 +77,11 @@ import {
   RECIPE_NOTE,
   WANTED,
   isHomemade,
+  LOUPE,
+  SAFE,
+  CODE_NOTE,
+  TEXT_NOTE,
+  NOTE_MAX,
   type Label,
 } from '../shared/products.ts';
 import {
@@ -94,6 +99,8 @@ import {
   THIEF_REWARD,
   THIEF_STEAL_CHANCE,
   inspectorHour,
+  FINDER_REWARD,
+  FORGED_FINE_FACTOR,
   thiefOf,
   thiefVisits,
   tipPenalty,
@@ -367,6 +374,9 @@ function itemsOf(stallId: number): Item[] {
     if (r.type_id === WANTED && r.edition && typeof st.seed === 'string')
       item.wanted = { seed: st.seed, alias: String(st.alias ?? ''), edition: r.edition };
     if (r.type_id === NEWSPAPER.id && st.cut) item.cut = true;
+    if (r.type_id === SAFE) item.safe = { locked: st.locked !== false };
+    if ((r.type_id === CODE_NOTE || r.type_id === TEXT_NOTE) && typeof st.text === 'string')
+      item.note = { kind: r.type_id === CODE_NOTE ? 'code' : 'text', text: st.text };
     if (r.type_id === NEWSPAPER.id && Array.isArray(st.coupons)) item.cutCoupons = st.coupons as number[];
     if (r.type_id === COUPON && typeof st.store === 'string')
       item.coupon = { store: st.store, productId: String(st.productId), pct: Number(st.pct), from: Number(st.from), to: Number(st.to) };
@@ -801,7 +811,135 @@ export function buy(player: PlayerRow, typeId: string, qty: number) {
     q.setCash.run(stall.cash - cost, stall.id);
     storeNew(stall.id, typeId, qty);
     if (typeId === FUSEBOX.id) syncFuseSlots(stall.id, true); // leveres med sikringer til det som står i kontaktene
+    if (typeId === SAFE) armSafes(stall.id);
     q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, typeId, qty, cost);
+  });
+}
+
+// ---------- Safe, lapper, åpne søplekasser og forstørrelsesglass ----------
+
+const rawState = (itemId: number): Record<string, unknown> => {
+  const r = one<{ state: string | null }>(db.prepare('SELECT state FROM items WHERE id = ?'), itemId);
+  return r?.state ? JSON.parse(r.state) : {};
+};
+
+/** Nye safer får en tilfeldig firesifret kode, og en kodelapp med koden legges under disken. */
+function armSafes(stallId: number) {
+  const items = itemsOf(stallId);
+  for (const s of items.filter((i) => i.typeId === SAFE)) {
+    if (typeof rawState(s.id).code === 'string') continue;
+    const code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    q.setState.run(JSON.stringify({ code, locked: true }), s.id);
+    const spot = findStorageSpot(items, CODE_NOTE);
+    if (!spot) throw new GameError('Det er ikke plass til kodelappen under disken.');
+    insertItem(stallId, items, CODE_NOTE, spot);
+    q.setState.run(JSON.stringify({ text: code }), items[items.length - 1].id);
+  }
+}
+
+function ownSafe(player: PlayerRow, itemId: number) {
+  const stall = myStall(player);
+  const safe = itemsOf(stall.id).find((i) => i.id === itemId && i.typeId === SAFE);
+  if (!safe) throw new GameError('Fant ikke safen.');
+  return { stall, safe };
+}
+
+/** Låser opp en safe med koden. */
+export function openSafe(player: PlayerRow, itemId: number, code: string) {
+  const { safe } = ownSafe(player, itemId);
+  const st = rawState(safe.id);
+  if (!/^\d{4}$/.test(code)) throw new GameError('Koden er fire siffer.');
+  if (st.code !== code) throw new GameError('Feil kode. Safen er fortsatt låst.');
+  q.setState.run(JSON.stringify({ ...st, locked: false }), safe.id);
+}
+
+/** Låser safen igjen. */
+export function lockSafe(player: PlayerRow, itemId: number) {
+  const { safe } = ownSafe(player, itemId);
+  q.setState.run(JSON.stringify({ ...rawState(safe.id), locked: true }), safe.id);
+}
+
+/** Skriver en kodelapp (fire siffer) eller et notat med penn på et ark fra papirblokka. */
+export function writeNote(player: PlayerRow, kind: 'code' | 'text', text: string) {
+  const market = marketOf(player);
+  const stall = myStall(player);
+  const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (kind === 'code' && !/^\d{4}$/.test(clean)) throw new GameError('En kodelapp har fire siffer.');
+  if (kind === 'text' && (clean.length < 1 || clean.length > NOTE_MAX)) throw new GameError(`Et notat er 1–${NOTE_MAX} tegn.`);
+  tx(() => {
+    const items = itemsOf(stall.id);
+    if (!holds(items, PEN)) throw new GameError('Du har ingenting å skrive med.');
+    const pad = items.find((i) => i.typeId === PAD && !isTrashed(items, i) && !isUndelivered(items, i) && (i.sheets ?? 0) > 0);
+    if (!pad) throw new GameError('Du har ikke noe papir å skrive på.');
+    const typeId = kind === 'code' ? CODE_NOTE : TEXT_NOTE;
+    const spot = findStorageSpot(items, typeId);
+    if (!spot) throw new GameError('Det er ikke plass til lappen under disken.');
+    insertItem(stall.id, items, typeId, spot);
+    q.setState.run(JSON.stringify({ text: clean }), items[items.length - 1].id);
+    const left = (pad.sheets ?? 1) - 1;
+    if (left > 0) q.setState.run(JSON.stringify({ sheets: left }), pad.id);
+    else q.deleteItem.run(pad.id);
+    event(market, player.id, nowFor(market), `✏️ Du skrev ${kind === 'code' ? 'en kodelapp' : 'et notat'}.${left > 0 ? '' : ' Papirblokka er tom.'}`);
+  });
+}
+
+/** Tar noe fra en annens søppelkasse og legger det under din egen disk. Søppelkassene er åpne for alle. */
+export function takeFromTrash(player: PlayerRow, stallId: number, itemId: number) {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  if (stallId === mine.id) throw new GameError('Det er din egen søppelkasse – dra det ut av den i stedet.');
+  tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other || other.market_id !== market.id) throw new GameError('Fant ikke boden.');
+    const theirs = itemsOf(stallId);
+    const item = theirs.find((i) => i.id === itemId && i.place === 'trash');
+    if (!item) throw new GameError('Den ligger ikke i søpla lenger.');
+    const t = ITEM_TYPES[item.typeId];
+    if (t.kind === 'policy') throw new GameError('Forsikringsbeviset står på et annet navn.');
+    if (theirs.some((i) => i.boxId === item.id)) throw new GameError('Det ligger noe oppi den. Det får du ikke med deg.');
+    const spot = findStorageSpot(itemsOf(mine.id), item.typeId);
+    if (!spot) throw new GameError('Det er ikke plass til den under disken din.');
+    db.prepare('UPDATE items SET stall_id = ?, place = ?, box_id = ?, x = ?, y = ? WHERE id = ?').run(mine.id, spot.place, spot.boxId, spot.x, spot.y, item.id);
+    event(market, player.id, nowFor(market), `🗑️ Du tok ${t.name.toLowerCase()} fra søpla til «${other.name}».`);
+  });
+}
+
+/**
+ * Undersøker en vare på en annens bord med forstørrelsesglasset. Falske «hjemmelaget»-etiketter:
+ * etikettene rives av, eieren får bot (2 × det kundene forventer), mindre omdømme og avisoppslag,
+ * og du får dusør etter gata.
+ */
+export function useLoupe(player: PlayerRow, stallId: number, productId: string): { forged: number; reward: number } {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  if (stallId === mine.id) throw new GameError('Dine egne varer kjenner du allerede.');
+  return tx(() => {
+    if (!holds(itemsOf(mine.id), LOUPE)) throw new GameError('Du har ikke noe forstørrelsesglass.');
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other || other.market_id !== market.id) throw new GameError('Fant ikke boden.');
+    const p = PRODUCT_BY_ID[productId];
+    if (!p) throw new GameError('Ukjent vare.');
+    const on = itemsOf(stallId).filter((i) => i.place === 'counter' && i.typeId === productId);
+    if (on.length === 0) throw new GameError('Den varen ligger ikke på bordet lenger.');
+    const forged = on.filter((i) => i.label === 'forged');
+    if (forged.length === 0) {
+      event(market, player.id, t, `🔍 Du studerte ${p.name.toLowerCase()} hos «${other.name}» med forstørrelsesglasset. Alt ser ekte ut.`);
+      return { forged: 0, reward: 0 };
+    }
+    for (const i of forged) q.setLabel.run(null, i.id);
+    const value = forged.reduce((n) => n + expectedPrice(p.basePrice, other.reputation, true), 0);
+    const fine = Math.round(value * FORGED_FINE_FACTOR);
+    const hit = Math.min(INSPECTOR_REP_MAX, INSPECTOR_REP_HIT + forged.length * INSPECTOR_REP_PER_ITEM);
+    q.setReputation.run(Math.max(0, other.reputation - hit), other.id);
+    issueBill(market, other, t, 'bot', currentEdition(t).key, fine);
+    const reward = FINDER_REWARD[LAYOUT[other.slot_index].street];
+    q.addCash.run(reward, mine.id);
+    const n = `${forged.length} × ${p.name.toLowerCase()}`;
+    event(market, other.owner_id, t, `🔍 Noen avslørte ${n} med falsk «Hjemmelaget»-etikett på bordet ditt. Bot ${fine} kr og omdømme −${hit}.`);
+    event(market, player.id, t, `🔍 Du avslørte ${n} med falsk «Hjemmelaget»-etikett hos «${other.name}». Dusør ${reward} kr!`);
+    event(market, null, t, `🔍 En våken kunde avslørte falske «hjemmelaget»-etiketter hos «${other.name}».`);
+    return { forged: forged.length, reward };
   });
 }
 
@@ -918,6 +1056,9 @@ export function getState(player: PlayerRow): GameState {
     const counter = itemsOf(s.id)
       .filter((i) => i.place === 'counter')
       .map((i) => (!own && i.label === 'forged' ? { ...i, label: 'home' as const } : i));
+    const trash = itemsOf(s.id)
+      .filter((i) => i.place === 'trash')
+      .map((i) => (!own && i.label === 'forged' ? { ...i, label: 'home' as const } : i));
     const stored = pricesOf(s.id);
     const prices: Record<string, number> = {};
     for (const i of counter) if (PRODUCT_BY_ID[i.typeId]) prices[i.typeId] = priceOf(stored, i.typeId);
@@ -929,6 +1070,7 @@ export function getState(player: PlayerRow): GameState {
         ownerName: s.owner_name,
         reputation: Math.round(s.reputation),
         counter,
+        trash,
         prices,
         power: powerOf(s),
         sign: s.sign,

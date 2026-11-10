@@ -58,6 +58,8 @@ export interface Item {
   recipe?: string; // bare avskrevne oppskrifter: oppskriftens id
   wanted?: { seed: string; alias: string; edition: number }; // bare utklipte etterlysninger
   cut?: boolean; // bare aviser: etterlysningen er klippet ut
+  safe?: { locked: boolean }; // bare safer (koden sendes aldri til nettleseren)
+  note?: { kind: 'code' | 'text'; text: string }; // bare kodelapper og notater
   boxId: number | null; // eskens id når place = 'box'
   x: number;
   y: number;
@@ -82,6 +84,7 @@ export interface StallPublic {
   ownerName: string;
   reputation: number;
   counter: Item[]; // varene på bordet
+  trash: Item[]; // det som ligger i søppelkassa (den er åpen for alle)
   prices: Record<string, number>; // pris per vare
 }
 

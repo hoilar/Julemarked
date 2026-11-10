@@ -40,7 +40,7 @@ export interface Tool {
   id: string;
   name: string;
   emoji: string;
-  image: string;
+  image?: string;
   price: number;
   size: Size;
   blurb: string; // butikkteksten – sier med vilje ikke hva verktøyet er til
@@ -53,7 +53,7 @@ export interface Doc {
   id: string;
   name: string;
   emoji: string;
-  image: string;
+  image?: string;
   size: Size;
 }
 
@@ -68,6 +68,7 @@ export interface Container {
   size: Size;
   inner: GridSize;
   shopBag?: boolean; // butikkpose: kommer med leveranser, selges ikke hos Klas Olsen
+  safe?: boolean; // safe: låst med en firesifret kode (kodelappen følger med)
 }
 
 /** Avisa fra postkassa. Kan ikke kjøpes eller selges; hver gjenstand er én utgave. */
@@ -221,16 +222,24 @@ export const TOOLS: Tool[] = [
   { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.png', price: 49, size: { w: 1, h: 1 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
   { kind: 'tool', id: 'skrutrekker', name: 'Skrutrekker', emoji: '🪛', image: '/art/elektro/skrutrekker.png', price: 89, size: { w: 2, h: 1 }, blurb: 'Stjerne og flat. Passer til det meste med skruer i.' },
   { kind: 'tool', id: 'telefon', name: 'Smarttelefon', emoji: '📱', image: '/art/telefon/telefon.png', price: 499, size: { w: 1, h: 2 }, blurb: 'Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden.' },
+  { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', price: 129, size: { w: 1, h: 1 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
   { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 1, h: 1 }, blurb: 'Skarp. Pass på fingrene.' },
 ];
 export const PEN = 'penn';
 export const PAD = 'papirblokk';
 export const SCISSORS = 'saks';
+export const LOUPE = 'lupe';
+export const SAFE = 'safe';
+export const CODE_NOTE = 'kodelapp';
+export const TEXT_NOTE = 'notat';
+export const NOTE_MAX = 140; // tegn på et notat
 export const SCREWDRIVER = 'skrutrekker';
 export const PHONE = 'telefon';
 
 export const DOCS: Doc[] = [
   { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'kodelapp', name: 'Kodelapp', emoji: '🔢', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'notat', name: 'Notat', emoji: '🗒️', size: { w: 1, h: 1 } },
   { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.png', size: { w: 1, h: 1 } },
 ];
 // Rabattkupong (klippet ut av avisa) og gavekort fra butikkenes selgere.
@@ -582,7 +591,6 @@ const vare = (
   ...extra,
 });
 const crafted = { craftedOnly: true } as const;
-const noArt = { image: undefined }; // tegningen er ikke klar ennå: emojien vises (bestilt i GRAFIKK.md)
 const rare = (chance: number) => ({ rare: chance });
 
 export const PRODUCTS: Product[] = [
@@ -644,12 +652,12 @@ export const PRODUCTS: Product[] = [
   vare('kakao', 'Varm kakao', '☕', 1, 1, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
   vare('julebrus', 'Julebrus', '🥤', 1, 2, 12, 35, 1.6, 'Bryggeriet', 'drikke'),
   // Alkohol (krever skjenkebevilling, se shared/liquor.ts). Vodka og rødvin er også råvarer i kjelen.
-  vare('vodka', 'Vodka', '🍸', 1, 2, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol', noArt),
-  vare('rodvin', 'Rødvin', '🍷', 1, 2, 90, 229, 0.45, 'Vinkjelleren', 'alkohol', noArt),
-  vare('eplecider', 'Eplecider', '🍏', 1, 2, 25, 69, 1.0, 'Fjordsideriet', 'alkohol', noArt),
-  vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', { ...crafted, ...noArt }),
-  vare('koseglogg', 'Kosegløgg', '🍷', 1, 1, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', { ...crafted, ...noArt }),
-  vare('styrkeglogg', 'Styrkegløgg', '🔥', 1, 1, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', { ...crafted, ...noArt }),
+  vare('vodka', 'Vodka', '🍸', 1, 2, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol'),
+  vare('rodvin', 'Rødvin', '🍷', 1, 2, 90, 229, 0.45, 'Vinkjelleren', 'alkohol'),
+  vare('eplecider', 'Eplecider', '🍏', 1, 2, 25, 69, 1.0, 'Fjordsideriet', 'alkohol'),
+  vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', crafted),
+  vare('koseglogg', 'Kosegløgg', '🍷', 1, 1, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', crafted),
+  vare('styrkeglogg', 'Styrkegløgg', '🔥', 1, 1, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', crafted),
   vare('eplemost_varm', 'Varm eplemost', '🍵', 1, 1, 4, 35, 1.6, 'Hjemmelaget', 'drikke', crafted),
   // Risikovarer: legg til `shady: { exposeChance, reputationHit, lines }` på en vare
   // (se Product over) for høy margin med fare for avsløring. Ingen varer bruker det nå.
@@ -661,6 +669,7 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'extrapose', name: 'Extra-pose', emoji: '🛍️', image: '/art/extra-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
   { kind: 'container', id: 'remapose', name: 'REMA-pose', emoji: '🛍️', image: '/art/rema-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
   { kind: 'container', id: 'kartong', name: 'Pappkartong', emoji: '📦', image: '/art/kartong.png', price: 49, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 } },
+  { kind: 'container', id: 'safe', name: 'Safe', emoji: '🔐', price: 599, size: { w: 2, h: 2 }, inner: { cols: 3, rows: 3 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
 ];
 

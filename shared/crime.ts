@@ -51,6 +51,12 @@ export function thiefVisits(marketId: number, dayKey: number, stallId: number): 
 /** Kundeandelen etter `wrong` feil tips (gjelder dagen etter). */
 export const tipPenalty = (wrong: number) => Math.max(WRONG_TIP_FLOOR, WRONG_TIP_FACTOR ** wrong);
 
+// ---------- Forstørrelsesglasset ----------
+// Spillere kan undersøke andres varer. Falske «hjemmelaget»-etiketter gir samme straff som hos
+// Tilsynsmannen, men boten er 2 × det kundene forventer å betale. Den som finner dem, får dusør.
+export const FINDER_REWARD: Record<'hovedgate' | 'sidegate' | 'bakgate', number> = { hovedgate: 500, sidegate: 300, bakgate: 150 };
+export const FORGED_FINE_FACTOR = 2;
+
 // ---------- Tilsynsmannen ----------
 // Kommer tilfeldige dager og står ved disken i én time. Når han går, sjekker han bordet:
 // varer merket «Hjemmelaget» som er kjøpt i butikk, gir bot og mye mindre omdømme.

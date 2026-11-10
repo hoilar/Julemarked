@@ -602,11 +602,25 @@ Skalert med nearest neighbor og kontrollert ved 128, 64 og 32 px.
 Oversikt: `sjelden-merke-oversikt.jpg`. Prompt: `sjelden-merke-prompt.json`.
 ✅ I bruk i spillet: `art/sjelden-merke.png`, som et lite segl med «Sjelden» på kortene i nettbutikken.
 
-### Bestilt: alkohol og Kommunen-appen
+### Ferdig laget: alkohol og Kommunen-appen
 
-Varene er i spillet med emoji som plassholder (`noArt` i `shared/products.ts`). Når et bilde er
-klart, legges det i mappa under og `noArt` fjernes fra varen. Samme stil som de andre varene:
-én gjenstand, sett litt ovenfra, gjennomsiktig bakgrunn, ingen ekte merkenavn eller lesbar tekst.
+**✅ Alle sju PNG-originaler er ferdige i `GFX_assets/ChatGPT`:** `vodka.png`,
+`rodvin.png`, `eplecider.png`, `varm-cider.png`, `koseglogg.png`, `styrkeglogg.png`
+og `app-kommunen.png`. Samme grove pikselstil og mørke konturer som de andre varene.
+Én gjenstand per bilde, rettvendt etter gridet, gjennomsiktig bakgrunn, ingen ekte
+merkenavn eller lesbar tekst. Flaskene er **887×1774 px / 1×2**, koppene og
+app-ikonet er **1254×1254 px / 1×1** som store originaler.
+
+Gløggvariantene bruker samme glasskrus, rosiner, mandler og damp. Styrkegløgg har
+mørkere innhold og en liten flamme over koppen. Kommunen matcher de øvrige
+kremfargede app-ikonene, med rådhus, rødt flagg og et oppfunnet grønt skjold med gulltre.
+
+Alle sju er kontrollert for transparent ytterområde og hele silhuetter. Samleoversikt:
+`alkohol-kommunen-oversikt.jpg`. Kopper og ikon er også kontrollert ved 128 og 64 px
+på lys bakgrunn i `alkohol-kommunen-liten.jpg`. Prompter fra bildegeneratoren:
+`alkohol-kommunen-prompter.json`. Kontrolldata: `alkohol-kommunen-kontroll.json`.
+**✅ Lagt inn i spillet:** `art/goods/{vodka,rodvin,eplecider,varm-cider,koseglogg,styrkeglogg}.png`
+(beskåret til motivet, 128 px per rute) og `art/telefon/app-kommunen.png` (som de andre app-ikonene).
 
 **Varer** → `client/public/art/goods/<fil>.png`
 
@@ -620,12 +634,29 @@ klart, legges det i mappa under og `noArt` fjernes fra varen. Samme stil som de 
 | `styrkeglogg` | 1×1 | Som kosegløgg, men mørkere med en liten flamme/glød over koppen – ser «sterk» ut. |
 
 **App-ikon** → `client/public/art/telefon/app-kommunen.png` (samme stil og størrelse som de andre
-app-ikonene): et lite rådhus med flagg og kommunevåpen-aktig skjold. I dag vises 🏛️.
+app-ikonene): et lite rådhus med flagg og kommunevåpen-aktig skjold. Original ferdig i
+`GFX_assets/ChatGPT/app-kommunen.png`; i bruk på telefonen og i toppen av Kommunen-appen.
 
+
+### Bestilt: safe, lapper og forstørrelsesglass
+
+I spillet med emoji som plassholder til bildene er klare. Samme stil som verktøyene: én gjenstand,
+sett litt ovenfra, gjennomsiktig bakgrunn, ingen lesbar tekst eller tall.
+
+| Fil i spillet | Rutenett | Motiv |
+|---|---|---|
+| `art/safe.png` | 2×2 | Liten, tung stålsafe i mørk grønngrå med messinghjul for kode og et lite håndtak. Døra lukket. |
+| `art/safe-apen.png` | 2×2 | Samme safe med døra åpen (samme beskjæring som den lukkede, så de kan byttes). |
+| `art/verktoy/kodelapp.png` | 1×1 | Liten gul lapp, litt krøllet, med fire uleselige blyant-«siffer» (ingen ekte tall). |
+| `art/verktoy/notat.png` | 1×1 | Linjert notatark revet fra en blokk, med håndskrift-krusseduller (ingen lesbar tekst). |
+| `art/verktoy/lupe.png` | 1×1 | Forstørrelsesglass med messingkant og treskaft, liggende vannrett langs gridet. |
+
+### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| 6 alkoholvarer og app-ikon til Kommunen | se «Bestilt: alkohol og Kommunen-appen» | ⏳ Bestilt: `art/goods/` og `art/telefon/app-kommunen.png` (emoji til de er klare) |
+| Safe (lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ⏳ Bestilt (emoji til de er klare) |
+| 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |
 | 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |
 | Smarttelefon, makuleringsmaskin (av + på) og mikroplast | – | ✅ i bruk: `art/telefon/telefon.png` (1×2), `art/maskiner/makulator{,-pa}.png` (2×2), `art/ravarer/mikroplast.png` (1×1) |

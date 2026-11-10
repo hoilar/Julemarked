@@ -96,6 +96,12 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (spot.place === 'mail' && t.id !== NEWSPAPER.id) return 'I postkassa ligger det bare aviser.';
   if (t.id === FUSEBOX.id && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0) return 'Ta ut sikringene før du kaster sikringsboksen.';
   if (t.id === PHONE && spot.place === 'trash') return 'Telefonen kaster du ikke – den trenger du.';
+  // Låst safe: ingenting inn eller ut før den er låst opp med koden.
+  const lockedSafe = (id: number | null) => !!items.find((b) => b.id === id)?.safe?.locked;
+  if (spot.place === 'box' && lockedSafe(spot.boxId)) return 'Safen er låst. Lås den opp med koden først.';
+  const cur = item.id ? items.find((i) => i.id === item.id) : undefined;
+  if (cur && cur.place === 'box' && lockedSafe(cur.boxId) && !(spot.place === 'box' && spot.boxId === cur.boxId)) return 'Safen er låst.';
+  if (t.kind === 'container' && t.safe && spot.place === 'box') return 'Safen får ikke plass i en eske.';
   if (t.id === PHONE && (spot.place === 'pot_in' || spot.place === 'pot_out')) return 'Telefonen hører ikke hjemme i en maskin.';
   if (spot.place === 'cell' && t.kind !== 'battery') return 'Her passer bare et batteri.';
   if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'charger' && t.kind !== 'battery') return 'Ladestasjonen tar bare batterier.';
