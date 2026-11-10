@@ -797,10 +797,29 @@ Originalene er klare til innlegging; spillfiler og kode er ikke endret i denne l
 | `art/ryggsekk.png` | 3×3 | Slitt tursekk i rødt og grått med lommer og stropper. I dag 🎒. |
 | `art/telefon/app-bilbutikken.png` | 128×128 | App-ikon i samme stil som de andre: en liten bil på kremfarget ramme. I dag 🚗. |
 
-### Bestilt: alarmsystem
+### Ferdig laget: alarmsystem
 
-Alarmen (349 kr hos Klas Olsen) henger på boden og vises i dag ikke i det hele tatt. Den lages som **lag over hele boden**
-(1536×1024, alt annet gjennomsiktig), akkurat som lyslenkene, og må passe nøyaktig på samme bod.
+**✅ Alle tre PNG-er er ferdige i `GFX_assets/ChatGPT`:** `alarm-av.png` og
+`alarm-pa.png` er transparente **1536×1024-lag over hele boden**, og `ikon-alarm.png`
+er et transparent **128×128-ikon** til Klas Olsen og grenuttaket.
+
+Liten hvit alarmboks med rund høyttalergrill, to festeskruer og rød blinklys-kuppel.
+Nøytral elektro i samme grove pikselstil som grenuttaket, uten tekst eller julepynt.
+Plassert **øverst på venstre stolpe, rett under taket og over skiltet**. Boksen ligger
+omtrent **x246–299, y326–380**, blinklysets midtpunkt er omtrent **(273,317)**,
+og en tynn grå ledning følger stolpen ved x272 ned til omtrent y615.
+
+Av/på har samme lerret, plassering, boks og ledning; bare området rundt blinklyset
+endres. Av har mørk rød kuppel uten lysglød; på har tent rødt lys og en liten lokal
+glød. Ikonet viser samme boks med tent lys, uten den lange ledningen og uten ramme.
+Kontrollert over `art/bod_selger.png` og dagens «Stengt»-skilt. Boden og skiltet er
+bare med i oversikten, ikke i PNG-lagene. Ikonet er kontrollert ved 128 og 64 px.
+
+Oversikt: `alarm-oversikt.jpg`. Prompter og plasseringsdata fra bildegeneratoren:
+`alarm-prompter.json`. Kontrolldata: `alarm-kontroll.json`. Store genererte kilder
+er bevart som `alarm-original-av.png`, `alarm-original-pa.png` og
+`ikon-alarm-original.png`. Skalert og plassert med nearest neighbor.
+Klar til innlegging i filene under; spillfiler, kode og klikkfelt er ikke endret i denne leveransen.
 
 | Fil i spillet | Størrelse | Motiv |
 |---|---|---|
@@ -812,7 +831,7 @@ Alarmen (349 kr hos Klas Olsen) henger på boden og vises i dag ikke i det hele 
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Alarmsystem på boden (av + på) | se «Bestilt: alarmsystem» | ⏳ Bestilt (vises ikke i dag) |
+| Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |
 | Fire kjøretøy (inkludert elektrisk varebil, lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)» | ✅ i bruk: `art/biler/bil-{tennis,toforr,highass,fuzz}{,-apen}.png` (384×288, felles beskjæring så størrelsen mellom bilene stemmer), `art/ryggsekk.png` (3×3), `art/telefon/app-bilbutikken.png` |
 | Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Ferdig laget: såpe og nøkler (snoking)» | ✅ i bruk: `art/verktoy/{sapestykke,sapeavtrykk,blank-nokkel,kopinokkel}.png` (1×1), `art/verktoy/nokkelmaskin.png` (2×2) |
 | 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Ferdig laget: luguberte varer og Meldinger-appen» | ✅ i bruk: `art/goods/{smuglersigaretter,piratfilm,kinaputter,juletre-tyv,hjemmebrent,merkevotter}.png`, `art/ravarer/{gjaer,falsk-logo}.png`, `art/telefon/app-meldinger.png` |

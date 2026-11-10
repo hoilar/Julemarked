@@ -931,10 +931,35 @@ function carView(s: GameState): string {
   const trip = s.me.car.trip;
   if (trip)
     return `<div class="car away" title="Du er ute og handler hos ${esc(STORE_BY_ID[trip.store]?.name ?? 'butikken')}"><span class="car-tracks">💨</span><small>Ute og handler · tilbake kl. ${hhmm(trip.until)}</small></div>`;
+  const t = ITEM_TYPES[car.typeId];
+  const open = isOpen(car.id);
   const n = itemsIn(s.me.items, 'box', car.id).length;
-  return `<button class="car ${isOpen(car.id) ? 'open' : ''}" data-action="open-car" data-item="${car.id}" title="${esc(spec?.name ?? 'Bilen')} – trykk for å åpne bagasjerommet">
-    ${carSprite(ITEM_TYPES[car.typeId], isOpen(car.id))}<small>${n ? `${n} i bagasjerommet` : 'Bagasjerom'}</small></button>`;
+  // Åpent: rutenettet ligger inni åpningen i bagasjerommet, med kvadratiske ruter (bunnjustert).
+  let trunk = '';
+  const hole = TRUNK_HOLE[car.typeId];
+  if (open && hole && t.kind === 'container') {
+    const { cols, rows } = t.inner;
+    const cell = Math.min(hole.w / cols, hole.h / rows);
+    const gw = cell * cols, gh = cell * rows;
+    const gx = hole.x + (hole.w - gw) / 2, gy = hole.y + hole.h - gh;
+    const items = itemsIn(s.me.items, 'box', car.id).map((i) => gridItemView(i, cols, rows)).join('');
+    trunk = `<div class="trunk" data-panel="${car.id}" style="left:${(gx / CAR_ART.w) * 100}%;top:${(gy / CAR_ART.h) * 100}%;width:${(gw / CAR_ART.w) * 100}%;height:${(gh / CAR_ART.h) * 100}%">
+      <div class="grid trunk-grid" data-grid="box" data-box="${car.id}" style="--cols:${cols};--rows:${rows}">${items}</div></div>`;
+  }
+  return `<div class="car ${open ? 'open' : ''}">
+    ${carSprite(t, open)}
+    <button class="car-hit" data-action="open-car" data-item="${car.id}" aria-label="Bagasjerommet" title="${esc(spec?.name ?? 'Bilen')} – ${n ? `${n} ting i bagasjerommet` : 'tomt bagasjerom'}. Trykk for å ${open ? 'lukke' : 'åpne'}."></button>
+    ${trunk}</div>`;
 }
+
+/** Bilbildene er 384×288. Åpningen i bagasjerommet (målt på de åpne bildene), der rutenettet tegnes. */
+const CAR_ART = { w: 384, h: 288 };
+const TRUNK_HOLE: Record<string, { x: number; y: number; w: number; h: number }> = {
+  bil_tennis: { x: 128, y: 142, w: 128, h: 58 },
+  bil_toforr: { x: 95, y: 121, w: 194, h: 62 },
+  bil_highass: { x: 118, y: 117, w: 147, h: 95 },
+  bil_fuzz: { x: 122, y: 100, w: 141, h: 120 },
+};
 
 /** Det du bærer: en pose i hver hånd og ryggsekken på ryggen. Dra en pose eller sekk hit. */
 function carryView(s: GameState): string {
@@ -971,7 +996,7 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     if (box && t?.id === STRIP.id) return stripPanel(s, box, n);
     if (box && t?.id === FUSEBOX.id) return fusePanel(s, box, n);
     if (!box || t?.kind !== 'container') return '';
-    if (t.car && s.me.car.trip) return '';
+    if (t.car) return ''; // bagasjerommet tegnes inni bilen (carView)
     ({ cols, rows } = t.inner);
     title = t.car ? `${icon(t)} Bagasjerommet · ${esc(t.name)}` : `${icon(t)} ${esc(t.name)}`;
     if (t.car) cls = 'trunk-panel';

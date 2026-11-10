@@ -1351,25 +1351,25 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 /* ---------- Steg 6: bilen og det du bærer ---------- */
 .car {
   position: absolute;
-  left: -2.5%;
-  bottom: 13%;
-  width: 17%;
-  z-index: 3;
-  display: grid;
-  justify-items: center;
-  gap: 0.2cqw;
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  cursor: pointer;
+  /* Står på bakken, jamt med boden. På brede skjermer står den ute i den ledige plassen til venstre for boden
+     (--room = bakgrunnen som synes utenfor scenen); på smale står den delvis utenfor kanten. */
+  --room: max(0px, (100vw - 150dvh) / 2);
+  left: calc(-26cqw + 5cqw - min(var(--room), 16cqw));
+  bottom: -5cqw; /* litt under kanten: bilen står nærmere deg enn boden */
+  width: 52cqw;
+  pointer-events: none; /* bildet har mye tom plass rundt bilen – bare selve bilen kan trykkes */
+  z-index: 2;
   color: #fff;
 }
 .car .sprite { font-size: 8cqw; line-height: 1; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.6)); }
 .car img.sprite { width: 100%; object-fit: contain; image-rendering: pixelated; }
 .car small, .car.away small { font-size: 0.75cqw; background: rgba(20, 16, 40, 0.75); padding: 0.1cqw 0.4cqw; border-radius: 0.4cqw; white-space: nowrap; }
-.car small { order: -1; }
-.car.open { outline: 0.2cqw solid #ffe08a; outline-offset: 0.3cqw; border-radius: 0.6cqw; }
+.car small { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); pointer-events: auto; }
+.car-hit { position: absolute; left: 24%; right: 24%; bottom: 4%; height: 62%; pointer-events: auto; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }
+.car-hit:hover { background: none; }
+.car img.sprite { display: block; }
+.trunk { position: absolute; z-index: 1; pointer-events: auto; }
+.trunk .trunk-grid { inset: 0; border-radius: 0; background-color: rgba(10, 10, 16, 0.35); }
 .car.away { cursor: default; }
 .car-tracks { font-size: 3cqw; opacity: 0.7; }
 .trunk-panel { background: #2b2b33; border-color: #6c6c80; }

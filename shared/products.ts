@@ -829,6 +829,8 @@ export const DEVICES: Device[] = [
     price: 349,
     kw: 0.1,
     effect: 'Skremmer bort nattetyven – men bare når det har strøm',
+    layers: { off: '/art/devices/alarm-av.png', on: '/art/devices/alarm-pa.png' }, // øverst på venstre stolpe; lyser rødt med strøm
+    image: '/art/devices/ikon-alarm.png',
   },
 ];
 /** Alarmen: så mye mindre sjanse har tyven per vare når den er på. */
