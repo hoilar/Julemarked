@@ -664,7 +664,14 @@ Oversikt: `safe-lapper-lupe-oversikt.jpg`. Liten visning på lys bakgrunn:
 Originalene er klare til innlegging og nearest-neighbor-skalering til spillfilene
 under; spillfiler og kode er ikke endret i denne leveransen.
 
-**Gjenstår i denne listen:** skjenkebevillingen, som er bestilt separat i tabellen under.
+**✅ Skjenkebevillingen er også ferdig:** `GFX_assets/ChatGPT/skjenkebevilling.png`,
+transparent original **1254×1254 px / 1×1 rute**. Kremhvitt, rettvendt ark med
+mørk kontur, uleselige tekstlinjer, rødt vokssegl og samme grønne skjold med gulltre
+som i Kommunen-ikonet. Ingen lesbare ord eller tall. Kontrollert for gjennomsiktig
+ytterområde, hel silhuett og lesbarhet ved 128 og 64 px.
+Oversikt: `skjenkebevilling-oversikt.jpg`. Prompt fra bildegeneratoren:
+`skjenkebevilling-prompt.json`. Kontrolldata: `skjenkebevilling-kontroll.json`.
+Klar til `art/verktoy/skjenkebevilling.png`; spillfilene er ikke endret i denne leveransen.
 
 | Fil i spillet | Rutenett | Motiv |
 |---|---|---|
@@ -677,12 +684,39 @@ under; spillfiler og kode er ikke endret i denne leveransen.
 | `art/verktoy/lupe.png` | 1×1 | Forstørrelsesglass med messingkant og treskaft, liggende vannrett langs gridet. |
 | `art/verktoy/skjenkebevilling.png` | 1×1 | Offisielt dokument fra kommunen: kremhvitt ark med rødt voksesegl og et lite kommunevåpen-aktig skjold (samme som Kommunen-ikonet), uleselige tekstlinjer. Ligger i postkassa. |
 
+### Bestilt: luguberte varer og Meldinger-appen
+
+I spillet med emoji som plassholder (`noArt` i `shared/products.ts`). Samme stil som de andre varene,
+men gjerne litt skummelt og shabby. Ingen ekte merkenavn, logoer eller lesbar tekst.
+
+**Varer** → `client/public/art/goods/<fil>.png`
+
+| Fil | Rutenett | Motiv |
+|---|---|---|
+| `smuglersigaretter` | 1×1 | Sigarettkartong uten avgiftsmerke, utenlandsk-utseende emballasje med uleselig skrift. |
+| `piratfilm` | 1×1 | Liten stabel DVD-er i tynne plastcovere med håndskrevne omslag (ingen lesbar tekst). |
+| `kinaputter` | 1×1 | En rull røde kinaputter med lunte, i tynt papir med kinesisk-aktige mønstre (ikke ekte tegn). |
+| `juletre-tyv` | 2×3 (stående) | Et grantre med litt for mye jord på rota, en avkuttet sperrebånd-bit og en julekule som henger skjevt. |
+| `hjemmebrent` | 1×2 | Gammel glassflaske med klar væske, korket med en fille, håndskrevet tapelapp. |
+| `merkevotter` | 2×2 | Strikkede votter med en stor, glinsende «luksuslogo» sydd skjevt på (oppfunnet logo). |
+
+**Råvarer** → `client/public/art/ravarer/<fil>.png`
+
+| Fil | Motiv |
+|---|---|
+| `gjaer` | Liten pakke tørrgjær / gjærterning i papir. |
+| `falsk-logo` | Et lite stoffmerke med en glinsende, oppfunnet luksuslogo, litt frynsete kanter. |
+
+**App-ikon** → `client/public/art/telefon/app-meldinger.png` (samme stil som de andre app-ikonene):
+en grønn snakkeboble, gjerne med et lite par solbriller i hjørnet. I dag vises 💬.
+
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
+| 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Bestilt: luguberte varer og Meldinger-appen» | ⏳ Bestilt (emoji til de er klare) |
 | To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ Alle sju PNG-originaler ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
-| Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ⏳ Bestilt: `art/verktoy/skjenkebevilling.png` |
+| Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ✅ Original ferdig: `GFX_assets/ChatGPT/skjenkebevilling.png`, klar til `art/verktoy/skjenkebevilling.png` |
 | 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |
 | 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |

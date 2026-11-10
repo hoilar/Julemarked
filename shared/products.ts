@@ -91,6 +91,7 @@ export interface Ingredient {
   price: number; // 0 = kan ikke kjøpes (f.eks. svidd klump)
   size: Size;
   rare?: number; // sjelden: sjansen (0–1) for at en butikk har den en gitt dag, og da bare 2–4 stk
+  dealerOnly?: boolean; // finnes ikke i nettbutikkene – bare hos Fyren bak containeren
 }
 
 /** Kokeplate med kjele: to rutenett (råvarer inn, ferdig ut), av/på og styrke 1–4. */
@@ -281,6 +282,8 @@ export const INGREDIENTS: Ingredient[] = [
   { kind: 'ingredient', id: 'bladgull', name: 'Bladgull', emoji: '✨', image: '/art/ravarer/bladgull.png', price: 40, size: { w: 1, h: 1 }, rare: 0.15 },
   { kind: 'ingredient', id: 'safran', name: 'Safran', emoji: '🌼', image: '/art/ravarer/safran.png', price: 35, size: { w: 1, h: 1 }, rare: 0.2 },
   { kind: 'ingredient', id: 'alpakkagarn', name: 'Alpakkagarn', emoji: '🦙', image: '/art/ravarer/alpakkagarn.png', price: 60, size: { w: 1, h: 1 }, rare: 0.15 },
+  { kind: 'ingredient', id: 'gjaer', name: 'Gjær', emoji: '🧫', price: 6, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'falsk_logo', name: 'Falsk logo', emoji: '🏷️', price: 45, size: { w: 1, h: 1 }, dealerOnly: true },
   { kind: 'ingredient', id: 'mikroplast', name: 'Mikroplast', emoji: '🫧', image: '/art/ravarer/mikroplast.png', price: 0, size: { w: 1, h: 1 } },
   { kind: 'ingredient', id: 'feilbatch', name: 'Mislykket batch', emoji: '🫠', image: '/art/ravarer/feilbatch.png', price: 0, size: { w: 1, h: 1 } },
   { kind: 'ingredient', id: 'svidd', name: 'Svidd klump', emoji: '🪨', image: '/art/ravarer/svidd.png', price: 0, size: { w: 1, h: 1 } },
@@ -388,6 +391,7 @@ export const MAKERS: Maker[] = [
       { id: 'pulsvarmere', name: 'Pulsvarmere', inputs: { garn: 1 }, outputs: { pulsvarmere: 2 }, hours: 2 },
       { id: 'alpakkaskjerf', name: 'Alpakkaskjerf', inputs: { alpakkagarn: 2 }, outputs: { alpakkaskjerf: 1 }, hours: 4 },
       { id: 'bamse', name: 'Strikket bamse', inputs: { garn: 2, fyll: 1 }, outputs: { bamse: 1 }, hours: 3 },
+      { id: 'merkevotter', name: '«Merkevotter»', inputs: { garn: 2, falsk_logo: 1 }, outputs: { merkevotter: 1 }, hours: 3 },
     ],
   },
   {
@@ -597,6 +601,9 @@ const vare = (
   ...extra,
 });
 const crafted = { craftedOnly: true } as const;
+const noArt = { image: undefined }; // tegningen er ikke klar ennå: emojien vises (bestilt i GRAFIKK.md)
+/** Luguber vare: høy margin, men kundene sladrer av og til (se `shady` over). */
+const shady = (lines: string[], exposeChance = 0.03, reputationHit = 3) => ({ shady: { exposeChance, reputationHit, lines } });
 const rare = (chance: number) => ({ rare: chance });
 
 export const PRODUCTS: Product[] = [
@@ -664,6 +671,33 @@ export const PRODUCTS: Product[] = [
   vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', crafted),
   vare('koseglogg', 'Kosegløgg', '🍷', 1, 1, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', crafted),
   vare('styrkeglogg', 'Styrkegløgg', '🔥', 1, 1, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', crafted),
+  // Lugubert: selges bare om natta, skaffes av Fyren bak containeren (se shared/dealer.ts).
+  vare('smuglersigaretter', 'Smuglersigaretter', '🚬', 1, 1, 40, 129, 1.2, 'Uten avgiftsmerke', 'lugubert', {
+    ...noArt,
+    ...shady(['Noen la merke til at sigarettene hos {stall} mangler avgiftsmerke.', 'Det går rykter om billige sigaretter fra {stall}.']),
+  }),
+  vare('piratfilm', 'Piratkopierte julefilmer', '📀', 1, 1, 15, 79, 0.9, 'Kopisentralen', 'lugubert', {
+    ...noArt,
+    ...shady(['En kunde klager: julefilmen fra {stall} stopper midt i «Tre nøtter».', 'Noen kjente igjen håndskriften på DVD-omslagene fra {stall}.']),
+  }),
+  vare('kinaputter', 'Kinaputter', '🧨', 1, 1, 60, 249, 0.8, 'Ukjent', 'lugubert', {
+    ...noArt,
+    ...shady(['Noen smalt av kinaputter bak bodene – de var kjøpt hos {stall}.'], 0.05, 4),
+  }),
+  vare('juletre_tyv', 'Juletre uten kvittering', '🎄', 2, 3, 120, 599, 0.25, 'Torget', 'lugubert', {
+    ...noArt,
+    ...shady(['Det mangler et tre på torget. Et påfallende likt tre står hos {stall}.'], 0.08, 5),
+  }),
+  vare('hjemmebrent', 'Hjemmebrent', '🫙', 1, 2, 20, 299, 0.5, 'Hjemmelaget', 'lugubert', {
+    ...crafted,
+    ...noArt,
+    ...shady(['En kunde ble dårlig av «eplesaften» fra {stall}.', 'Det lukter destilleri bak {stall}.'], 0.04, 4),
+  }),
+  vare('merkevotter', '«Merkevotter»', '🧤', 2, 2, 80, 799, 0.2, 'Hjemmelaget', 'lugubert', {
+    ...crafted,
+    ...noArt,
+    ...shady(['Logoen på «merkevottene» fra {stall} er sydd på opp-ned.'], 0.05, 4),
+  }),
   vare('eplemost_varm', 'Varm eplemost', '🍵', 1, 1, 4, 35, 1.6, 'Hjemmelaget', 'drikke', crafted),
   // Risikovarer: legg til `shady: { exposeChance, reputationHit, lines }` på en vare
   // (se Product over) for høy margin med fare for avsløring. Ingen varer bruker det nå.

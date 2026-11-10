@@ -158,6 +158,8 @@ if (!hasColumn('stalls', 'tip_day')) {
     ALTER TABLE stalls ADD COLUMN tip_wrong INTEGER NOT NULL DEFAULT 0;`);
 }
 // Kunder du har solgt til selv (eller som sa nei), så samme kunde ikke kan brukes to ganger.
+// Bestillinger hos Fyren bak containeren: leveres i søppelkassa kl. 04. lines = JSON [{typeId, qty}] som ikke er levert ennå.
+db.exec('CREATE TABLE IF NOT EXISTS dealer_orders (id INTEGER PRIMARY KEY, stall_id INTEGER NOT NULL, day INTEGER NOT NULL, lines TEXT NOT NULL, ordered TEXT NOT NULL, deliver_at INTEGER NOT NULL, delivered INTEGER NOT NULL DEFAULT 0)');
 db.exec('CREATE TABLE IF NOT EXISTS leads_used (stall_id INTEGER NOT NULL, lead TEXT NOT NULL, PRIMARY KEY (stall_id, lead))');
 // Lageret under disken ble 28 ruter bredt (to nye kolonner på hver side): flytt det som lå der to ruter mot høyre, én gang.
 if (!hasColumn('stalls', 'storage_wide')) {

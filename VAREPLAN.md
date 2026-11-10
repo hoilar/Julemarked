@@ -2,7 +2,9 @@
 
 Planlegging av nye varer, råvarer og gameplay.
 
-**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Steg 3 er bygget – åpne søplekasser, safe med PIN-kode og kodelapp, egne lapper og notater, og forstørrelsesglass mot falske varer. Lugubert, snoking, spor, nøkler, bæring og bil er ikke bygget.
+**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Steg 3 er bygget – åpne søplekasser, safe med PIN-kode og kodelapp, egne lapper og notater, og forstørrelsesglass mot falske varer. Steg 4 er bygget – Fyren bak containeren (Meldinger-appen, kontant betaling, levering i søppelkassa kl. 04), seks luguberte varer, gjær og falsk logo, nattsalg (kl. 21–08) og at Tilsynsmannen leter under disken (ikke i låst safe). Snoking, spor, nøkler, bæring og bil er ikke bygget.
+
+**Valg i steg 4:** Fyren tar kontant fra kassa. Han leverer kl. 04 – etter søppelbilen kl. 03 – så varene ligger i den åpne søppelkassa hele dagen til du henter dem. Det som ikke får plass, kommer neste natt. Oppskriften på hjemmebrent står i SMS-ene hans, og oppskriften på «merkevotter» følger med første falske logo; luguberte oppskrifter står aldri i avisa. Tilsynsmannen finner luguberte varer overalt (bord, under disken, esker, søpla) unntatt i en låst safe: beslag, bot 2 × verdien og −20 omdømme.
 
 **Forenklinger i steg 3 (til bæring er bygget):** det du tar fra andres søplekasse havner rett under din egen disk. Forsikringsbevis kan ikke tas fra andres søpel. Tilsynsmannen sjekker fortsatt bare bordet og søpla (ikke under disken) – å lete under disken kommer sammen med de luguberte varene.
 Kategoriene finnes i `shared/categories.ts`. ★ = sjelden: dukker bare opp noen dager, i én butikk, med lite på lager.
@@ -86,13 +88,9 @@ Prisene justeres etter hvert som vi tester.
 
 ## Åpne spørsmål
 
-- Betaling til Fyren: kontant fra kassa, eller Bipps (som kan spores)?
-- Hva skjer hvis søpla tømmes før du har hentet varene?
 - Kan en safe brytes opp (f.eks. med verktøy) eller bæres bort?
 - Hvor stor er risikoen for å bli tatt av Tyttebærpolitiet, og hva er straffen?
 - Kan man se andres bil og bryte seg inn i den?
-- Svarer Fyren alltid, eller bare noen netter?
-- Nøyaktige tidspunkter for «natt».
 
 ## 🍷 Alkohol
 

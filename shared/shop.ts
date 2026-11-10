@@ -50,7 +50,7 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
   const price = (base: number, id: string) =>
     Math.max(1, Math.round(base * store.priceFactor * (0.9 + 0.25 * hash01('pris', marketId, storeId, day, id))));
   for (const g of INGREDIENTS) {
-    if (g.price <= 0) continue;
+    if (g.price <= 0 || g.dealerOnly) continue;
     if (g.rare !== undefined) {
       // Sjelden råvare: bare noen dager, og bare noen få.
       if (hash01('sjelden', marketId, storeId, day, g.id) >= g.rare) continue;
@@ -65,7 +65,7 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
     if (hash01('sjelden', marketId, storeId, day, p.id) >= p.rare) continue;
     items.push({ typeId: p.id, price: price(p.wholesale, p.id), stock: 1 + Math.floor(hash01('lager', marketId, storeId, day, p.id) * 2) });
   }
-  const goods = PRODUCTS.filter((p) => !p.craftedOnly && p.rare === undefined);
+  const goods = PRODUCTS.filter((p) => !p.craftedOnly && p.rare === undefined && p.category !== 'lugubert');
   let picked = goods.filter((p) => hash01('utvalg', marketId, storeId, day, p.id) < 0.6);
   if (picked.length < 5) picked = goods.slice(0, 5); // aldri helt tomme hyller
   for (const p of picked) {

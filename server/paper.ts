@@ -139,7 +139,9 @@ export function buildPaper(
   const n2 = (n1 + 1 + Math.floor(hash('notis2', marketId, ed.key) * (NOTICES.length - 1))) % NOTICES.length;
   const date = dateFmt.format(new Date(ed.time));
   // Dagens oppskrift: tilfeldig, men samme for alle i markedet den dagen.
-  const r = pick(RECIPES, hash('oppskrift', marketId, ed.key));
+  // Luguberte oppskrifter står ikke i avisa (dem får du av Fyren).
+  const legal = (o: Record<string, number>) => Object.keys(o).every((id) => (ITEM_TYPES[id] as { category?: string }).category !== 'lugubert');
+  const r = pick(RECIPES.filter((x) => legal(x.outputs)), hash('oppskrift', marketId, ed.key));
   const list = (m: Record<string, number>) =>
     Object.entries(m).map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`);
   return {
@@ -153,7 +155,7 @@ export function buildPaper(
       quote: pick(EIVBLAA, hash('eivblaa', marketId, ed.key)),
     },
     machineRecipe: (() => {
-      const m = pick(MACHINE_BOOK, hash('maskinoppskrift', marketId, ed.key));
+      const m = pick(MACHINE_BOOK.filter((x) => legal(x.outputs)), hash('maskinoppskrift', marketId, ed.key));
       return { id: m.id, name: m.name, machine: m.machine!, machineName: MAKER_BY_ID[m.machine!].name, inputs: list(m.inputs), outputs: list(m.outputs), hours: m.hours };
     })(),
     crime: { thefts, log: pick(POLICE_LOG, hash('politi', marketId, ed.key)) },

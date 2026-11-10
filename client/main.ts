@@ -78,6 +78,7 @@ import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
+import { DEALER, DEALER_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange } from '../shared/deals.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
@@ -138,7 +139,8 @@ let modal: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: ligger bak disken (eller i hjørnet), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' = 'home';
+let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
 let phonePos: { x: number; y: number } | null = null;
 let phoneDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
 let phoneSeen = Number(localStorage.getItem('jm_phone_seen') ?? 0); // nyeste varsel du har sett (id)
@@ -495,8 +497,38 @@ function phoneWindow(s: GameState): string {
       <li>Ser Tilsynsmannen alkohol på bordet før kl. ${LIQUOR_FROM_HOUR}, blir bevillingen inndratt i ${LICENSE_BAN_DAYS} dager.</li>
       <li>Uten bevilling blir alkoholen beslaglagt, og du får bot på det dobbelte av verdien.</li>
     </ul>`;
+  // Meldinger: SMS med Fyren bak containeren.
+  const dl = s.me.dealer;
+  const cartLines = dl.offer.filter((o) => (dealerCart[o.typeId] ?? 0) > 0);
+  const cartSum = cartLines.reduce((n, o) => n + o.price * (dealerCart[o.typeId] ?? 0), 0);
+  const tip = DEALER_TIPS[Math.floor(s.clock.gameTime / (6 * 3_600_000)) % DEALER_TIPS.length];
+  const meldinger = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>💬 ${esc(DEALER.name)}</b></div>
+    <div class="sms-thread">
+      <div class="sms in">Yo. Trenger du noe? Kontant. Jeg legger det i søppelkassa di kl. 0${DEALER_HOUR} – hent det før noen andre gjør det.</div>
+      <div class="sms in">${esc(tip)}</div>
+      ${dl.orders
+        .map(
+          (o) => `<div class="sms out">${o.lines.map((l) => `${l.qty} × ${esc(ITEM_TYPES[l.typeId].name)}`).join(', ')}</div>
+            <div class="sms in">Greit. Kl. 0${DEALER_HOUR}, ${esc(formatClock(osloParts(o.deliverAt)).replace(/ kl\..*$/, ''))}.</div>`,
+        )
+        .join('')}
+    </div>
+    <div class="phone-kicker">Han har i dag</div>
+    <ul class="dealer-offer">${dl.offer
+      .map((o) => {
+        const t = ITEM_TYPES[o.typeId];
+        const n = dealerCart[o.typeId] ?? 0;
+        return `<li><span class="dealer-what">${icon(t)} <span>${esc(t.name)}<small>${kr(o.price)} · ${o.left} igjen</small></span></span>
+          <span class="dealer-qty"><button class="ghost small" data-action="dealer-cart" data-type="${o.typeId}" data-delta="-1" ${n ? '' : 'disabled'}>−</button><b>${n}</b>
+          <button class="small" data-action="dealer-cart" data-type="${o.typeId}" data-delta="1" ${n < o.left ? '' : 'disabled'}>+</button></span></li>`;
+      })
+      .join('')}</ul>
+    <button class="dealer-send" data-action="dealer-send" ${cartSum > 0 && s.me.cash >= cartSum ? '' : 'disabled'}>📱 Send SMS · ${kr(cartSum)} kontant</button>
+    <p class="phone-empty">Luguberte varer selger bare om natta (kl. 21–08). ${esc(INSPECTOR.name)} leter under disken – en låst safe ser han ikke inn i.</p>`;
   const body =
-    phonePage === 'kommunen'
+    phonePage === 'meldinger'
+      ? meldinger
+      : phonePage === 'kommunen'
       ? kommunen
       : phonePage === 'bank'
       ? bank
@@ -522,6 +554,7 @@ function phoneWindow(s: GameState): string {
            ${app('phone-page', appIcon('varsler'), 'Varsler', 'data-page="events"', unreadCount(s))}
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
+           ${mine ? app('phone-page', '<span class="app-emoji">💬</span>', 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length) : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -2018,6 +2051,7 @@ function modalView(s: GameState): string {
       p,
       `<h2>${esc(p.name)}</h2>
       <p class="cat-pill">${categoryLabel(p.category)}</p>
+      ${isLuguber(p.id) ? `<p class="liquor-note warn">🕶️ Lugubert: selges bare om natta (kl. 21–08). ${esc(INSPECTOR.name)} leter under disken – en låst safe ser han ikke inn i.</p>` : ''}
       ${isAlcohol(p.id) ? `<p class="liquor-note ${s.me.license.has ? '' : 'warn'}">${s.me.license.has ? '🏛️ Du har skjenkebevilling.' : '⚠️ Du har ikke skjenkebevilling – kjøp den i Kommunen-appen.'} Alkohol er bare lov å selge etter kl. ${LIQUOR_FROM_HOUR}.</p>` : ''}
       <dl class="item-stats">
         <dt>På bordet</dt><dd>${inv.onCounter}</dd>
@@ -2471,7 +2505,7 @@ app.addEventListener('click', (e) => {
   if (action === 'phone-close') phoneOpen = false;
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' ? p : 'home';
   }
   if (action === 'autogiro' && state) {
     const on = !state.me.autogiro;
@@ -2564,6 +2598,18 @@ app.addEventListener('click', (e) => {
       }
       await refresh();
     })();
+    return;
+  }
+  if (action === 'dealer-cart') {
+    const id = el.dataset.type!;
+    dealerCart[id] = Math.max(0, (dealerCart[id] ?? 0) + Number(el.dataset.delta));
+  }
+  if (action === 'dealer-send') {
+    const lines = Object.entries(dealerCart).filter(([, n]) => n > 0).map(([typeId, qty]) => ({ typeId, qty }));
+    void act('/api/dealer/order', { lines }, `📱 SMS sendt. Varene kommer i søppelkassa kl. 0${DEALER_HOUR}.`).then((ok) => {
+      if (ok) dealerCart = {};
+      render();
+    });
     return;
   }
   if (action === 'buy-license') {

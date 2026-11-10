@@ -26,6 +26,7 @@ export const RECIPES: Recipe[] = [
   { id: 'grot', name: 'Rømmegrøt', inputs: { flote: 1, mel: 1 }, outputs: { rommegrot: 3 }, level: 3 },
   { id: 'karamell', name: 'Fløtekarameller', inputs: { flote: 1, sukker: 1 }, outputs: { karamell: 6 }, level: 3 },
   { id: 'syltetoy', name: 'Syltetøy', inputs: { baer: 2, sukker: 1 }, outputs: { syltetoy: 1 }, level: 4 },
+  { id: 'hjemmebrent', name: 'Hjemmebrent', inputs: { sukker: 2, gjaer: 1 }, outputs: { hjemmebrent: 2 }, level: 4 },
   { id: 'kandisert', name: 'Kandiserte epler', inputs: { epler: 1, sukker: 1 }, outputs: { kandisert_eple: 2 }, level: 4 },
 ];
 
