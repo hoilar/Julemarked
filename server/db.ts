@@ -157,6 +157,30 @@ if (!hasColumn('stalls', 'tip_day')) {
   db.exec(`ALTER TABLE stalls ADD COLUMN tip_day INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE stalls ADD COLUMN tip_wrong INTEGER NOT NULL DEFAULT 0;`);
 }
+// Kunder du har solgt til selv (eller som sa nei), så samme kunde ikke kan brukes to ganger.
+db.exec('CREATE TABLE IF NOT EXISTS leads_used (stall_id INTEGER NOT NULL, lead TEXT NOT NULL, PRIMARY KEY (stall_id, lead))');
+// Lageret under disken ble 28 ruter bredt (to nye kolonner på hver side): flytt det som lå der to ruter mot høyre, én gang.
+if (!hasColumn('stalls', 'storage_wide')) {
+  db.exec('ALTER TABLE stalls ADD COLUMN storage_wide INTEGER NOT NULL DEFAULT 1');
+  db.exec("UPDATE items SET x = x + 2 WHERE place = 'storage'");
+}
+// Mikroplast Tilsynsmannen har funnet i søpla: kr per dag ekstra til byråkratifondet resten av spillet.
+if (!hasColumn('stalls', 'microplastic')) db.exec('ALTER TABLE stalls ADD COLUMN microplastic INTEGER NOT NULL DEFAULT 0');
+// AvtaleGiro i banken: regningene betales automatisk kl. 08 når det er dekning.
+if (!hasColumn('stalls', 'autogiro')) db.exec('ALTER TABLE stalls ADD COLUMN autogiro INTEGER NOT NULL DEFAULT 0');
+// Hovedsikringen (uten egen sikringsboks): 1 = gått, ingen strøm før den byttes.
+if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN main_blown INTEGER NOT NULL DEFAULT 0');
+// Lageret ble 26 ruter (én kolonne mindre på hver side): 0 = ting under disken er ikke flyttet ennå.
+if (!hasColumn('stalls', 'storage_26')) db.exec('ALTER TABLE stalls ADD COLUMN storage_26 INTEGER NOT NULL DEFAULT 0');
+// Skiltet på boden: 'open' (Åpent), 'self' (Selvbetjent) eller 'closed' (Stengt).
+if (!hasColumn('stalls', 'sign')) db.exec("ALTER TABLE stalls ADD COLUMN sign TEXT NOT NULL DEFAULT 'open'");
+// Strømmåleren: målerstand (kWh totalt), dagen den sist ble skrudd tilbake, og kWh skrudd tilbake
+// som Tilsynsmannen ikke har sett ennå.
+if (!hasColumn('stalls', 'meter_kwh')) {
+  db.exec(`ALTER TABLE stalls ADD COLUMN meter_kwh REAL NOT NULL DEFAULT 0;
+    ALTER TABLE stalls ADD COLUMN meter_day INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE stalls ADD COLUMN meter_tamper REAL NOT NULL DEFAULT 0;`);
+}
 
 export function tx<T>(fn: () => T): T {
   db.exec('BEGIN');

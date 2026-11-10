@@ -20,12 +20,12 @@ export interface BillView {
 // box = i en eske/pose; pot_in / pot_out = i kjelens råvare- eller ferdig-rutenett (boxId = kjelen).
 // transit = poser på vei fra nettbutikken; ground = levert, står ved siden av boden.
 // nail = hengt opp på spikeren under grenuttaket (bare etterlysninger).
-export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail';
+export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail' | 'cell' | 'fuse' | 'mail';
 
 /** Dagens tilbud i en nettbutikk, med hvor mange du kan kjøpe til (lageret er per spiller). */
 export interface ShopView {
   id: string;
-  items: { typeId: string; price: number; left: number }[];
+  items: { typeId: string; price: number; left: number; was?: number; deal?: number }[];
 }
 
 /** Innstillingene på en kjele. */
@@ -35,6 +35,9 @@ export interface KettleState {
 }
 
 /** Én fysisk gjenstand: én vareenhet eller én eske. */
+import type { Serving, SignMode } from './sign.ts';
+import type { Lead } from './leads.ts';
+
 export interface Item {
   id: number;
   typeId: string;
@@ -42,6 +45,13 @@ export interface Item {
   edition?: number; // bare aviser: hvilken utgave (ÅÅÅÅMMDD)
   kettle?: KettleState; // bare kjeler
   folder?: { on: boolean }; // bare posebrettere
+  strip?: { sockets: (string | null)[] }; // bare ekstra grenuttak: hva som står i de fire kontaktene
+  maker?: { on: boolean; program: string; progress: number }; // bare maskiner med programmer (timer gjort på omgangen)
+  fuse?: { slots: (string | null)[] }; // sikringsboksen: hvilket apparat hver sikringsplass gir strøm til
+  charge?: number; // bare batterier: kWh igjen
+  coupon?: { store: string; productId: string; pct: number; from: number; to: number }; // bare rabattkuponger
+  giftcard?: { store: string; value: number }; // bare gavekort: kr igjen
+  cutCoupons?: number[]; // bare aviser: kupongene som er klippet ut // bare sikringsboksen: kontakt-oppføringer med vippebryteren av
   arrives?: number; // bare poser på vei (transit): spilltid de leveres
   label?: Label; // bare salgsvarer: hva etiketten sier (andres boder ser aldri «forged»)
   sheets?: number; // bare papirblokka: ark igjen
@@ -60,10 +70,13 @@ export interface Power {
   on: boolean;
   sockets: (string | null)[]; // apparat-id i hver av de fire kontaktene
   devices: string[]; // apparater boden eier (i en kontakt eller ikke)
+  blown: boolean; // hovedsikringen har gått (bare uten sikringsboks): ingen strøm før den byttes
 }
 
 export interface StallPublic {
   power: Power;
+  sign: SignMode; // det som står på skiltet
+  serving: Serving; // det boden faktisk gjør nå (away = Åpent, men ingen bak disken)
   id: number;
   name: string;
   ownerName: string;
@@ -101,11 +114,14 @@ export interface GameEvent {
 /** Morgenavisa «Verdens Undergang» (ny utgave kl. 07 hver dag). */
 export interface Paper {
   edition: number; // ÅÅÅÅMMDD
+  coupons: { index: number; store: string; productId: string; pct: number; from: number; to: number }[]; // klipp ut med saks
   date: string; // «Fredag 4. desember»
   price: number; // strømpris i dag, kr/kWh
   headline: string;
   notices: string[];
   recipe: { id: string; name: string; inputs: string[]; outputs: string[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»
+  /** «Fra verkstedet»: dagens oppskrift for en av maskinene (bake-, strikke-, dekormaskin). */
+  machineRecipe: { id: string; name: string; machine: string; machineName: string; inputs: string[]; outputs: string[]; hours: number };
   /** Dagens etterlyste tyv (ansiktet tegnes fra seed). `caught` = noen har angitt ham. */
   wanted: { seed: string; alias: string; reward: number; caught: boolean };
   /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */
@@ -143,6 +159,16 @@ export interface GameState {
     visitors: { thief: string | null; inspector: boolean };
     /** Andelen kunder i dag etter feil tips til politiet i går (1 = som vanlig). */
     crowd: number;
+    /** Strømmåleren (vises i sikringsboksen). kwh = målerstanden, sinceBill/cost = siden forrige regning. */
+    /** Kunder du kan selge til selv denne timen (tom når du ikke står bak disken). */
+    leads: Lead[];
+    /** AvtaleGiro: regningene betales automatisk kl. 08 når det er dekning. */
+    autogiro: boolean;
+    /** Det ligger en avis i postkassa (flagget er oppe). */
+    mailPaper: boolean;
+    /** Gavekortselgeren ved disken (null når ingen står der). offer = null: du har ingenting hen vil ha. */
+    gift: { store: string; name: string; seed: string; pitch: string; offer: { productId: string; qty: number; value: number } | null } | null;
+    meter: { kwh: number; sinceBill: number; cost: number; rolledToday: boolean } | null;
   };
   events: GameEvent[];
 }

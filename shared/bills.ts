@@ -16,7 +16,7 @@ export const PURRING_DAY = 1; // dager forfalt → purring
 export const INKASSO_DAY = 2; // dager forfalt → inkasso
 export const NAMSMANN_DAY = 7; // dager forfalt → namsmann
 
-export type BillKind = 'rent' | 'power' | 'renovasjon' | 'byrakratifond' | 'forsikring' | 'bot';
+export type BillKind = 'rent' | 'power' | 'renovasjon' | 'byrakratifond' | 'forsikring' | 'bot' | 'bipps';
 
 export const BILL_META: Record<BillKind, { label: string; emoji: string }> = {
   rent: { label: 'Bodleie', emoji: '🏠' },
@@ -25,6 +25,7 @@ export const BILL_META: Record<BillKind, { label: string; emoji: string }> = {
   byrakratifond: { label: 'Handelens byråkratifond', emoji: '📋' },
   forsikring: { label: 'Forsikring', emoji: '🛡️' },
   bot: { label: 'Bot fra Markedstilsynet', emoji: '⚖️' },
+  bipps: { label: 'Bipps-terminal', emoji: '💳' },
 };
 
 /** 0 = forfaller i dag, 1 = purret, 2 = inkasso, 3 = namsmann. */

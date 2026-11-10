@@ -31,6 +31,10 @@ import {
   KETTLE,
   KETTLE_KW_PER_LEVEL,
   POSEBRETTER,
+  FOLDER_BY_ID,
+  MICROPLASTIC,
+  MICROPLASTIC_CHANCE,
+  MICROPLASTIC_FEE,
   FOLDER_KW,
   FOLDED_BY_BAG,
   BAG_BY_FOLDED,
@@ -51,6 +55,25 @@ import {
   PEN,
   PAD,
   SCISSORS,
+  SCREWDRIVER,
+  PHONE,
+  STRIP,
+  FUSEBOX,
+  FUSE,
+  BLOWN_FUSE,
+  FUSE_SLOTS,
+  MAIL_GRID,
+  FUSE_OUTAGE_CHANCE,
+  METER_ROLLBACK_KWH,
+  COUPON,
+  TERMINAL,
+  MAKER_BY_ID,
+  ALARM_STEAL_FACTOR,
+  capacityOf,
+  isBattery,
+  CHARGER,
+  CHARGE_EFFICIENCY,
+  CHARGE_KW,
   RECIPE_NOTE,
   WANTED,
   isHomemade,
@@ -64,6 +87,10 @@ import {
   INSPECTOR_REP_HIT,
   INSPECTOR_REP_MAX,
   INSPECTOR_REP_PER_ITEM,
+  METER_CATCH_CHANCE,
+  METER_FINE,
+  METER_FINE_PER_KWH,
+  METER_REP_HIT,
   THIEF_REWARD,
   THIEF_STEAL_CHANCE,
   inspectorHour,
@@ -72,6 +99,45 @@ import {
   tipPenalty,
 } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
+import { BOOK_BY_ID, FAILED_BATCH, makerRecipeId } from '../shared/cookbook.ts';
+import { GIFT_HOURS, GIFT_SELLERS, couponValid, couponsFor, dayRange, giftCardId, giftOffer, giftVisit } from '../shared/deals.ts';
+import {
+  BIPPS_DAILY,
+  CASH_SHARE,
+  EMPTY_LIMIT,
+  EMPTY_REP_HIT,
+  PRESENCE_MS,
+  SELF_CROWD,
+  SELF_SHRINK,
+  SERVICE_BOOST,
+  SIGN_LABEL,
+  type Serving,
+  type SignMode,
+} from '../shared/sign.ts';
+import {
+  CURIOUS_DISCOUNT,
+  CURIOUS_RATE,
+  CURIOUS_YES,
+  EAGER_MARKUP,
+  EAGER_RATE,
+  LEAD_MINUTES,
+  type Lead,
+  type LeadKind,
+} from '../shared/leads.ts';
+import {
+  chargingIn,
+  pluggedEntries,
+  cleanEntry,
+  entryName,
+  fuseboxOf,
+  isStripEntry,
+  loosePlugs,
+  machineKw,
+  machineSource,
+  poweredEntries,
+  stripSockets,
+  totalKw,
+} from '../shared/power.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
 import {
   BAG_FEE,
@@ -91,6 +157,7 @@ import {
 import { START_REPUTATION, expectedPrice, priceAppeal, reputationCrowd } from '../shared/mood.ts';
 import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree } from '../shared/grid.ts';
+import { hash01 } from '../shared/hash.ts';
 import {
   INSURANCE_BY_KIND,
   INSURER,
@@ -101,7 +168,7 @@ import {
   policyItemId,
   type InsuranceKind,
 } from '../shared/insurance.ts';
-import { BAG_PRICE, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
+import { BAG_PRICE, KLAS_DELIVERY, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 
 export class GameError extends Error {}
@@ -167,6 +234,13 @@ interface StallRow {
   bags_binned: number; // poser kastet siden forrige byråkratifond-regning
   tip_day: number; // dato (ÅÅÅÅMMDD) med færre kunder etter feil tips
   tip_wrong: number; // antall feil tips som gjelder den dagen
+  meter_kwh: number; // strømmåleren: kWh totalt
+  meter_day: number; // dato (ÅÅÅÅMMDD) måleren sist ble skrudd tilbake
+  meter_tamper: number; // kWh skrudd tilbake som Tilsynsmannen ikke har oppdaget
+  sign: SignMode;
+  microplastic: number; // mikroplast funnet i søpla (kr/dag til byråkratifondet)
+  autogiro: number; // 1 = AvtaleGiro på
+  main_blown: number; // 1 = hovedsikringen har gått
 }
 interface BillRow {
   id: number;
@@ -281,7 +355,7 @@ function itemsOf(stallId: number): Item[] {
     const item: Item = { id: r.id, typeId: r.type_id, place: r.place, boxId: r.box_id, x: r.x, y: r.y, w, h };
     if (r.edition) item.edition = r.edition;
     if (r.type_id === KETTLE.id) item.kettle = { on: false, level: 1, ...(r.state ? JSON.parse(r.state) : {}) };
-    if (r.type_id === POSEBRETTER.id) item.folder = { on: false, ...(r.state ? JSON.parse(r.state) : {}) };
+    if (FOLDER_BY_ID[r.type_id]) item.folder = { on: false, ...(r.state ? JSON.parse(r.state) : {}) };
     if (r.place === 'transit' && r.state) item.arrives = JSON.parse(r.state).arrives;
     if (PRODUCT_BY_ID[r.type_id]) item.label = r.label ?? 'store';
     const st = r.state && r.place !== 'transit' ? (JSON.parse(r.state) as Record<string, unknown>) : {};
@@ -290,6 +364,21 @@ function itemsOf(stallId: number): Item[] {
     if (r.type_id === WANTED && r.edition && typeof st.seed === 'string')
       item.wanted = { seed: st.seed, alias: String(st.alias ?? ''), edition: r.edition };
     if (r.type_id === NEWSPAPER.id && st.cut) item.cut = true;
+    if (r.type_id === NEWSPAPER.id && Array.isArray(st.coupons)) item.cutCoupons = st.coupons as number[];
+    if (r.type_id === COUPON && typeof st.store === 'string')
+      item.coupon = { store: st.store, productId: String(st.productId), pct: Number(st.pct), from: Number(st.from), to: Number(st.to) };
+    if (r.type_id.startsWith('gavekort_') && typeof st.store === 'string') item.giftcard = { store: st.store, value: Number(st.value) };
+    if (r.type_id === STRIP.id) item.strip = { sockets: Array.isArray(st.sockets) ? (st.sockets as (string | null)[]) : [] };
+    const mk = MAKER_BY_ID[r.type_id];
+    if (mk)
+      item.maker = {
+        on: st.on === true,
+        program: typeof st.program === 'string' && mk.programs.some((p) => p.id === st.program) ? st.program : mk.programs[0].id,
+        progress: typeof st.progress === 'number' ? st.progress : 0,
+      };
+    if (isBattery(r.type_id)) item.charge = typeof st.charge === 'number' ? st.charge : capacityOf(r.type_id); // nye batterier er fulladet
+    if (r.type_id === FUSEBOX.id)
+      item.fuse = { slots: Array.from({ length: FUSE_SLOTS }, (_, n) => (Array.isArray(st.slots) ? ((st.slots as (string | null)[])[n] ?? null) : null)) };
     return item;
   });
 }
@@ -421,7 +510,39 @@ export function migrate() {
       p.devices = p.devices.filter((d) => d !== KETTLE.id);
       savePower(s.id, p);
     }
+    // Alle boder har en smarttelefon under disken (klokke, bank, nettbutikk og varsler).
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterPhone(s.id);
+    // Sikringsbokser fra før skrusikringene ble gjenstander: gi plassene sikringer.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) {
+      const box = itemsOf(s.id).find((i) => i.typeId === FUSEBOX.id);
+      if (box && !itemsOf(s.id).some((i) => i.place === 'fuse')) syncFuseSlots(s.id, true);
+    }
+    // Lageret ble 26 ruter bredt: flytt alt én rute mot venstre, og finn ny plass til det som havnet utenfor.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE storage_26 = 0'))) {
+      const stuck: Item[] = [];
+      for (const i of itemsOf(s.id).filter((x) => x.place === 'storage')) {
+        const nx = i.x - 1;
+        if (nx >= 0 && nx + i.w <= STORAGE_GRID.cols) q.moveItem.run('storage', null, nx, i.y, i.id);
+        else stuck.push(i);
+      }
+      for (const i of stuck) {
+        const spot = findStorageSpot(itemsOf(s.id).filter((x) => x.id !== i.id), i.typeId);
+        if (spot) q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, i.id);
+        else q.moveItem.run('storage', null, Math.max(0, Math.min(STORAGE_GRID.cols - i.w, i.x - 1)), i.y, i.id);
+      }
+      db.prepare('UPDATE stalls SET storage_26 = 1 WHERE id = ?').run(s.id);
+    }
+    // Avisa ligger nå i postkassa som en gjenstand.
+    for (const m of all<MarketRow>(db.prepare('SELECT * FROM markets'))) deliverPapers(m, nowFor(m));
   });
+}
+
+/** Legger en smarttelefon under disken hvis boden ikke har en. */
+function giveStarterPhone(stallId: number) {
+  const items = itemsOf(stallId);
+  if (items.some((i) => i.typeId === PHONE)) return;
+  const spot = findStorageSpot(items, PHONE);
+  if (spot) q.insertItem.run(stallId, PHONE, spot.place, spot.boxId, spot.x, spot.y, null);
 }
 
 // ---------- Spillerhandlinger ----------
@@ -444,7 +565,131 @@ export function join(name: string, code: string): string {
 export function playerFromToken(token: string | undefined): PlayerRow {
   const player = token ? one<PlayerRow>(q.playerByToken, token) : undefined;
   if (!player) throw new GameError('Ikke innlogget.');
+  lastSeen.set(player.id, Date.now());
   return player;
+}
+
+// ---------- Til stede bak disken? ----------
+
+const lastSeen = new Map<number, number>(); // spiller → sist vi hørte fra nettleseren (ms)
+const online = new Map<number, number>(); // spiller → antall åpne nettleservinduer (WebSocket)
+
+/** WebSocket åpnet (+1) eller lukket (−1). */
+export function setOnline(playerId: number, delta: number) {
+  const n = Math.max(0, (online.get(playerId) ?? 0) + delta);
+  online.set(playerId, n);
+  lastSeen.set(playerId, Date.now());
+}
+
+function present(playerId: number): boolean {
+  return (online.get(playerId) ?? 0) > 0 || Date.now() - (lastSeen.get(playerId) ?? 0) < PRESENCE_MS;
+}
+
+/** Har boden Bipps-terminal (hos deg, ikke i søpla)? */
+function hasTerminal(stallId: number): boolean {
+  const items = itemsOf(stallId);
+  return !!holds(items, TERMINAL.id);
+}
+
+/** Hva boden gjør nå: betjent, selvbetjent, stengt, eller «Åpent» uten noen bak disken. */
+function servingOf(s: StallRow): Serving {
+  if (s.sign === 'closed') return 'closed';
+  if (s.sign === 'self' && hasTerminal(s.id)) return 'self';
+  return present(s.owner_id) ? 'open' : 'away';
+}
+
+// ---------- Kunder du selger til selv ----------
+
+/** Poisson-trekning som er lik hver gang (samme nøkler gir samme antall). */
+function hashPoisson(lambda: number, ...keys: (string | number)[]): number {
+  const limit = Math.exp(-lambda);
+  let k = 0;
+  let p = hash01(...keys, 0);
+  while (p > limit && k < 10) {
+    k++;
+    p *= hash01(...keys, k);
+  }
+  return k;
+}
+
+/**
+ * Ivrige og interesserte kunder ved boden i timen `t` er i. Bestemt av bod + time + vare, så de er
+ * de samme hver gang vi spør. Bare om dagen, bare varer som står på bordet, og ikke de som er brukt.
+ */
+function leadsFor(market: MarketRow, s: StallRow, t: number): Lead[] {
+  const start = Math.floor(t / HOUR) * HOUR;
+  const parts = osloParts(start);
+  if (phaseOf(parts.hour) !== 'day') return [];
+  const used = new Set(
+    all<{ lead: string }>(db.prepare('SELECT lead FROM leads_used WHERE stall_id = ? AND lead LIKE ?'), s.id, `${start}:%`).map((r) => r.lead),
+  );
+  const onTable = [...new Set(itemsOf(s.id).filter((i) => i.place === 'counter' && PRODUCT_BY_ID[i.typeId]).map((i) => i.typeId))];
+  const base = LAYOUT[s.slot_index].traffic * (HOUR_CURVE[parts.hour] ?? 1) * seasonFactor(seasonDay(parts)) * reputationCrowd(s.reputation);
+  const out: Lead[] = [];
+  for (const pid of onTable) {
+    const demand = PRODUCT_BY_ID[pid].baseDemand * base;
+    for (const [kind, rate] of [['eager', EAGER_RATE], ['curious', CURIOUS_RATE]] as [LeadKind, number][]) {
+      const n = hashPoisson(demand * rate, 'kunde', market.id, s.id, start, pid, kind);
+      for (let j = 0; j < n; j++) {
+        const id = `${start}:${pid}:${kind}${j}`;
+        if (used.has(id)) continue;
+        const from = start + Math.floor(hash01('kunde-tid', s.id, id) * 0.8 * HOUR);
+        out.push({ id, productId: pid, kind, from, until: from + LEAD_MINUTES * 60_000 });
+      }
+    }
+  }
+  return out.sort((a, b) => a.from - b.from);
+}
+
+/**
+ * Du trykker på en kunde: ivrige kjøper én til 25 % over prisen din, interesserte får 15 % avslag
+ * og sier som regel ja. Krever at du står bak disken.
+ */
+export function sellLead(player: PlayerRow, leadId: string) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    if (servingOf(stall) !== 'open') throw new GameError('Du må stå bak disken med skiltet på Åpent for å selge selv.');
+    const lead = leadsFor(market, stall, t).find((l) => l.id === leadId);
+    if (!lead || t < lead.from - 60_000 || t > lead.until + 5 * 60_000) throw new GameError('Kunden har gått videre.');
+    db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, lead.id);
+    const p = PRODUCT_BY_ID[lead.productId];
+    if (lead.kind === 'curious' && hash01('kunde-ja', stall.id, lead.id) >= CURIOUS_YES) {
+      event(market, player.id, t, `🤷 Kunden takket nei til ${p.name.toLowerCase()}, selv med avslag.`);
+      return { sold: false, amount: 0, txId: 0, productId: p.id };
+    }
+    const price = priceOf(pricesOf(stall.id), p.id);
+    const amount = Math.max(1, Math.round(price * (lead.kind === 'eager' ? EAGER_MARKUP : CURIOUS_DISCOUNT)));
+    const took = takeFromCounter(stall.id, p.id, 1, true) || takeFromCounter(stall.id, p.id, 1, false);
+    if (!took) throw new GameError(`Det er ingen ${p.name.toLowerCase()} igjen på bordet.`);
+    const cash = Math.random() < CASH_SHARE;
+    const fee = cash ? 0 : Math.round(amount * PAYMENT_FEE);
+    q.addCash.run(amount - fee, stall.id);
+    const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, 1, amount);
+    if (lead.kind === 'curious') q.setReputation.run(Math.min(100, stall.reputation + 0.3), stall.id);
+    const how = cash ? 'kontant' : `Bipps, gebyr ${fee} kr`;
+    event(
+      market,
+      player.id,
+      t,
+      lead.kind === 'eager'
+        ? `🤩 Solgte ${p.emoji} ${p.name.toLowerCase()} til en ivrig kunde for ${amount} kr (${how}).`
+        : `🤝 Kunden lot seg overtale: ${p.emoji} ${p.name.toLowerCase()} for ${amount} kr med avslag (${how}).`,
+    );
+    return { sold: true, amount, txId: Number(res.lastInsertRowid), productId: p.id };
+  });
+}
+
+/** Snur skiltet. Selvbetjent krever Bipps-terminal. */
+export function setSign(player: PlayerRow, sign: string) {
+  if (sign !== 'open' && sign !== 'self' && sign !== 'closed') throw new GameError('Ukjent skilt.');
+  const stall = myStall(player);
+  if (sign === 'self' && !hasTerminal(stall.id))
+    throw new GameError('Selvbetjening krever Bipps-terminal. Den får du hos Klas Olsen.');
+  db.prepare('UPDATE stalls SET sign = ? WHERE id = ?').run(sign, stall.id);
+  const market = marketOf(player);
+  event(market, null, nowFor(market), `🪧 «${stall.name}» har snudd skiltet: ${SIGN_LABEL[sign]}.`);
 }
 
 function marketOf(player: PlayerRow): MarketRow {
@@ -490,6 +735,9 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
       throw new GameError('Plassen er allerede tatt.');
     }
     if (def.price > 0) q.insertTx.run(market.id, nowFor(market), 'plass', id, null, null, null, def.price);
+    db.prepare('UPDATE stalls SET storage_26 = 1 WHERE id = ?').run(id);
+    giveStarterPhone(id);
+    deliverPapers(market, nowFor(market));
     event(market, null, nowFor(market), `${player.name} har leid plass ${slotIndex + 1} i ${def.street}n og åpnet «${stallName}».`);
   });
 }
@@ -533,24 +781,30 @@ export function buy(player: PlayerRow, typeId: string, qty: number) {
   if (!t || t.kind === 'paper' || t.kind === 'kettle' || (t.kind === 'ingredient' && t.price <= 0))
     throw new GameError('Ukjent vare.');
   // Varer og råvarer kjøpes i nettbutikkene nå; her (Klas Olsen) er det esker og kontorrekvisita.
-  if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool'))
+  if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery'))
     throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
   if (int(qty, 'antall') < 1 || qty > 100) throw new GameError('Ugyldig antall.');
   const market = marketOf(player);
   tx(() => {
     const stall = myStall(player);
+    if (t.kind === 'electric' && t.max) {
+      const items = itemsOf(stall.id);
+      const have = items.filter((i) => i.typeId === t.id && !isTrashed(items, i)).length;
+      if (have + qty > t.max) throw new GameError(`Du kan bare ha ${t.max} ${t.name.toLowerCase()}.`);
+    }
     const unit = t.price;
-    const cost = unit * qty;
-    if (stall.cash < cost) throw new GameError(`Du har ikke råd. Det koster ${cost} kr.`);
+    const cost = unit * qty + KLAS_DELIVERY; // pluss levering fra Klas Olsen
+    if (stall.cash < cost) throw new GameError(`Du har ikke råd. Det koster ${cost} kr med levering.`);
     q.setCash.run(stall.cash - cost, stall.id);
     storeNew(stall.id, typeId, qty);
+    if (typeId === FUSEBOX.id) syncFuseSlots(stall.id, true); // leveres med sikringer til det som står i kontaktene
     q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, typeId, qty, cost);
   });
 }
 
 /** Flytter én gjenstand til et nytt sted (lager, bord eller eske). En eske tar med seg innholdet. */
 export function moveItem(player: PlayerRow, itemId: number, place: Place, boxId: number | null, x: number, y: number) {
-  if (!['storage', 'counter', 'box', 'trash', 'pot_in', 'pot_out', 'nail'].includes(place)) throw new GameError('Ugyldig sted.');
+  if (!['storage', 'counter', 'box', 'trash', 'pot_in', 'pot_out', 'nail', 'cell', 'fuse', 'mail'].includes(place)) throw new GameError('Ugyldig sted.');
   const stall = myStall(player);
   const items = itemsOf(stall.id);
   const item = items.find((i) => i.id === itemId);
@@ -571,6 +825,7 @@ export function discardItem(player: PlayerRow, itemId: number): string {
   if (isUndelivered(items, item)) throw new GameError('Posen står ved boden. Trykk på den for å ta den inn.');
   if (items.some((i) => i.place === 'box' && i.boxId === item.id)) throw new GameError(`Tøm ${ITEM_TYPES[item.typeId].name} før du kaster den.`);
   if (item.place === 'trash') throw new GameError('Den ligger allerede i søpla.');
+  if (item.typeId === PHONE) throw new GameError('Telefonen kaster du ikke – den trenger du.');
   const spot = findTrashSpot(items, item.typeId);
   if (!spot)
     throw new GameError(
@@ -673,6 +928,8 @@ export function getState(player: PlayerRow): GameState {
         counter,
         prices,
         power: powerOf(s),
+        sign: s.sign,
+        serving: servingOf(s),
       },
     };
   });
@@ -732,10 +989,25 @@ export function getState(player: PlayerRow): GameState {
       bills: mine ? billsFor(mine.id, currentEdition(t).key) : [],
       visitors: mine ? visitorsAt(market, mine, t) : { thief: null, inspector: false },
       crowd: mine && mine.tip_day === dateKey(t) ? tipPenalty(mine.tip_wrong) : 1,
+      gift: mine ? giftFor(market, mine, t) : null,
+      autogiro: !!mine?.autogiro,
+      mailPaper: items.some((i) => i.place === 'mail'),
+      leads: mine && servingOf(mine) === 'open' ? leadsFor(market, mine, t).filter((l) => l.until > t) : [],
+      meter: mine
+        ? {
+            kwh: Math.round((meterBase(mine.id) + mine.meter_kwh) * 10) / 10,
+            sinceBill: Math.round(mine.power_kwh * 10) / 10,
+            cost: Math.round(mine.power_cost),
+            rolledToday: mine.meter_day === dateKey(t),
+          }
+        : null,
     },
     events,
   };
 }
+
+/** Målerstanden boden overtok (måleren er ikke ny). */
+const meterBase = (stallId: number) => 1000 + Math.floor(hash01('måler', stallId) * 8000);
 
 /** Kalenderdato (norsk tid) som ÅÅÅÅMMDD. */
 function dateKey(t: number): number {
@@ -760,6 +1032,7 @@ function powerOf(s: StallRow): Power {
     on: s.power_on === 1,
     sockets: Array.from({ length: SOCKETS }, (_, i) => sockets[i] ?? null),
     devices: JSON.parse(s.devices) as string[],
+    blown: s.main_blown === 1,
   };
 }
 
@@ -772,50 +1045,82 @@ function savePower(stallId: number, p: Power) {
   );
 }
 
-/** Faste apparater (lyslenka) som går nå: i en kontakt, og bryteren er på. Kjeler regnes for seg. */
-function runningDevices(p: Power): Device[] {
-  if (!p.on) return [];
-  return p.sockets
+/** Faste apparater (lyslenka) som får strøm nå. Maskiner (kjeler, posebrettere) regnes for seg. */
+function runningDevices(s: StallRow, items: Item[]): Device[] {
+  return [...poweredEntries(powerOf(s), items)]
     .map(socketEntry)
     .filter((e): e is NonNullable<typeof e> => !!e && e.itemId === null)
     .map((e) => e.device);
 }
 
-/** Kjelene som koker nå: påslått, i en kontakt, grenuttaket på, og ikke i søpla. */
-function runningKettles(s: StallRow, items: Item[]): Item[] {
-  const p = powerOf(s);
-  if (!p.on) return [];
-  return items.filter(
-    (i) => i.typeId === KETTLE.id && i.kettle?.on && !isTrashed(items, i) && p.sockets.includes(itemSocket(KETTLE.id, i.id)),
-  );
+/** Maskiner av en type som går nå: slått på, får strøm (stolpe, ev. ekstra grenuttak, sikring) og ikke i søpla. */
+function runningMachines(s: StallRow, items: Item[], typeId: string, on: (i: Item) => boolean, gridDown = false): Item[] {
+  const power = powerOf(s);
+  return items.filter((i) => i.typeId === typeId && on(i) && !isTrashed(items, i) && machineSource(power, items, i, gridDown) !== null);
 }
+const runningKettles = (s: StallRow, items: Item[], gridDown = false) =>
+  runningMachines(s, items, KETTLE.id, (i) => !!i.kettle?.on, gridDown);
+const runningFolders = (s: StallRow, items: Item[], gridDown = false) =>
+  Object.keys(FOLDER_BY_ID).flatMap((id) => runningMachines(s, items, id, (i) => !!i.folder?.on, gridDown));
+/** Maskiner med programmer (bake-, strikke-, dekormaskin) som går nå. */
+const runningMakers = (s: StallRow, items: Item[], gridDown = false) =>
+  Object.keys(MAKER_BY_ID).flatMap((id) => runningMachines(s, items, id, (i) => !!i.maker?.on, gridDown));
 
-/** Posebrettere som går nå: påslått, i en kontakt, grenuttaket på, og ikke i søpla. */
-function runningFolders(s: StallRow, items: Item[]): Item[] {
-  const p = powerOf(s);
-  if (!p.on) return [];
-  return items.filter(
-    (i) => i.typeId === POSEBRETTER.id && i.folder?.on && !isTrashed(items, i) && p.sockets.includes(itemSocket(POSEBRETTER.id, i.id)),
-  );
-}
-
-/** Hvor mange kW boden trekker nå. Kjeler trekker etter styrke, posebrettere fast, de andre apparatene fast. */
-function stallKw(s: StallRow): number {
+/**
+ * Batteriene, én time: maskiner som gikk på batteri, tapper det; ladestasjoner med strøm fyller
+ * batteriene sine. Kjøres etter at maskinene har gjort timen sin.
+ */
+function batteryHour(market: MarketRow, s: StallRow, t: number, gridDown: boolean) {
   const items = itemsOf(s.id);
-  const fixed = runningDevices(powerOf(s)).reduce((n, d) => n + d.kw, 0);
-  const kettles = runningKettles(s, items).reduce((n, k) => n + k.kettle!.level * KETTLE_KW_PER_LEVEL, 0);
-  const folders = runningFolders(s, items).length * FOLDER_KW;
-  return fixed + kettles + folders;
+  const power = powerOf(s);
+  const machines = [...runningKettles(s, items, gridDown), ...runningFolders(s, items, gridDown), ...runningMakers(s, items, gridDown)];
+  for (const m of machines) {
+    if (machineSource(power, items, m, gridDown) !== 'battery') continue;
+    const b = items.find((i) => i.place === 'cell' && i.boxId === m.id && isBattery(i.typeId))!;
+    const left = Math.max(0, (b.charge ?? 0) - machineKw(m, items));
+    saveState(b.id, { charge: left });
+    if (left <= 0.001) event(market, s.owner_id, t, `🪫 Batteriet i ${entryName(itemSocket(m.typeId, m.id), items).name.toLowerCase()} er tomt.`);
+  }
+  if (gridDown) return;
+  const powered = poweredEntries(power, items);
+  for (const c of items.filter((i) => i.typeId === CHARGER.id && powered.has(itemSocket(CHARGER.id, i.id)))) {
+    for (const b of chargingIn(items, c.id)) {
+      const cap = capacityOf(b.typeId);
+      const charge = Math.min(cap, (b.charge ?? 0) + CHARGE_KW * CHARGE_EFFICIENCY);
+      saveState(b.id, { charge });
+      if (charge >= cap - 0.001) event(market, s.owner_id, t, '🔋 Et batteri i ladestasjonen er fulladet.');
+    }
+  }
 }
 
-/** Apparater boden har som ikke står i noen kontakt (faste apparater og gjenstands-apparater utenom søpla). */
-function loosePlugs(p: Power, items: Item[]): string[] {
-  const fixed = p.devices.filter((d) => !p.sockets.includes(d));
-  const machines = items
-    .filter((i) => DEVICES.some((d) => d.item === i.typeId) && !isTrashed(items, i))
-    .map((i) => itemSocket(i.typeId, i.id))
-    .filter((e) => !p.sockets.includes(e));
-  return [...fixed, ...machines];
+/** Får alarmen strøm akkurat nå (og er det ikke strømbrudd i gata)? */
+function alarmOn(market: MarketRow, s: StallRow, t: number): boolean {
+  if (!runningDevices(s, itemsOf(s.id)).some((d) => d.id === 'alarm')) return false;
+  const outage = outageFor(market.id, currentEdition(t).key);
+  const hour = osloParts(t).hour;
+  return !(outage && LAYOUT[s.slot_index].street === outage.street && hour >= outage.from && hour < outage.to);
+}
+
+/** Hvor mange kW boden trekker nå. */
+function stallKw(s: StallRow): number {
+  return totalKw(powerOf(s), itemsOf(s.id));
+}
+
+/** Tar ut av kontaktene det som ikke finnes lenger (kastede kjeler, grenuttak …). */
+function cleanPower(s: StallRow) {
+  const items = itemsOf(s.id);
+  const p = powerOf(s);
+  const sockets = p.sockets.map((e) => cleanEntry(e, items));
+  if (JSON.stringify(sockets) !== JSON.stringify(p.sockets)) savePower(s.id, { ...p, sockets });
+  for (const strip of items.filter((i) => i.typeId === STRIP.id)) {
+    const before = stripSockets(strip);
+    const after = before.map((e) => cleanEntry(e, items));
+    if (JSON.stringify(after) !== JSON.stringify(before)) saveState(strip.id, { sockets: after });
+  }
+}
+
+function saveState(itemId: number, state: unknown) {
+  db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify(state), itemId);
 }
 
 /** Kjøper et apparat hos Klas Olsen. Det plugges inn i første ledige kontakt. Kjeler kan man ha flere av. */
@@ -827,23 +1132,47 @@ export function buyDevice(player: PlayerRow, deviceId: string) {
     const stall = myStall(player);
     const p = powerOf(stall);
     if (!d.item && p.devices.includes(d.id)) throw new GameError(`Du har allerede ${d.name.toLowerCase()}.`);
-    if (stall.cash < d.price) throw new GameError(`Du har ikke råd. Det koster ${d.price} kr.`);
-    q.setCash.run(stall.cash - d.price, stall.id);
-    let entry = d.id;
+    // En ny lyslenke bytter ut den gamle (de henger på samme sted). Står den gamle i en kontakt, tar den nye plassen.
+    let socketOfOld = -1;
+    if (d.light) {
+      const old = p.devices.filter((x) => DEVICE_BY_ID[x]?.light);
+      p.devices = p.devices.filter((x) => !DEVICE_BY_ID[x]?.light);
+      for (const o of old) {
+        const i = p.sockets.indexOf(o);
+        if (i >= 0) {
+          p.sockets[i] = null;
+          if (socketOfOld < 0) socketOfOld = i;
+        }
+      }
+    }
+    const cost = d.price + KLAS_DELIVERY; // pluss levering fra Klas Olsen
+    if (stall.cash < cost) throw new GameError(`Du har ikke råd. Det koster ${cost} kr med levering.`);
+    q.setCash.run(stall.cash - cost, stall.id);
     if (d.item) {
-      // Gjenstanden (kjelen) havner under disken – kaster hvis det ikke er plass.
+      // Maskiner kommer i en pappkartong under disken. Pakk ut og plugg inn selv – en utpakket
+      // maskin får ikke plass i kartongen igjen (maskiner kan ikke ligge i esker).
       const items = itemsOf(stall.id);
-      const spot = findStorageSpot(items, d.item);
-      if (!spot) throw new GameError(`Det er ikke plass til ${d.name.toLowerCase()} under disken.`);
-      insertItem(stall.id, items, d.item, spot);
-      entry = itemSocket(d.id, items[items.length - 1].id);
-    } else p.devices.push(d.id);
-    const free = p.sockets.indexOf(null);
-    if (free >= 0) p.sockets[free] = entry;
-    savePower(stall.id, p);
-    q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, d.id, 1, d.price);
+      const spot = findStorageSpot(items, MACHINE_BOX);
+      if (!spot || spot.place !== 'storage') throw new GameError(`Det er ikke plass til kartongen med ${d.name.toLowerCase()} under disken (den tar 3×3).`);
+      insertItem(stall.id, items, MACHINE_BOX, spot);
+      const boxId = items[items.length - 1].id;
+      q.insertItem.run(stall.id, d.item, 'box', boxId, 0, 0, null);
+    } else {
+      p.devices.push(d.id);
+      const free = socketOfOld >= 0 ? socketOfOld : p.sockets.indexOf(null);
+      if (free >= 0) p.sockets[free] = d.id;
+      savePower(stall.id, p);
+      // Ny lyslenke: ta over sikringsplassen (og sikringen) til den gamle.
+      const box = d.light ? fuseboxOf(itemsOf(stall.id)) : undefined;
+      if (box) saveState(box.id, { slots: (box.fuse?.slots ?? []).map((e) => (e && DEVICE_BY_ID[e]?.light ? d.id : e)) });
+      syncFuseSlots(stall.id);
+    }
+    q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, d.id, 1, cost);
   });
 }
+
+/** Kartongen maskinene leveres i (vanlig pappkartong, kan brukes videre som eske). */
+const MACHINE_BOX = 'kartong';
 
 /** Slår grenuttaket av eller på. */
 export function togglePower(player: PlayerRow) {
@@ -853,18 +1182,126 @@ export function togglePower(player: PlayerRow) {
   savePower(stall.id, p);
 }
 
-/** Trykk på en kontakt: trekk ut det som står der, eller plugg inn et apparat som ikke står i noen kontakt. */
-export function toggleSocket(player: PlayerRow, index: number) {
-  if (!Number.isInteger(index) || index < 0 || index >= SOCKETS) throw new GameError('Ugyldig kontakt.');
+/**
+ * Trykk på en kontakt: trekk ut det som står der, eller plugg inn `entry` (eller det første som ikke
+ * står i noen kontakt). `stripId` = en kontakt i et ekstra grenuttak i stedet for på stolpen.
+ */
+export function toggleSocket(player: PlayerRow, index: number, stripId: number | null = null, entry: string | null = null) {
   const stall = myStall(player);
+  const items = itemsOf(stall.id);
   const p = powerOf(stall);
-  if (p.sockets[index]) p.sockets[index] = null;
+  const strip = stripId === null ? null : items.find((i) => i.id === stripId && i.typeId === STRIP.id);
+  if (stripId !== null && (!strip || isTrashed(items, strip) || isUndelivered(items, strip))) throw new GameError('Fant ikke grenuttaket.');
+  const sockets = strip ? stripSockets(strip) : p.sockets;
+  if (!Number.isInteger(index) || index < 0 || index >= sockets.length) throw new GameError('Ugyldig kontakt.');
+  if (sockets[index]) sockets[index] = null;
   else {
-    const loose = loosePlugs(p, itemsOf(stall.id))[0];
-    if (!loose) throw new GameError('Du har ingen apparater som ikke står i en kontakt. Kjøp hos Klas Olsen.');
-    p.sockets[index] = loose;
+    if (entry && strip && isStripEntry(entry)) throw new GameError('Et grenuttak kan ikke plugges i et annet grenuttak.');
+    const loose = loosePlugs(p, items, strip ? 'strip' : 'main');
+    const chosen = entry ?? loose[0];
+    if (!chosen) throw new GameError('Du har ingen apparater som ikke står i en kontakt. Kjøp hos Klas Olsen.');
+    if (!loose.includes(chosen)) throw new GameError('Det står allerede i en kontakt.');
+    sockets[index] = chosen;
   }
-  savePower(stall.id, p);
+  if (strip) saveState(strip.id, { sockets });
+  else savePower(stall.id, p);
+  syncFuseSlots(stall.id);
+}
+
+// ---------- Sikringsboksen og måleren ----------
+
+/** (Gammelt) Sikringene i boksen er gjenstander nå – de dras ut og inn. */
+export function toggleFuse(_player: PlayerRow, _entry: string) {
+  throw new GameError('Dra skrusikringen ut av sikringsboksen for å kutte strømmen, og inn igjen for å slå den på.');
+}
+
+/**
+ * Sikringsboksen: hver plass gir strøm til ett apparat. Nye apparater får en ledig plass,
+ * apparater som er trukket ut, slipper plassen sin. `fill` = legg en ny skrusikring i tomme plasser.
+ */
+function syncFuseSlots(stallId: number, fill = false) {
+  const s = one<StallRow>(q.stallById, stallId);
+  if (!s) return;
+  const items = itemsOf(stallId);
+  const box = fuseboxOf(items);
+  if (!box) return;
+  const plugged = pluggedEntries(powerOf(s), items)
+    .map((p) => p.entry)
+    .filter((e): boolean => !isStripEntry(e));
+  const before = box.fuse?.slots ?? Array<string | null>(FUSE_SLOTS).fill(null);
+  const slots = before.map((e) => (e && plugged.includes(e) ? e : null));
+  for (const e of plugged) {
+    if (slots.includes(e)) continue;
+    const free = slots.indexOf(null);
+    if (free >= 0) slots[free] = e;
+  }
+  if (JSON.stringify(slots) !== JSON.stringify(before)) saveState(box.id, { slots });
+  if (fill)
+    slots.forEach((e, y) => {
+      if (e && !items.some((i) => i.place === 'fuse' && i.boxId === box.id && i.y === y)) q.insertItem.run(stallId, FUSE.id, 'fuse', box.id, 0, y, null);
+    });
+}
+
+/** Skrur inn en ny skrusikring: for ett apparat i sikringsboksen, eller hovedsikringen («main»). */
+export function replaceFuse(player: PlayerRow, entry: string) {
+  const market = marketOf(player);
+  tx(() => {
+    const stall = myStall(player);
+    const items = itemsOf(stall.id);
+    const spare = items.find((i) => i.typeId === FUSE.id && !isTrashed(items, i) && !isUndelivered(items, i));
+    if (!spare) throw new GameError('Du har ingen skrusikringer. Klas Olsen har.');
+    // Bare hovedsikringen byttes slik; sikringene i sikringsboksen dras ut og inn.
+    if (entry !== 'main') throw new GameError('Dra den røkne sikringen ut av sikringsboksen og en ny skrusikring inn.');
+    if (!stall.main_blown) throw new GameError('Hovedsikringen er hel.');
+    db.prepare('UPDATE stalls SET main_blown = 0 WHERE id = ?').run(stall.id);
+    q.deleteItem.run(spare.id);
+    event(market, player.id, nowFor(market), '🔩 Du skrudde inn en ny sikring. Strømmen er tilbake.');
+  });
+}
+
+/**
+ * En sikring ryker: med sikringsboks bare for det ene apparatet, uten sikringsboks hovedsikringen
+ * (hele boden mister strømmen). Batterier i maskinene redder dem som vanlig.
+ */
+function blowFuse(market: MarketRow, s: StallRow, t: number, entry: string, why: string) {
+  const items = itemsOf(s.id);
+  const box = fuseboxOf(items);
+  const name = entryName(entry, items).name;
+  if (box) {
+    const slot = (box.fuse?.slots ?? []).indexOf(entry);
+    const fuse = slot < 0 ? undefined : items.find((i) => i.place === 'fuse' && i.boxId === box.id && i.y === slot && i.typeId === FUSE.id);
+    if (!fuse) return;
+    db.prepare('UPDATE items SET type_id = ? WHERE id = ?').run(BLOWN_FUSE.id, fuse.id);
+    event(market, s.owner_id, t, `💥 ${why}: sikringen til ${name.toLowerCase()} røk. Dra den røkne sikringen ut av sikringsboksen og sett inn en ny skrusikring.`);
+  } else {
+    if (one<StallRow>(q.stallById, s.id)!.main_blown) return;
+    db.prepare('UPDATE stalls SET main_blown = 1 WHERE id = ?').run(s.id);
+    event(market, s.owner_id, t, `💥 ${why}: hovedsikringen gikk (${name.toLowerCase()} trakk for mye) – hele boden er uten strøm! Skru inn en ny skrusikring (trykk på bryteren på grenuttaket). En sikringsboks gjør at bare ett apparat stopper.`);
+  }
+}
+
+/**
+ * Skrur strømmåleren tilbake (krever sikringsboks og skrutrekker), én gang per dag. Strømregningen
+ * blir mindre – men Tilsynsmannen kan se at plomberingen er brutt.
+ */
+export function rollbackMeter(player: PlayerRow) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    const items = itemsOf(stall.id);
+    if (!fuseboxOf(items)) throw new GameError('Du har ingen sikringsboks.');
+    if (!holds(items, SCREWDRIVER)) throw new GameError('Du trenger en skrutrekker.');
+    const today = dateKey(t);
+    if (stall.meter_day === today) throw new GameError('Du har allerede skrudd på måleren i dag. Den knirker.');
+    const kwh = Math.min(METER_ROLLBACK_KWH, stall.power_kwh);
+    if (kwh <= 0.01) throw new GameError('Måleren står på det samme som ved forrige regning. Ingenting å skru tilbake.');
+    const saved = (stall.power_cost * kwh) / stall.power_kwh;
+    db.prepare(
+      'UPDATE stalls SET power_kwh = power_kwh - ?, power_cost = MAX(0, power_cost - ?), meter_kwh = meter_kwh - ?, meter_tamper = meter_tamper + ?, meter_day = ? WHERE id = ?',
+    ).run(kwh, saved, kwh, kwh, today, stall.id);
+    return { kwh: Math.round(kwh * 10) / 10, saved: Math.round(saved) };
+  });
 }
 
 /**
@@ -922,6 +1359,7 @@ function shopsFor(market: MarketRow, player: PlayerRow, t: number): ShopView[] {
         typeId: i.typeId,
         price: i.price,
         left: Math.max(0, i.stock - (bought.get(i.typeId) ?? 0)),
+        ...(i.deal ? { was: i.was, deal: i.deal } : {}),
       })),
     };
   });
@@ -931,7 +1369,7 @@ function shopsFor(market: MarketRow, player: PlayerRow, t: number): ShopView[] {
  * Bestiller fra en nettbutikk. Varene pakkes i butikkens poser (1 kr per pose) og sendes:
  * standard (20 kr) kommer kl. 07 neste morgen, ekspress (150 kr, gratis første dag) innen en time.
  */
-export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: string; qty: number }[], express: boolean) {
+export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: string; qty: number }[], express: boolean, useCards = true) {
   const store = STORE_BY_ID[storeId];
   if (!store) throw new GameError('Ukjent butikk.');
   const clean = lines
@@ -954,12 +1392,42 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
   const bags = packBags(clean);
   const shipping = express ? expressPrice(isFirstDay(market, t)) : SHIPPING.standard;
   const total = goods + bags.length * BAG_PRICE + shipping;
+  // Rabattkuponger (gyldige i dag, for denne butikken): den beste per vare, gjelder hele linja.
+  const held = itemsOf(myStall(player).id);
+  const usable = (i: Item) => !isTrashed(held, i) && !isUndelivered(held, i);
+  const coupons: { item: Item; saved: number }[] = [];
+  for (const l of clean) {
+    const best = held
+      .filter((i) => i.coupon && usable(i) && i.coupon.store === store.id && i.coupon.productId === l.typeId && couponValid(i.coupon, day))
+      .sort((a, b) => b.coupon!.pct - a.coupon!.pct)[0];
+    if (best) coupons.push({ item: best, saved: Math.round((offer.get(l.typeId)!.price * l.qty * best.coupon!.pct) / 100) });
+  }
+  const couponSaved = coupons.reduce((n, c) => n + c.saved, 0);
+  const afterCoupons = total - couponSaved;
+  // Gavekort i samme butikk: minste først, så det blir færrest halvbrukte kort.
+  const cards = useCards
+    ? held.filter((i) => i.giftcard && usable(i) && i.giftcard.store === store.id && i.giftcard.value > 0).sort((a, b) => a.giftcard!.value - b.giftcard!.value)
+    : [];
+  let cardUsed = 0;
+  const cardLeft = new Map<number, number>();
+  for (const c of cards) {
+    if (cardUsed >= afterCoupons) break;
+    const take = Math.min(c.giftcard!.value, afterCoupons - cardUsed);
+    cardUsed += take;
+    cardLeft.set(c.id, c.giftcard!.value - take);
+  }
+  const pay = afterCoupons - cardUsed;
   const arrives = express ? t : currentEdition(t).time + 24 * HOUR;
 
   tx(() => {
     const stall = myStall(player);
-    if (stall.cash < total) throw new GameError(`Du har ikke råd. Bestillingen koster ${total} kr.`);
-    q.setCash.run(stall.cash - total, stall.id);
+    if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr.`);
+    q.setCash.run(stall.cash - pay, stall.id);
+    for (const c of coupons) q.deleteItem.run(c.item.id); // kupongen er brukt
+    for (const [id, left] of cardLeft) {
+      if (left <= 0) q.deleteItem.run(id);
+      else q.setState.run(JSON.stringify({ store: store.id, value: left }), id);
+    }
     // Snittkost: varene koster det de kostet, frakt og poser fordeles ikke (det er «driftskostnader»).
     for (const l of clean) {
       if (PRODUCT_BY_ID[l.typeId]) addCost(stall.id, l.typeId, l.qty, offer.get(l.typeId)!.price);
@@ -975,9 +1443,9 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
       db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify({ arrives }), bagId);
       for (const u of bag) q.insertItem.run(stall.id, u.typeId, 'box', bagId, u.x, u.y, null);
     }
-    q.insertTx.run(market.id, t, 'shop', stall.id, null, store.id, bags.length, total);
+    q.insertTx.run(market.id, t, 'shop', stall.id, null, store.id, bags.length, pay);
   });
-  return { total, bags: bags.length, express };
+  return { total, pay, couponSaved, cardUsed, bags: bags.length, express };
 }
 
 /** Leverer poser som har kommet fram: de settes ved boden. */
@@ -1030,12 +1498,88 @@ export function setKettle(player: PlayerRow, itemId: number, on: boolean | undef
   db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify(s), k.id);
 }
 
+// ---------- Maskiner med programmer ----------
+
+/** Slår en maskin av/på eller bytter program (da starter omgangen på nytt). */
+export function setMaker(player: PlayerRow, itemId: number, on: boolean | undefined, program: string | undefined) {
+  const stall = myStall(player);
+  const m = itemsOf(stall.id).find((i) => i.id === itemId && i.maker);
+  if (!m) throw new GameError('Fant ikke maskinen.');
+  const st = { ...m.maker! };
+  if (on !== undefined) st.on = !!on;
+  const items = itemsOf(stall.id);
+  const knows = (prog: string) =>
+    items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === makerRecipeId(m.typeId, prog) && !isTrashed(items, i));
+  if (program !== undefined && program !== st.program) {
+    if (!MAKER_BY_ID[m.typeId].programs.some((p) => p.id === program)) throw new GameError('Ukjent program.');
+    if (!knows(program)) throw new GameError('Du har ikke den oppskriften. Se etter den i avisa.');
+    st.program = program;
+    st.progress = 0;
+  }
+  if (st.on && !knows(st.program)) throw new GameError('Velg en oppskrift først. Du trenger en avskrevet oppskrift fra avisa.');
+  saveState(m.id, st);
+}
+
+/** Én spilltime for maskinene: én time nærmere ferdig hvis råvarene ligger klare. */
+function makerHour(market: MarketRow, s: StallRow, t: number, gridDown = false) {
+  const items = itemsOf(s.id);
+  for (const m of runningMakers(s, items, gridDown)) makeOne(market, s, t, items, m);
+}
+
+function makeOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
+  const def = MAKER_BY_ID[m.typeId];
+  const st = m.maker!;
+  const prog = def.programs.find((p) => p.id === st.program) ?? def.programs[0];
+  const inside = itemsIn(items, 'pot_in', m.id);
+  if (inside.length === 0) return; // tom: står og venter
+  const progress = st.progress + 1;
+  if (progress < prog.hours) return saveState(m.id, { ...st, progress });
+  // Riktige ingredienser (nok av alt, og ingenting annet)? Ellers blir det en mislykket batch.
+  const have = (id: string) => inside.filter((i) => i.typeId === id).length;
+  const right = Object.entries(prog.inputs).every(([id, n]) => have(id) >= n) && inside.every((i) => prog.inputs[i.typeId]);
+  const result: Record<string, number> = right ? prog.outputs : { [FAILED_BATCH]: 1 };
+  // Ferdig: finn plass til alt før noe brukes opp.
+  const out = itemsIn(items, 'pot_out', m.id);
+  const spots: { typeId: string; x: number; y: number }[] = [];
+  for (const [typeId, n] of Object.entries(result)) {
+    const { w, h } = ITEM_TYPES[typeId].size;
+    for (let j = 0; j < n; j++) {
+      const free = findFree(w, h, [...out, ...spots.map((p) => ({ ...p, ...ITEM_TYPES[p.typeId].size }))], def.output);
+      if (!free) {
+        if (st.progress < prog.hours) event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig, men det er fullt i ferdig-feltet.`);
+        return saveState(m.id, { ...st, progress: prog.hours });
+      }
+      spots.push({ typeId, ...free });
+    }
+  }
+  if (right)
+    for (const [id, n] of Object.entries(prog.inputs))
+      inside
+        .filter((i) => i.typeId === id)
+        .slice(0, n)
+        .forEach((i) => q.deleteItem.run(i.id));
+  else for (const i of inside) q.deleteItem.run(i.id); // feil batch: alt går med
+  for (const p of spots) {
+    const res = q.insertItem.run(s.id, p.typeId, 'pot_out', m.id, p.x, p.y, null);
+    if (PRODUCT_BY_ID[p.typeId]) q.setLabel.run('home', Number(res.lastInsertRowid));
+  }
+  saveState(m.id, { ...st, progress: 0 });
+  if (!right) {
+    event(market, s.owner_id, t, `🫠 Feil batch! ${def.name} fikk ikke riktige ingredienser til ${prog.name.toLowerCase()}. Alt ble til en mislykket klump.`);
+    return;
+  }
+  const made = Object.entries(prog.outputs)
+    .map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`)
+    .join(', ');
+  event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig: ${made}.`);
+}
+
 // ---------- Posebretteren ----------
 
 /** Slår posebretteren av eller på («Brett sammen»). */
 export function setFolder(player: PlayerRow, itemId: number, on: boolean) {
   const stall = myStall(player);
-  const m = itemsOf(stall.id).find((i) => i.id === itemId && i.typeId === POSEBRETTER.id);
+  const m = itemsOf(stall.id).find((i) => i.id === itemId && FOLDER_BY_ID[i.typeId]);
   if (!m) throw new GameError('Fant ikke posebretteren.');
   db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify({ ...m.folder, on: !!on }), m.id);
 }
@@ -1057,13 +1601,15 @@ export function unfoldBag(player: PlayerRow, itemId: number) {
 }
 
 /** Én spilltime for alle posebrettere på boden som står på. */
-function foldHour(market: MarketRow, s: StallRow, t: number) {
+function foldHour(market: MarketRow, s: StallRow, t: number, gridDown = false) {
   const items = itemsOf(s.id);
-  for (const m of runningFolders(s, items)) foldOne(market, s, t, items, m);
+  for (const m of runningFolders(s, items, gridDown)) foldOne(market, s, t, items, m);
 }
 
 /** Én posebretter, én time: brett sammen én tom pose til en 1×1-klump i ferdig-feltet. */
 function foldOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
+  const def = FOLDER_BY_ID[m.typeId];
+  if (def.mode === 'shred') return shredOne(market, s, t, items, m);
   const bag = itemsIn(items, 'pot_in', m.id).find((i) => {
     const type = ITEM_TYPES[i.typeId];
     return type.kind === 'container' && type.shopBag && contentsOf(items, i.id).length === 0;
@@ -1082,10 +1628,47 @@ function foldOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: It
   event(market, s.owner_id, t, `🗜️ Posebretteren brettet sammen en ${ITEM_TYPES[bag.typeId].name.toLowerCase()}.`);
 }
 
+/**
+ * Makuleringsmaskinen, én time: makulerer opptil `perHour` ting. Papir forsvinner helt; plastposer blir
+ * borte, men av og til blir de til mikroplast i ut-feltet.
+ */
+function shredOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
+  const def = FOLDER_BY_ID[m.typeId];
+  const queue = itemsIn(items, 'pot_in', m.id).sort((a, b) => a.y - b.y || a.x - b.x).slice(0, def.perHour);
+  if (queue.length === 0) return;
+  const out = itemsIn(items, 'pot_out', m.id);
+  const done: string[] = [];
+  let plastic = 0;
+  for (const it of queue) {
+    const type = ITEM_TYPES[it.typeId];
+    const isPlastic = (type.kind === 'container' && type.shopBag) || type.kind === 'folded';
+    if (type.kind === 'container' && contentsOf(items, it.id).length > 0) continue; // ikke tomme poser
+    if (isPlastic && Math.random() < MICROPLASTIC_CHANCE) {
+      const free = findFree(1, 1, out, def.output);
+      if (!free) {
+        event(market, s.owner_id, t, `${def.emoji} Makuleringsmaskinen stoppet – ut-feltet er fullt av mikroplast.`);
+        break;
+      }
+      q.insertItem.run(s.id, MICROPLASTIC, 'pot_out', m.id, free.x, free.y, null);
+      out.push({ id: -1, typeId: MICROPLASTIC, place: 'pot_out', boxId: m.id, x: free.x, y: free.y, w: 1, h: 1 });
+      plastic++;
+    }
+    q.deleteItem.run(it.id);
+    done.push(type.name.toLowerCase());
+  }
+  if (done.length)
+    event(
+      market,
+      s.owner_id,
+      t,
+      `${def.emoji} Makulert: ${done.join(', ')}.${plastic ? ` ${plastic === 1 ? 'Én pose' : `${plastic} poser`} ble til mikroplast.` : ''}`,
+    );
+}
+
 /** Én spilltime for alle kjelene på boden som står og koker. */
-function cookHour(market: MarketRow, s: StallRow, t: number) {
+function cookHour(market: MarketRow, s: StallRow, t: number, gridDown = false) {
   const items = itemsOf(s.id);
-  for (const k of runningKettles(s, items)) cookOne(market, s, t, items, k);
+  for (const k of runningKettles(s, items, gridDown)) cookOne(market, s, t, items, k);
 }
 
 /** Én kjele, én time: lag en porsjon på riktig styrke, eller svi den hvis det er for varmt. */
@@ -1183,19 +1766,40 @@ function nightThefts(market: MarketRow, editionAt: number, myStallId: number | n
 }
 
 /** Henter dagens avis fra postkassa: den legges under disken (1×2), og flagget går ned. */
+/** Tar den nyeste avisa ut av postkassa og legger den under disken. */
 export function fetchPaper(player: PlayerRow) {
-  const market = marketOf(player);
-  const ed = currentEdition(nowFor(market));
-  if (ed.time < market.game_start - HOUR) throw new GameError('Postkassa er tom. Avisa kommer kl. 07.');
-  if (player.paper_read >= ed.key) throw new GameError('Postkassa er tom. Neste avis kommer kl. 07.');
   const stall = myStall(player);
   tx(() => {
     const items = itemsOf(stall.id);
-    const spot = findStorageSpot(items, NEWSPAPER.id);
+    const paper = items.filter((i) => i.place === 'mail' && i.typeId === NEWSPAPER.id).sort((a, b) => (b.edition ?? 0) - (a.edition ?? 0))[0];
+    if (!paper) throw new GameError('Postkassa er tom. Neste avis kommer kl. 07.');
+    const spot = findStorageSpot(items.filter((i) => i.id !== paper.id), NEWSPAPER.id);
     if (!spot) throw new GameError('Det er ikke plass til avisa under disken.');
-    insertItem(stall.id, items, NEWSPAPER.id, spot, ed.key);
-    db.prepare('UPDATE players SET paper_read = ? WHERE id = ?').run(ed.key, player.id);
+    q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, paper.id);
   });
+}
+
+/** Legger dagens avis i postkassa til boder som ikke har fått den ennå. Er postkassa full, ryker den eldste. */
+function deliverPapers(market: MarketRow, t: number) {
+  const ed = currentEdition(t);
+  if (ed.time < market.game_start - HOUR) return;
+  for (const s of all<StallRow & { paper_read: number }>(
+    db.prepare('SELECT s.*, p.paper_read FROM stalls s JOIN players p ON p.id = s.owner_id WHERE s.market_id = ?'),
+    market.id,
+  )) {
+    if (s.paper_read >= ed.key) continue;
+    let mail = itemsOf(s.id).filter((i) => i.place === 'mail');
+    let spot = findFree(2, 1, mail, MAIL_GRID);
+    while (!spot && mail.length) {
+      const oldest = mail.sort((a, b) => (a.edition ?? 0) - (b.edition ?? 0))[0];
+      q.deleteItem.run(oldest.id);
+      mail = mail.filter((i) => i.id !== oldest.id);
+      spot = findFree(2, 1, mail, MAIL_GRID);
+    }
+    if (!spot) continue;
+    q.insertItem.run(s.id, NEWSPAPER.id, 'mail', null, spot.x, spot.y, ed.key);
+    db.prepare('UPDATE players SET paper_read = ? WHERE id = ?').run(ed.key, s.owner_id);
+  }
 }
 
 /** En avis av utgaven `edition` som du har i hende (ikke i søpla). */
@@ -1204,7 +1808,7 @@ function heldPaper(items: Item[], edition: number): Item | undefined {
 }
 
 /** Skriver av dagens oppskrift fra avisa på et ark fra papirblokka. Lappen legges under disken. */
-export function copyRecipe(player: PlayerRow, edition: number) {
+export function copyRecipe(player: PlayerRow, edition: number, which: 'kettle' | 'machine' = 'kettle') {
   const market = marketOf(player);
   const stall = myStall(player);
   return tx(() => {
@@ -1215,7 +1819,8 @@ export function copyRecipe(player: PlayerRow, edition: number) {
     if (!pad) throw new GameError('Du har ikke noe papir å skrive på.');
     const paper = paperFor(market, player, edition, stall.id);
     if (!paper) throw new GameError('Avisa er uleselig.');
-    const id = paper.recipe.id;
+    const r = which === 'machine' ? paper.machineRecipe : paper.recipe;
+    const id = r.id;
     if (items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === id && !isTrashed(items, i)))
       throw new GameError('Du har allerede skrevet av den oppskriften.');
     const spot = findStorageSpot(items, RECIPE_NOTE);
@@ -1225,7 +1830,7 @@ export function copyRecipe(player: PlayerRow, edition: number) {
     const left = (pad.sheets ?? 1) - 1;
     if (left > 0) q.setState.run(JSON.stringify({ sheets: left }), pad.id);
     else q.deleteItem.run(pad.id);
-    event(market, player.id, nowFor(market), `📝 Du skrev av «${paper.recipe.name}».${left > 0 ? '' : ' Papirblokka er tom.'}`);
+    event(market, player.id, nowFor(market), `📝 Du skrev av «${r.name}».${left > 0 ? '' : ' Papirblokka er tom.'}`);
     return { left };
   });
 }
@@ -1245,8 +1850,99 @@ export function cutWanted(player: PlayerRow, edition: number) {
     const thief = thiefOf(market.id, edition);
     const res = q.insertItem.run(stall.id, WANTED, spot.place, spot.boxId, spot.x, spot.y, edition);
     q.setState.run(JSON.stringify(thief), Number(res.lastInsertRowid));
-    q.setState.run(JSON.stringify({ cut: true }), paper.id);
+    q.setState.run(JSON.stringify({ cut: true, coupons: paper.cutCoupons ?? [] }), paper.id);
     event(market, player.id, nowFor(market), `✂️ Du klippet ut etterlysningen av ${thief.alias}.`);
+  });
+}
+
+/** Klipper ut en rabattkupong av avisa med saksa. Kupongen legges under disken. */
+export function cutCoupon(player: PlayerRow, edition: number, index: number) {
+  const market = marketOf(player);
+  const stall = myStall(player);
+  tx(() => {
+    const items = itemsOf(stall.id);
+    const paper = heldPaper(items, edition);
+    if (!paper) throw new GameError('Du har ikke den avisa lenger.');
+    const c = couponsFor(market.id, edition).find((x) => x.index === index);
+    if (!c) throw new GameError('Fant ikke kupongen.');
+    if (paper.cutCoupons?.includes(index)) throw new GameError('Den kupongen er allerede klippet ut.');
+    if (!holds(items, SCISSORS)) throw new GameError('Du har ingenting å klippe med. Klas Olsen har sakser.');
+    const spot = findStorageSpot(items, COUPON);
+    if (!spot) throw new GameError('Det er ikke plass til kupongen under disken.');
+    const res = q.insertItem.run(stall.id, COUPON, spot.place, spot.boxId, spot.x, spot.y, null);
+    q.setState.run(JSON.stringify({ store: c.store, productId: c.productId, pct: c.pct, from: c.from, to: c.to }), Number(res.lastInsertRowid));
+    q.setState.run(JSON.stringify({ cut: !!paper.cut, coupons: [...(paper.cutCoupons ?? []), index] }), paper.id);
+    event(
+      market,
+      player.id,
+      nowFor(market),
+      `✂️ Du klippet ut en kupong: ${c.pct} % på ${ITEM_TYPES[c.productId].name.toLowerCase()} hos ${STORE_BY_ID[c.store].name} ${dayRange(c.from, c.to)}.`,
+    );
+  });
+}
+
+// ---------- Gavekortselgeren ----------
+
+/** Står en gavekortselger ved boden nå (og har du ikke svart ham/henne i dag)? */
+function giftHere(market: MarketRow, s: StallRow, t: number) {
+  const day = currentEdition(t).key;
+  const v = giftVisit(market.id, day, s.id);
+  if (!v) return null;
+  const hour = osloParts(t).hour;
+  if (hour < v.hour || hour >= v.hour + GIFT_HOURS) return null;
+  if (one(db.prepare('SELECT 1 FROM leads_used WHERE stall_id = ? AND lead = ?'), s.id, `gavekort:${day}`)) return null;
+  return { ...v, day };
+}
+
+/** Hvor mange av hver vare boden har (under disken, i esker og på bordet). */
+function productsHeld(items: Item[]): Map<string, number> {
+  const have = new Map<string, number>();
+  for (const i of items)
+    if (PRODUCT_BY_ID[i.typeId] && !isTrashed(items, i) && !isUndelivered(items, i)) have.set(i.typeId, (have.get(i.typeId) ?? 0) + 1);
+  return have;
+}
+
+function giftFor(market: MarketRow, s: StallRow, t: number): GameState['me']['gift'] {
+  const v = giftHere(market, s, t);
+  if (!v) return null;
+  const seller = GIFT_SELLERS[v.store];
+  const offer = giftOffer(market.id, v.day, s.id, productsHeld(itemsOf(s.id)));
+  return { ...seller, offer };
+}
+
+/** Svar gavekortselgeren: bytt varene mot et gavekort, eller takk nei. Én gang per dag. */
+export function answerGift(player: PlayerRow, accept: boolean) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    const v = giftHere(market, stall, t);
+    if (!v) throw new GameError('Selgeren har gått.');
+    const seller = GIFT_SELLERS[v.store];
+    db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, `gavekort:${v.day}`);
+    if (!accept) {
+      event(market, player.id, t, `🎁 Du takket nei til ${seller.name}.`);
+      return { accepted: false };
+    }
+    const items = itemsOf(stall.id);
+    const offer = giftOffer(market.id, v.day, stall.id, productsHeld(items));
+    if (!offer) throw new GameError('Du har ingen varer å bytte.');
+    // Ta varene: først fra lageret, så fra bordet.
+    const pick = items
+      .filter((i) => i.typeId === offer.productId && !isTrashed(items, i) && !isUndelivered(items, i))
+      .sort((a, b) => Number(a.place === 'counter') - Number(b.place === 'counter'))
+      .slice(0, offer.qty);
+    if (pick.length < offer.qty) throw new GameError('Du har ikke nok av varen.');
+    for (const i of pick) q.deleteItem.run(i.id);
+    const left = itemsOf(stall.id);
+    const cardId = giftCardId(v.store);
+    const spot = findStorageSpot(left, cardId);
+    if (!spot) throw new GameError('Det er ikke plass til gavekortet under disken.');
+    const res = q.insertItem.run(stall.id, cardId, spot.place, spot.boxId, spot.x, spot.y, null);
+    q.setState.run(JSON.stringify({ store: v.store, value: offer.value }), Number(res.lastInsertRowid));
+    const p = PRODUCT_BY_ID[offer.productId];
+    event(market, player.id, t, `🎁 Du byttet ${offer.qty} ${p.emoji} ${p.name.toLowerCase()} mot et ${STORE_BY_ID[v.store].name}-gavekort på ${offer.value} kr.`);
+    return { accepted: true, value: offer.value };
   });
 }
 
@@ -1347,10 +2043,11 @@ function issueBills(market: MarketRow, t: number, s: StallRow, yesterdayRevenue:
 
   issueBill(market, s, t, 'power', dueDay, s.power_cost);
   issueBill(market, s, t, 'renovasjon', dueDay, RENOVASJON_DAILY);
-  issueBill(market, s, t, 'byrakratifond', dueDay, s.bags_binned * BAG_FEE);
+  issueBill(market, s, t, 'byrakratifond', dueDay, s.bags_binned * BAG_FEE + (s.microplastic ?? 0));
   const policies = activePolicies(s.id);
   issueBill(market, s, t, 'forsikring', dueDay, [...policies].reduce((n, k) => n + INSURANCE_BY_KIND[k].premium, 0));
 
+  if (hasTerminal(s.id)) issueBill(market, s, t, 'bipps', dueDay, BIPPS_DAILY);
   db.prepare('UPDATE stalls SET power_kwh = 0, power_cost = 0, bags_binned = 0 WHERE id = ?').run(s.id);
 }
 
@@ -1504,6 +2201,43 @@ export function payBill(player: PlayerRow, billId: number) {
   });
 }
 
+/** Betaler alle regninger boden har råd til (billigste først). Brukes av «Betal alt» og AvtaleGiro. */
+function payWhatWeCan(market: MarketRow, stall: StallRow, t: number) {
+  let cash = stall.cash;
+  let paid = 0;
+  let total = 0;
+  const bills = all<BillRow>(q.billsForStall, stall.id).sort((a, b) => a.amount + a.surcharge - (b.amount + b.surcharge));
+  for (const b of bills) {
+    const sum = b.amount + b.surcharge;
+    if (sum > cash) continue;
+    cash -= sum;
+    total += sum;
+    paid++;
+    q.deleteBill.run(b.id);
+    q.insertTx.run(market.id, t, b.kind, stall.id, null, null, null, sum);
+  }
+  if (paid > 0) q.addCash.run(-total, stall.id);
+  return { paid, total, left: bills.length - paid };
+}
+
+/** Slår AvtaleGiro av eller på. Slås den på, betales det som forfaller nå med en gang. */
+export function setAutogiro(player: PlayerRow, on: boolean) {
+  const market = marketOf(player);
+  return tx(() => {
+    const stall = myStall(player);
+    db.prepare('UPDATE stalls SET autogiro = ? WHERE id = ?').run(on ? 1 : 0, stall.id);
+    if (!on) return { paid: 0, total: 0 };
+    const r = payWhatWeCan(market, one<StallRow>(q.stallById, stall.id)!, nowFor(market));
+    event(
+      market,
+      player.id,
+      nowFor(market),
+      `🏦 AvtaleGiro er satt opp. Regningene betales automatisk kl. 08 når det er dekning.${r.paid ? ` Betalte ${r.paid} med en gang: ${r.total} kr.` : ''}`,
+    );
+    return r;
+  });
+}
+
 /** Betaler alle regninger man har råd til, billigste først. */
 export function payAllBills(player: PlayerRow) {
   const market = marketOf(player);
@@ -1542,13 +2276,17 @@ function stealHour(market: MarketRow, t: number, hour: number, stalls: StallRow[
     if (!thiefVisits(market.id, key, s.id).night.includes(hour)) continue;
     const prices = pricesOf(s.id);
     const stolen: string[] = [];
+    const alarm = alarmOn(market, s, t - HOUR / 2);
+    const chance = THIEF_STEAL_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1);
     for (const i of itemsOf(s.id)) {
       if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
-      if (Math.random() >= THIEF_STEAL_CHANCE) continue;
+      if (Math.random() >= chance) continue;
       q.deleteItem.run(i.id);
       q.insertTx.run(market.id, t, 'theft', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
       stolen.push(i.typeId);
     }
+    if (alarm && hour === thiefVisits(market.id, key, s.id).night[0])
+      event(market, s.owner_id, t, stolen.length ? '🚨 Alarmen hylte i natt! Tyven stakk – men fikk med seg litt.' : '🚨 Alarmen hylte i natt, og tyven stakk tomhendt.');
     if (stolen.length > 0)
       insurancePayout(market, s, t, 'tyveri', insuredValue(s.id, stolen), `${stolen.length} ${stolen.length === 1 ? 'stjålet vare' : 'stjålne varer'}`);
   }
@@ -1567,23 +2305,54 @@ function inspections(market: MarketRow, t: number, hour: number, passed: number,
   }
 }
 
-/** Sjekker bordet: falske «hjemmelaget»-etiketter gir bot, mindre omdømme og riktig etikett igjen. */
+/**
+ * Sjekker bordet og måleren. Falske «hjemmelaget»-etiketter gir bot, mindre omdømme og riktig
+ * etikett igjen. En måler som er skrudd tilbake, oppdager han av og til (brutt plombering).
+ */
 function inspect(market: MarketRow, t: number, s: StallRow) {
   const fresh = one<StallRow>(q.stallById, s.id)!;
   const forged = itemsOf(s.id).filter((i) => i.place === 'counter' && i.label === 'forged');
-  if (forged.length === 0) {
-    q.setReputation.run(Math.min(100, fresh.reputation + INSPECTOR_REP_CLEAN), s.id);
+  const tampered = fresh.meter_tamper > 0.01;
+  // Mikroplast i søpla: +1 kr per stk til byråkratifondet hver dag resten av spillet.
+  const all_ = itemsOf(s.id);
+  const plastic = all_.filter((i) => i.typeId === MICROPLASTIC && isTrashed(all_, i)).length;
+  if (plastic > 0) {
+    db.prepare('UPDATE stalls SET microplastic = microplastic + ? WHERE id = ?').run(plastic * MICROPLASTIC_FEE, s.id);
+    for (const i of all_.filter((i) => i.typeId === MICROPLASTIC && isTrashed(all_, i))) q.deleteItem.run(i.id); // han tar dem med som bevis
+    event(
+      market,
+      s.owner_id,
+      t,
+      `📋 ${INSPECTOR.name} fant ${plastic} mikroplast i søppelkassa. Byråkratifondet øker med ${plastic * MICROPLASTIC_FEE} kr per dag – resten av sesongen.`,
+    );
+  }
+  const meterCaught = tampered && hash01('måler-sjekk', market.id, currentEdition(t).key, s.id) < METER_CATCH_CHANCE;
+  if (tampered) db.prepare('UPDATE stalls SET meter_tamper = 0 WHERE id = ?').run(s.id); // sporene er borte etter besøket
+  let rep = fresh.reputation;
+  if (forged.length === 0 && !meterCaught && plastic === 0) {
+    q.setReputation.run(Math.min(100, rep + INSPECTOR_REP_CLEAN), s.id);
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} nikket fornøyd og gikk. Omdømme +${INSPECTOR_REP_CLEAN}.`);
     return;
   }
-  for (const i of forged) q.setLabel.run(null, i.id); // han river av de falske etikettene
-  const hit = Math.min(INSPECTOR_REP_MAX, INSPECTOR_REP_HIT + forged.length * INSPECTOR_REP_PER_ITEM);
-  q.setReputation.run(Math.max(0, fresh.reputation - hit), s.id);
-  const fine = INSPECTOR_FINE + forged.length * INSPECTOR_FINE_PER_ITEM;
-  issueBill(market, fresh, t, 'bot', currentEdition(t).key, fine);
-  const n = `${forged.length} ${forged.length === 1 ? 'vare' : 'varer'}`;
-  event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fant ${n} merket «Hjemmelaget» som er kjøpt i butikk. Bot ${fine} kr og omdømme −${hit}.`);
-  event(market, null, t, `📋 ${INSPECTOR.office} avslørte falske «hjemmelaget»-etiketter hos «${s.name}».`);
+  if (forged.length > 0) {
+    for (const i of forged) q.setLabel.run(null, i.id); // han river av de falske etikettene
+    const hit = Math.min(INSPECTOR_REP_MAX, INSPECTOR_REP_HIT + forged.length * INSPECTOR_REP_PER_ITEM);
+    rep = Math.max(0, rep - hit);
+    const fine = INSPECTOR_FINE + forged.length * INSPECTOR_FINE_PER_ITEM;
+    issueBill(market, fresh, t, 'bot', currentEdition(t).key, fine);
+    const n = `${forged.length} ${forged.length === 1 ? 'vare' : 'varer'}`;
+    event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fant ${n} merket «Hjemmelaget» som er kjøpt i butikk. Bot ${fine} kr og omdømme −${hit}.`);
+    event(market, null, t, `📋 ${INSPECTOR.office} avslørte falske «hjemmelaget»-etiketter hos «${s.name}».`);
+  }
+  if (meterCaught) {
+    const kwh = Math.round(fresh.meter_tamper);
+    const fine = METER_FINE + Math.round(fresh.meter_tamper * METER_FINE_PER_KWH);
+    rep = Math.max(0, rep - METER_REP_HIT);
+    issueBill(market, fresh, t, 'bot', currentEdition(t).key, fine);
+    event(market, s.owner_id, t, `📋 ${INSPECTOR.name} så at plomberingen på strømmåleren er brutt – den er skrudd tilbake ca. ${kwh} kWh. Bot ${fine} kr og omdømme −${METER_REP_HIT}.`);
+    event(market, null, t, `📋 ${INSPECTOR.office} tok «${s.name}» i å skru tilbake strømmåleren.`);
+  }
+  q.setReputation.run(rep, s.id);
 }
 
 // ---------- Strømbrudd ----------
@@ -1598,8 +2367,16 @@ function startOutage(market: MarketRow, t: number, stalls: StallRow[], outage: {
   );
   for (const s of stalls) {
     if (LAYOUT[s.slot_index].street !== outage.street) continue;
+    for (const e of poweredEntries(powerOf(s), itemsOf(s.id)))
+      if (Math.random() < FUSE_OUTAGE_CHANCE) blowFuse(market, s, t, e, 'Strømbruddet');
+  }
+  for (const s of stalls) {
+    if (LAYOUT[s.slot_index].street !== outage.street) continue;
     const items = itemsOf(s.id);
-    const ruined = runningKettles(s, items).flatMap((k) => itemsIn(items, 'pot_in', k.id));
+    const power = powerOf(s);
+    const ruined = runningKettles(s, items)
+      .filter((k) => machineSource(power, items, k, true) === null) // batteri redder kokingen
+      .flatMap((k) => itemsIn(items, 'pot_in', k.id));
     if (ruined.length === 0) continue;
     for (const i of ruined) q.deleteItem.run(i.id);
     event(market, s.owner_id, t, `🥶 Kjelen ble kald midt i kokingen. ${ruined.length} ${ruined.length === 1 ? 'råvare' : 'råvarer'} ble ødelagt.`);
@@ -1650,9 +2427,10 @@ function processHour(market: MarketRow, hour: number) {
     if (dark(s)) continue;
     const kw = stallKw(s);
     if (kw > 0)
-      db.prepare('UPDATE stalls SET power_kwh = power_kwh + ?, power_cost = power_cost + ? WHERE id = ?').run(
+      db.prepare('UPDATE stalls SET power_kwh = power_kwh + ?, power_cost = power_cost + ?, meter_kwh = meter_kwh + ? WHERE id = ?').run(
         kw,
         kw * kwhPrice,
+        kw,
         s.id,
       );
   }
@@ -1662,10 +2440,13 @@ function processHour(market: MarketRow, hour: number) {
   deliverArrived(market, t);
 
   // Kjelene koker og posebrettere bretter døgnet rundt så lenge de står på.
+  // Under strømbrudd går bare maskiner med ladet batteri.
   for (const s of stalls) {
-    if (dark(s)) continue;
-    cookHour(market, s, t);
-    foldHour(market, s, t);
+    const down = dark(s);
+    cookHour(market, s, t, down);
+    foldHour(market, s, t, down);
+    makerHour(market, s, t, down);
+    batteryHour(market, s, t, down);
   }
 
   if (parts.hour === 8) {
@@ -1677,11 +2458,24 @@ function processHour(market: MarketRow, hour: number) {
       all<{ from_stall: number; amount: number }>(q.salesBetween, market.id, t - 24 * HOUR, t).map((r) => [r.from_stall, r.amount]),
     );
     for (const s of stalls) issueBills(market, t, s, revenue.get(s.id) ?? 0);
+    // AvtaleGiro: betal det som er mulig med en gang.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ? AND autogiro = 1'), market.id)) {
+      const r = payWhatWeCan(market, s, t);
+      if (r.paid)
+        event(market, s.owner_id, t, `🏦 AvtaleGiro betalte ${r.paid} ${r.paid === 1 ? 'regning' : 'regninger'}: ${r.total} kr.${r.left ? ` ${r.left} ble ikke betalt – for lite på konto.` : ''}`);
+      else if (r.left) event(market, s.owner_id, t, `🏦 AvtaleGiro: for lite på konto til å betale ${r.left} ${r.left === 1 ? 'regning' : 'regninger'}.`);
+    }
   }
   if (parts.hour === 21) event(market, null, t, '🌙 Dagsmarkedet stenger. Nattmarkedet våkner.');
+  for (const s of stalls) {
+    const v = giftVisit(market.id, currentEdition(t).key, s.id);
+    if (v && v.hour === parts.hour)
+      event(market, s.owner_id, t, `🎁 ${GIFT_SELLERS[v.store].name} fra ${STORE_BY_ID[v.store].name} står ved disken og vil bytte varer mot gavekort.`);
+  }
   if (INSURER_VISITS.some((v) => v.from === parts.hour))
     event(market, null, t, `🛡️ ${INSURER.name} fra ${INSURER.company} går fra bod til bod og selger forsikringer.`);
   if (parts.hour === PAPER_HOUR) {
+    deliverPapers(market, t);
     const price = powerPrice(market.id, currentEdition(t).key);
     event(market, null, t, `📰 Verdens Undergang ligger i postkassa. Strømpris i dag: ${price.toFixed(2).replace('.', ',')} kr/kWh.`);
   }
@@ -1697,13 +2491,8 @@ function processHour(market: MarketRow, hour: number) {
       }).length;
       if (bags > 0) db.prepare('UPDATE stalls SET bags_binned = bags_binned + ? WHERE id = ?').run(bags, s.id);
       for (const i of gone) q.deleteItem.run(i.id);
-      // Kastede apparater (kjeler) trekkes ut av grenuttaket.
-      const unplug = new Set(gone.filter((i) => DEVICES.some((d) => d.item === i.typeId)).map((i) => itemSocket(i.typeId, i.id)));
-      if (unplug.size > 0) {
-        const p = powerOf(s);
-        p.sockets = p.sockets.map((d) => (d && unplug.has(d) ? null : d));
-        savePower(s.id, p);
-      }
+      // Kastede apparater og grenuttak trekkes ut av kontaktene.
+      cleanPower(s);
       event(market, s.owner_id, t, `🚛 Søppelbilen har tømt søppelkassa di (${gone.length} ting).`);
     }
   }
@@ -1752,11 +2541,22 @@ function processHour(market: MarketRow, hour: number) {
   const today = dateKey(t);
 
   for (const s of stalls) {
+    const serving = servingOf(s);
+    if (serving === 'closed' || serving === 'away') continue; // ingen bak disken, ingen salg
     const traffic = LAYOUT[s.slot_index].traffic;
     const prices = pricesOf(s.id);
     let reputation = s.reputation;
     let revenue = 0;
+    let shrink = 0;
     const sold: string[] = [];
+    const modeFactor = serving === 'self' ? SELF_CROWD : SERVICE_BOOST;
+    // Åpen bod med (nesten) tomt bord: kundene blir skuffet.
+    const shown = [...onCounter.get(s.id)!.values()].reduce((n, c) => n + c.home + c.store, 0);
+    if (shown <= EMPTY_LIMIT) {
+      reputation -= EMPTY_REP_HIT;
+      if (parts.hour % 3 === 0)
+        event(market, s.owner_id, t, `😕 Kundene går skuffet forbi – bordet ditt er ${shown === 0 ? 'tomt' : 'nesten tomt'}. Snu skiltet til Stengt mens du fyller på.`);
+    }
     // Feil tips til politiet i går: ryktet holder folk unna i dag.
     const rumour = s.tip_day === today ? tipPenalty(s.tip_wrong) : 1;
 
@@ -1775,14 +2575,24 @@ function processHour(market: MarketRow, hour: number) {
         const competition = 1 / Math.sqrt(sellers.get(pid) ?? 1);
         // Et fullt bord trekker litt flere kunder enn én ensom vare. Etterspørselen deles på etikettene.
         const display = Math.min(1.25, 0.85 + total * 0.04) * (count / total);
-        const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(powerOf(s)).some((d) => d.id === 'lyslenke') ? LIGHT_BOOST : 1;
-        const lambda = p.baseDemand * traffic * repFactor * priceFactor * curve * season * competition * display * lights * rumour;
+        const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
+        const lambda = p.baseDemand * traffic * repFactor * priceFactor * curve * season * competition * display * lights * rumour * modeFactor;
         const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count), homemade);
         if (units <= 0) continue;
 
         revenue += units * price;
         sold.push(`${units} ${p.emoji}`);
         q.insertTx.run(market.id, t, 'npc_sale', s.id, null, pid, units, units * price);
+        // Selvbetjent: noen «glemmer» å betale.
+        if (serving === 'self') {
+          let gone = 0;
+          for (let j = 0; j < units; j++) if (Math.random() < SELF_SHRINK) gone++;
+          gone = takeFromCounter(s.id, pid, gone, homemade);
+          if (gone > 0) {
+            shrink += gone;
+            q.insertTx.run(market.id, t, 'theft', s.id, null, pid, gone, gone * price);
+          }
+        }
 
         if (price <= expected * 1.15) reputation += 0.3;
         if (price > expected * 1.6) reputation -= 0.4;
@@ -1803,10 +2613,15 @@ function processHour(market: MarketRow, hour: number) {
     reputation = Math.max(0, Math.min(100, reputation));
     if (reputation !== s.reputation) q.setReputation.run(reputation, s.id);
     if (revenue > 0) {
-      const fee = Math.round(revenue * PAYMENT_FEE);
+      // Betjent: noen betaler kontant (uten gebyr). Selvbetjent: alt går gjennom Bipps.
+      const cash = serving === 'open' ? Math.round(revenue * CASH_SHARE) : 0;
+      const fee = Math.round((revenue - cash) * PAYMENT_FEE);
       q.addCash.run(revenue - fee, s.id);
-      event(market, s.owner_id, t, `Solgte ${sold.join(', ')} for ${revenue} kr (Bipps-gebyr ${fee} kr).`);
+      const how = cash > 0 ? `kontant ${cash} kr, Bipps ${revenue - cash} kr – gebyr ${fee} kr` : `alt med Bipps – gebyr ${fee} kr`;
+      event(market, s.owner_id, t, `${serving === 'self' ? '💳 Selvbetjent: solgte' : 'Solgte'} ${sold.join(', ')} for ${revenue} kr (${how}).`);
     }
+    if (shrink > 0)
+      event(market, s.owner_id, t, `🫣 ${shrink} ${shrink === 1 ? 'vare' : 'varer'} forsvant fra bordet uten at noen betalte.`);
   }
 }
 

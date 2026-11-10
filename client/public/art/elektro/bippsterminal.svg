@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="14" y="6" width="36" height="52" rx="6" fill="#2b2f36" stroke="#111" stroke-width="3"/>
+  <rect x="19" y="11" width="26" height="15" rx="2" fill="#7fe0a0"/>
+  <text x="32" y="22" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="#123">BIPPS</text>
+  <g fill="#e6e8eb"><rect x="19" y="30" width="7" height="5" rx="1"/><rect x="28.5" y="30" width="7" height="5" rx="1"/><rect x="38" y="30" width="7" height="5" rx="1"/>
+  <rect x="19" y="37" width="7" height="5" rx="1"/><rect x="28.5" y="37" width="7" height="5" rx="1"/><rect x="38" y="37" width="7" height="5" rx="1"/>
+  <rect x="19" y="44" width="7" height="5" rx="1"/><rect x="28.5" y="44" width="7" height="5" rx="1"/></g>
+  <rect x="38" y="44" width="7" height="5" rx="1" fill="#3f9d6b"/>
+  <rect x="22" y="2" width="20" height="6" rx="1" fill="#f4f3ee" stroke="#111" stroke-width="1.5"/>
+</svg>

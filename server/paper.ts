@@ -3,6 +3,9 @@
 import { HOUR, TIME_ZONE, osloParts } from '../shared/clock.ts';
 import type { Paper } from '../shared/types.ts';
 import { RECIPES } from '../shared/recipes.ts';
+import { couponsFor } from '../shared/deals.ts';
+import { MACHINE_BOOK } from '../shared/cookbook.ts';
+import { MAKER_BY_ID } from '../shared/products.ts';
 import { hash01 } from '../shared/hash.ts';
 import { ITEM_TYPES } from '../shared/products.ts';
 import { THIEF_REWARD, thiefOf } from '../shared/crime.ts';
@@ -149,8 +152,13 @@ export function buildPaper(
       level: r.level,
       quote: pick(EIVBLAA, hash('eivblaa', marketId, ed.key)),
     },
+    machineRecipe: (() => {
+      const m = pick(MACHINE_BOOK, hash('maskinoppskrift', marketId, ed.key));
+      return { id: m.id, name: m.name, machine: m.machine!, machineName: MAKER_BY_ID[m.machine!].name, inputs: list(m.inputs), outputs: list(m.outputs), hours: m.hours };
+    })(),
     crime: { thefts, log: pick(POLICE_LOG, hash('politi', marketId, ed.key)) },
     edition: ed.key,
+    coupons: couponsFor(marketId, ed.key),
     date: date[0].toUpperCase() + date.slice(1),
     price,
     headline,

@@ -63,6 +63,11 @@ export const INSPECTOR_REP_HIT = 15; // omdømme ved juks …
 export const INSPECTOR_REP_PER_ITEM = 2; // … pluss per falsk vare
 export const INSPECTOR_REP_MAX = 35;
 export const INSPECTOR_REP_CLEAN = 2; // ryddig bord: litt bedre omdømme
+// Strømmåleren: skrudd tilbake siden forrige besøk? Han ser det ikke alltid.
+export const METER_CATCH_CHANCE = 0.4;
+export const METER_FINE = 250; // fast bot …
+export const METER_FINE_PER_KWH = 12; // … pluss per kWh skrudd tilbake
+export const METER_REP_HIT = 10;
 
 /** Timen Tilsynsmannen står ved boden (10–17), eller null hvis han ikke kommer i dag. */
 export function inspectorHour(marketId: number, dayKey: number, stallId: number): number | null {

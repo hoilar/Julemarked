@@ -1,7 +1,7 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
-import { COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
+import { CELL_GRID, FOLDER_BY_ID, PHONE, FUSE, FUSEBOX, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 
 export interface Spot {
@@ -16,7 +16,7 @@ export function sizeOf(typeId: string) {
 }
 
 /** Steder som ligger inni en annen gjenstand (boxId peker på den). */
-export const NESTED: ReadonlySet<Place> = new Set<Place>(['box', 'pot_in', 'pot_out']);
+export const NESTED: ReadonlySet<Place> = new Set<Place>(['box', 'pot_in', 'pot_out', 'cell', 'fuse']);
 
 /** Rutenettet for et sted. Null hvis eska/kjelen ikke finnes. */
 export function gridOf(items: Item[], place: Place, boxId: number | null): GridSize | null {
@@ -24,10 +24,14 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   if (place === 'counter') return COUNTER_GRID;
   if (place === 'trash') return TRASH_GRID;
   if (place === 'nail') return NAIL_GRID;
+  if (place === 'mail') return MAIL_GRID;
   const box = items.find((i) => i.id === boxId);
   const t = box && ITEM_TYPES[box.typeId];
   if (place === 'box') return t?.kind === 'container' ? t.inner : null;
-  if (t?.kind !== 'kettle' && t?.kind !== 'folder') return null;
+  if (place === 'fuse') return t?.id === FUSEBOX.id ? FUSE_GRID : null;
+  if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' ? CELL_GRID : null;
+  if (t?.kind === 'charger') return place === 'pot_in' ? t.input : null;
+  if (t?.kind !== 'kettle' && t?.kind !== 'folder' && t?.kind !== 'maker') return null;
   return place === 'pot_in' ? t.input : t.output;
 }
 
@@ -60,29 +64,57 @@ export function isTrashed(items: Item[], item: Item): boolean {
 export function placementError(items: Item[], item: { id?: number; typeId: string }, spot: Spot): string | null {
   const t = ITEM_TYPES[item.typeId];
   const boxKind = (id: number | null) => (id == null ? null : ITEM_TYPES[items.find((b) => b.id === id)?.typeId ?? '']?.kind);
-  // En tom butikkpose kan legges i posebretterens inn-felt for å brettes sammen.
+  // En tom butikkpose kan legges i posebretterens (eller makuleringsmaskinens) inn-felt.
   const intoFolder = spot.place === 'pot_in' && boxKind(spot.boxId) === 'folder';
+  const machine = spot.boxId == null ? undefined : FOLDER_BY_ID[items.find((b) => b.id === spot.boxId)?.typeId ?? ''];
+  const shredder = machine?.mode === 'shred';
+  const shreddable = t.kind === 'paper' || t.kind === 'doc' || t.kind === 'policy' || t.kind === 'folded' || (t.kind === 'container' && !!t.shopBag);
   if (t.kind === 'container') {
     if (intoFolder && t.shopBag) {
       if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du bretter den sammen.`;
     } else if (spot.place !== 'storage' && spot.place !== 'trash') {
-      return intoFolder ? 'Posebretteren tar bare tomme handleposer.' : 'Esker må stå under disken.';
+      return intoFolder ? (shredder ? 'Makuleringsmaskinen tar papir og tomme plastposer.' : 'Posebretteren tar bare tomme handleposer.') : 'Esker må stå under disken.';
     }
   }
-  if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'folder' && !(t.kind === 'container' && t.shopBag))
-    return 'Posebretteren tar bare tomme handleposer.';
-  if (spot.place === 'pot_out' && boxKind(spot.boxId) === 'folder' && t.kind !== 'folded')
+  if (intoFolder && shredder && !shreddable) return 'Makuleringsmaskinen tar papir og tomme plastposer.';
+  if (intoFolder && !shredder && !(t.kind === 'container' && t.shopBag)) return 'Posebretteren tar bare tomme handleposer.';
+  if (spot.place === 'pot_out' && boxKind(spot.boxId) === 'folder' && !shredder && t.kind !== 'folded')
     return 'Her kommer bare ferdig sammenbretta poser ut.';
+  if (spot.place === 'pot_out' && shredder && items.find((i) => i.id === item.id)?.boxId !== spot.boxId)
+    return 'Her kommer bare det som ikke lot seg makulere.';
+  // Papir som skal makuleres, kan legges i maskinen (ellers stopper reglene for papir/lapper under).
+  if (intoFolder && shredder && shreddable) {
+    const grid = gridOf(items, spot.place, spot.boxId);
+    if (!grid) return 'Fant ikke maskinen.';
+    const r = { x: spot.x, y: spot.y, w: t.size.w, h: t.size.h };
+    return fits(r, itemsIn(items, spot.place, spot.boxId), grid, (o) => o.id === item.id) ? null : 'Det er ikke plass der.';
+  }
+  if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'maker' && t.kind !== 'ingredient') return 'Maskinen tar bare råvarer.';
+  if (spot.place === 'pot_out' && boxKind(spot.boxId) === 'maker' && items.find((i) => i.id === item.id)?.boxId !== spot.boxId)
+    return 'Her kommer det ferdige ut.';
+  if (spot.place === 'fuse' && t.id !== FUSE.id) return 'Her passer bare en skrusikring.';
+  if (spot.place === 'mail' && t.id !== NEWSPAPER.id) return 'I postkassa ligger det bare aviser.';
+  if (t.id === FUSEBOX.id && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0) return 'Ta ut sikringene før du kaster sikringsboksen.';
+  if (t.id === PHONE && spot.place === 'trash') return 'Telefonen kaster du ikke – den trenger du.';
+  if (t.id === PHONE && (spot.place === 'pot_in' || spot.place === 'pot_out')) return 'Telefonen hører ikke hjemme i en maskin.';
+  if (spot.place === 'cell' && t.kind !== 'battery') return 'Her passer bare et batteri.';
+  if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'charger' && t.kind !== 'battery') return 'Ladestasjonen tar bare batterier.';
+  if (t.kind === 'battery' && (spot.place === 'counter' || ((spot.place === 'pot_in' || spot.place === 'pot_out') && boxKind(spot.boxId) !== 'charger')))
+    return spot.place === 'counter' ? 'Batteriet er ikke til salgs.' : 'Batteriet går i batteriplassen eller i ladestasjonen.';
+  if (t.kind === 'charger' && spot.place !== 'storage' && spot.place !== 'trash') return 'Ladestasjonen skal stå under disken.';
   if (t.kind === 'folded' && spot.place === 'counter') return 'Sammenbretta poser er ikke til salgs.';
-  if ((t.kind === 'kettle' || t.kind === 'folder') && NESTED.has(spot.place)) return 'Maskinen får ikke plass der.';
+  if ((t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger') && NESTED.has(spot.place))
+    return spot.place === 'box' ? 'En utpakket maskin går ikke inn i esken igjen.' : 'Maskinen får ikke plass der.';
   if (t.kind === 'paper' && spot.place === 'counter') return 'Avisa er ikke til salgs.';
   if (t.kind === 'policy' && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
     return 'Forsikringsbeviset skal ligge trygt under disken (eller i søpla, hvis du vil si det opp).';
+  if (t.kind === 'electric' && spot.place !== 'storage' && spot.place !== 'box' && spot.place !== 'trash' && !(t.id === FUSE.id && spot.place === 'fuse'))
+    return `${t.name} skal stå under disken.`;
   if (t.kind === 'ingredient' && spot.place === 'counter') return 'Råvarer selges ikke – kok noe av dem først.';
   if (spot.place === 'nail' && t.id !== WANTED) return 'Det er bare etterlysninger som henges på spikeren.';
   if ((t.kind === 'tool' || t.kind === 'doc') && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
     return `${t.name} er ikke til salgs – den ligger best under disken.`;
-  if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
+  if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
     return `Tøm ${t.name} før du kaster den.`;
   if (NESTED.has(spot.place) && spot.boxId === item.id) return 'Den kan ikke ligge i seg selv.';
   if (NESTED.has(spot.place) && items.find((b) => b.id === spot.boxId)?.place === 'trash')

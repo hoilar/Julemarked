@@ -71,6 +71,7 @@ interface Customer {
   x: number; // venstre kant, % av kundefeltet
   leaveAt: number;
   buying: boolean; // har betalt og er på vei bort
+  lead: ClientLead | null; // en kunde du kan selge til selv (ivrig «!» eller interessert «?»)
   mood: Mood | null;
   el: HTMLDivElement;
   img: HTMLImageElement;
@@ -84,6 +85,61 @@ let customers: Customer[] = [];
 let stallKey: string | null = null;
 let offers: () => Offer[] = () => [];
 let timer = 0;
+
+/** En kunde serveren sier finnes denne timen, med ekte klokkeslett (ms) for når hen kommer og går. */
+export interface ClientLead {
+  id: string;
+  productId: string;
+  kind: 'eager' | 'curious';
+  icon: string;
+  realFrom: number;
+  realUntil: number;
+}
+let leads: ClientLead[] = [];
+const placed = new Set<string>(); // leads som har fått en kunde (eller er ferdige)
+export function setLeads(list: ClientLead[]) {
+  leads = list;
+}
+
+/** Gir ventende leads en kunde ved disken. */
+function placeLeads(now: number) {
+  for (const l of leads) {
+    if (placed.has(l.id) || now < l.realFrom || now >= l.realUntil) continue;
+    const c =
+      customers.find((x) => !x.buying && !x.lead && x.want === l.productId) ?? customers.find((x) => !x.buying && !x.lead) ?? arrive();
+    if (!c) return;
+    placed.add(l.id);
+    c.lead = l;
+    c.want = l.productId;
+    c.leaveAt = l.realUntil;
+    update(c, offers());
+  }
+}
+
+/** Svaret fra serveren etter at du trykket på en kunde. */
+export function leadResult(id: string, sold: boolean, amount: number) {
+  const c = customers.find((x) => x.lead?.id === id);
+  if (!c) return;
+  const icon = c.lead!.icon;
+  c.lead = null;
+  if (sold) {
+    c.buying = true;
+    c.bubble.innerHTML = icon;
+    c.bubble.removeAttribute('data-action');
+    setMood(c, 'glad');
+    const pay = document.createElement('div');
+    pay.className = 'paid';
+    pay.textContent = `+${amount} kr`;
+    c.el.appendChild(pay);
+    c.leaveAt = Date.now() + 1800;
+  } else {
+    c.buying = true; // går skuffet
+    c.bubble.innerHTML = '🙅';
+    c.bubble.removeAttribute('data-action');
+    setMood(c, 'sur');
+    c.leaveAt = Date.now() + 1500;
+  }
+}
 
 /** Kunden velger en vare på bordet; finnes ikke den hen ville ha lenger, velges en ny. */
 function look(c: Customer, list: Offer[]): Offer | null {
@@ -99,6 +155,21 @@ function look(c: Customer, list: Offer[]): Offer | null {
 function update(c: Customer, list: Offer[]) {
   if (c.buying) return;
   const o = look(c, list);
+  if (c.lead && o?.productId !== c.lead.productId) c.lead = null; // varen er borte fra bordet
+  if (c.lead) {
+    // Ivrig: glad og vil ha den. Interessert: nøler.
+    setMood(c, c.lead.kind === 'eager' ? 'glad' : 'noytral');
+    const eager = c.lead.kind === 'eager';
+    c.bubble.className = `want lead ${c.lead.kind}`;
+    c.bubble.dataset.action = 'lead';
+    c.bubble.dataset.lead = c.lead.id;
+    c.bubble.title = eager ? 'Ivrig kunde – trykk for å selge 25 % over prisen' : 'Interessert – trykk for å tilby 15 % avslag';
+    c.bubble.innerHTML = `${c.lead.icon}<span class="lead-badge">${eager ? '!' : '?'}</span>`;
+    return;
+  }
+  c.bubble.className = 'want';
+  c.bubble.removeAttribute('data-action');
+  c.bubble.removeAttribute('title');
   setMood(c, o ? moodFor(o.ratio, c.tolerance) : 'sur');
   c.bubble.innerHTML = o ? o.icon : '❓';
 }
@@ -142,6 +213,7 @@ function arrive(): Customer | null {
     x,
     leaveAt: Date.now() + 6000 + Math.random() * 9000,
     buying: false,
+    lead: null,
     mood: null,
     el,
     img,
@@ -165,16 +237,22 @@ function tick() {
   if (!layer.isConnected) return;
   const list = offers();
   const now = Date.now();
-  const night = isNight();
+  const night = isNight() || shut;
   for (const c of [...customers]) {
     // Om natta går kundene hjem (én og én, ikke alle på en gang).
     if (now >= c.leaveAt || (night && !c.buying && Math.random() < 0.3)) leave(c);
     else update(c, list);
   }
+  if (!night) placeLeads(now);
   if (!night && customers.length < 4 && Math.random() < 0.35 * crowd) arrive();
 }
 
 let crowd = 1;
+let shut = false;
+/** Boden er stengt (eller ingen står bak disken): kundene går, og nye kommer ikke. */
+export function setShut(v: boolean) {
+  shut = v;
+}
 /** Færre kunder i dag (f.eks. etter feil tips til politiet): 1 = som vanlig. */
 export function setCrowd(n: number) {
   crowd = n;
@@ -197,8 +275,8 @@ function reset() {
 export function showSale(productId: string, icon: string, units: number, amount: number) {
   if (!layer.isConnected) return;
   const c =
-    customers.find((x) => !x.buying && x.want === productId && x.mood !== 'sjokk') ??
-    customers.find((x) => !x.buying) ??
+    customers.find((x) => !x.buying && !x.lead && x.want === productId && x.mood !== 'sjokk') ??
+    customers.find((x) => !x.buying && !x.lead) ??
     arrive();
   if (!c) return;
   c.buying = true;
@@ -256,7 +334,7 @@ export function insurerImage(): string {
 // ---------- Spesielle besøkende: selgeren, Tilsynsmannen og tyven ----------
 // De står på én plass bak disken så lenge serveren sier de er der. Kunder på plassen går.
 
-type SpecialKind = 'insurer' | 'inspector' | 'thief';
+type SpecialKind = 'insurer' | 'inspector' | 'thief' | 'gift';
 interface Special {
   el: HTMLDivElement;
   x: number;
@@ -287,6 +365,17 @@ function showSpecial(kind: SpecialKind, key: string | null, x: number | null, bu
 }
 
 const INSURER_X = 74; // står på plassen lengst til høyre
+
+/** Gavekortselgeren fra en av butikkene (eller null: ingen). Trykk åpner byttetilbudet. */
+export function showGiftSeller(g: { seed: string; name: string; color: string } | null) {
+  showSpecial('gift', g ? g.seed : null, 38, (el) => {
+    el.classList.add('gift', 'special');
+    el.dataset.action = 'gift';
+    el.title = `${g!.name} – trykk for å høre tilbudet`;
+    el.style.setProperty('--brand', g!.color);
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${avatarFor(g!.seed)}"><div class="want">🎁</div></div>`;
+  });
+}
 const INSPECTOR_X = 2; // står på plassen lengst til venstre
 
 /** Viser eller sender bort forsikringsselgeren. Trykk på henne åpner tilbudet (data-action="insurer"). */
@@ -370,7 +459,7 @@ export function mountCustomers(scene: Element | null, key: string | null, counte
     stallKey = key;
     reset();
     // Litt folk med en gang når man kommer til en bod (bare om dagen).
-    if (!isNight()) for (let i = 0; i < 2; i++) arrive();
+    if (!isNight() && !shut) for (let i = 0; i < 2; i++) arrive();
   }
   scene.insertBefore(layer, scene.querySelector('.counter-layer'));
   const list = counter();

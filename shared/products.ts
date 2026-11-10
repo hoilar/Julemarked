@@ -114,6 +114,9 @@ export interface Folder {
   input: GridSize;
   output: GridSize;
   sprite: number;
+  kw: number; // mens den står på
+  mode: 'fold' | 'shred'; // posebretter: bretter poser · makuleringsmaskin: makulerer papir og poser
+  perHour: number; // så mange ting den tar per time
 }
 
 /** En sammenbrettet handlepose (1×1). Kan brettes ut igjen til den fulle posen (`bag`) uten maskin. */
@@ -138,32 +141,119 @@ export interface Policy {
   insurance: InsuranceKind;
 }
 
-export type ItemType = Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc;
+/**
+ * Elektrisk utstyr fra Klas Olsen som står under disken: ekstra grenuttak (forgrenere som plugges
+ * i grenuttaket på stolpen) og sikringsboksen (vippebrytere per apparat og strømmåleren).
+ */
+export interface Electric {
+  kind: 'electric';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  price: number;
+  size: Size;
+  blurb: string;
+  max?: number; // hvor mange man kan eie
+}
+
+/**
+ * En maskin med programmer (bakemaskin, strikkemaskin, dekormaskin): råvarer inn, ferdige varer ut.
+ * Velg program, slå den på; den bruker `hours` timer per omgang og lager hjemmelagde varer.
+ */
+export interface Maker {
+  kind: 'maker';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  imageOn: string; // når den går
+  size: Size;
+  input: GridSize;
+  output: GridSize;
+  sprite: number;
+  kw: number; // mens den står på
+  verb: string; // «Baker», «Strikker» …
+  programs: MakerProgram[];
+}
+export interface MakerProgram {
+  id: string;
+  name: string;
+  inputs: Record<string, number>;
+  outputs: Record<string, number>;
+  hours: number;
+}
+
+/** Oppladbart batteri (1×1). Settes i batteriplassen på en maskin, eller i ladestasjonen. */
+export interface Battery {
+  kind: 'battery';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  price: number;
+  size: Size;
+  capacity: number; // kWh
+}
+
+/** Ladestasjon: et lite rutenett med plass til batterier som lades mens den har strøm. */
+export interface Charger {
+  kind: 'charger';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  size: Size;
+  input: GridSize;
+  output: GridSize; // ubrukt (samme form som de andre maskinene)
+  sprite: number;
+}
+
+export type ItemType = Battery | Charger | Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc | Electric | Maker;
 
 // Kontorrekvisita hos Klas Olsen.
 export const TOOLS: Tool[] = [
-  { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.svg', price: 29, size: { w: 1, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
-  { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.svg', price: 49, size: { w: 1, h: 1 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
-  { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.svg', price: 79, size: { w: 1, h: 1 }, blurb: 'Skarp. Pass på fingrene.' },
+  { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.png', price: 29, size: { w: 1, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
+  { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.png', price: 49, size: { w: 1, h: 1 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
+  { kind: 'tool', id: 'skrutrekker', name: 'Skrutrekker', emoji: '🪛', image: '/art/elektro/skrutrekker.png', price: 89, size: { w: 2, h: 1 }, blurb: 'Stjerne og flat. Passer til det meste med skruer i.' },
+  { kind: 'tool', id: 'telefon', name: 'Smarttelefon', emoji: '📱', image: '/art/telefon/telefon.png', price: 499, size: { w: 1, h: 2 }, blurb: 'Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden.' },
+  { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 1, h: 1 }, blurb: 'Skarp. Pass på fingrene.' },
 ];
 export const PEN = 'penn';
 export const PAD = 'papirblokk';
 export const SCISSORS = 'saks';
+export const SCREWDRIVER = 'skrutrekker';
+export const PHONE = 'telefon';
 
 export const DOCS: Doc[] = [
-  { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.svg', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.svg', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.png', size: { w: 1, h: 1 } },
 ];
+// Rabattkupong (klippet ut av avisa) og gavekort fra butikkenes selgere.
+DOCS.push(
+  { kind: 'doc', id: 'kupong', name: 'Rabattkupong', emoji: '🎟️', image: '/art/verktoy/kupong.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'gavekort_kiwi', name: 'KIWI-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-kiwi.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'gavekort_rema', name: 'REMA 1000-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-rema.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'gavekort_extra', name: 'Extra-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-extra.png', size: { w: 1, h: 1 } },
+);
+export const COUPON = 'kupong';
 export const RECIPE_NOTE = 'oppskrift';
 export const WANTED = 'etterlysning';
 
 // Plassholdere med emoji til de får tegning.
 export const INGREDIENTS: Ingredient[] = [
-  { kind: 'ingredient', id: 'baer', name: 'Frosne bær', emoji: '🫐', price: 10, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'sukker', name: 'Sukker', emoji: '🧊', price: 5, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'flote', name: 'Fløte', emoji: '🥛', price: 12, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'mandler', name: 'Mandler', emoji: '🌰', price: 18, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'svidd', name: 'Svidd klump', emoji: '🪨', price: 0, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'baer', name: 'Tyttebær', emoji: '🍒', image: '/art/ravarer/baer.png', price: 10, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'sukker', name: 'Sukker', emoji: '🧊', image: '/art/ravarer/sukker.png', price: 5, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'flote', name: 'Fløte', emoji: '🥛', image: '/art/ravarer/flote.png', price: 12, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'mandler', name: 'Mandler', emoji: '🌰', image: '/art/ravarer/mandler.png', price: 18, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'mel', name: 'Hvetemel', emoji: '🌾', image: '/art/ravarer/mel.png', price: 6, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'smor', name: 'Smør', emoji: '🧈', image: '/art/ravarer/smor.png', price: 15, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'garn', name: 'Garnnøste', emoji: '🧶', image: '/art/ravarer/garn.png', price: 25, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'glassemne', name: 'Glassemne', emoji: '🔮', image: '/art/ravarer/glassemne.png', price: 8, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'maling', name: 'Glassmaling', emoji: '🎨', image: '/art/ravarer/maling.png', price: 6, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'mikroplast', name: 'Mikroplast', emoji: '🫧', image: '/art/ravarer/mikroplast.png', price: 0, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'feilbatch', name: 'Mislykket batch', emoji: '🫠', image: '/art/ravarer/feilbatch.png', price: 0, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'svidd', name: 'Svidd klump', emoji: '🪨', image: '/art/ravarer/svidd.png', price: 0, size: { w: 1, h: 1 } },
 ];
 
 export const KETTLE: Kettle = {
@@ -192,15 +282,190 @@ export const POSEBRETTER: Folder = {
   input: { cols: 4, rows: 4 }, // tomme poser (2×2) inn
   output: { cols: 4, rows: 4 }, // sammenbretta poser (1×1) ut
   sprite: 3,
+  kw: 0.3,
+  mode: 'fold',
+  perHour: 1,
 };
-export const FOLDER_KW = 0.3;
+export const FOLDER_KW = POSEBRETTER.kw;
+
+// Makuleringsmaskinen: papir (aviser, lapper, kuponger, gavekort, forsikringsbevis) forsvinner helt.
+// Plastposer kan bli til mikroplast – og mikroplast i søpla liker ikke Tilsynsmannen.
+export const SHREDDER: Folder = {
+  kind: 'folder',
+  id: 'makulator',
+  name: 'Makuleringsmaskin',
+  emoji: '🧻',
+  image: '/art/maskiner/makulator.png',
+  imageOn: '/art/maskiner/makulator-pa.png',
+  size: { w: 2, h: 2 },
+  input: { cols: 4, rows: 4 },
+  output: { cols: 4, rows: 2 }, // bare mikroplast kommer ut
+  sprite: 2,
+  kw: 0.2,
+  mode: 'shred',
+  perHour: 2,
+};
+export const FOLDERS: Folder[] = [POSEBRETTER, SHREDDER];
+export const FOLDER_BY_ID: Record<string, Folder> = Object.fromEntries(FOLDERS.map((f) => [f.id, f]));
+export const MICROPLASTIC = 'mikroplast';
+export const MICROPLASTIC_CHANCE = 0.5; // sjanse per makulert plastpose
+export const MICROPLASTIC_FEE = 1; // kr per dag til byråkratifondet, resten av spillet, per mikroplast Tilsynsmannen finner i søpla
+
+// Maskiner med programmer. Plassholder-tegninger til de får ekte grafikk.
+export const MAKERS: Maker[] = [
+  {
+    kind: 'maker',
+    id: 'bakemaskin',
+    name: 'Bakemaskin',
+    emoji: '🥮',
+    image: '/art/maskiner/bakemaskin.png',
+    imageOn: '/art/maskiner/bakemaskin-pa.png',
+    size: { w: 3, h: 2 },
+    input: { cols: 4, rows: 4 },
+    output: { cols: 4, rows: 4 },
+    sprite: 3,
+    kw: 1.5,
+    verb: 'Baker',
+    programs: [
+      { id: 'stjerner', name: 'Pepperkakestjerner', inputs: { mel: 1, smor: 1, sukker: 1 }, outputs: { pepperkake_stjerne: 4 }, hours: 2 },
+      { id: 'hjerter', name: 'Pepperkakehjerter', inputs: { mel: 1, smor: 1, sukker: 1 }, outputs: { pepperkake_hjerte: 3 }, hours: 2 },
+      { id: 'pose', name: 'Pose med pepperkaker', inputs: { mel: 2, smor: 1, sukker: 1 }, outputs: { pepperkakepose: 1 }, hours: 3 },
+    ],
+  },
+  {
+    kind: 'maker',
+    id: 'strikkemaskin',
+    name: 'Strikkemaskin',
+    emoji: '🧶',
+    image: '/art/maskiner/strikkemaskin.png',
+    imageOn: '/art/maskiner/strikkemaskin-pa.png',
+    size: { w: 4, h: 3 },
+    input: { cols: 4, rows: 4 },
+    output: { cols: 4, rows: 4 },
+    sprite: 4,
+    kw: 0.4,
+    verb: 'Strikker',
+    programs: [
+      { id: 'votter', name: 'Votter', inputs: { garn: 3 }, outputs: { votter: 1 }, hours: 4 },
+      { id: 'nisselue', name: 'Nisselue', inputs: { garn: 2 }, outputs: { nisselue: 1 }, hours: 3 },
+      { id: 'julestrompe', name: 'Julestrømpe', inputs: { garn: 2 }, outputs: { julestrompe: 1 }, hours: 3 },
+    ],
+  },
+  {
+    kind: 'maker',
+    id: 'dekormaskin',
+    name: 'Dekormaskin',
+    emoji: '🎨',
+    image: '/art/maskiner/dekormaskin.png',
+    imageOn: '/art/maskiner/dekormaskin-pa.png',
+    size: { w: 3, h: 3 },
+    input: { cols: 4, rows: 4 },
+    output: { cols: 4, rows: 4 },
+    sprite: 3,
+    kw: 0.8,
+    verb: 'Maler',
+    programs: [{ id: 'julekuler', name: 'Julekuler', inputs: { glassemne: 1, maling: 1 }, outputs: { julekule: 2 }, hours: 1 }],
+  },
+];
+export const BATTERIES: Battery[] = [
+  { kind: 'battery', id: 'batteri', name: 'Batteri', emoji: '🔋', image: '/art/elektro/batteri.png', price: 149, size: { w: 1, h: 1 }, capacity: 2 },
+  { kind: 'battery', id: 'batteri_pluss', name: 'Batteri+', emoji: '🔋', image: '/art/elektro/batteri-pluss.png', price: 279, size: { w: 1, h: 1 }, capacity: 4 },
+  { kind: 'battery', id: 'batteri_pluss2', name: 'Batteri++', emoji: '🔋', image: '/art/elektro/batteri-pluss2.png', price: 499, size: { w: 1, h: 1 }, capacity: 8 },
+];
+export const BATTERY = BATTERIES[0];
+export const BATTERY_BY_ID: Record<string, Battery> = Object.fromEntries(BATTERIES.map((b) => [b.id, b]));
+export const isBattery = (typeId: string) => !!BATTERY_BY_ID[typeId];
+/** Hvor mye et batteri rommer (kWh). */
+export const capacityOf = (typeId: string) => BATTERY_BY_ID[typeId]?.capacity ?? 0;
+export const CHARGER: Charger = {
+  kind: 'charger',
+  id: 'ladestasjon',
+  name: 'Ladestasjon',
+  emoji: '🔌',
+  image: '/art/elektro/ladestasjon-0.png', // ladestasjon-1…4.png: med så mange batterier i
+  size: { w: 3, h: 1 },
+  input: { cols: 4, rows: 1 }, // fire batterier på rad
+  output: { cols: 0, rows: 0 },
+  sprite: 2,
+};
+/** Ladestasjonen trekker så mye per batteri som ikke er fullt. Litt går tapt som varme. */
+export const CHARGE_KW = 0.5;
+export const CHARGE_EFFICIENCY = 0.8;
+/** Batteriplassen i en maskin. */
+export const CELL_GRID: GridSize = { cols: 1, rows: 1 };
+
+export const MAKER_BY_ID: Record<string, Maker> = Object.fromEntries(MAKERS.map((m) => [m.id, m]));
+
+export const STRIP: Electric = {
+  kind: 'electric',
+  id: 'grenuttak',
+  name: 'Ekstra grenuttak',
+  emoji: '🔌',
+  image: '/art/elektro/grenuttak.png',
+  price: 99,
+  size: { w: 2, h: 1 },
+  blurb: 'Fire kontakter til. Plugges i grenuttaket på stolpen.',
+};
+export const FUSEBOX: Electric = {
+  kind: 'electric',
+  id: 'sikringsboks',
+  name: 'Sikringsboks',
+  emoji: '🎛️',
+  image: '/art/elektro/sikringsboks.png',
+  price: 449,
+  size: { w: 2, h: 2 },
+  blurb: 'En vippebryter for hvert apparat, og en måler som viser hvor mye strøm boden har brukt.',
+  max: 1,
+};
+export const TERMINAL: Electric = {
+  kind: 'electric',
+  id: 'bippsterminal',
+  name: 'Bipps-terminal',
+  emoji: '💳',
+  image: '/art/elektro/bippsterminal.png',
+  price: 199,
+  size: { w: 1, h: 1 },
+  blurb: 'Kundene betaler selv med kort når du ikke er der. Gir «Selvbetjent» på skiltet. 25 kr/dag i avtale.',
+  max: 1,
+};
+export const FUSE: Electric = {
+  kind: 'electric',
+  id: 'skrusikring',
+  name: 'Skrusikring',
+  emoji: '🔩',
+  image: '/art/elektro/skrusikring.png',
+  price: 29,
+  size: { w: 1, h: 1 },
+  blurb: 'Reservesikring. Ryker en sikring, skrur du inn en ny.',
+};
+export const ELECTRICS: Electric[] = [STRIP, FUSEBOX, TERMINAL, FUSE];
+/** En sikring som har røket. Dra den ut av sikringsboksen og kast den. */
+export const BLOWN_FUSE: Electric = {
+  kind: 'electric',
+  id: 'sikring_roket',
+  name: 'Røket sikring',
+  emoji: '💥',
+  image: '/art/elektro/sikring-roket.png',
+  price: 0,
+  size: { w: 1, h: 1 },
+  blurb: 'Svidd. Hører hjemme i søpla.',
+};
+/** Sikringsplasser i sikringsboksen (én per apparat). */
+export const FUSE_SLOTS = 8;
+export const FUSE_GRID: GridSize = { cols: 1, rows: FUSE_SLOTS };
+/** Postkassa: plass til aviser (2×1 hver). Regningene ligger som konvolutter ved siden av. */
+export const MAIL_GRID: GridSize = { cols: 4, rows: 2 };
+/** Ved strømbrudd: sjanse for at sikringen til hvert apparat som går, ryker (bare da). */
+export const FUSE_OUTAGE_CHANCE = 0.5;
+export const STRIP_SOCKETS = 4;
+/** Skrutrekker i sikringsboksen: så mange kWh kan måleren skrus tilbake per dag. */
+export const METER_ROLLBACK_KWH = 15;
 
 // Sammenbretta poser – én variant per butikkpose, alle med samme hvite «klump»-grafikk.
-const FOLDED_IMG = '/art/goods/pose-brettet.svg';
 export const FOLDED_BAGS: FoldedBag[] = [
-  { kind: 'folded', id: 'kiwipose_brettet', name: 'Sammenbretta KIWI-pose', emoji: '📦', image: FOLDED_IMG, size: { w: 1, h: 1 }, bag: 'kiwipose' },
-  { kind: 'folded', id: 'extrapose_brettet', name: 'Sammenbretta Extra-pose', emoji: '📦', image: FOLDED_IMG, size: { w: 1, h: 1 }, bag: 'extrapose' },
-  { kind: 'folded', id: 'remapose_brettet', name: 'Sammenbretta REMA-pose', emoji: '📦', image: FOLDED_IMG, size: { w: 1, h: 1 }, bag: 'remapose' },
+  { kind: 'folded', id: 'kiwipose_brettet', name: 'Sammenbretta KIWI-pose', emoji: '📦', image: '/art/goods/kiwi-pose-brettet.png', size: { w: 1, h: 1 }, bag: 'kiwipose' },
+  { kind: 'folded', id: 'extrapose_brettet', name: 'Sammenbretta Extra-pose', emoji: '📦', image: '/art/goods/extra-pose-brettet.png', size: { w: 1, h: 1 }, bag: 'extrapose' },
+  { kind: 'folded', id: 'remapose_brettet', name: 'Sammenbretta REMA-pose', emoji: '📦', image: '/art/goods/rema-pose-brettet.png', size: { w: 1, h: 1 }, bag: 'remapose' },
 ];
 /** Butikkpose-id → sammenbretta variant, og motsatt. */
 export const FOLDED_BY_BAG: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.bag, f.id]));
@@ -299,17 +564,43 @@ export interface Device {
   effect: string; // kort forklaring i innkjøpslisten
   layers?: { off: string; on: string }; // lag over boden (kjelen er en gjenstand i stedet)
   item?: string; // apparatet er en fysisk gjenstand (kjelen)
+  image?: string; // bilde i butikken (faste apparater som lyslenkene)
+  light?: boolean; // en lyslenke: flere kunder når det er mørkt. Man kan bare ha én (en ny bytter ut den gamle).
 }
 
 export const DEVICES: Device[] = [
   {
     id: 'lyslenke',
-    name: 'Lyslenke',
+    name: 'Lyslenke, gulhvit',
     emoji: '💡',
     price: 249,
     kw: 0.4,
     effect: '+30 % kunder når det er mørkt (fra kl. 15)',
-    layers: { off: '/art/devices/lys_off.png', on: '/art/devices/lys_on.png' },
+    layers: { off: '/art/devices/lys-standard-av.png', on: '/art/devices/lys-standard-pa.png' },
+    image: '/art/devices/ikon-lys-standard.png',
+    light: true,
+  },
+  {
+    id: 'lyslenke_stjerner',
+    name: 'Lyslenke, stjerner',
+    emoji: '⭐',
+    price: 299,
+    kw: 0.4,
+    effect: '+30 % kunder når det er mørkt (fra kl. 15). Gulhvite stjerner',
+    layers: { off: '/art/devices/lys-stjerner-av.png', on: '/art/devices/lys-stjerner-pa.png' },
+    image: '/art/devices/ikon-lys-stjerner.png',
+    light: true,
+  },
+  {
+    id: 'lyslenke_farger',
+    name: 'Lyslenke, flerfarget',
+    emoji: '🌈',
+    price: 349,
+    kw: 0.4,
+    effect: '+30 % kunder når det er mørkt (fra kl. 15). Rødt, grønt, blått og gult',
+    layers: { off: '/art/devices/lys-farger-av.png', on: '/art/devices/lys-farger-pa.png' },
+    image: '/art/devices/ikon-lys-farger.png',
+    light: true,
   },
   {
     id: 'kjele',
@@ -329,7 +620,44 @@ export const DEVICES: Device[] = [
     effect: 'Bretter sammen tomme handleposer til 1×1-klumper – én pose per time',
     item: 'posebretter',
   },
+  {
+    id: 'makulator',
+    name: 'Makuleringsmaskin',
+    emoji: '🧻',
+    price: 249,
+    kw: 0.2,
+    effect: 'Makulerer aviser, lapper og plastposer, så de ikke havner i søpla. Plast kan bli mikroplast…',
+    item: 'makulator',
+  },
+  ...MAKERS.map((m, n): Device => ({
+    id: m.id,
+    name: m.name,
+    emoji: m.emoji,
+    price: [699, 899, 549][n],
+    kw: m.kw,
+    effect: m.programs.map((p) => p.name).join(', ') + ' – hjemmelaget',
+    item: m.id,
+  })),
+  {
+    id: 'ladestasjon',
+    name: 'Ladestasjon',
+    emoji: '🔌',
+    price: 299,
+    kw: CHARGE_KW * 4,
+    effect: 'Lader fire batterier. Maskiner med batteri går videre når strømmen går',
+    item: 'ladestasjon',
+  },
+  {
+    id: 'alarm',
+    name: 'Alarmsystem',
+    emoji: '🚨',
+    price: 349,
+    kw: 0.1,
+    effect: 'Skremmer bort nattetyven – men bare når det har strøm',
+  },
 ];
+/** Alarmen: så mye mindre sjanse har tyven per vare når den er på. */
+export const ALARM_STEAL_FACTOR = 0.15;
 export const DEVICE_BY_ID: Record<string, Device> = Object.fromEntries(DEVICES.map((d) => [d.id, d]));
 
 /**
@@ -349,13 +677,13 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, POSEBRETTER, ...FOLDED_BAGS, ...POLICIES, ...TOOLS, ...DOCS].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER].map((t) => [t.id, t]),
 );
 
 /** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */
 export const COUNTER_GRID: GridSize = { cols: 24, rows: 4 };
 /** Lageret under disken. */
-export const STORAGE_GRID: GridSize = { cols: 24, rows: 6 };
+export const STORAGE_GRID: GridSize = { cols: 26, rows: 6 };
 
 /** Søppelkassa er et eget rutenett. Alt i den forsvinner når søppelbilen kommer om natta. */
 export const TRASH_GRID: GridSize = { cols: 4, rows: 4 };
@@ -369,5 +697,5 @@ export const THEFT_FROM = 23;
 export const THEFT_TO = 6;
 export const THEFT_CHANCE = 0.04; // per vare per time (≈ 22 % for én vare som står ute hele natta)
 
-export const START_CASH = 2000;
+export const START_CASH = 20000; // testverdi (var 2000)
 export const PAYMENT_FEE = 0.0175; // «Bipps»

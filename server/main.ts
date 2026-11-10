@@ -24,6 +24,16 @@ import {
   openDelivery,
   unpackBox,
   toggleSocket,
+  toggleFuse,
+  replaceFuse,
+  setSign,
+  setAutogiro,
+  cutCoupon,
+  answerGift,
+  sellLead,
+  setOnline,
+  setMaker,
+  rollbackMeter,
   playerFromToken,
   setPrice,
   setFolder,
@@ -94,14 +104,25 @@ const routes: Record<string, Handler> = {
   'POST /api/device/buy': action((p, b) => buyDevice(p, String(b.deviceId))),
   'POST /api/power/switch': action((p) => togglePower(p)),
   'POST /api/shop/order': action((p, b) =>
-    placeOrder(p, String(b.store), Array.isArray(b.lines) ? b.lines : [], !!b.express),
+    placeOrder(p, String(b.store), Array.isArray(b.lines) ? b.lines : [], !!b.express, b.useCards !== false),
   ),
   'POST /api/box/unpack': action((p, b) => unpackBox(p, Number(b.boxId), b.to === 'counter' ? 'counter' : 'storage')),
   'POST /api/delivery/open': action((p, b) => openDelivery(p, Number(b.itemId))),
   'POST /api/kettle': action((p, b) =>
     setKettle(p, Number(b.itemId), b.on === undefined ? undefined : !!b.on, b.level === undefined ? undefined : Number(b.level)),
   ),
-  'POST /api/power/socket': action((p, b) => toggleSocket(p, Number(b.index))),
+  'POST /api/power/socket': action((p, b) =>
+    toggleSocket(p, Number(b.index), b.strip == null ? null : Number(b.strip), typeof b.entry === 'string' ? b.entry : null),
+  ),
+  'POST /api/maker': action((p, b) =>
+    setMaker(p, Number(b.itemId), b.on === undefined ? undefined : !!b.on, typeof b.program === 'string' ? b.program : undefined),
+  ),
+  'POST /api/lead': action((p, b) => sellLead(p, String(b.leadId ?? ''))),
+  'POST /api/autogiro': action((p, b) => setAutogiro(p, !!b.on)),
+  'POST /api/sign': action((p, b) => setSign(p, String(b.sign ?? ''))),
+  'POST /api/fuse/replace': action((p, b) => replaceFuse(p, String(b.entry ?? ''))),
+  'POST /api/fuse': action((p, b) => toggleFuse(p, String(b.entry ?? ''))),
+  'POST /api/meter/rollback': action((p) => rollbackMeter(p)),
   'POST /api/folder': action((p, b) => setFolder(p, Number(b.itemId), !!b.on)),
   'POST /api/bag/unfold': action((p, b) => unfoldBag(p, Number(b.itemId))),
   'POST /api/item/discard': action((p, b) => {
@@ -110,7 +131,9 @@ const routes: Record<string, Handler> = {
   'POST /api/item/auto':action((p, b) => {
     autoMove(p, String(b.productId), b.to === 'storage' ? 'storage' : 'counter', Number(b.qty));
   }),
-  'POST /api/paper/recipe': action((p, b) => copyRecipe(p, Number(b.edition))),
+  'POST /api/paper/recipe': action((p, b) => copyRecipe(p, Number(b.edition), b.which === 'machine' ? 'machine' : 'kettle')),
+  'POST /api/paper/coupon': action((p, b) => cutCoupon(p, Number(b.edition), Number(b.index))),
+  'POST /api/gift': action((p, b) => answerGift(p, !!b.accept)),
   'POST /api/paper/cut': action((p, b) => cutWanted(p, Number(b.edition))),
   'POST /api/label': action((p, b) => ({ changed: relabel(p, String(b.productId), b.to === 'store' ? 'store' : 'home') })),
   'POST /api/police/tip': action((p, b) => tipPolice(p, String(b.seed ?? ''))),
@@ -171,13 +194,20 @@ const sockets = new Map<WebSocket, number>();
 
 wss.on('connection', (ws, req) => {
   const token = new URL(req.url ?? '', 'http://x').searchParams.get('token') ?? undefined;
+  let playerId: number;
   try {
-    sockets.set(ws, playerFromToken(token).market_id);
+    const p = playerFromToken(token);
+    playerId = p.id;
+    sockets.set(ws, p.market_id);
   } catch {
     ws.close(4001, 'unauthorized');
     return;
   }
-  ws.on('close', () => sockets.delete(ws));
+  setOnline(playerId, 1); // står bak disken så lenge nettleseren er åpen
+  ws.on('close', () => {
+    sockets.delete(ws);
+    setOnline(playerId, -1);
+  });
 });
 
 function broadcast(marketId: number) {

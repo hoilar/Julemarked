@@ -26,13 +26,22 @@ export const SHIPPING = { standard: 20, express: 150 };
 /** Ekspressfrakt koster ingenting den første markedsdagen, så man kommer i gang. */
 export const expressPrice = (firstDay: boolean) => (firstDay ? 0 : SHIPPING.express);
 export const BAG_PRICE = 1;
+/** Klas Olsen leverer med en gang, rett under disken – mot en fast leveringskostnad per bestilling. */
+export const KLAS_DELIVERY = 49;
 export const BAG_GRID = { cols: 4, rows: 4 };
 
 export interface ShopItem {
   typeId: string;
   price: number; // kr per stk i dag
   stock: number; // hvor mange butikken har til deg i dag (før det du har kjøpt)
+  was?: number; // på tilbud: prisen før rabatten
+  deal?: number; // på tilbud: rabatten i prosent
 }
+
+/** Dagens tilbud: så mange varer i hver butikk, med 20–40 % rabatt. */
+export const DEALS_PER_STORE = 3;
+export const DEAL_MIN = 20;
+export const DEAL_MAX = 40;
 
 /** Dagens sortiment i en butikk. `day` er avisdatoen (ÅÅÅÅMMDD) – byttes kl. 07. */
 export function catalog(marketId: number, storeId: string, day: number): ShopItem[] {
@@ -49,6 +58,18 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
   if (picked.length < 5) picked = goods.slice(0, 5); // aldri helt tomme hyller
   for (const p of picked) {
     items.push({ typeId: p.id, price: price(p.wholesale, p.id), stock: 4 + Math.floor(hash01('lager', marketId, storeId, day, p.id) * 13) });
+  }
+  // Dagens tilbud: noen varer (helst ferdigvarer) får en tydelig rabatt.
+  const order = items
+    .map((it, i) => ({ i, r: hash01('tilbud', marketId, storeId, day, it.typeId) * (ITEM_TYPES[it.typeId].kind === 'ingredient' ? 1.6 : 1) }))
+    .sort((a, b) => a.r - b.r)
+    .slice(0, DEALS_PER_STORE);
+  for (const { i } of order) {
+    const it = items[i];
+    const pct = Math.round((DEAL_MIN + hash01('tilbud-pst', marketId, storeId, day, it.typeId) * (DEAL_MAX - DEAL_MIN)) / 5) * 5;
+    const was = it.price;
+    const now = Math.max(1, Math.round(was * (1 - pct / 100)));
+    if (now < was) Object.assign(it, { was, deal: pct, price: now });
   }
   return items;
 }
