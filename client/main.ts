@@ -928,7 +928,7 @@ function carView(s: GameState): string {
   const spec = CAR_BY_ID[car.typeId];
   const trip = s.me.car.trip;
   if (trip)
-    return `<div class="car away" title="Du er ute og kjører til ${esc(tripPlaceName(trip.store, STORE_BY_ID))}"><span class="car-tracks">💨</span><small>${trip.store === 'gjenbruk' ? 'På gjenbruksstasjonen' : 'Ute og handler'} · tilbake kl. ${hhmm(trip.until)}</small></div>`;
+    return `<div class="car away" title="Du er ute og kjører til ${esc(tripPlaceName(trip.store, STORE_BY_ID))}"><img class="sprite" src="/art/biler/parkering-tom.png" alt=""><small>${trip.store === 'gjenbruk' ? 'På gjenbruksstasjonen' : 'Ute og handler'}<br>tilbake kl. ${hhmm(trip.until)}</small></div>`;
   const t = ITEM_TYPES[car.typeId];
   const open = isOpen(car.id);
   const n = itemsIn(s.me.items, 'box', car.id).length;
@@ -978,7 +978,7 @@ function carryView(s: GameState): string {
     const count = it ? itemsIn(s.me.items, 'box', it.id).length : 0;
     const inner = it && t
       ? `<div class="carry-item ${isOpen(it.id) ? 'open' : ''}" data-drag="${it.id}" title="${esc(t.name)} med ${count} ${count === 1 ? 'ting' : 'ting'} – trykk for å se oppi">${sprite(t)}${count ? `<b class="carry-count">${count}</b>` : ''}</div>`
-      : `<span class="carry-empty">${sl.x === 2 ? '🎒' : '✋'}</span>`;
+      : `<img class="carry-empty" src="/art/${sl.x === 2 ? 'baere-sekk' : 'baere-hand'}.png" alt="">`;
     return `<div class="carry-slot ${it ? 'full' : ''}" data-carry-slot="${sl.x}" title="${sl.name}: ${sl.x === 2 ? 'dra en ryggsekk hit' : 'dra en handlepose hit'}">${inner}<small>${sl.name}</small></div>`;
   }).join('');
   return `<div class="carry ${screen.kind === 'visit' ? 'visit' : ''}"><div class="carry-label">Du bærer</div><div class="carry-slots">${slots}</div></div>`;
@@ -1511,7 +1511,7 @@ function keyHookView(s: GameState): string {
     ? `<button class="small ghost loupe-mode-btn ${loupeMode ? 'on' : ''}" data-action="loupe-mode" title="Undersøk rutene under disken én og én etter spor fra snokere">🔍 ${loupeMode ? 'Ferdig' : 'Let etter spor'}</button>`
     : '';
   return `<div class="key-hook" style="left:${STORAGE.left + 8.6}%;top:${STORAGE.top}%">
-    <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}">${hasKey ? '🔑' : '🔒'}</div>
+    <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}"><img src="/art/${hasKey ? 'nokkel-krok' : 'nokkel-krok-tom'}.png" alt="${hasKey ? 'Nøkkel' : 'Låst'}"></div>
     ${loupe}</div>`;
 }
 

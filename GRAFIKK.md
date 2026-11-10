@@ -638,7 +638,7 @@ app-ikonene): et lite rådhus med flagg og kommunevåpen-aktig skjold. Original 
 `GFX_assets/ChatGPT/app-kommunen.png`; i bruk på telefonen og i toppen av Kommunen-appen.
 
 
-### Bestilt: safe, lapper og forstørrelsesglass
+### Ferdig laget: safe, lapper og forstørrelsesglass
 
 **✅ De sju bestilte bildene av safer, kodelapp, notat og lupe er ferdige i
 `GFX_assets/ChatGPT`.** Samme nøytrale pikselstil som verktøyene, uten julepynt,
@@ -867,7 +867,7 @@ nearest-neighbor-skalering; spillfiler og kode er ikke endret i denne leveransen
 | `art/verktoy/dokumentmappe.png` | 2×3 (stående) | Lukket dokumentmappe i brun papp/skinn med strikk rundt og fire fargede faner som stikker opp på toppen. |
 | `art/verktoy/dokumentmappe-apen.png` | ca. 5×6 (bakgrunn til vinduet) | Den åpne mappa sett ovenfra: kremhvitt innerark med svake rutelinjer, fire faner langs toppen (tomme – navnene skrives av spillet). Brukes som bakgrunn i vinduet. |
 
-### Ferdig laget: små ting i grensesnittet
+### ✅ i bruk: små ting i grensesnittet
 
 **✅ Alle seks PNG-er er ferdige i `GFX_assets/ChatGPT`:** `nokkel-krok.png`,
 `nokkel-krok-tom.png`, `baere-hand.png`, `baere-sekk.png`, `parkering-tom.png`
@@ -892,7 +892,7 @@ Alle seks er kontrollert for transparent ytterområde og hele silhuetter. Småik
 er visuelt kontrollert ved 128, 64, 32 og 24 px. Skalert med nearest neighbor.
 Oversikt: `sma-grensesnitt-oversikt.jpg`. Prompter fra bildegeneratoren:
 `sma-grensesnitt-prompter.json`. Kontrolldata: `sma-grensesnitt-kontroll.json`.
-Klare til innlegging i filene under; spillfilene og koden er ikke endret i denne leveransen.
+Lagt inn i spillet. Parkeringsplassen er skalert fra originalen til 1152×864 som bilene, så den er like skarp.
 
 | Fil i spillet | Størrelse | Motiv |
 |---|---|---|
@@ -903,17 +903,21 @@ Klare til innlegging i filene under; spillfilene og koden er ikke endret i denne
 | `art/biler/parkering-tom.png` | 384×288 (samme lerret som bilene, 4:3) | Tom parkeringsplass når bilen er ute og handler: nedtråkket snø med to tydelige hjulspor og litt slaps. Samme plassering og bakkelinje som bilbildene, ingen bil. I dag 💨. |
 | `art/verktoy/spor.png` | 128×128 | Spor etter snoking, som vises i ruta der du finner det med lupa: et skittent fotavtrykk eller fingeravtrykk, litt gjennomsiktig. I dag en rød rute. |
 
-### Gjenstår å lage eller rette
+### Status og innlegging
+
+**Statuskontroll 10.11.2026:** Alle grafikkbestillingene i dette dokumentet er ferdig
+laget. Det ligger ingen nye bilder i produksjonskøen. Tabellen under skiller mellom
+ferdige originaler og bilder som er markert som tatt i bruk i spillet.
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Nøkkelkrok (med/uten nøkkel), tomme bæreplasser (hånd, sekk), tom parkeringsplass og spor | se «Ferdig laget: små ting i grensesnittet» | ✅ Alle seks PNG-er ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
+| Nøkkelkrok (med/uten nøkkel), tomme bæreplasser (hånd, sekk), tom parkeringsplass og spor | se «✅ i bruk: små ting i grensesnittet» | ✅ i bruk |
 | Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Ferdig laget: sikringsbokser og dokumentmappe» | ✅ i bruk: `art/elektro/sikringsboks{,-av,-smart,-smart-av,-automat,-bypass}.png` (2×2, av-bildet når boden er uten strøm), `art/verktoy/dokumentmappe.png` (2×3) og `dokumentmappe-apen.png` (640×768, bakgrunn i vinduet; fanenavnene står på fargede knapper over) |
 | Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |
 | Fire kjøretøy (inkludert elektrisk varebil, lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)» | ✅ i bruk: `art/biler/bil-{tennis,toforr,highass,fuzz}{,-apen}.png` (384×288, felles beskjæring så størrelsen mellom bilene stemmer), `art/ryggsekk.png` (3×3), `art/telefon/app-bilbutikken.png` |
 | Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Ferdig laget: såpe og nøkler (snoking)» | ✅ i bruk: `art/verktoy/{sapestykke,sapeavtrykk,blank-nokkel,kopinokkel}.png` (1×1), `art/verktoy/nokkelmaskin.png` (2×2) |
 | 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Ferdig laget: luguberte varer og Meldinger-appen» | ✅ i bruk: `art/goods/{smuglersigaretter,piratfilm,kinaputter,juletre-tyv,hjemmebrent,merkevotter}.png`, `art/ravarer/{gjaer,falsk-logo}.png`, `art/telefon/app-meldinger.png` |
-| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ i bruk: `art/safe-liten{,-apen}.png` (2×2), `art/safe-stor{,-apen}.png` (3×4, åpent bilde når safen er låst opp), `art/verktoy/{kodelapp,notat,lupe}.png` |
+| To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Ferdig laget: safe, lapper og forstørrelsesglass» | ✅ i bruk: `art/safe-liten{,-apen}.png` (2×2), `art/safe-stor{,-apen}.png` (3×4, åpent bilde når safen er låst opp), `art/verktoy/{kodelapp,notat,lupe}.png` |
 | Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ✅ i bruk: `art/verktoy/skjenkebevilling.png` |
 | 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |
 | 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
