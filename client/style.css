@@ -1088,6 +1088,8 @@ body.night .top { background: #0c1020; }
 .shop-card.deal .shop-sub, .shop-card.deal .shop-stock { color: #6b5a48; }
 .deal-ribbon { position: absolute; left: -0.3rem; top: 0.4rem; display: flex; flex-direction: column; align-items: center; padding: 0.15rem 0.5rem; border-radius: 4px; background: #d9261c; color: #fff; font: 900 0.7rem/1.1 system-ui, sans-serif; letter-spacing: 0.06em; transform: rotate(-8deg); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 .deal-ribbon b { font-size: 1rem; letter-spacing: 0; }
+.rare-ribbon { position: absolute; left: -0.3rem; top: 0.4rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: linear-gradient(135deg, #f6d36b, #c99a2e); color: #3b2a06; font: 900 0.7rem/1.1 system-ui, sans-serif; letter-spacing: 0.04em; transform: rotate(-8deg); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+.shop-card.rare { box-shadow: 0 0 0 2px #d8b04a inset; }
 .shop-card.deal .shop-price { color: #d9261c; }
 .shop-price s { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
 .coupon-flag { position: absolute; right: 0.25rem; top: 0.3rem; padding: 0.1rem 0.4rem; border-radius: 99px; border: 1.5px dashed #1d1a16; background: #f7eed8; font: 800 0.7rem system-ui, sans-serif; }

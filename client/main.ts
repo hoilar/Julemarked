@@ -69,7 +69,7 @@ import {
   type Offer,
 } from './customers.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, insurerHere } from '../shared/insurance.ts';
-import { BAG_PRICE, KLAS_DELIVERY, SHIPPING, STORES, STORE_BY_ID, expressPrice, packBags } from '../shared/shop.ts';
+import { BAG_PRICE, KLAS_DELIVERY, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
@@ -1330,11 +1330,12 @@ function storeView(s: GameState, storeId: string): string {
     const n = cart[it.typeId] ?? 0;
     const art = t.image ? `<img src="${t.image}" alt="" draggable="false">` : `<span class="shop-emoji">${t.emoji}</span>`;
     const p = PRODUCT_BY_ID[it.typeId];
-    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen';
+    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen og maskinene';
     const coupon = bestCoupon(s, storeId, it.typeId);
-    return `<div class="shop-card ${it.deal ? 'deal' : ''} ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
+    return `<div class="shop-card ${it.deal ? 'deal' : ''} ${isRare(it.typeId) ? 'rare' : ''} ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
       <div class="shop-art">${art}<span class="shop-size">${t.size.w}×${t.size.h}</span>
         ${it.deal ? `<span class="deal-ribbon">TILBUD<b>−${it.deal} %</b></span>` : ''}
+        ${isRare(it.typeId) ? '<span class="rare-ribbon" title="Finnes bare noen dager, og bare noen få">★ Sjelden</span>' : ''}
         ${coupon ? `<span class="coupon-flag" title="Du har en kupong: ${coupon.pct} % på denne varen">🎟️ −${coupon.pct} %</span>` : ''}</div>
       <div class="shop-name">${esc(t.name)}</div>
       <div class="shop-sub">${sub}</div>

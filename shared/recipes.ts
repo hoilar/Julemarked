@@ -13,8 +13,16 @@ export interface Recipe {
 export const RECIPES: Recipe[] = [
   { id: 'glogg', name: 'Varm gløgg', inputs: { gloggflaske: 1 }, outputs: { glogg: 4 }, level: 1 },
   { id: 'mandler', name: 'Brente mandler', inputs: { mandler: 1, sukker: 1 }, outputs: { brente_mandler: 1 }, level: 2 },
+  { id: 'marsipan', name: 'Marsipangriser', inputs: { mandler: 1, sukker: 1 }, outputs: { marsipangris: 3 }, level: 1 },
+  { id: 'eplemost', name: 'Varm eplemost', inputs: { eplemost: 1 }, outputs: { eplemost_varm: 4 }, level: 1 },
+  { id: 'kakao', name: 'Varm kakao', inputs: { kakaopulver: 1, flote: 1 }, outputs: { kakao: 4 }, level: 2 },
+  { id: 'polse', name: 'Pølse i lompe', inputs: { polser: 1, lomper: 1 }, outputs: { polse_lompe: 4 }, level: 2 },
+  // Fudge står før karamellene: samme råvarer pluss smør, så den mest spesifikke oppskriften må vinne.
+  { id: 'fudge', name: 'Fudge', inputs: { flote: 1, sukker: 1, smor: 1 }, outputs: { fudge: 6 }, level: 3 },
+  { id: 'grot', name: 'Rømmegrøt', inputs: { flote: 1, mel: 1 }, outputs: { rommegrot: 3 }, level: 3 },
   { id: 'karamell', name: 'Fløtekarameller', inputs: { flote: 1, sukker: 1 }, outputs: { karamell: 6 }, level: 3 },
   { id: 'syltetoy', name: 'Syltetøy', inputs: { baer: 2, sukker: 1 }, outputs: { syltetoy: 1 }, level: 4 },
+  { id: 'kandisert', name: 'Kandiserte epler', inputs: { epler: 1, sukker: 1 }, outputs: { kandisert_eple: 2 }, level: 4 },
 ];
 
 export const BURNT = 'svidd';

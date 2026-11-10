@@ -511,10 +511,73 @@ arkivert i undermappen `tidligere-plassering/`.
 Klar til innlegging. De gamle `art/power/`-lagene og spillets klikkfelt er ikke
 endret; klikkfeltene må flyttes til koordinatene over når denne serien tas i bruk.
 
+### Bestilt: nye varer og råvarer
+
+De nye varene er i spillet med emoji som plassholder (se `emo(...)` i `shared/products.ts`).
+Når et bilde er klart, legges det i mappa under og varen bytter fra `emo(...)` til `good(...)`.
+Samme stil som de andre varene: én gjenstand, sett litt ovenfra, gjennomsiktig bakgrunn.
+
+**Varer** → `client/public/art/goods/<fil>.png`
+
+| Fil | Rutenett | Motiv |
+|---|---|---|
+| `antikk-julekule` | 1×1 | Antikk julekule: falmet, gammel glasskule med slitt gullmaling og bittelitt rust på hetta. Sjelden, dyr. |
+| `snokule` | 1×1 | Snøkule med en liten norsk landsby med kirke inni, snøflak i vannet, trefot. |
+| `musikkboks` | 2×2 | Musikkboks i tre med åpent lokk og en liten dansende nisse på toppen, messingsveiv på siden. |
+| `glasshjerte` | 1×1 | Rødt glasshjerte med hvit malt dekor og hyssing til oppheng. |
+| `trenisse` | 1×2 | Liten malt trenisse, rød lue og hvitt skjegg, stående, synlige trefibre. |
+| `gullkule` | 1×1 | Julekule dekket av bladgull, glinsende, med små sprekker i gullet. |
+| `toppstjerne` | 1×2 | Toppstjerne i glass med bladgull, på en spiss som settes på toppen av treet. |
+| `skjerf` | 2×2 | Strikket skjerf i rødt og hvitt, sammenbrettet med frynser. |
+| `pulsvarmere` | 1×1 | Et par strikkede pulsvarmere, grå med rødt mønster. |
+| `alpakkaskjerf` | 2×2 | Mykt, lodent alpakkaskjerf i lys beige, sammenbrettet. Ser dyrt ut. |
+| `julegenser` | 2×2 | Stygg julegenser: grønn med reinsdyr med rød nese, pompong og glitter. |
+| `lusekofte` | 2×2 | Klassisk lusekofte i svart og hvitt med tinnspenner, sammenbrettet. |
+| `snurrebass` | 1×1 | Malt snurrebass i tre, røde og grønne striper. |
+| `tretog` | 2×1 | Lite tretog: lokomotiv og én vogn, malt rødt og blått, sett fra siden. |
+| `bamse` | 2×2 | Strikket bamse med nisselue, sittende. |
+| `puslespill` | 2×2 | Eske med julepuslespill, bilde av en vinterlandsby på lokket. |
+| `blikkbil` | 2×1 | Gammel blikkbil fra 50-tallet, rød med kremhvitt tak, litt slitt lakk. |
+| `krumkake` | 1×1 | Krumkake rullet til en kjegle, gyllen med mønster. |
+| `sirupssnipp` | 1×1 | Sirupssnipp: rombeformet småkake med en mandel i midten. |
+| `lussekatt` | 1×1 | Lussekatt, S-formet safranbolle med to rosiner. |
+| `kransekake` | 2×2 | Kransekaketårn med hvit glasur i siksak og små norske flagg. |
+| `marsipangris` | 1×1 | Rosa marsipangris med sjokoladeøyne. |
+| `fudge` | 1×1 | Tre biter brun fudge i rutete papir. |
+| `polkagris` | 1×2 | Polkagrisstang: lang, rød- og hvitstripet sukkerstang. |
+| `kandisert-eple` | 1×1 | Kandisert eple: blankt rødt glasert eple på en trepinne. |
+| `polse-lompe` | 1×1 | Pølse i lompe med sennep og ketchup, i en liten serviett. |
+| `rommegrot` | 1×1 | Skål med rømmegrøt, smørøye, sukker og kanel på toppen. |
+| `lefse` | 1×1 | Sammenbrettet lefse med smør og sukker, i bakepapir. |
+| `fenalaar` | 1×3 | Fenalår: helt, tørket fårelår, mørkt og rustikt, med hyssing. Står loddrett. |
+| `kakao` | 1×1 | Krus med varm kakao og krem på toppen, damp. |
+| `julebrus` | 1×2 | Flaske rød julebrus med nissebilde på etiketten (oppfunnet merke). |
+| `eplemost-varm` | 1×1 | Papirkopp med varm eplemost, en kanelstang og en epleskive. |
+
+**Råvarer** (alle 1×1) → `client/public/art/ravarer/<fil>.png`
+
+| Fil | Motiv |
+|---|---|
+| `treemne` | Treemne: en liten umalt, slipt trekloss. |
+| `sirup` | Glass med mørk sirup og lokk. |
+| `kakaopulver` | Liten boks kakaopulver. |
+| `epler` | To røde epler. |
+| `eplemost` | Kartong eplemost. |
+| `polser` | Pakke grillpølser i plast. |
+| `lomper` | Pakke lomper. |
+| `fyllvatt` | Pose med hvitt fyllvatt. |
+| `bladgull` | Liten mappe med tynne ark bladgull, ett ark stikker ut. Sjelden. |
+| `safran` | Lite glass med røde safrantråder. Sjelden. |
+| `alpakkagarn` | Nøste med mykt, lodent alpakkagarn i beige. Sjelden. |
+
+**Sjelden-merke:** nettbutikken viser foreløpig et gullbånd i CSS («★ Sjelden»). Et eget lite
+ikon (gullstjerne/segl, 1×1) kan lages senere hvis vi vil ha det i grafikkstilen.
+
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
+| 32 nye varer og 11 nye råvarer | se «Bestilt: nye varer og råvarer» | ⏳ Bestilt: `art/goods/` og `art/ravarer/` (emoji til de er klare) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |
 | Smarttelefon, makuleringsmaskin (av + på) og mikroplast | – | ✅ i bruk: `art/telefon/telefon.png` (1×2), `art/maskiner/makulator{,-pa}.png` (2×2), `art/ravarer/mikroplast.png` (1×1) |
 | App-ikoner: Nettbutikk, Markedet, Min bod, Varsler, Bank | – | ✅ i bruk: `art/telefon/app-*.png` (Nettbutikk også i innkjøpsvinduet, Bank i bankappen) |

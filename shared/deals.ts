@@ -51,7 +51,8 @@ export function dayRange(from: number, to: number): string {
 
 /** Kupongene i avisa en dag. */
 export function couponsFor(marketId: number, edition: number): Coupon[] {
-  const pool = [...PRODUCTS.filter((p) => !p.craftedOnly).map((p) => p.id), ...INGREDIENTS.filter((g) => g.price > 0).map((g) => g.id)];
+  // Ikke sjeldne varer: en kupong på noe man nesten aldri finner, er ingen glede.
+  const pool = [...PRODUCTS.filter((p) => !p.craftedOnly && p.rare === undefined).map((p) => p.id), ...INGREDIENTS.filter((g) => g.price > 0 && g.rare === undefined).map((g) => g.id)];
   const out: Coupon[] = [];
   for (let i = 0; i < COUPONS_PER_PAPER; i++) {
     const store = STORES[Math.floor(hash01('kupong-butikk', marketId, edition, i) * STORES.length)].id;

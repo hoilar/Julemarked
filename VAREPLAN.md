@@ -1,6 +1,8 @@
 # Vareplan
 
-Planlegging av nye varer, råvarer og gameplay. Ingenting her er bygget ennå.
+Planlegging av nye varer, råvarer og gameplay.
+
+**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Alkohol, Lugubert og resten av systemene er ikke bygget.
 Kategoriene finnes i `shared/categories.ts`. ★ = sjelden: dukker bare opp noen dager, i én butikk, med lite på lager.
 
 ## Avklart

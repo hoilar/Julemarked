@@ -51,9 +51,21 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
     Math.max(1, Math.round(base * store.priceFactor * (0.9 + 0.25 * hash01('pris', marketId, storeId, day, id))));
   for (const g of INGREDIENTS) {
     if (g.price <= 0) continue;
+    if (g.rare !== undefined) {
+      // Sjelden råvare: bare noen dager, og bare noen få.
+      if (hash01('sjelden', marketId, storeId, day, g.id) >= g.rare) continue;
+      items.push({ typeId: g.id, price: price(g.price, g.id), stock: 2 + Math.floor(hash01('lager', marketId, storeId, day, g.id) * 3) });
+      continue;
+    }
     items.push({ typeId: g.id, price: price(g.price, g.id), stock: 10 + Math.floor(hash01('lager', marketId, storeId, day, g.id) * 21) });
   }
-  const goods = PRODUCTS.filter((p) => !p.craftedOnly);
+  // Sjeldne varer: bare noen dager, 1–2 stk.
+  for (const p of PRODUCTS) {
+    if (p.rare === undefined || p.craftedOnly) continue;
+    if (hash01('sjelden', marketId, storeId, day, p.id) >= p.rare) continue;
+    items.push({ typeId: p.id, price: price(p.wholesale, p.id), stock: 1 + Math.floor(hash01('lager', marketId, storeId, day, p.id) * 2) });
+  }
+  const goods = PRODUCTS.filter((p) => !p.craftedOnly && p.rare === undefined);
   let picked = goods.filter((p) => hash01('utvalg', marketId, storeId, day, p.id) < 0.6);
   if (picked.length < 5) picked = goods.slice(0, 5); // aldri helt tomme hyller
   for (const p of picked) {
@@ -62,6 +74,7 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
   // Dagens tilbud: noen varer (helst ferdigvarer) får en tydelig rabatt.
   const order = items
     .map((it, i) => ({ i, r: hash01('tilbud', marketId, storeId, day, it.typeId) * (ITEM_TYPES[it.typeId].kind === 'ingredient' ? 1.6 : 1) }))
+    .filter(({ i }) => !isRare(items[i].typeId)) // sjeldne varer kommer aldri på tilbud
     .sort((a, b) => a.r - b.r)
     .slice(0, DEALS_PER_STORE);
   for (const { i } of order) {
@@ -72,6 +85,12 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
     if (now < was) Object.assign(it, { was, deal: pct, price: now });
   }
   return items;
+}
+
+/** Sjelden vare eller råvare (finnes bare noen dager i nettbutikken). */
+export function isRare(typeId: string): boolean {
+  const t = ITEM_TYPES[typeId] as { rare?: number } | undefined;
+  return t?.rare !== undefined;
 }
 
 /** Pakker varene i poser (4×4). Største først. Returnerer innholdet i hver pose. */

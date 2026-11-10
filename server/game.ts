@@ -1952,7 +1952,7 @@ export function answerGift(player: PlayerRow, accept: boolean) {
  */
 export function relabel(player: PlayerRow, productId: string, to: 'home' | 'store'): number {
   const p = product(productId);
-  if (p.craftedOnly) throw new GameError(`${p.name} lages bare i kjelen.`);
+  if (p.craftedOnly) throw new GameError(`${p.name} kan bare lages selv.`);
   const stall = myStall(player);
   return tx(() => {
     const items = itemsOf(stall.id);
