@@ -1042,7 +1042,7 @@ function docFolderPanel(s: GameState, box: Item, n: number): string {
   const tabs = names
     .map((nm, i) => {
       const count = all.filter((it) => Math.floor(it.y / rows) === i).length;
-      return `<button class="folder-tab ${i === tab ? 'on' : ''}" data-action="folder-tab" data-box="${box.id}" data-tab="${i}" title="Dobbeltklikk for å gi fanen nytt navn">${esc(nm)}${count ? ` <small>${count}</small>` : ''}</button>`;
+      return `<button class="folder-tab ${i === tab ? 'on' : ''}" data-action="folder-tab" data-box="${box.id}" data-tab="${i}" aria-label="${esc(nm)}" title="${esc(nm)}${count ? ` (${count})` : ''} – dobbeltklikk for å gi fanen nytt navn"></button>`;
     })
     .join('');
   const items = all
@@ -1058,8 +1058,8 @@ function docFolderPanel(s: GameState, box: Item, n: number): string {
   return `
   <div class="box-panel doc-folder" data-panel="${key}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
     <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(t)} ${esc(t.name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${key}" aria-label="Lukk">✕</button></div>
-    <div class="folder-tabs" style="width:${(cols * BOX_CELL) / 0.872}cqw">${tabs}</div>
     <div class="folder-sheet" style="width:${(cols * BOX_CELL) / 0.872}cqw">
+      <div class="folder-tabs">${tabs}</div>
       <div class="grid box-grid folder-grid" data-grid="box" data-box="${box.id}" data-yoff="${off}" style="--cols:${cols};--rows:${rows}">${items}</div>
     </div>
   </div>`;

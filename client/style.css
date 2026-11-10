@@ -1376,15 +1376,15 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .doc-folder { background: #4a3a26; border-color: #8a6a40; }
 /* Bildet av den åpne mappa (640×768): fanene ligger i y 100–137 og x 34–606, kremarket i x 40–598 og y 137–732. */
 .folder-sheet { position: relative; aspect-ratio: 640 / 768; background: url('/art/verktoy/dokumentmappe-apen.png') center / 100% 100% no-repeat; image-rendering: pixelated; margin-top: 0.3cqw; }
-/* Fanene over mappa, i samme farger som de tegnede fanene (rød, blå, grønn, gul). */
-.folder-tabs { display: flex; gap: 0.2cqw; margin-top: 0.3cqw; }
-.folder-tab { flex: 1; min-width: 0; font-size: max(9px, 0.65cqw); line-height: 1.1; padding: 0.2cqw 0.25cqw; border: 0; border-radius: 0.35cqw 0.35cqw 0 0; box-shadow: none; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.6; }
-.folder-tab:nth-child(1) { background: #b8423a; }
-.folder-tab:nth-child(2) { background: #4a7bb7; }
-.folder-tab:nth-child(3) { background: #6b9a55; }
-.folder-tab:nth-child(4) { background: #d4a72c; color: #2a1d0c; }
-.folder-tab.on { opacity: 1; font-weight: 700; transform: translateY(0.1cqw); }
-.folder-tab:hover { opacity: 0.9; }
+/* Fanene: usynlige knapper over de tegnede fanene (målt i bildet: x 71–172, 207–303, 338–434, 469–569, y 52–104). */
+.folder-tabs { position: absolute; inset: 0; pointer-events: none; }
+.folder-tab { position: absolute; top: 6.8%; height: 6.8%; padding: 0; border: 0; border-radius: 0.3cqw 0.3cqw 0 0; background: transparent; box-shadow: none; pointer-events: auto; cursor: pointer; }
+.folder-tab:nth-child(1) { left: 11.1%; width: 15.8%; }
+.folder-tab:nth-child(2) { left: 32.3%; width: 15%; }
+.folder-tab:nth-child(3) { left: 52.8%; width: 15%; }
+.folder-tab:nth-child(4) { left: 73.3%; width: 15.6%; }
+.folder-tab:hover { background: rgba(255, 255, 255, 0.2); }
+.folder-tab.on { background: rgba(255, 255, 255, 0.28); box-shadow: 0 0 0 0.12cqw rgba(255, 255, 255, 0.85); }
 .folder-tab small { opacity: 0.7; }
 .folder-sheet .folder-grid { position: absolute; left: 6.25%; top: 20.2%; width: 87.2%; height: 72.7%; background-color: transparent; }
 /* Automatsikringer */
