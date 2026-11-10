@@ -5,7 +5,7 @@
 //   «lyslenke»            fast apparat (henger på boden)
 //   «kjele:12»            apparat som er en gjenstand (kjele, posebretter …)
 //   «grenuttak:7»         et ekstra grenuttak – bare i grenuttaket på stolpen, ikke i hverandre
-import { BLOWN_FUSE, FOLDER_BY_ID, capacityOf, isBattery, CHARGER, CHARGE_KW, DEVICES, FOLDER_KW, FUSEBOX, MAKER_BY_ID, ITEM_TYPES, KETTLE_KW_PER_LEVEL, STRIP, STRIP_SOCKETS, socketEntry } from './products.ts';
+import { BLOWN_FUSE, FOLDER_BY_ID, capacityOf, isBattery, CHARGER, CHARGE_KW, DEVICES, FOLDER_KW, fuseboxKind, isFusebox, MAKER_BY_ID, ITEM_TYPES, KETTLE_KW_PER_LEVEL, STRIP, STRIP_SOCKETS, socketEntry } from './products.ts';
 import { isTrashed, isUndelivered } from './items.ts';
 import type { Item, Power } from './types.ts';
 
@@ -27,7 +27,7 @@ export const stripSockets = (s: Item): (string | null)[] =>
 
 /** Sikringsboksen boden har (den første som er hos deg). */
 export function fuseboxOf(items: Item[]): Item | undefined {
-  return items.find((i) => i.typeId === FUSEBOX.id && usable(items, i));
+  return items.find((i) => isFusebox(i.typeId) && usable(items, i));
 }
 
 /** Alt som står i en kontakt: på stolpen (via = null) eller i et ekstra grenuttak (via = grenuttakets id). */
@@ -53,13 +53,20 @@ export function feedStatus(power: Power, items: Item[], entry: string): FeedStat
   if (power.blown) return 'main-blown';
   if (!power.on) return 'main-off';
   const box = fuseboxOf(items);
-  if (box) {
-    // Med sikringsboks trenger hvert apparat en hel skrusikring i plassen sin.
+  const kind = box && fuseboxKind(box.typeId);
+  if (box && kind === 'screw') {
+    // Med skrusikringer trenger hvert apparat en hel skrusikring i plassen sin.
     const slot = (box.fuse?.slots ?? []).indexOf(entry);
     const fuse = slot < 0 ? undefined : items.find((i) => i.place === 'fuse' && i.boxId === box.id && i.y === slot);
     if (!fuse) return 'fuse-off';
     if (fuse.typeId === BLOWN_FUSE.id) return 'fuse-blown';
+  } else if (box && (kind === 'auto' || kind === 'smart')) {
+    // Automatsikringer: hver plass har sin bryter. Den kan være slått av, eller ha gått.
+    if (!(box.fuse?.slots ?? []).includes(entry)) return 'fuse-off';
+    if (box.fuse?.tripped?.includes(entry)) return 'fuse-blown';
+    if (box.fuse?.off?.includes(entry)) return 'fuse-off';
   }
+  // Forbikoblet (bypass): ingen sikringer i veien.
   if (off.has(entry)) return 'fuse-off';
   return 'ok';
 }
@@ -109,16 +116,17 @@ export function loosePlugs(power: Power, items: Item[], target: 'main' | 'strip'
 }
 
 /** Navnet på det som står i en kontakt. Har man flere av samme sort, får de nummer (Kjele 2). */
-export function entryName(entry: string, items: Item[]): { emoji: string; name: string } {
+export function entryName(entry: string, items: Item[]): { emoji: string; image?: string; name: string } {
   const [typeId, id] = entry.split(':');
   const t = ITEM_TYPES[typeId];
   const dev = DEVICES.find((d) => d.id === typeId);
   const emoji = dev?.emoji ?? t?.emoji ?? '🔌';
+  const image = t?.image ?? dev?.image;
   const base = dev?.name ?? t?.name ?? typeId;
-  if (!id) return { emoji, name: base };
+  if (!id) return { emoji, image, name: base };
   const same = items.filter((i) => i.typeId === typeId).sort((a, b) => a.id - b.id);
   const n = same.findIndex((i) => i.id === Number(id));
-  return { emoji, name: same.length > 1 && n >= 0 ? `${base} ${n + 1}` : base };
+  return { emoji, image, name: same.length > 1 && n >= 0 ? `${base} ${n + 1}` : base };
 }
 
 /** Fjerner kontakt-oppføringer som peker på gjenstander som ikke finnes lenger. */

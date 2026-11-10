@@ -179,6 +179,8 @@ if (!hasColumn('stalls', 'liquor_order')) db.exec('ALTER TABLE stalls ADD COLUMN
 if (!hasColumn('stalls', 'liquor_ban')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_ban INTEGER NOT NULL DEFAULT 0');
 // Hovedsikringen (uten egen sikringsboks): 1 = gått, ingen strøm før den byttes.
 // Handleturen med bilen (JSON, se CarTrip i server/game.ts), eller NULL når bilen står parkert.
+// Strøm brukt gjennom en forbikoblet sikringsboks (kWh som ikke er målt, siden Tilsynsmannen sist tok deg).
+if (!hasColumn('stalls', 'bypass_kwh')) db.exec('ALTER TABLE stalls ADD COLUMN bypass_kwh REAL NOT NULL DEFAULT 0');
 if (!hasColumn('stalls', 'car_trip')) db.exec('ALTER TABLE stalls ADD COLUMN car_trip TEXT');
 if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN main_blown INTEGER NOT NULL DEFAULT 0');
 // Lageret ble 26 ruter (én kolonne mindre på hver side): 0 = ting under disken er ikke flyttet ennå.

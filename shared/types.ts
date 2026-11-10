@@ -48,7 +48,7 @@ export interface Item {
   folder?: { on: boolean }; // bare posebrettere
   strip?: { sockets: (string | null)[] }; // bare ekstra grenuttak: hva som står i de fire kontaktene
   maker?: { on: boolean; program: string; progress: number }; // bare maskiner med programmer (timer gjort på omgangen)
-  fuse?: { slots: (string | null)[] }; // sikringsboksen: hvilket apparat hver sikringsplass gir strøm til
+  fuse?: { slots: (string | null)[]; tripped?: string[]; off?: string[] }; // sikringsboksen: hvilket apparat hver plass gir strøm til; automatsikringer som har gått / er slått av
   charge?: number; // bare batterier: kWh igjen
   coupon?: { store: string; productId: string; pct: number; from: number; to: number }; // bare rabattkuponger
   giftcard?: { store: string; value: number }; // bare gavekort: kr igjen
@@ -62,7 +62,8 @@ export interface Item {
   safe?: { locked: boolean }; // bare safer (koden sendes aldri til nettleseren)
   note?: { kind: 'code' | 'text'; text: string }; // bare kodelapper og notater
   key?: { stallId: number; stallName: string }; // bare såpeavtrykk og kopinøkler: hvilken bod de passer til
-  keyJob?: { stallName: string; until: number }; // bare nøkkelmaskinen: kopien den holder på med (ferdig da)
+  keyJob?: { stallName: string; until: number };
+  tabs?: string[]; // bare dokumentmapper: navnene på fanene // bare nøkkelmaskinen: kopien den holder på med (ferdig da)
   boxId: number | null; // eskens id når place = 'box'
   x: number;
   y: number;
@@ -138,6 +139,12 @@ export interface GameEvent {
   private: boolean;
 }
 
+/** Én linje i en oppskrift: så mange av en vare eller råvare. */
+export interface RecipeLine {
+  id: string;
+  n: number;
+}
+
 /** Morgenavisa «Verdens Undergang» (ny utgave kl. 07 hver dag). */
 export interface Paper {
   edition: number; // ÅÅÅÅMMDD
@@ -146,9 +153,9 @@ export interface Paper {
   price: number; // strømpris i dag, kr/kWh
   headline: string;
   notices: string[];
-  recipe: { id: string; name: string; inputs: string[]; outputs: string[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»
+  recipe: { id: string; name: string; inputs: RecipeLine[]; outputs: RecipeLine[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»
   /** «Fra verkstedet»: dagens oppskrift for en av maskinene (bake-, strikke-, dekormaskin). */
-  machineRecipe: { id: string; name: string; machine: string; machineName: string; inputs: string[]; outputs: string[]; hours: number };
+  machineRecipe: { id: string; name: string; machine: string; machineName: string; inputs: RecipeLine[]; outputs: RecipeLine[]; hours: number };
   /** Dagens etterlyste tyv (ansiktet tegnes fra seed). `caught` = noen har angitt ham. */
   wanted: { seed: string; alias: string; reward: number; caught: boolean };
   /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */

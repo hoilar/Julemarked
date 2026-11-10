@@ -71,6 +71,10 @@ export const INSPECTOR_REP_MAX = 35;
 export const INSPECTOR_REP_CLEAN = 2; // ryddig bord: litt bedre omdømme
 // Strømmåleren: skrudd tilbake siden forrige besøk? Han ser det ikke alltid.
 export const METER_CATCH_CHANCE = 0.4;
+/** Forbikoblet sikringsboks: sjansen for at Tilsynsmannen ser den når han er innom, og straffen (pluss per kWh som ikke er målt). */
+export const BYPASS_CATCH_CHANCE = 0.35;
+export const BYPASS_FINE = 1500;
+export const BYPASS_REP_HIT = 20;
 export const METER_FINE = 250; // fast bot …
 export const METER_FINE_PER_KWH = 12; // … pluss per kWh skrudd tilbake
 export const METER_REP_HIT = 10;

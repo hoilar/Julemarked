@@ -30,6 +30,7 @@ export const DEALER_GOODS: DealerGood[] = [
   { typeId: 'falsk_logo', price: 45, stock: [3, 6] },
   { typeId: 'blank_nokkel', price: 30, stock: [2, 5] },
   { typeId: 'nokkelmaskin', price: 900, stock: [1, 1], rare: 0.4 },
+  { typeId: 'sikringsboks_bypass', price: 700, stock: [1, 1], rare: 0.5 },
 ];
 
 export interface DealerOffer {
@@ -58,5 +59,6 @@ export const DEALER_TIPS = [
   'Hjemmebrent: 2 sukker og 1 gjær i kjelen, full guffe (styrke 4). Ikke si hvor du har det fra.',
   'Kjøper du falske logoer, får du oppskriften på «merkevotter» til strikkemaskinen med på kjøpet.',
   'Har du et såpeavtrykk av en nøkkel, lager nøkkelmaskinen en kopi. Du trenger en blank nøkkel til hver.',
+  'En forbikoblet sikringsboks: ingenting ryker, og måleren står stille. Ikke la Tilsynsmannen se den.',
   'Luguberte saker selger bare når det er mørkt. Og Tilsynsmannen roter under disken – ha en safe.',
 ];

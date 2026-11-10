@@ -111,6 +111,15 @@ Prisene justeres etter hvert som vi tester.
 
 - **Bensin** er stort sett billig, men har perioder der den er veldig dyr, slik som strømprisen.
 
+## Sikringsbokser og dokumentmappe (etter steg 6)
+
+- **Alle boder har den vanlige sikringsboksen fra start**, full av skrusikringer (åtte plasser). Den selges ikke lenger.
+- **Sikringsboks med automatsikringer** (1 499 kr hos Klas Olsen): går en sikring, vipper du den opp igjen. Ingen skrusikringer.
+- **Smart sikringsboks** (2 499 kr hos Klas Olsen): automatsikringer som slår seg på igjen av seg selv når strømmen er tilbake.
+- **Forbikoblet sikringsboks** (700 kr kontant hos Fyren): ingenting ryker, og måleren står stille. Tilsynsmannen ser den med 35 % sjanse når han er innom: boksen beslaglegges, bot 1 500 kr pluss for den umålte strømmen, omdømme −20.
+- Man har én sikringsboks. Kjøper du en ny (eller tar Fyren sin inn fra søpla), settes den inn i stedet for den gamle: plassene følger med, skrusikringene legges under disken, og den gamle havner i søpla.
+- **Dokumentmappe** (129 kr hos Klas Olsen, 2×3): bare papirer – dokumenter, lapper, oppskrifter, utklipp, kuponger, gavekort, forsikringsbevis og aviser. Fire faner (5×5 hver) som du gir navn selv (dobbeltklikk på fanen). Nye varer havner aldri i mappa.
+
 ## Åpne spørsmål
 
 - Ingen akkurat nå.

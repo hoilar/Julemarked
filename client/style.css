@@ -338,7 +338,7 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .citem.kettle-item.open img { filter: drop-shadow(0 0 0.3cqw #ffe08a); }
 
 /* ---------- Postkassa og avisa ---------- */
-.mailbox-layer { z-index: 0; }
+.mailbox-layer { z-index: 3; pointer-events: none; } /* over alarmledningen på stolpen og bilen; trykk går til knappen */
 .mailbox-hot {
   position: absolute;
   z-index: 3;
@@ -1372,6 +1372,24 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car-hit:hover { background: none; }
 .car img.sprite { display: block; }
 .trunk { position: absolute; z-index: 1; pointer-events: auto; }
+/* Dokumentmappa */
+.doc-folder { background: #4a3a26; border-color: #8a6a40; }
+.folder-tabs { display: flex; gap: 0.2cqw; margin: 0.2cqw 0 -0.1cqw; }
+.folder-tab { flex: 1; min-width: 0; font-size: max(9px, 0.7cqw); padding: 0.15cqw 0.3cqw; border-radius: 0.4cqw 0.4cqw 0 0; background: #6b5434; color: #f5e6c8; border: 0; box-shadow: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.folder-tab.on { background: #e9dcc0; color: #3a2a14; font-weight: 700; }
+.folder-tab small { opacity: 0.7; }
+.folder-grid { background-color: rgba(233, 220, 192, 0.92); }
+/* Automatsikringer */
+.breakers { list-style: none; margin: 0.4cqw 0 0; padding: 0; display: grid; gap: 0.3cqw; }
+.breaker { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 0.5cqw; font-size: 0.85cqw; padding: 0.2cqw 0.3cqw; border-radius: 0.3cqw; background: rgba(255, 255, 255, 0.05); }
+.breaker small { grid-column: 1 / -1; font-size: 0.7cqw; }
+.breaker.tripped { background: rgba(255, 120, 60, 0.18); }
+.breaker-switch { width: 1.6cqw; height: 2.2cqw; min-width: 16px; min-height: 22px; padding: 0; border-radius: 0.25cqw; background: #222; border: 0.1cqw solid #555; position: relative; box-shadow: none; }
+.breaker-switch i { position: absolute; left: 15%; right: 15%; height: 40%; border-radius: 0.15cqw; background: #ddd; top: 8%; transition: top 0.12s; }
+.breaker.off .breaker-switch i, .breaker.tripped .breaker-switch i { top: 52%; }
+.breaker.on .breaker-switch { border-color: #6c6; }
+.breaker.tripped .breaker-switch { border-color: #f84; }
+.meter.stopped .meter-digits { opacity: 0.5; }
 .car-cell { position: absolute; left: 73%; top: 50%; width: 6.5%; z-index: 1; pointer-events: auto; display: grid; gap: 0.2cqw; justify-items: center; }
 .car-cell .cell-grid { position: relative; width: 100%; aspect-ratio: 1; }
 .car-cell-pct { font-size: 0.7cqw; background: rgba(20, 16, 40, 0.75); padding: 0 0.3cqw; border-radius: 0.3cqw; white-space: nowrap; }

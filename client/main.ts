@@ -35,6 +35,8 @@ import {
   PHONE,
   STRIP,
   FUSEBOX,
+  fuseboxKind,
+  isFusebox,
   FUSE,
   BLOWN_FUSE,
   FUSE_GRID,
@@ -212,6 +214,12 @@ function sprite(t: { emoji: string; image?: string }): string {
     ? `<img class="sprite img" src="${t.image}" alt="" draggable="false">`
     : `<span class="sprite">${t.emoji}</span>`;
 }
+/** Råvarer/varer i en oppskrift, med bildene: «2 [bilde] tyttebær og 1 [bilde] sukker». */
+function recipeList(lines: { id: string; n: number }[]): string {
+  return lines.map(({ id, n }) => `${n} ${icon(ITEM_TYPES[id])} ${esc(ITEM_TYPES[id].name.toLowerCase())}`).join(' og ');
+}
+const linesOf = (m: Record<string, number>) => Object.entries(m).map(([id, n]) => ({ id, n }));
+
 /** Lite ikon til tekst og lister. */
 function icon(t: { emoji: string; image?: string }): string {
   return t.image ? `<img class="icon" src="${t.image}" alt="">` : t.emoji;
@@ -980,9 +988,10 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     if (box && t?.kind === 'maker') return makerPanel(s, box, n);
     if (box && t?.kind === 'charger') return chargerPanel(s, box, n);
     if (box && t?.id === STRIP.id) return stripPanel(s, box, n);
-    if (box && t?.id === FUSEBOX.id) return fusePanel(s, box, n);
+    if (box && t && isFusebox(t.id)) return fusePanel(s, box, n);
     if (!box || t?.kind !== 'container') return '';
     if (t.car) return ''; // bagasjerommet tegnes inni bilen (carView)
+    if (t.docFolder) return docFolderPanel(s, box, n);
     ({ cols, rows } = t.inner);
     title = t.car ? `${icon(t)} Bagasjerommet · ${esc(t.name)}` : `${icon(t)} ${esc(t.name)}`;
     if (t.car) cls = 'trunk-panel';
@@ -1015,6 +1024,43 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
   </div>`;
 }
 
+/** Fanen som er åpen i hver dokumentmappe (huskes mens siden er åpen). */
+const folderTab = new Map<number, number>();
+
+/** Dokumentmappa: fire faner med egne navn, 5×5 papirer i hver. Fanene ligger stablet i rutenettet (y = fane × 5 + rad). */
+function docFolderPanel(s: GameState, box: Item, n: number): string {
+  const t = ITEM_TYPES[box.typeId];
+  if (t.kind !== 'container' || !t.docFolder) return '';
+  const { cols, rows } = t.docFolder.tabGrid;
+  const tab = folderTab.get(box.id) ?? 0;
+  const off = tab * rows;
+  const all = itemsIn(s.me.items, 'box', box.id);
+  const names = box.tabs ?? ['Dokumenter', 'Oppskrifter', 'Koder', 'Utklipp'];
+  const tabs = names
+    .map((nm, i) => {
+      const count = all.filter((it) => Math.floor(it.y / rows) === i).length;
+      return `<button class="folder-tab ${i === tab ? 'on' : ''}" data-action="folder-tab" data-box="${box.id}" data-tab="${i}" title="Dobbeltklikk for å gi fanen nytt navn">${esc(nm)}${count ? ` <small>${count}</small>` : ''}</button>`;
+    })
+    .join('');
+  const items = all
+    .filter((it) => Math.floor(it.y / rows) === tab)
+    .map((it) => gridItemView({ ...it, y: it.y - off }, cols, rows))
+    .join('');
+  const key = box.id;
+  if (!panelPos.has(key)) {
+    const k = openPanels.indexOf(key);
+    panelPos.set(key, { x: Math.max(1, 98.5 - (cols * BOX_CELL + 3) - k * 2.5), y: Math.max(1, Math.min(18 + k * 6, 60)) });
+  }
+  const pos = panelPos.get(key)!;
+  return `
+  <div class="box-panel doc-folder" data-panel="${key}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(t)} ${esc(t.name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${key}" aria-label="Lukk">✕</button></div>
+    <div class="folder-tabs">${tabs}</div>
+    <div class="grid box-grid folder-grid" data-grid="box" data-box="${box.id}" data-yoff="${off}" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">${items}</div>
+    <div class="meter-sub muted">Bare papirer: dokumenter, lapper, oppskrifter, utklipp, kuponger og aviser.</div>
+  </div>`;
+}
+
 /** Kokevinduet: råvarer inn → ferdig ut, av/på og styrke 1–4. */
 function kettlePanel(s: GameState, k: Item, n: number): string {
   const st = k.kettle ?? { on: false, level: 1 };
@@ -1040,7 +1086,7 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
   const pos = panelPos.get(k.id)!;
   return `
   <div class="box-panel kettle-panel ${hot ? 'hot' : ''}" data-panel="${k.id}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
-    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${KETTLE.emoji} ${esc(KETTLE.name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${k.id}" aria-label="Lukk">✕</button></div>
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(KETTLE)} ${esc(KETTLE.name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${k.id}" aria-label="Lukk">✕</button></div>
     <div class="pot-grids">
       ${grid('pot_in', KETTLE.input, 'Råvarer')}
       <div class="pot-arrow">${hot ? '🔥' : '➜'}</div>
@@ -1079,6 +1125,35 @@ function cellView(s: GameState, m: Item): string {
   </div>`;
 }
 
+/** Sikringsboks med automatsikringer (vipp opp igjen / slår seg på selv), eller forbikoblet (ingen sikringer, måleren står). */
+function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart' | 'bypass'): string {
+  const stall = myStall(s)!;
+  const items = s.me.items;
+  const bt = ITEM_TYPES[box.typeId];
+  const m = s.me.meter;
+  const slots = (box.fuse?.slots ?? []).filter((e): e is string => !!e);
+  const list =
+    kind === 'bypass'
+      ? '<p class="meter-sub">🔧 Ledningene går rett forbi. Ingenting kan ryke, og måleren står stille.</p>'
+      : `<ul class="breakers">${slots
+          .map((entry) => {
+            const nm = entryName(entry, items);
+            const tripped = !!box.fuse?.tripped?.includes(entry);
+            const off = !tripped && !!box.fuse?.off?.includes(entry);
+            const st = feedStatus(stall.power, items, entry);
+            const label = tripped ? (kind === 'smart' ? '⚡ Gått – slår seg på selv' : '⚡ Gått – vipp opp') : off ? 'Av' : st === 'ok' ? `${kwStr(entryKw(entry, items))} kW` : 'ingen strøm inn';
+            return `<li class="breaker ${tripped ? 'tripped' : off ? 'off' : 'on'}"><span>${icon(nm)} ${esc(nm.name)}</span>
+              <button class="breaker-switch" data-action="fuse-toggle" data-entry="${esc(entry)}" title="${tripped ? 'Vipp sikringen opp igjen' : off ? 'Slå på' : 'Slå av'}" aria-pressed="${!tripped && !off}"><i></i></button>
+              <small class="muted">${label}</small></li>`;
+          })
+          .join('') || '<li class="muted">Ingenting er plugget inn.</li>'}</ul>`;
+  const digits = m ? m.kwh.toFixed(1).padStart(7, '0').replace('.', ',') : '—';
+  return smallPanel(box.id, n, 'fuse-panel', `${icon(bt)} ${esc(bt.name)}`, `
+    <div class="meter ${kind === 'bypass' ? 'stopped' : ''}"><span class="meter-digits">${digits}</span><span class="meter-unit">kWh</span></div>
+    <div class="meter-sub muted">Nå: ${kwStr(totalKw(stall.power, items))} kW${kind === 'bypass' ? ' · måles ikke' : ` · siden regningen: ${m ? `${kwStr(m.sinceBill)} kWh ≈ ${kr(m.cost)}` : '—'}`}</div>
+    ${list}`, 24, 46);
+}
+
 /** Ladestasjonen: fire batteriplasser som lades mens den får strøm. */
 function chargerPanel(s: GameState, c: Item, n: number): string {
   const stall = myStall(s);
@@ -1094,7 +1169,7 @@ function chargerPanel(s: GameState, c: Item, n: number): string {
         ? '✅ Alle batteriene er fulle'
         : 'Legg batterier her for å lade dem';
   const { cols, rows } = CHARGER.input;
-  return smallPanel(c.id, n, 'charger-panel', `${CHARGER.emoji} ${esc(entryName(itemSocket(CHARGER.id, c.id), items).name)}`, `
+  return smallPanel(c.id, n, 'charger-panel', `${icon(CHARGER)} ${esc(entryName(itemSocket(CHARGER.id, c.id), items).name)}`, `
     <div class="grid box-grid" data-grid="pot_in" data-box="${c.id}" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">
       ${itemsIn(items, 'pot_in', c.id).map((i) => gridItemView(i, cols, rows)).join('')}
     </div>
@@ -1137,12 +1212,12 @@ function stripPanel(s: GameState, strip: Item, n: number): string {
           <button class="small ghost" data-action="plug-pick" data-strip="${strip.id}" data-index="${i}">Plugg inn</button></li>`;
       const nm = entryName(e, items);
       const on = powered.has(e);
-      return `<li class="sock ${on ? 'on' : ''}"><span class="sock-n">${i + 1}</span><span>${nm.emoji} ${esc(nm.name)}</span>
+      return `<li class="sock ${on ? 'on' : ''}"><span class="sock-n">${i + 1}</span><span>${icon(nm)} ${esc(nm.name)}</span>
         <span class="muted">${on ? `${kwStr(entryKw(e, items))} kW` : 'ingen strøm'}</span>
         <button class="small ghost" data-action="strip-plug" data-strip="${strip.id}" data-index="${i}">Trekk ut</button></li>`;
     })
     .join('');
-  return smallPanel(strip.id, n, 'strip-panel', `${STRIP.emoji} ${esc(entryName(stripEntry(strip.id), items).name)}`, `
+  return smallPanel(strip.id, n, 'strip-panel', `${icon(STRIP)} ${esc(entryName(stripEntry(strip.id), items).name)}`, `
     <ul class="sock-list">${rows}</ul>
     <div class="pot-status">${feed}</div>`);
 }
@@ -1156,6 +1231,9 @@ function fusePanel(s: GameState, box: Item, n: number): string {
   if (!stall) return '';
   const items = s.me.items;
   const slots = box.fuse?.slots ?? [];
+  const kind = fuseboxKind(box.typeId) ?? 'screw';
+  const bt = ITEM_TYPES[box.typeId];
+  if (kind !== 'screw') return autoFusePanel(s, box, n, kind);
   const spares = items.filter((i) => i.typeId === FUSE.id && i.place !== 'fuse' && usable(items, i)).length;
   const { rows } = FUSE_GRID;
   const fuses = itemsIn(items, 'fuse', box.id).map((i) => gridItemView(i, 1, rows)).join('');
@@ -1172,7 +1250,7 @@ function fusePanel(s: GameState, box: Item, n: number): string {
           : st === 'fuse-off'
             ? 'ingen sikring'
             : 'ingen strøm inn';
-    return `<li class="fuse-label ${st === 'fuse-blown' ? 'blown' : st === 'ok' ? 'on' : ''}"><span>${nm.emoji} ${esc(nm.name)}</span><span class="muted">${note}</span></li>`;
+    return `<li class="fuse-label ${st === 'fuse-blown' ? 'blown' : st === 'ok' ? 'on' : ''}"><span>${icon(nm)} ${esc(nm.name)}</span><span class="muted">${note}</span></li>`;
   }).join('');
   const m = s.me.meter;
   const digits = m ? m.kwh.toFixed(1).padStart(7, '0').replace('.', ',') : '—';
@@ -1180,7 +1258,7 @@ function fusePanel(s: GameState, box: Item, n: number): string {
   const roll = tool && m
     ? `<button class="small ghost meter-roll" data-action="meter-rollback" ${m.rolledToday ? 'disabled' : ''} title="Skrur måleren tilbake inntil ${METER_ROLLBACK_KWH} kWh (én gang per dag)">🪛 ${m.rolledToday ? 'Skrudd i dag' : 'Skru måleren tilbake'}</button>`
     : '';
-  return smallPanel(box.id, n, 'fuse-panel', `${FUSEBOX.emoji} ${esc(FUSEBOX.name)}`, `
+  return smallPanel(box.id, n, 'fuse-panel', `${icon(bt)} ${esc(bt.name)}`, `
     <div class="meter"><span class="meter-digits">${digits}</span><span class="meter-unit">kWh</span></div>
     <div class="meter-sub muted">Nå: ${kwStr(totalKw(stall.power, items))} kW · siden regningen: ${m ? `${kwStr(m.sinceBill)} kWh ≈ ${kr(m.cost)}` : '—'}</div>
     <div class="fuse-board">
@@ -1265,7 +1343,7 @@ function makerPanel(s: GameState, m: Item, n: number): string {
   const pos = panelPos.get(m.id)!;
   return `
   <div class="box-panel kettle-panel maker-panel ${hot ? 'hot' : ''}" data-panel="${m.id}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
-    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${def.emoji} ${esc(entryName(itemSocket(m.typeId, m.id), s.me.items).name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${m.id}" aria-label="Lukk">✕</button></div>
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(ITEM_TYPES[m.typeId])} ${esc(entryName(itemSocket(m.typeId, m.id), s.me.items).name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${m.id}" aria-label="Lukk">✕</button></div>
     <div class="pot-grids">
       ${grid('pot_in', def.input, 'Råvarer')}
       <div class="pot-arrow">${hot && ready ? def.emoji : '➜'}</div>
@@ -1310,7 +1388,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
   const pos = panelPos.get(m.id)!;
   return `
   <div class="box-panel kettle-panel ${hot ? 'hot' : ''}" data-panel="${m.id}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
-    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${def.emoji} ${esc(entryName(itemSocket(m.typeId, m.id), s.me.items).name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${m.id}" aria-label="Lukk">✕</button></div>
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(ITEM_TYPES[m.typeId])} ${esc(entryName(itemSocket(m.typeId, m.id), s.me.items).name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${m.id}" aria-label="Lukk">✕</button></div>
     <div class="pot-grids">
       ${grid('pot_in', def.input, shred ? 'Inn' : 'Poser')}
       <div class="pot-arrow">${hot ? def.emoji : '➜'}</div>
@@ -1504,7 +1582,7 @@ function slotButton(s: GameState, sl: MarketSlot): string {
   }
   const mine = sl.stall.id === s.me.stallId;
   // Bare salgsvarer (en kjele på bordet er ikke en vare).
-  const goods = [...new Set(sl.stall.counter.filter((c) => PRODUCT_BY_ID[c.typeId]).map((c) => PRODUCT_BY_ID[c.typeId].emoji))].join('');
+  const goods = [...new Set(sl.stall.counter.filter((c) => PRODUCT_BY_ID[c.typeId]).map((c) => c.typeId))].map((id) => icon(PRODUCT_BY_ID[id])).join('');
   return `<button class="slot taken ${mine ? 'mine' : ''}" data-action="${mine ? 'home' : 'visit'}" data-stall="${sl.stall.id}">
     <span class="slot-no">#${sl.index + 1}</span>
     <span class="slot-name"><i class="sign-dot ${sl.stall.serving}" title="${sl.stall.serving === 'away' ? 'Straks tilbake' : SIGN_LABEL[sl.stall.sign]}"></i>${esc(sl.stall.name)}</span>
@@ -1596,7 +1674,7 @@ function storeView(s: GameState, storeId: string): string {
     const n = cart[it.typeId] ?? 0;
     const art = t.image ? `<img src="${t.image}" alt="" draggable="false">` : `<span class="shop-emoji">${t.emoji}</span>`;
     const p = PRODUCT_BY_ID[it.typeId];
-    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare til kjelen og maskinene';
+    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare';
     const coupon = bestCoupon(s, storeId, it.typeId);
     return `<div class="shop-card ${it.deal ? 'deal' : ''} ${isRare(it.typeId) ? 'rare' : ''} ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
       <div class="shop-art">${art}<span class="shop-size">${t.size.w}×${t.size.h}</span>
@@ -1731,7 +1809,7 @@ function klasView(s: GameState): string {
           : `<button class="small" data-action="buy-device" data-device="${d.id}" ${swaps ? 'title="Bytter ut lyslenka du har"' : ''}>${swaps ? 'Bytt til denne' : 'Kjøp'}</button>`,
       });
     });
-  const electric = ELECTRICS.map((e) => {
+  const electric = ELECTRICS.filter((e) => !e.dealerOnly && e.id !== FUSEBOX.id).map((e) => {
     const n = has(e.id);
     const full = !!e.max && n >= e.max;
     return klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: esc(e.blurb), have: n, buy: full ? '<span class="pill">Har</span>' : form(e.id, e.max ?? 10) });
@@ -1836,8 +1914,8 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
     <h1 class="paper-headline">Eivblås Halvstrøms hjørne</h1>
     <section class="paper-recipe">
       <div class="paper-kicker">🍲 Dagens oppskrift: ${esc(p.recipe.name)}</div>
-      <p>Legg ${p.recipe.inputs.map(esc).join(' og ')} i kjelen. Kok på <b>styrke ${p.recipe.level}</b> i én time,
-        så får du ${p.recipe.outputs.map(esc).join(' og ')}.</p>
+      <p>Legg ${recipeList(p.recipe.inputs)} i kjelen. Kok på <b>styrke ${p.recipe.level}</b> i én time,
+        så får du ${recipeList(p.recipe.outputs)}.</p>
       ${copyRecipeButton(s, p, !!held)}
     </section>
     <blockquote class="paper-quote">«${esc(p.recipe.quote)}»<cite>– Eivblå Halvstrøm</cite></blockquote>
@@ -1845,8 +1923,8 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
       p.machineRecipe
         ? `<section class="paper-recipe">
             <div class="paper-kicker">🛠️ Fra verkstedet: ${esc(p.machineRecipe.name)}</div>
-            <p>Legg ${p.machineRecipe.inputs.map(esc).join(' og ')} i ${esc(p.machineRecipe.machineName.toLowerCase())}en, velg programmet og la den stå i
-              <b>${p.machineRecipe.hours} ${p.machineRecipe.hours === 1 ? 'time' : 'timer'}</b>. Da får du ${p.machineRecipe.outputs.map(esc).join(' og ')}.
+            <p>Legg ${recipeList(p.machineRecipe.inputs)} i ${esc(p.machineRecipe.machineName.toLowerCase())}en, velg programmet og la den stå i
+              <b>${p.machineRecipe.hours} ${p.machineRecipe.hours === 1 ? 'time' : 'timer'}</b>. Da får du ${recipeList(p.machineRecipe.outputs)}.
               Feil ingredienser gir en mislykket batch.</p>
             ${copyRecipeButton(s, p, !!held, 'machine')}
           </section>`
@@ -2074,8 +2152,7 @@ function itemView(s: GameState, it: Item): string {
   if (it.typeId === RECIPE_NOTE) {
     const r = it.recipe ? BOOK_BY_ID[it.recipe] : undefined;
     if (!r) return '<p class="muted">Lappen er uleselig.</p>';
-    const list = (m: Record<string, number>) =>
-      Object.entries(m).map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${esc(ITEM_TYPES[id].name.toLowerCase())}`).join(' og ');
+    const list = (m: Record<string, number>) => recipeList(linesOf(m));
     const how = r.machine
       ? `${list(r.inputs)} i ${esc(MAKER_BY_ID[r.machine].name.toLowerCase())}.<br>Programmet «${esc(r.name)}», ${r.hours} timer.`
       : `${list(r.inputs)} i kjelen.<br>Styrke <b>${r.level}</b>, én time.`;
@@ -2164,7 +2241,7 @@ function plugView(s: GameState, strip: number | null, index: number): string {
     ? loose
         .map((e) => {
           const nm = entryName(e, s.me.items);
-          return `<button class="plug-choice" data-action="plug-choose" data-entry="${esc(e)}">${nm.emoji} ${esc(nm.name)}</button>`;
+          return `<button class="plug-choice" data-action="plug-choose" data-entry="${esc(e)}">${icon(nm)} ${esc(nm.name)}</button>`;
         })
         .join('')
     : '<p class="muted">Alt du har står allerede i en kontakt. Kjøp flere apparater eller grenuttak hos Klas Olsen.</p>';
@@ -2388,7 +2465,7 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
       place: el.dataset.grid as Spot['place'],
       boxId: el.dataset.box ? Number(el.dataset.box) : null,
       x: Math.round((px - r.left) / cell - d.grabCX),
-      y: Math.round((py - r.top) / cell - d.grabCY),
+      y: Math.round((py - r.top) / cell - d.grabCY) + Number(el.dataset.yoff ?? 0),
     };
   }
   if (inPanel) return null; // i et vindu, men ikke over et rutenett
@@ -2446,14 +2523,18 @@ function showPreview(d: Drag | null) {
   } else {
     const grid = gridOf(state!.me.items, spot.place, spot.boxId);
     if (!grid) return;
+    const sel = spot.place === 'box' || spot.place === 'cell' ? `[data-grid="${spot.place}"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
+    const target = document.querySelector<HTMLElement>(sel);
+    // Dokumentmappa viser én fane (5 rader) av gangen.
+    const yoff = Number(target?.dataset.yoff ?? 0);
+    const rows = target?.dataset.yoff !== undefined ? Number(target.style.getPropertyValue('--rows')) : grid.rows;
     Object.assign(el.style, {
       left: `${(spot.x / grid.cols) * 100}%`,
-      top: `${(spot.y / grid.rows) * 100}%`,
+      top: `${((spot.y - yoff) / rows) * 100}%`,
       width: `${(d.item.w / grid.cols) * 100}%`,
-      height: `${(d.item.h / grid.rows) * 100}%`,
+      height: `${(d.item.h / rows) * 100}%`,
     });
-    const sel = spot.place === 'box' || spot.place === 'cell' ? `[data-grid="${spot.place}"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
-    document.querySelector(sel)?.appendChild(el);
+    target?.appendChild(el);
   }
 }
 
@@ -2557,7 +2638,7 @@ function endDrag(cancelled = false) {
       phonePage = 'home';
     } else if (t.kind === 'tool') modal = { kind: 'tool', itemId: d.item.id };
     else if (t.kind === 'ingredient')
-      toast(t.price <= 0 ? `${t.emoji} ${t.name}. Den hører hjemme i søpla.` : `${t.emoji} ${t.name} – råvare til kjelen. Oppskriftene står i avisa.`);
+      toast(t.price <= 0 ? `${t.emoji} ${t.name}. Den hører hjemme i søpla.` : `${t.emoji} ${t.name} – råvare.`);
     else modal = { kind: 'product', productId: t.id };
     return render();
   }
@@ -2808,6 +2889,17 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'phone-close') phoneOpen = false;
   if (action === 'open-car') togglePanel(Number(el.dataset.item));
+  if (action === 'folder-tab') {
+    const boxId = Number(el.dataset.box);
+    const tab = Number(el.dataset.tab);
+    if (folderTab.get(boxId) === tab && (e as MouseEvent).detail >= 2) {
+      const now = state?.me.items.find((i) => i.id === boxId)?.tabs?.[tab] ?? '';
+      const name = prompt('Nytt navn på fanen (maks 16 tegn):', now);
+      if (name && name.trim()) void act('/api/folder/rename', { itemId: boxId, tab, name });
+      return;
+    }
+    folderTab.set(boxId, tab);
+  }
   if (action === 'buy-car') {
     const c = CAR_BY_ID[el.dataset.car ?? ''];
     if (c && confirm(`Kjøpe ${c.name}? Den gamle bilen tas i innbytte.`)) void act('/api/car/buy', { car: c.id }, `🚗 ${c.name} står parkert ved boden.`);

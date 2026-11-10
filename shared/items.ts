@@ -1,7 +1,7 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
-import { CELL_GRID, FOLDER_BY_ID, PHONE, FUSE, FUSEBOX, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
+import { CELL_GRID, FOLDER_BY_ID, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 import { BACKPACK, CAR_BY_ID } from './car.ts';
 
@@ -30,7 +30,7 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   const box = items.find((i) => i.id === boxId);
   const t = box && ITEM_TYPES[box.typeId];
   if (place === 'box') return t?.kind === 'container' ? t.inner : null;
-  if (place === 'fuse') return t?.id === FUSEBOX.id ? FUSE_GRID : null;
+  if (place === 'fuse') return t && fuseboxKind(t.id) === 'screw' ? FUSE_GRID : null; // bare boksen med skrusikringer
   // Batteriplass: maskinene, og elbilen (ID Fuzz).
   if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' || CAR_BY_ID[t?.id ?? '']?.fuel === 'batteri' ? CELL_GRID : null;
   if (t?.kind === 'charger') return place === 'pot_in' ? t.input : null;
@@ -123,6 +123,14 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
     if (items.some((i) => i.place === 'carry' && i.x === spot.x && i.id !== item.id)) return spot.x === 2 ? 'Du har allerede en ryggsekk på.' : 'Den hånden er opptatt.';
     return null;
   }
+  // Dokumentmappa: bare papirer, og ingenting som går over to faner.
+  const folder = spot.place === 'box' && parent ? (ITEM_TYPES[parent.typeId] as { docFolder?: { tabGrid: GridSize } }).docFolder : undefined;
+  if (folder) {
+    const paperish = (t.kind === 'doc' && t.id !== 'sapeavtrykk' && t.id !== 'kopinokkel') || t.kind === 'policy' || t.kind === 'paper';
+    if (!paperish) return 'I dokumentmappa er det bare plass til papirer: dokumenter, lapper, oppskrifter, utklipp og aviser.';
+    const rows = folder.tabGrid.rows;
+    if (Math.floor(spot.y / rows) !== Math.floor((spot.y + t.size.h - 1) / rows)) return 'Det får ikke plass på én fane.';
+  }
   const shreddable = t.kind === 'paper' || t.kind === 'doc' || t.kind === 'policy' || t.kind === 'folded' || (t.kind === 'container' && !!t.shopBag);
   if (t.kind === 'container') {
     if (intoFolder && t.shopBag) {
@@ -151,7 +159,7 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
     return 'Her kommer det ferdige ut.';
   if (spot.place === 'fuse' && t.id !== FUSE.id) return 'Her passer bare en skrusikring.';
   if (spot.place === 'mail' && t.id !== NEWSPAPER.id && t.id !== 'skjenkebevilling') return 'I postkassa ligger det bare post.';
-  if (t.id === FUSEBOX.id && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0) return 'Ta ut sikringene før du kaster sikringsboksen.';
+  if (isFusebox(t.id) && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0) return 'Ta ut sikringene før du kaster sikringsboksen.';
   if (t.id === PHONE && spot.place === 'trash') return 'Telefonen kaster du ikke – den trenger du.';
   // Låst safe: ingenting inn eller ut før den er låst opp med koden.
   const lockedSafe = (id: number | null) => !!items.find((b) => b.id === id)?.safe?.locked;
@@ -199,7 +207,7 @@ export function findStorageSpot(items: Item[], typeId: string): Spot | null {
   const s = findFree(w, h, itemsIn(items, 'storage', null), STORAGE_GRID);
   if (s) return { place: 'storage', boxId: null, ...s };
   if (ITEM_TYPES[typeId].kind === 'container') return null;
-  for (const box of items.filter((i) => ITEM_TYPES[i.typeId].kind === 'container' && (i.place === 'storage' || i.place === 'counter'))) {
+  for (const box of items.filter((i) => ITEM_TYPES[i.typeId].kind === 'container' && !(ITEM_TYPES[i.typeId] as { docFolder?: unknown }).docFolder && (i.place === 'storage' || i.place === 'counter'))) {
     const grid = gridOf(items, 'box', box.id)!;
     const b = findFree(w, h, itemsIn(items, 'box', box.id), grid);
     if (b) return { place: 'box', boxId: box.id, ...b };

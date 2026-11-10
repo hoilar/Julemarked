@@ -142,8 +142,7 @@ export function buildPaper(
   // Luguberte oppskrifter står ikke i avisa (dem får du av Fyren).
   const legal = (o: Record<string, number>) => Object.keys(o).every((id) => (ITEM_TYPES[id] as { category?: string }).category !== 'lugubert');
   const r = pick(RECIPES.filter((x) => legal(x.outputs)), hash('oppskrift', marketId, ed.key));
-  const list = (m: Record<string, number>) =>
-    Object.entries(m).map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`);
+  const list = (m: Record<string, number>) => Object.entries(m).map(([id, n]) => ({ id, n }));
   return {
     wanted: { ...thiefOf(marketId, ed.key), reward: THIEF_REWARD, caught: thiefCaught },
     recipe: {

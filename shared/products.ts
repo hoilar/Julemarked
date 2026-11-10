@@ -73,6 +73,7 @@ export interface Container {
   imageOpen?: string; // bilde når safen er låst opp (bilen: bagasjerommet åpent)
   backpack?: boolean; // ryggsekk: bæres på ryggen
   car?: boolean; // bilen: står parkert ved boden, inner = bagasjerommet
+  docFolder?: { tabs: number; tabGrid: GridSize }; // dokumentmappe: faner over hverandre i inner (hver fane er tabGrid)
 }
 
 /** Avisa fra postkassa. Kan ikke kjøpes eller selges; hver gjenstand er én utgave. */
@@ -165,7 +166,15 @@ export interface Electric {
   size: Size;
   blurb: string;
   max?: number; // hvor mange man kan eie
+  fusebox?: FuseboxKind; // sikringsbokser: hva slags sikringer den har
+  dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
 }
+
+/**
+ * Sikringsboksene. screw = skrusikringer (ryker, byttes). auto = automatsikringer (vippes opp igjen).
+ * smart = automatsikringer som slår seg på igjen av seg selv. bypass = forbikoblet: ingen sikringer, og måleren står stille.
+ */
+export type FuseboxKind = 'screw' | 'auto' | 'smart' | 'bypass';
 
 /**
  * En maskin med programmer (bakemaskin, strikkemaskin, dekormaskin): råvarer inn, ferdige varer ut.
@@ -475,9 +484,51 @@ export const FUSEBOX: Electric = {
   image: '/art/elektro/sikringsboks.png',
   price: 449,
   size: { w: 2, h: 2 },
-  blurb: 'En vippebryter for hvert apparat, og en måler som viser hvor mye strøm boden har brukt.',
+  blurb: 'En skrusikring for hvert apparat, og en måler som viser hvor mye strøm boden har brukt.',
   max: 1,
+  fusebox: 'screw',
 };
+export const FUSEBOX_AUTO: Electric = {
+  kind: 'electric',
+  id: 'sikringsboks_automat',
+  name: 'Sikringsboks med automatsikringer',
+  emoji: '🎛️',
+  image: '/art/elektro/sikringsboks.png',
+  price: 1499,
+  size: { w: 2, h: 2 },
+  blurb: 'Går en sikring, vipper du den bare opp igjen. Ingen skrusikringer å kjøpe.',
+  max: 1,
+  fusebox: 'auto',
+};
+export const FUSEBOX_SMART: Electric = {
+  kind: 'electric',
+  id: 'sikringsboks_smart',
+  name: 'Smart sikringsboks',
+  emoji: '🎛️',
+  image: '/art/elektro/sikringsboks.png',
+  price: 2499,
+  size: { w: 2, h: 2 },
+  blurb: 'Automatsikringer som slår seg på igjen av seg selv når strømmen er tilbake.',
+  max: 1,
+  fusebox: 'smart',
+};
+/** Forbikoblet sikringsboks fra Fyren: ingen sikringer som ryker, og måleren står stille. Ulovlig. */
+export const FUSEBOX_BYPASS: Electric = {
+  kind: 'electric',
+  id: 'sikringsboks_bypass',
+  name: 'Sikringsboks, forbikoblet',
+  emoji: '🎛️',
+  image: '/art/elektro/sikringsboks.png',
+  price: 700,
+  size: { w: 2, h: 2 },
+  blurb: 'Koblet forbi både sikringene og måleren. Gratis strøm, ingenting ryker – helt til Tilsynsmannen ser den.',
+  max: 1,
+  fusebox: 'bypass',
+  dealerOnly: true,
+};
+export const FUSEBOXES = [FUSEBOX, FUSEBOX_AUTO, FUSEBOX_SMART, FUSEBOX_BYPASS];
+export const isFusebox = (typeId: string) => FUSEBOXES.some((b) => b.id === typeId);
+export const fuseboxKind = (typeId: string): FuseboxKind | undefined => FUSEBOXES.find((b) => b.id === typeId)?.fusebox;
 export const TERMINAL: Electric = {
   kind: 'electric',
   id: 'bippsterminal',
@@ -499,7 +550,7 @@ export const FUSE: Electric = {
   size: { w: 1, h: 1 },
   blurb: 'Reservesikring. Ryker en sikring, skrur du inn en ny.',
 };
-export const ELECTRICS: Electric[] = [STRIP, FUSEBOX, TERMINAL, FUSE];
+export const ELECTRICS: Electric[] = [STRIP, FUSEBOX, FUSEBOX_AUTO, FUSEBOX_SMART, FUSEBOX_BYPASS, TERMINAL, FUSE];
 /** En sikring som har røket. Dra den ut av sikringsboksen og kast den. */
 export const BLOWN_FUSE: Electric = {
   kind: 'electric',
@@ -716,6 +767,8 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', image: '/art/safe-liten.png', imageOpen: '/art/safe-liten-apen.png', price: 599, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, safe: true },
   { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
+  // Dokumentmappa: bare papirer. Fire faner du kan gi navn, 5×5 i hver (inner er fanene stablet: 5×20).
+  { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', price: 129, size: { w: 2, h: 3 }, inner: { cols: 5, rows: 20 }, docFolder: { tabs: 4, tabGrid: { cols: 5, rows: 5 } } },
   // Ryggsekken bæres på ryggen og rommer like mye som en pappkartong.
   { kind: 'container', id: 'ryggsekk', name: 'Ryggsekk', emoji: '🎒', image: '/art/ryggsekk.png', price: 249, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 }, backpack: true },
   // Bilene (shared/car.ts): bagasjerommet er rutenettet inni. Kjøpes i Bilbutikken, ikke hos Klas Olsen.

@@ -827,10 +827,24 @@ Klar til innlegging i filene under; spillfiler, kode og klikkfelt er ikke endret
 | `art/devices/alarm-pa.png` | 1536×1024 | Samme alarm, plassert identisk, med blinklyset tent rødt og en svak rød glød rundt (det er dette tyven ser). |
 | `art/devices/ikon-alarm.png` | 128×128 | Ikon til Klas Olsen og grenuttaket: alarmboksen med det røde lyset tent. |
 
+### Bestilt: sikringsbokser og dokumentmappe
+
+I spillet bruker de tre nye sikringsboksene i dag samme bilde som den vanlige, og dokumentmappa vises med 🗂️. Den vanlige og den smarte skal ha **to bilder hver: på og av** (av = grenuttaket er slått av eller hovedsikringen har gått), med samme beskjæring. Samme pikselstil som elektro og verktøy, uten lesbar tekst.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/elektro/sikringsboks-automat.png` | 2×2 | Samme grå boks som den vanlige, men med en rad små svarte vippebrytere (automatsikringer) i stedet for skrusikringer. Ren og ny. |
+| `art/elektro/sikringsboks.png` + `sikringsboks-av.png` | 2×2 | **Ny grafikk til den vanlige** (følger med boden): gammel, grå metallboks med åtte skrusikringer i porselen bak et lite vindu og en mekanisk måler med tallhjul. *På:* måleren lyser svakt / en liten rød lampe er tent. *Av:* samme boks, lampa er mørk (ingen strøm inn). |
+| `art/elektro/sikringsboks-smart.png` + `sikringsboks-smart-av.png` | 2×2 | **Ny grafikk:** moderne hvit boks med vippebrytere og et lite display. *På:* displayet lyser grønt. *Av:* displayet er mørkt. Samme beskjæring på av og på. |
+| `art/elektro/sikringsboks-bypass.png` | 2×2 | Den vanlige grå boksen med lokket på skakke, tape og en tykk kobberledning som går rett forbi – shabby og ulovlig, fra Fyren. |
+| `art/verktoy/dokumentmappe.png` | 2×3 (stående) | Lukket dokumentmappe i brun papp/skinn med strikk rundt og fire fargede faner som stikker opp på toppen. |
+| `art/verktoy/dokumentmappe-apen.png` | ca. 5×6 (bakgrunn til vinduet) | Den åpne mappa sett ovenfra: kremhvitt innerark med svake rutelinjer, fire faner langs toppen (tomme – navnene skrives av spillet). Brukes som bakgrunn i vinduet. |
+
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
+| Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Bestilt: sikringsbokser og dokumentmappe» | ⏳ Bestilt (samme bilde / emoji til de er klare) |
 | Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |
 | Fire kjøretøy (inkludert elektrisk varebil, lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Ferdig laget: bilene, ryggsekken og Bilbutikken (steg 6)» | ✅ i bruk: `art/biler/bil-{tennis,toforr,highass,fuzz}{,-apen}.png` (384×288, felles beskjæring så størrelsen mellom bilene stemmer), `art/ryggsekk.png` (3×3), `art/telefon/app-bilbutikken.png` |
 | Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Ferdig laget: såpe og nøkler (snoking)» | ✅ i bruk: `art/verktoy/{sapestykke,sapeavtrykk,blank-nokkel,kopinokkel}.png` (1×1), `art/verktoy/nokkelmaskin.png` (2×2) |

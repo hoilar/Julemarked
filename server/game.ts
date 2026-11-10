@@ -62,6 +62,8 @@ import {
   PHONE,
   STRIP,
   FUSEBOX,
+  fuseboxKind,
+  isFusebox,
   FUSE,
   BLOWN_FUSE,
   FUSE_SLOTS,
@@ -97,6 +99,9 @@ import {
   INSPECTOR_REP_MAX,
   INSPECTOR_REP_PER_ITEM,
   METER_CATCH_CHANCE,
+  BYPASS_CATCH_CHANCE,
+  BYPASS_FINE,
+  BYPASS_REP_HIT,
   METER_FINE,
   METER_FINE_PER_KWH,
   METER_REP_HIT,
@@ -277,6 +282,7 @@ interface StallRow {
   liquor_order: number; // avisutgaven bevillingen ble bestilt (0 = ingen på vei)
   liquor_ban: number; // spilltid (ms) da man kan kjøpe ny bevilling etter inndragning
   main_blown: number; // 1 = hovedsikringen har gått
+  bypass_kwh: number; // strøm gjennom forbikoblet sikringsboks som ikke er målt
   car_trip: string | null; // JSON (CarTrip): handleturen bilen er på
 }
 
@@ -410,6 +416,7 @@ function itemsOf(stallId: number): Item[] {
       item.wanted = { seed: st.seed, alias: String(st.alias ?? ''), edition: r.edition };
     if (r.type_id === NEWSPAPER.id && st.cut) item.cut = true;
     if (isSafe(r.type_id)) item.safe = { locked: st.locked !== false };
+    if (r.type_id === FOLDER_ID) item.tabs = folderTabs(st.tabs);
     if (r.type_id === KEY_MACHINE && st.job && typeof (st.job as { until?: unknown }).until === 'number') {
       const job = st.job as { stallName: string; until: number };
       item.keyJob = { stallName: String(job.stallName ?? ''), until: job.until };
@@ -431,13 +438,40 @@ function itemsOf(stallId: number): Item[] {
         progress: typeof st.progress === 'number' ? st.progress : 0,
       };
     if (isBattery(r.type_id)) item.charge = typeof st.charge === 'number' ? st.charge : capacityOf(r.type_id); // nye batterier er fulladet
-    if (r.type_id === FUSEBOX.id)
-      item.fuse = { slots: Array.from({ length: FUSE_SLOTS }, (_, n) => (Array.isArray(st.slots) ? ((st.slots as (string | null)[])[n] ?? null) : null)) };
+    if (isFusebox(r.type_id))
+      item.fuse = {
+        slots: Array.from({ length: FUSE_SLOTS }, (_, n) => (Array.isArray(st.slots) ? ((st.slots as (string | null)[])[n] ?? null) : null)),
+        ...(Array.isArray(st.tripped) ? { tripped: st.tripped as string[] } : {}),
+        ...(Array.isArray(st.off) ? { off: st.off as string[] } : {}),
+      };
     return item;
   });
 }
 
 const TOOL_BY_ID = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
+
+// ---------- Dokumentmappa ----------
+
+const FOLDER_ID = 'dokumentmappe';
+const FOLDER_TABS = 4;
+const DEFAULT_TABS = ['Dokumenter', 'Oppskrifter', 'Koder', 'Utklipp'];
+function folderTabs(v: unknown): string[] {
+  const arr = Array.isArray(v) ? v : [];
+  return Array.from({ length: FOLDER_TABS }, (_, n) => (typeof arr[n] === 'string' && arr[n] ? String(arr[n]) : DEFAULT_TABS[n]));
+}
+
+/** Gir en fane i dokumentmappa et nytt navn. */
+export function renameFolderTab(player: PlayerRow, itemId: number, tab: number, name: string) {
+  const stall = myStall(player);
+  const item = itemsOf(stall.id).find((i) => i.id === itemId && i.typeId === FOLDER_ID);
+  if (!item) throw new GameError('Fant ikke dokumentmappa.');
+  if (!Number.isInteger(tab) || tab < 0 || tab >= FOLDER_TABS) throw new GameError('Ugyldig fane.');
+  const clean = name.replace(/\s+/g, ' ').trim().slice(0, 16);
+  if (!clean) throw new GameError('Fanen må ha et navn.');
+  const tabs = folderTabs(rawState(item.id).tabs);
+  tabs[tab] = clean;
+  saveState(item.id, { ...rawState(item.id), tabs });
+}
 
 /** Har boden et verktøy i hende (ikke i søpla, ikke på vei)? */
 function holds(items: Item[], typeId: string): Item | undefined {
@@ -567,6 +601,7 @@ export function migrate() {
     // Alle boder har en smarttelefon under disken (klokke, bank, nettbutikk og varsler).
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterPhone(s.id);
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterCar(s.id);
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterFusebox(s.id);
     // Sikringsbokser fra før skrusikringene ble gjenstander: gi plassene sikringer.
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) {
       const box = itemsOf(s.id).find((i) => i.typeId === FUSEBOX.id);
@@ -600,6 +635,45 @@ export function migrate() {
 }
 
 /** Alle boder har en bil parkert ved siden av (startbilen er gratis). */
+/** Alle boder har den vanlige sikringsboksen (med skrusikringer) fra start. */
+function giveStarterFusebox(stallId: number) {
+  const items = itemsOf(stallId);
+  if (items.some((i) => isFusebox(i.typeId))) return;
+  const spot = findStorageSpot(items, FUSEBOX.id);
+  if (!spot) return;
+  const boxId = Number(q.insertItem.run(stallId, FUSEBOX.id, spot.place, spot.boxId, spot.x, spot.y, null).lastInsertRowid);
+  // Full av skrusikringer, så alt du plugger inn senere får strøm.
+  for (let y = 0; y < FUSE_SLOTS; y++) q.insertItem.run(stallId, FUSE.id, 'fuse', boxId, 0, y, null);
+  syncFuseSlots(stallId);
+}
+
+/**
+ * Setter inn en ny sikringsboks i stedet for den gamle: plassene (hvilket apparat hver sikring gir strøm til) følger med,
+ * skrusikringene fra den gamle legges under disken, og den gamle boksen havner i søpla (eller forsvinner hvis søpla er full).
+ */
+function installFusebox(stallId: number, newBoxId: number): string | null {
+  const items = itemsOf(stallId);
+  const old = items.find((i) => isFusebox(i.typeId) && i.id !== newBoxId && !isTrashed(items, i) && !isUndelivered(items, i));
+  if (!old) {
+    syncFuseSlots(stallId, items.find((i) => i.id === newBoxId)?.typeId === FUSEBOX.id);
+    return null;
+  }
+  const oldState = rawState(old.id) as { slots?: unknown };
+  saveState(newBoxId, { slots: oldState.slots ?? [] });
+  for (const f of itemsIn(items, 'fuse', old.id)) {
+    if (f.typeId !== FUSE.id) { q.deleteItem.run(f.id); continue; } // røkne sikringer kastes
+    const spot = findStorageSpot(itemsOf(stallId), FUSE.id);
+    if (spot) q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, f.id);
+    else q.deleteItem.run(f.id);
+  }
+  const trash = findTrashSpot(itemsOf(stallId), old.typeId);
+  saveState(old.id, {});
+  if (trash) q.moveItem.run('trash', null, trash.x, trash.y, old.id);
+  else q.deleteItem.run(old.id);
+  syncFuseSlots(stallId, items.find((i) => i.id === newBoxId)?.typeId === FUSEBOX.id);
+  return ITEM_TYPES[old.typeId].name;
+}
+
 function giveStarterCar(stallId: number) {
   if (itemsOf(stallId).some((i) => isCar(i.typeId))) return;
   q.insertItem.run(stallId, START_CAR, 'car', null, 0, 0, null);
@@ -807,6 +881,7 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
     db.prepare('UPDATE stalls SET storage_26 = 1 WHERE id = ?').run(id);
     giveStarterPhone(id);
     giveStarterCar(id);
+    giveStarterFusebox(id);
     deliverPapers(market, nowFor(market));
     event(market, null, nowFor(market), `${player.name} har leid plass ${slotIndex + 1} i ${def.street}n og åpnet «${stallName}».`);
   });
@@ -853,12 +928,19 @@ export function buy(player: PlayerRow, typeId: string, qty: number) {
   // Varer og råvarer kjøpes i nettbutikkene nå; her (Klas Olsen) er det esker og kontorrekvisita.
   if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
   if (t.kind === 'container' && t.car) throw new GameError('Biler kjøper du i Bilbutikken på telefonen.');
+  if (t.kind === 'electric' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
   if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery'))
     throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
   if (int(qty, 'antall') < 1 || qty > 100) throw new GameError('Ugyldig antall.');
   const market = marketOf(player);
   tx(() => {
     const stall = myStall(player);
+    if (t.kind === 'electric' && isFusebox(t.id)) {
+      if (t.id === FUSEBOX.id) throw new GameError('Den vanlige sikringsboksen følger med boden.');
+      const items = itemsOf(stall.id);
+      if (items.some((i) => i.typeId === t.id && !isTrashed(items, i))) throw new GameError(`Du har allerede ${t.name.toLowerCase()}.`);
+      if (qty > 1) throw new GameError('Du kan bare ha én sikringsboks.');
+    }
     if (t.kind === 'electric' && t.max) {
       const items = itemsOf(stall.id);
       const have = items.filter((i) => i.typeId === t.id && !isTrashed(items, i)).length;
@@ -869,7 +951,12 @@ export function buy(player: PlayerRow, typeId: string, qty: number) {
     if (stall.cash < cost) throw new GameError(`Du har ikke råd. Det koster ${cost} kr med levering.`);
     q.setCash.run(stall.cash - cost, stall.id);
     storeNew(stall.id, typeId, qty);
-    if (typeId === FUSEBOX.id) syncFuseSlots(stall.id, true); // leveres med sikringer til det som står i kontaktene
+    if (isFusebox(typeId)) {
+      // Den nye sikringsboksen settes inn i stedet for den gamle.
+      const fresh = itemsOf(stall.id).filter((i) => i.typeId === typeId).sort((a, b) => b.id - a.id)[0];
+      const old = fresh ? installFusebox(stall.id, fresh.id) : null;
+      if (old) event(market, player.id, nowFor(market), `🎛️ ${t.name} er satt inn. Den gamle sikringsboksen ligger i søpla, og skrusikringene ligger under disken.`);
+    }
     if (isSafe(typeId)) armSafes(stall.id);
     q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, typeId, qty, cost);
   });
@@ -1363,7 +1450,13 @@ export function moveItem(player: PlayerRow, itemId: number, place: Place, boxId:
   const spot: Spot = { place, boxId: NESTED.has(place) ? boxId : null, x: int(x, 'plass'), y: int(y, 'plass') };
   const err = placementError(items, item, spot);
   if (err) throw new GameError(err);
+  const installing = isFusebox(item.typeId) && isTrashed(items, item) && spot.place !== 'trash';
   q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, item.id);
+  if (installing) {
+    const old = installFusebox(stall.id, item.id);
+    const market = marketOf(player);
+    if (old) event(market, player.id, nowFor(market), `🎛️ ${ITEM_TYPES[item.typeId].name} er satt inn. Den gamle sikringsboksen ligger i søpla, og skrusikringene ligger under disken.`);
+  }
 }
 
 /** Legger en gjenstand i første ledige plass i søppelkassa. Den kan tas opp igjen til søppelbilen kommer. */
@@ -1734,7 +1827,7 @@ export function buyDevice(player: PlayerRow, deviceId: string) {
       savePower(stall.id, p);
       // Ny lyslenke: ta over sikringsplassen (og sikringen) til den gamle.
       const box = d.light ? fuseboxOf(itemsOf(stall.id)) : undefined;
-      if (box) saveState(box.id, { slots: (box.fuse?.slots ?? []).map((e) => (e && DEVICE_BY_ID[e]?.light ? d.id : e)) });
+      if (box) saveState(box.id, { ...rawState(box.id), slots: (box.fuse?.slots ?? []).map((e) => (e && DEVICE_BY_ID[e]?.light ? d.id : e)) });
       syncFuseSlots(stall.id);
     }
     q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, d.id, 1, cost);
@@ -1781,8 +1874,31 @@ export function toggleSocket(player: PlayerRow, index: number, stripId: number |
 // ---------- Sikringsboksen og måleren ----------
 
 /** (Gammelt) Sikringene i boksen er gjenstander nå – de dras ut og inn. */
-export function toggleFuse(_player: PlayerRow, _entry: string) {
-  throw new GameError('Dra skrusikringen ut av sikringsboksen for å kutte strømmen, og inn igjen for å slå den på.');
+/** Automatsikringer: vipp en sikring som har gått opp igjen, eller slå en av/på. (Skrusikringer dras ut og inn.) */
+export function toggleFuse(player: PlayerRow, entry: string) {
+  const stall = myStall(player);
+  const items = itemsOf(stall.id);
+  const box = fuseboxOf(items);
+  const kind = box && fuseboxKind(box.typeId);
+  if (!box) throw new GameError('Du har ingen sikringsboks.');
+  if (kind === 'bypass') throw new GameError('Sikringsboksen er koblet forbi. Det er ingen sikringer å vippe.');
+  if (kind === 'screw') throw new GameError('Dra skrusikringen ut av sikringsboksen for å kutte strømmen, og inn igjen for å slå den på.');
+  if (!(box.fuse?.slots ?? []).includes(entry)) throw new GameError('Fant ikke sikringen.');
+  const st = rawState(box.id) as { tripped?: string[]; off?: string[] };
+  const tripped = st.tripped ?? [];
+  const off = st.off ?? [];
+  if (tripped.includes(entry)) saveState(box.id, { ...st, tripped: tripped.filter((e) => e !== entry), off: off.filter((e) => e !== entry) });
+  else saveState(box.id, { ...st, off: off.includes(entry) ? off.filter((e) => e !== entry) : [...off, entry] });
+}
+
+/** Smart sikringsboks: sikringer som har gått, slår seg på igjen når strømmen er tilbake i gata. */
+function smartReset(market: MarketRow, s: StallRow, t: number) {
+  const items = itemsOf(s.id);
+  const box = fuseboxOf(items);
+  if (!box || fuseboxKind(box.typeId) !== 'smart' || !box.fuse?.tripped?.length) return;
+  const names = box.fuse.tripped.map((e) => entryName(e, items).name.toLowerCase());
+  saveState(box.id, { ...rawState(box.id), tripped: [] });
+  event(market, s.owner_id, t, `🎛️ Den smarte sikringsboksen slo på igjen: ${names.join(', ')}.`);
 }
 
 /**
@@ -1805,8 +1921,8 @@ function syncFuseSlots(stallId: number, fill = false) {
     const free = slots.indexOf(null);
     if (free >= 0) slots[free] = e;
   }
-  if (JSON.stringify(slots) !== JSON.stringify(before)) saveState(box.id, { slots });
-  if (fill)
+  if (JSON.stringify(slots) !== JSON.stringify(before)) saveState(box.id, { ...rawState(box.id), slots });
+  if (fill && fuseboxKind(box.typeId) === 'screw')
     slots.forEach((e, y) => {
       if (e && !items.some((i) => i.place === 'fuse' && i.boxId === box.id && i.y === y)) q.insertItem.run(stallId, FUSE.id, 'fuse', box.id, 0, y, null);
     });
@@ -1837,6 +1953,21 @@ function blowFuse(market: MarketRow, s: StallRow, t: number, entry: string, why:
   const items = itemsOf(s.id);
   const box = fuseboxOf(items);
   const name = entryName(entry, items).name;
+  const kind = box && fuseboxKind(box.typeId);
+  if (box && kind === 'bypass') return; // forbikoblet: ingenting ryker
+  if (box && (kind === 'auto' || kind === 'smart')) {
+    if (!(box.fuse?.slots ?? []).includes(entry) || box.fuse?.tripped?.includes(entry)) return;
+    saveState(box.id, { ...rawState(box.id), tripped: [...(box.fuse?.tripped ?? []), entry] });
+    event(
+      market,
+      s.owner_id,
+      t,
+      kind === 'smart'
+        ? `⚡ ${why}: automatsikringen til ${name.toLowerCase()} gikk. Den slår seg på igjen av seg selv når strømmen er tilbake.`
+        : `⚡ ${why}: automatsikringen til ${name.toLowerCase()} gikk. Vipp den opp igjen i sikringsboksen.`,
+    );
+    return;
+  }
   if (box) {
     const slot = (box.fuse?.slots ?? []).indexOf(entry);
     const fuse = slot < 0 ? undefined : items.find((i) => i.place === 'fuse' && i.boxId === box.id && i.y === slot && i.typeId === FUSE.id);
@@ -1861,6 +1992,7 @@ export function rollbackMeter(player: PlayerRow) {
     const stall = myStall(player);
     const items = itemsOf(stall.id);
     if (!fuseboxOf(items)) throw new GameError('Du har ingen sikringsboks.');
+    if (fuseboxKind(fuseboxOf(items)!.typeId) === 'bypass') throw new GameError('Måleren er koblet forbi – den står stille uansett.');
     if (!holds(items, SCREWDRIVER)) throw new GameError('Du trenger en skrutrekker.');
     const today = dateKey(t);
     if (stall.meter_day === today) throw new GameError('Du har allerede skrudd på måleren i dag. Den knirker.');
@@ -3209,9 +3341,11 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
     );
   }
   const meterCaught = tampered && hash01('måler-sjekk', market.id, currentEdition(t).key, s.id) < METER_CATCH_CHANCE;
+  const bypassBox = all_.find((i) => fuseboxKind(i.typeId) === 'bypass' && !isTrashed(all_, i) && !isUndelivered(all_, i));
+  const bypassCaught = !!bypassBox && Math.random() < BYPASS_CATCH_CHANCE;
   if (tampered) db.prepare('UPDATE stalls SET meter_tamper = 0 WHERE id = ?').run(s.id); // sporene er borte etter besøket
   let rep = fresh.reputation;
-  if (forged.length === 0 && !meterCaught && plastic === 0 && !liquorIllegal && !liquorEarly && shadyFound.length === 0) {
+  if (forged.length === 0 && !meterCaught && !bypassCaught && plastic === 0 && !liquorIllegal && !liquorEarly && shadyFound.length === 0) {
     q.setReputation.run(Math.min(100, rep + INSPECTOR_REP_CLEAN), s.id);
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} nikket fornøyd og gikk. Omdømme +${INSPECTOR_REP_CLEAN}.`);
     return;
@@ -3258,6 +3392,17 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
       `📋 ${INSPECTOR.name} så alkohol til salgs før kl. ${LIQUOR_FROM_HOUR}. Skjenkebevillingen er inndratt – du kan søke om ny om ${LICENSE_BAN_DAYS} dager. Omdømme −${LICENSE_REVOKE_REP_HIT}.`,
     );
     event(market, null, t, `📋 Kommunen har inndratt skjenkebevillingen til «${s.name}» etter salg før kl. ${LIQUOR_FROM_HOUR}.`);
+  }
+  if (bypassCaught && bypassBox) {
+    // Boksen beslaglegges (strømmen går nå rett på hovedsikringen), og den umålte strømmen kommer på boten.
+    const kwh = Math.round(fresh.bypass_kwh);
+    const fine = BYPASS_FINE + Math.round(fresh.bypass_kwh * METER_FINE_PER_KWH);
+    q.deleteItem.run(bypassBox.id);
+    db.prepare('UPDATE stalls SET bypass_kwh = 0 WHERE id = ?').run(s.id);
+    rep = Math.max(0, rep - BYPASS_REP_HIT);
+    issueBill(market, fresh, t, 'bot', currentEdition(t).key, fine);
+    event(market, s.owner_id, t, `📋 ${INSPECTOR.name} så at sikringsboksen er koblet forbi måleren. Den er beslaglagt. Bot ${fine} kr (ca. ${kwh} kWh umålt strøm) og omdømme −${BYPASS_REP_HIT}.`);
+    event(market, null, t, `📋 ${INSPECTOR.office} beslagla en forbikoblet sikringsboks hos «${s.name}».`);
   }
   if (meterCaught) {
     const kwh = Math.round(fresh.meter_tamper);
@@ -3344,6 +3489,12 @@ function processHour(market: MarketRow, hour: number) {
   for (const s of stalls) {
     if (dark(s)) continue;
     const kw = stallKw(s);
+    const box = fuseboxOf(itemsOf(s.id));
+    if (kw > 0 && box && fuseboxKind(box.typeId) === 'bypass') {
+      db.prepare('UPDATE stalls SET bypass_kwh = bypass_kwh + ? WHERE id = ?').run(kw, s.id);
+      continue;
+    }
+    if (!dark(s)) smartReset(market, s, t);
     if (kw > 0)
       db.prepare('UPDATE stalls SET power_kwh = power_kwh + ?, power_cost = power_cost + ?, meter_kwh = meter_kwh + ? WHERE id = ?').run(
         kw,
