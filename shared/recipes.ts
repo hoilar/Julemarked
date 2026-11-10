@@ -11,6 +11,10 @@ export interface Recipe {
 }
 
 export const RECIPES: Recipe[] = [
+  // Gløggene står før den vanlige: samme flaske pluss alkohol, så den mest spesifikke vinner.
+  { id: 'koseglogg', name: 'Kosegløgg', inputs: { gloggflaske: 1, rodvin: 1 }, outputs: { koseglogg: 6 }, level: 1 },
+  { id: 'styrkeglogg', name: 'Styrkegløgg', inputs: { gloggflaske: 1, rodvin: 1, vodka: 1 }, outputs: { styrkeglogg: 8 }, level: 2 },
+  { id: 'cider', name: 'Varm eplecider', inputs: { eplecider: 1 }, outputs: { varm_cider: 4 }, level: 1 },
   { id: 'glogg', name: 'Varm gløgg', inputs: { gloggflaske: 1 }, outputs: { glogg: 4 }, level: 1 },
   { id: 'mandler', name: 'Brente mandler', inputs: { mandler: 1, sukker: 1 }, outputs: { brente_mandler: 1 }, level: 2 },
   { id: 'marsipan', name: 'Marsipangriser', inputs: { mandler: 1, sukker: 1 }, outputs: { marsipangris: 3 }, level: 1 },

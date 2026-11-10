@@ -155,6 +155,7 @@ import {
   type BillKind,
 } from '../shared/bills.ts';
 import { START_REPUTATION, expectedPrice, priceAppeal, reputationCrowd } from '../shared/mood.ts';
+import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
 import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree } from '../shared/grid.ts';
 import { hash01 } from '../shared/hash.ts';
@@ -240,6 +241,8 @@ interface StallRow {
   sign: SignMode;
   microplastic: number; // mikroplast funnet i søpla (kr/dag til byråkratifondet)
   autogiro: number; // 1 = AvtaleGiro på
+  liquor_license: number; // 1 = har skjenkebevilling
+  liquor_ban: number; // spilltid (ms) da man kan kjøpe ny bevilling etter inndragning
   main_blown: number; // 1 = hovedsikringen har gått
 }
 interface BillRow {
@@ -991,6 +994,7 @@ export function getState(player: PlayerRow): GameState {
       crowd: mine && mine.tip_day === dateKey(t) ? tipPenalty(mine.tip_wrong) : 1,
       gift: mine ? giftFor(market, mine, t) : null,
       autogiro: !!mine?.autogiro,
+      license: { has: !!mine?.liquor_license, bannedUntil: mine && mine.liquor_ban > t ? mine.liquor_ban : null },
       mailPaper: items.some((i) => i.place === 'mail'),
       leads: mine && servingOf(mine) === 'open' ? leadsFor(market, mine, t).filter((l) => l.until > t) : [],
       meter: mine
@@ -2185,6 +2189,22 @@ export function signPolicy(player: PlayerRow, kind: string) {
   });
 }
 
+/** Kjøper skjenkebevilling i Kommunen-appen. Gjelder resten av markedet, til den eventuelt inndras. */
+export function buyLicense(player: PlayerRow) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  tx(() => {
+    const stall = myStall(player);
+    if (stall.liquor_license) throw new GameError('Du har allerede skjenkebevilling.');
+    if (stall.liquor_ban > t)
+      throw new GameError(`Bevillingen din er inndratt. Du kan søke om ny ${formatClock(osloParts(stall.liquor_ban))}.`);
+    if (stall.cash < LICENSE_PRICE) throw new GameError(`Du har ikke råd. Skjenkebevillingen koster ${LICENSE_PRICE} kr.`);
+    q.addCash.run(-LICENSE_PRICE, stall.id);
+    db.prepare('UPDATE stalls SET liquor_license = 1 WHERE id = ?').run(stall.id);
+    event(market, player.id, t, `🏛️ Du fikk skjenkebevilling (${LICENSE_PRICE} kr). Husk: alkohol selges bare etter kl. ${LIQUOR_FROM_HOUR}.`);
+  });
+}
+
 /** Betaler én regning fra kassa. */
 export function payBill(player: PlayerRow, billId: number) {
   const market = marketOf(player);
@@ -2301,7 +2321,7 @@ function inspections(market: MarketRow, t: number, hour: number, passed: number,
   for (const s of stalls) {
     if (inspectorHour(market.id, nowKey, s.id) === hour)
       event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fra ${INSPECTOR.office} står ved disken og studerer varene dine.`);
-    if (inspectorHour(market.id, pastKey, s.id) === passed) inspect(market, t, s);
+    if (inspectorHour(market.id, pastKey, s.id) === passed) inspect(market, t, s, passed);
   }
 }
 
@@ -2309,9 +2329,13 @@ function inspections(market: MarketRow, t: number, hour: number, passed: number,
  * Sjekker bordet og måleren. Falske «hjemmelaget»-etiketter gir bot, mindre omdømme og riktig
  * etikett igjen. En måler som er skrudd tilbake, oppdager han av og til (brutt plombering).
  */
-function inspect(market: MarketRow, t: number, s: StallRow) {
+function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
   const fresh = one<StallRow>(q.stallById, s.id)!;
   const forged = itemsOf(s.id).filter((i) => i.place === 'counter' && i.label === 'forged');
+  // Alkohol på bordet: uten bevilling er det ulovlig; med bevilling bare før kl. 15 (timen han sto der).
+  const liquor = itemsOf(s.id).filter((i) => i.place === 'counter' && isAlcohol(i.typeId));
+  const liquorIllegal = liquor.length > 0 && !fresh.liquor_license;
+  const liquorEarly = liquor.length > 0 && !!fresh.liquor_license && hour < LIQUOR_FROM_HOUR;
   const tampered = fresh.meter_tamper > 0.01;
   // Mikroplast i søpla: +1 kr per stk til byråkratifondet hver dag resten av spillet.
   const all_ = itemsOf(s.id);
@@ -2329,7 +2353,7 @@ function inspect(market: MarketRow, t: number, s: StallRow) {
   const meterCaught = tampered && hash01('måler-sjekk', market.id, currentEdition(t).key, s.id) < METER_CATCH_CHANCE;
   if (tampered) db.prepare('UPDATE stalls SET meter_tamper = 0 WHERE id = ?').run(s.id); // sporene er borte etter besøket
   let rep = fresh.reputation;
-  if (forged.length === 0 && !meterCaught && plastic === 0) {
+  if (forged.length === 0 && !meterCaught && plastic === 0 && !liquorIllegal && !liquorEarly) {
     q.setReputation.run(Math.min(100, rep + INSPECTOR_REP_CLEAN), s.id);
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} nikket fornøyd og gikk. Omdømme +${INSPECTOR_REP_CLEAN}.`);
     return;
@@ -2343,6 +2367,29 @@ function inspect(market: MarketRow, t: number, s: StallRow) {
     const n = `${forged.length} ${forged.length === 1 ? 'vare' : 'varer'}`;
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fant ${n} merket «Hjemmelaget» som er kjøpt i butikk. Bot ${fine} kr og omdømme −${hit}.`);
     event(market, null, t, `📋 ${INSPECTOR.office} avslørte falske «hjemmelaget»-etiketter hos «${s.name}».`);
+  }
+  if (liquorIllegal) {
+    // Beslag, bot på 2 × det kundene forventer å betale, avisoppslag og mindre omdømme.
+    const value = liquor.reduce((n, i) => n + expectedPrice(PRODUCT_BY_ID[i.typeId].basePrice, fresh.reputation, isHomemade(i.label)), 0);
+    const fine = Math.round(value * LIQUOR_FINE_FACTOR);
+    for (const i of liquor) q.deleteItem.run(i.id);
+    rep = Math.max(0, rep - LIQUOR_REP_HIT);
+    issueBill(market, fresh, t, 'bot', currentEdition(t).key, fine);
+    const n = `${liquor.length} ${liquor.length === 1 ? 'alkoholvare' : 'alkoholvarer'}`;
+    event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fant ${n} på bordet uten skjenkebevilling. Alt ble beslaglagt. Bot ${fine} kr og omdømme −${LIQUOR_REP_HIT}.`);
+    event(market, null, t, `📋 ${INSPECTOR.office} beslagla alkohol hos «${s.name}», som solgte uten skjenkebevilling.`);
+  }
+  if (liquorEarly) {
+    const until = t + LICENSE_BAN_DAYS * 24 * HOUR;
+    db.prepare('UPDATE stalls SET liquor_license = 0, liquor_ban = ? WHERE id = ?').run(until, s.id);
+    rep = Math.max(0, rep - LICENSE_REVOKE_REP_HIT);
+    event(
+      market,
+      s.owner_id,
+      t,
+      `📋 ${INSPECTOR.name} så alkohol til salgs før kl. ${LIQUOR_FROM_HOUR}. Skjenkebevillingen er inndratt – du kan søke om ny om ${LICENSE_BAN_DAYS} dager. Omdømme −${LICENSE_REVOKE_REP_HIT}.`,
+    );
+    event(market, null, t, `📋 Kommunen har inndratt skjenkebevillingen til «${s.name}» etter salg før kl. ${LIQUOR_FROM_HOUR}.`);
   }
   if (meterCaught) {
     const kwh = Math.round(fresh.meter_tamper);

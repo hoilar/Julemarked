@@ -2,13 +2,14 @@
 
 Planlegging av nye varer, råvarer og gameplay.
 
-**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Alkohol, Lugubert og resten av systemene er ikke bygget.
+**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Lugubert og resten av systemene er ikke bygget.
 Kategoriene finnes i `shared/categories.ts`. ★ = sjelden: dukker bare opp noen dager, i én butikk, med lite på lager.
 
 ## Avklart
 
 - **Kategorier:** Dekor, Klær, Leketøy, Kaker, Godteri, Mat, Drikke, Alkohol, Lugubert, Verktøy.
-- **Alkohol** krever **skjenkebevilling**. Den kjøpes i en ny app, «Kommunen», på telefonen, og gjelder resten av markedet (ingen dagsavgift).
+- **Alkohol** krever **skjenkebevilling**. Den kjøpes i en ny app, «Kommunen», på telefonen, og gjelder resten av markedet (ingen dagsavgift). Pris foreløpig **1 500 kr** (`shared/liquor.ts`).
+  - Kundene kjøper alkohol uansett tid og bevilling – det er Tilsynsmannen som håndhever reglene når han sjekker bordet.
   - Alkohol er bare lov å selge **etter kl. 15:00**.
   - Selger du alkohol før kl. 15:00 og Tilsynsmannen ser det, blir bevillingen **inndratt**. Du kan ikke kjøpe ny før det har gått **2 dager**.
   - Selger du alkohol uten bevilling, kan Tilsynsmannen gi bot og beslaglegge varene.
@@ -89,8 +90,6 @@ Prisene justeres etter hvert som vi tester.
 - Kan man se andres bil og bryte seg inn i den?
 - Svarer Fyren alltid, eller bare noen netter?
 - Nøyaktige tidspunkter for «natt».
-- Hva koster skjenkebevillingen?
-- Hva skjer med alkoholen på bordet før kl. 15? Blir den bare ikke solgt, eller selges den (og kan bli sett)?
 
 ## 🍷 Alkohol
 

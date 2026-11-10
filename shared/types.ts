@@ -164,6 +164,8 @@ export interface GameState {
     leads: Lead[];
     /** AvtaleGiro: regningene betales automatisk kl. 08 når det er dekning. */
     autogiro: boolean;
+    /** Skjenkebevillingen. bannedUntil = spilltid da du kan kjøpe ny etter at den ble inndratt. */
+    license: { has: boolean; bannedUntil: number | null };
     /** Det ligger en avis i postkassa (flagget er oppe). */
     mailPaper: boolean;
     /** Gavekortselgeren ved disken (null når ingen står der). offer = null: du har ingenting hen vil ha. */

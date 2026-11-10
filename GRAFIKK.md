@@ -511,11 +511,35 @@ arkivert i undermappen `tidligere-plassering/`.
 Klar til innlegging. De gamle `art/power/`-lagene og spillets klikkfelt er ikke
 endret; klikkfeltene må flyttes til koordinatene over når denne serien tas i bruk.
 
-### Bestilt: nye varer og råvarer
+### Ferdig laget: 32 nye varer og 11 nye råvarer
 
-De nye varene er i spillet med emoji som plassholder (se `emo(...)` i `shared/products.ts`).
-Når et bilde er klart, legges det i mappa under og varen bytter fra `emo(...)` til `good(...)`.
-Samme stil som de andre varene: én gjenstand, sett litt ovenfra, gjennomsiktig bakgrunn.
+**✅ Alle 43 originaler er ferdig laget i `GFX_assets/ChatGPT`.** Én transparent
+PNG per oppføring i tabellene under, med samme filnavn pluss `.png`. Samme grove
+pikselstil, varme palett og mørke konturer som referansevarene. Hovedaksene følger
+gridet; toget og blikkbilen ligger vannrett, høye varer står loddrett.
+
+Kvadratiske originaler er 1254×1254 px. Tog og blikkbil er 1774×887 px; trenisse,
+toppstjerne og julebrus er 887×1774 px; polkagris er 1024×1536 px og fenalår
+724×2172 px. Dette er store originaler, klare for tilpasning til rutestørrelsene under.
+Ingen tekst eller tall er bakt inn i bildene. Alpakkaskjerfet er ensfarget lys beige;
+krumkaken har gyllent, preget vaffelmønster og sirupssnippen er uten glasur.
+
+Alle 43 er kontrollert for gjennomsiktighet og hele silhuetter uten avkuttede kanter,
+og visuelt kontrollert på ensfarget bakgrunn og nedskalert til en oversikt med
+128 px visningsfelt. Svært svak alfa-støy utenfor motivene er fjernet; øvrig alfa er bevart.
+Kontrolldata: `nye-varer-ravarer-kontroll.json`.
+
+Samleoversikt: `nye-varer-ravarer-oversikt.jpg`. Større deloversikter:
+`nye-varer-julepynt-oversikt.jpg`, `nye-varer-strikk-oversikt.jpg`,
+`nye-varer-leker-oversikt.jpg`, `nye-varer-bakst-godteri-oversikt.jpg`,
+`nye-varer-mat-drikke-oversikt.jpg` og `nye-ravarer-oversikt.jpg`.
+Prompter fra bildegeneratoren: `nye-varer-ravarer-prompter.json` og
+`nye-varer-rettelser-prompter.json`. Status gjelder originalene, ikke innlegging i spillet.
+
+**✅ Lagt inn i spillet.** Bildene er beskåret til motivet og skalert til 128 px per rute
+(stående på bunnkanten, 8 px luft) i mappene under. Varene bruker `vare(...)` i
+`shared/products.ts`, der bildet heter som id-en med bindestrek. Fyllvatt heter `fyll.png`
+i spillet (id `fyll`).
 
 **Varer** → `client/public/art/goods/<fil>.png`
 
@@ -573,11 +597,31 @@ Samme stil som de andre varene: én gjenstand, sett litt ovenfra, gjennomsiktig 
 **Sjelden-merke:** nettbutikken viser foreløpig et gullbånd i CSS («★ Sjelden»). Et eget lite
 ikon (gullstjerne/segl, 1×1) kan lages senere hvis vi vil ha det i grafikkstilen.
 
-### Gjenstår å lage eller rette
+### Bestilt: alkohol og Kommunen-appen
+
+Varene er i spillet med emoji som plassholder (`noArt` i `shared/products.ts`). Når et bilde er
+klart, legges det i mappa under og `noArt` fjernes fra varen. Samme stil som de andre varene:
+én gjenstand, sett litt ovenfra, gjennomsiktig bakgrunn, ingen ekte merkenavn eller lesbar tekst.
+
+**Varer** → `client/public/art/goods/<fil>.png`
+
+| Fil | Rutenett | Motiv |
+|---|---|---|
+| `vodka` | 1×2 | Klar vodkaflaske med enkel, oppfunnet etikett (nordlys/fjell), skrukork. |
+| `rodvin` | 1×2 | Mørk rødvinsflaske med kork og papiretikett med en vinranke. |
+| `eplecider` | 1×2 | Gyllen ciderflaske med patentkork og et grønt eple på etiketten. |
+| `varm-cider` | 1×1 | Glasskopp med varm, gyllen eplecider, damp og en kanelstang. |
+| `koseglogg` | 1×1 | Glasskrus med mørkerød gløgg, rosiner og mandler, damp. |
+| `styrkeglogg` | 1×1 | Som kosegløgg, men mørkere med en liten flamme/glød over koppen – ser «sterk» ut. |
+
+**App-ikon** → `client/public/art/telefon/app-kommunen.png` (samme stil og størrelse som de andre
+app-ikonene): et lite rådhus med flagg og kommunevåpen-aktig skjold. I dag vises 🏛️.
+
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| 32 nye varer og 11 nye råvarer | se «Bestilt: nye varer og råvarer» | ⏳ Bestilt: `art/goods/` og `art/ravarer/` (emoji til de er klare) |
+| 6 alkoholvarer og app-ikon til Kommunen | se «Bestilt: alkohol og Kommunen-appen» | ⏳ Bestilt: `art/goods/` og `art/telefon/app-kommunen.png` (emoji til de er klare) |
+| 32 nye varer og 11 nye råvarer | se «Ferdig laget: 32 nye varer og 11 nye råvarer» | ✅ i bruk: `art/goods/` og `art/ravarer/` (originaler i `GFX_assets/ChatGPT`) |
 | Regningskonvolutter: forfaller i dag, purret, inkasso, namsmann | 128×88 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/regning-{due,purret,inkasso,namsmann}.png`; klare til å erstatte plassholderne i `art/post/` |
 | Smarttelefon, makuleringsmaskin (av + på) og mikroplast | – | ✅ i bruk: `art/telefon/telefon.png` (1×2), `art/maskiner/makulator{,-pa}.png` (2×2), `art/ravarer/mikroplast.png` (1×1) |
 | App-ikoner: Nettbutikk, Markedet, Min bod, Varsler, Bank | – | ✅ i bruk: `art/telefon/app-*.png` (Nettbutikk også i innkjøpsvinduet, Bank i bankappen) |

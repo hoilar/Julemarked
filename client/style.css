@@ -226,6 +226,15 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .store-banner b { font-size: 1.5rem; letter-spacing: 0.02em; }
 .store-banner span { font-style: italic; font-size: 0.85rem; opacity: 0.9; }
 .store-banner.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
+.phone-widget.license { display: grid; gap: 0.3rem; }
+.phone-widget.license.ok b { color: #2f8a3e; }
+.phone-widget.license.banned b { color: #c0392b; }
+.phone-widget.license button { justify-self: start; margin-top: 0.2rem; }
+.phone-rules { margin: 0.5rem 0 0; padding-left: 1.1rem; font-size: 0.78rem; line-height: 1.35; }
+.phone-rules li { margin-bottom: 0.3rem; }
+.app-emoji { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.6rem; }
+.liquor-note { margin: 0 0 0.5rem; padding: 0.35rem 0.55rem; border-radius: 6px; background: rgba(47, 138, 62, 0.12); font-size: 0.82rem; }
+.liquor-note.warn { background: rgba(192, 57, 43, 0.12); }
 .cat-head { margin: 0.9rem 0 0.4rem; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .cat-pill { display: inline-block; margin: -0.3rem 0 0.5rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: rgba(127, 127, 127, 0.15); font-size: 0.8rem; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.6rem; }

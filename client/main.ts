@@ -74,6 +74,7 @@ import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } f
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
+import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange } from '../shared/deals.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
@@ -132,7 +133,7 @@ let modal: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: ligger bak disken (eller i hjørnet), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' = 'home';
 let phonePos: { x: number; y: number } | null = null;
 let phoneDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
 let phoneSeen = Number(localStorage.getItem('jm_phone_seen') ?? 0); // nyeste varsel du har sett (id)
@@ -461,8 +462,30 @@ function phoneWindow(s: GameState): string {
         : '<p class="phone-empty">Ingen ubetalte regninger. 🎉</p>'
     }
     <p class="phone-empty">Ubetalt: purring dagen etter, så inkasso, så namsmann.</p>`;
+  // Kommunen: skjenkebevilling.
+  const lic = s.me.license;
+  const kommunen = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>🏛️ Kommunen</b></div>
+    <div class="phone-kicker">Skjenkebevilling</div>
+    <div class="phone-widget license ${lic.has ? 'ok' : lic.bannedUntil ? 'banned' : ''}">
+      ${
+        lic.has
+          ? '<b>✅ Du har skjenkebevilling</b><small>Gjelder resten av markedet.</small>'
+          : lic.bannedUntil
+            ? `<b>⛔ Inndratt</b><small>Du kan søke om ny ${esc(formatClock(osloParts(lic.bannedUntil)))}.</small>`
+            : `<b>Ingen bevilling</b><small>Koster ${kr(LICENSE_PRICE)}, én gang.</small>
+               <button class="small" data-action="buy-license" ${s.me.cash >= LICENSE_PRICE ? '' : 'disabled'}>Søk og betal ${kr(LICENSE_PRICE)}</button>`
+      }
+    </div>
+    <ul class="phone-rules">
+      <li>Alkohol (vin, sprit, cider og sterk gløgg) krever skjenkebevilling.</li>
+      <li>Alkohol er bare lov å selge <b>etter kl. ${LIQUOR_FROM_HOUR}</b>.</li>
+      <li>Ser Tilsynsmannen alkohol på bordet før kl. ${LIQUOR_FROM_HOUR}, blir bevillingen inndratt i ${LICENSE_BAN_DAYS} dager.</li>
+      <li>Uten bevilling blir alkoholen beslaglagt, og du får bot på det dobbelte av verdien.</li>
+    </ul>`;
   const body =
-    phonePage === 'bank'
+    phonePage === 'kommunen'
+      ? kommunen
+      : phonePage === 'bank'
       ? bank
       : phonePage === 'events'
       ? `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>Varsler</b></div>
@@ -485,6 +508,7 @@ function phoneWindow(s: GameState): string {
            ${home ? app('map', appIcon('markedet'), 'Markedet') : mine ? app('home', appIcon('minbod'), 'Min bod') : app('map', appIcon('markedet'), 'Markedet')}
            ${app('phone-page', appIcon('varsler'), 'Varsler', 'data-page="events"', unreadCount(s))}
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
+           ${mine ? app('phone-page', '<span class="app-emoji">🏛️</span>', 'Kommunen', 'data-page="kommunen"') : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -1932,6 +1956,7 @@ function modalView(s: GameState): string {
       p,
       `<h2>${esc(p.name)}</h2>
       <p class="cat-pill">${categoryLabel(p.category)}</p>
+      ${isAlcohol(p.id) ? `<p class="liquor-note ${s.me.license.has ? '' : 'warn'}">${s.me.license.has ? '🏛️ Du har skjenkebevilling.' : '⚠️ Du har ikke skjenkebevilling – kjøp den i Kommunen-appen.'} Alkohol er bare lov å selge etter kl. ${LIQUOR_FROM_HOUR}.</p>` : ''}
       <dl class="item-stats">
         <dt>På bordet</dt><dd>${inv.onCounter}</dd>
         <dt>Under disken</dt><dd>${stored}</dd>
@@ -2378,7 +2403,10 @@ app.addEventListener('click', (e) => {
     phonePage = 'home';
   }
   if (action === 'phone-close') phoneOpen = false;
-  if (action === 'phone-page') phonePage = el.dataset.page === 'events' ? 'events' : el.dataset.page === 'bank' ? 'bank' : 'home';
+  if (action === 'phone-page') {
+    const p = el.dataset.page;
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' ? p : 'home';
+  }
   if (action === 'autogiro' && state) {
     const on = !state.me.autogiro;
     api<{ paid: number; total: number }>('/api/autogiro', { on })
@@ -2453,6 +2481,10 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'pay-bill') {
     act('/api/bill/pay', { billId: Number(el.dataset.bill) }, '✅ Regning betalt.');
+    return;
+  }
+  if (action === 'buy-license') {
+    act('/api/license/buy', {}, '🏛️ Du har skjenkebevilling!');
     return;
   }
   if (action === 'pay-all') {

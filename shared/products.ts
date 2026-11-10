@@ -255,17 +255,17 @@ export const INGREDIENTS: Ingredient[] = [
   { kind: 'ingredient', id: 'garn', name: 'Garnnøste', emoji: '🧶', image: '/art/ravarer/garn.png', price: 25, size: { w: 1, h: 1 } },
   { kind: 'ingredient', id: 'glassemne', name: 'Glassemne', emoji: '🔮', image: '/art/ravarer/glassemne.png', price: 8, size: { w: 1, h: 1 } },
   { kind: 'ingredient', id: 'maling', name: 'Glassmaling', emoji: '🎨', image: '/art/ravarer/maling.png', price: 6, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'treemne', name: 'Treemne', emoji: '🪵', price: 7, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'sirup', name: 'Sirup', emoji: '🍯', price: 8, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'kakaopulver', name: 'Kakaopulver', emoji: '🟤', price: 10, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'epler', name: 'Epler', emoji: '🍏', price: 4, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'eplemost', name: 'Eplemost', emoji: '🧃', price: 15, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'polser', name: 'Pølser (pakke)', emoji: '🌭', price: 35, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'lomper', name: 'Lomper (pakke)', emoji: '🫓', price: 12, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'fyll', name: 'Fyllvatt', emoji: '☁️', price: 5, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'bladgull', name: 'Bladgull', emoji: '✨', price: 40, size: { w: 1, h: 1 }, rare: 0.15 },
-  { kind: 'ingredient', id: 'safran', name: 'Safran', emoji: '🌼', price: 35, size: { w: 1, h: 1 }, rare: 0.2 },
-  { kind: 'ingredient', id: 'alpakkagarn', name: 'Alpakkagarn', emoji: '🦙', price: 60, size: { w: 1, h: 1 }, rare: 0.15 },
+  { kind: 'ingredient', id: 'treemne', name: 'Treemne', emoji: '🪵', image: '/art/ravarer/treemne.png', price: 7, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'sirup', name: 'Sirup', emoji: '🍯', image: '/art/ravarer/sirup.png', price: 8, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'kakaopulver', name: 'Kakaopulver', emoji: '🟤', image: '/art/ravarer/kakaopulver.png', price: 10, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'epler', name: 'Epler', emoji: '🍏', image: '/art/ravarer/epler.png', price: 4, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'eplemost', name: 'Eplemost', emoji: '🧃', image: '/art/ravarer/eplemost.png', price: 15, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'polser', name: 'Pølser (pakke)', emoji: '🌭', image: '/art/ravarer/polser.png', price: 35, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'lomper', name: 'Lomper (pakke)', emoji: '🫓', image: '/art/ravarer/lomper.png', price: 12, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'fyll', name: 'Fyllvatt', emoji: '☁️', image: '/art/ravarer/fyll.png', price: 5, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'bladgull', name: 'Bladgull', emoji: '✨', image: '/art/ravarer/bladgull.png', price: 40, size: { w: 1, h: 1 }, rare: 0.15 },
+  { kind: 'ingredient', id: 'safran', name: 'Safran', emoji: '🌼', image: '/art/ravarer/safran.png', price: 35, size: { w: 1, h: 1 }, rare: 0.2 },
+  { kind: 'ingredient', id: 'alpakkagarn', name: 'Alpakkagarn', emoji: '🦙', image: '/art/ravarer/alpakkagarn.png', price: 60, size: { w: 1, h: 1 }, rare: 0.15 },
   { kind: 'ingredient', id: 'mikroplast', name: 'Mikroplast', emoji: '🫧', image: '/art/ravarer/mikroplast.png', price: 0, size: { w: 1, h: 1 } },
   { kind: 'ingredient', id: 'feilbatch', name: 'Mislykket batch', emoji: '🫠', image: '/art/ravarer/feilbatch.png', price: 0, size: { w: 1, h: 1 } },
   { kind: 'ingredient', id: 'svidd', name: 'Svidd klump', emoji: '🪨', image: '/art/ravarer/svidd.png', price: 0, size: { w: 1, h: 1 } },
@@ -553,8 +553,8 @@ const good = (
   sprite: w === 2 ? 2.3 : 1.15,
 });
 
-// Kortform for varer som ennå ikke har egen tegning: emojien vises i stedet (bestilt i GRAFIKK.md).
-const emo = (
+// Kortform for de nyere varene: bildet heter som id-en med bindestrek (art/goods/antikk-julekule.png).
+const vare = (
   id: string,
   name: string,
   emoji: string,
@@ -566,8 +566,23 @@ const emo = (
   brand: string,
   category: Category,
   extra: Partial<Product> = {},
-): Product => ({ kind: 'product', id, name, emoji, wholesale, basePrice, baseDemand, brand, category, size: { w, h }, sprite: w === 2 ? 2.3 : 1.15, ...extra });
+): Product => ({
+  kind: 'product',
+  id,
+  name,
+  emoji,
+  image: `/art/goods/${id.replace(/_/g, '-')}.png`,
+  wholesale,
+  basePrice,
+  baseDemand,
+  brand,
+  category,
+  size: { w, h },
+  sprite: w === 2 ? 2.3 : 1.15,
+  ...extra,
+});
 const crafted = { craftedOnly: true } as const;
+const noArt = { image: undefined }; // tegningen er ikke klar ennå: emojien vises (bestilt i GRAFIKK.md)
 const rare = (chance: number) => ({ rare: chance });
 
 export const PRODUCTS: Product[] = [
@@ -588,47 +603,54 @@ export const PRODUCTS: Product[] = [
   good('nisselue', 'Nisselue', '🎅', 'nisselue', 2, 2, 45, 149, 0.6, 'Pynt Import AS', 'klaer'),
   good('julestrompe', 'Julestrømpe', '🧦', 'julestrompe', 2, 2, 60, 199, 0.5, 'Pynt Import AS', 'dekor'),
   good('votter', 'Strikkede votter', '🧤', 'votter', 2, 2, 120, 399, 0.3, 'Strikkefabrikken', 'klaer'),
-  // --- Nye varer (emoji til tegningene er klare) ---
+  // --- Nyere varer ---
   //   id                 navn                       emoji w  h  inn  pris  ettersp.  produsent           kategori
   // Dekor
-  emo('antikk_julekule', 'Antikk julekule', '🏺', 1, 1, 90, 249, 0.25, 'Loppemarkedet', 'dekor', rare(0.12)),
-  emo('snokule', 'Snøkule med landsby', '❄️', 1, 1, 60, 179, 0.35, 'Pynt Import AS', 'dekor', rare(0.2)),
-  emo('musikkboks', 'Musikkboks med nisse', '🎶', 2, 2, 220, 599, 0.15, 'Spilledåsen', 'dekor', rare(0.08)),
-  emo('glasshjerte', 'Glasshjerte', '💖', 1, 1, 5, 49, 0.9, 'Hjemmelaget', 'dekor', crafted),
-  emo('trenisse', 'Malt trenisse', '🎅', 1, 2, 8, 69, 0.7, 'Hjemmelaget', 'dekor', crafted),
-  emo('gullkule', 'Gullkule', '🟡', 1, 1, 25, 199, 0.35, 'Hjemmelaget', 'dekor', crafted),
-  emo('toppstjerne', 'Toppstjerne', '🌟', 1, 2, 55, 249, 0.3, 'Hjemmelaget', 'dekor', crafted),
+  vare('antikk_julekule', 'Antikk julekule', '🏺', 1, 1, 90, 249, 0.25, 'Loppemarkedet', 'dekor', rare(0.12)),
+  vare('snokule', 'Snøkule med landsby', '❄️', 1, 1, 60, 179, 0.35, 'Pynt Import AS', 'dekor', rare(0.2)),
+  vare('musikkboks', 'Musikkboks med nisse', '🎶', 2, 2, 220, 599, 0.15, 'Spilledåsen', 'dekor', rare(0.08)),
+  vare('glasshjerte', 'Glasshjerte', '💖', 1, 1, 5, 49, 0.9, 'Hjemmelaget', 'dekor', crafted),
+  vare('trenisse', 'Malt trenisse', '🎅', 1, 2, 8, 69, 0.7, 'Hjemmelaget', 'dekor', crafted),
+  vare('gullkule', 'Gullkule', '🟡', 1, 1, 25, 199, 0.35, 'Hjemmelaget', 'dekor', crafted),
+  vare('toppstjerne', 'Toppstjerne', '🌟', 1, 2, 55, 249, 0.3, 'Hjemmelaget', 'dekor', crafted),
   // Klær
-  emo('skjerf', 'Strikket skjerf', '🧣', 2, 2, 50, 249, 0.4, 'Hjemmelaget', 'klaer', crafted),
-  emo('pulsvarmere', 'Pulsvarmere', '🧶', 1, 1, 13, 99, 0.6, 'Hjemmelaget', 'klaer', crafted),
-  emo('alpakkaskjerf', 'Alpakkaskjerf', '🦙', 2, 2, 140, 699, 0.2, 'Hjemmelaget', 'klaer', crafted),
-  emo('julegenser', 'Stygg julegenser', '👕', 2, 2, 150, 449, 0.3, 'Festlig AS', 'klaer'),
-  emo('lusekofte', 'Lusekofte', '🧥', 2, 2, 900, 2490, 0.06, 'Husfliden', 'klaer', rare(0.08)),
+  vare('skjerf', 'Strikket skjerf', '🧣', 2, 2, 50, 249, 0.4, 'Hjemmelaget', 'klaer', crafted),
+  vare('pulsvarmere', 'Pulsvarmere', '🧶', 1, 1, 13, 99, 0.6, 'Hjemmelaget', 'klaer', crafted),
+  vare('alpakkaskjerf', 'Alpakkaskjerf', '🦙', 2, 2, 140, 699, 0.2, 'Hjemmelaget', 'klaer', crafted),
+  vare('julegenser', 'Stygg julegenser', '👕', 2, 2, 150, 449, 0.3, 'Festlig AS', 'klaer'),
+  vare('lusekofte', 'Lusekofte', '🧥', 2, 2, 900, 2490, 0.06, 'Husfliden', 'klaer', rare(0.08)),
   // Leketøy
-  emo('snurrebass', 'Snurrebass', '🌀', 1, 1, 5, 39, 1.0, 'Hjemmelaget', 'leketoy', crafted),
-  emo('tretog', 'Tretog', '🚂', 2, 1, 27, 249, 0.35, 'Hjemmelaget', 'leketoy', crafted),
-  emo('bamse', 'Strikket bamse', '🧸', 2, 2, 55, 229, 0.45, 'Hjemmelaget', 'leketoy', crafted),
-  emo('puslespill', 'Julepuslespill', '🧩', 2, 2, 55, 169, 0.5, 'Spillfabrikken', 'leketoy'),
-  emo('blikkbil', 'Blikkbil fra 50-tallet', '🚗', 2, 1, 180, 499, 0.12, 'Loppemarkedet', 'leketoy', rare(0.1)),
+  vare('snurrebass', 'Snurrebass', '🌀', 1, 1, 5, 39, 1.0, 'Hjemmelaget', 'leketoy', crafted),
+  vare('tretog', 'Tretog', '🚂', 2, 1, 27, 249, 0.35, 'Hjemmelaget', 'leketoy', crafted),
+  vare('bamse', 'Strikket bamse', '🧸', 2, 2, 55, 229, 0.45, 'Hjemmelaget', 'leketoy', crafted),
+  vare('puslespill', 'Julepuslespill', '🧩', 2, 2, 55, 169, 0.5, 'Spillfabrikken', 'leketoy'),
+  vare('blikkbil', 'Blikkbil fra 50-tallet', '🚗', 2, 1, 180, 499, 0.12, 'Loppemarkedet', 'leketoy', rare(0.1)),
   // Kaker
-  emo('krumkake', 'Krumkake', '🍦', 1, 1, 10, 29, 1.6, 'Hjemmelaget', 'kaker', crafted),
-  emo('sirupssnipp', 'Sirupssnipp', '🍪', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'kaker', crafted),
-  emo('lussekatt', 'Lussekatt', '🥯', 1, 1, 14, 45, 1.4, 'Hjemmelaget', 'kaker', crafted),
-  emo('kransekake', 'Kransekake', '🎂', 2, 2, 46, 449, 0.25, 'Hjemmelaget', 'kaker', crafted),
+  vare('krumkake', 'Krumkake', '🍦', 1, 1, 10, 29, 1.6, 'Hjemmelaget', 'kaker', crafted),
+  vare('sirupssnipp', 'Sirupssnipp', '🍪', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'kaker', crafted),
+  vare('lussekatt', 'Lussekatt', '🥯', 1, 1, 14, 45, 1.4, 'Hjemmelaget', 'kaker', crafted),
+  vare('kransekake', 'Kransekake', '🎂', 2, 2, 46, 449, 0.25, 'Hjemmelaget', 'kaker', crafted),
   // Godteri
-  emo('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
-  emo('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),
-  emo('polkagris', 'Polkagrisstang', '🍭', 1, 2, 9, 35, 1.4, 'Søtt & Co', 'godteri'),
-  emo('kandisert_eple', 'Kandisert eple', '🍎', 1, 1, 5, 39, 1.2, 'Hjemmelaget', 'godteri', crafted),
+  vare('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
+  vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),
+  vare('polkagris', 'Polkagrisstang', '🍭', 1, 2, 9, 35, 1.4, 'Søtt & Co', 'godteri'),
+  vare('kandisert_eple', 'Kandisert eple', '🍎', 1, 1, 5, 39, 1.2, 'Hjemmelaget', 'godteri', crafted),
   // Mat
-  emo('polse_lompe', 'Pølse i lompe', '🌭', 1, 1, 12, 45, 2.0, 'Hjemmelaget', 'mat', crafted),
-  emo('rommegrot', 'Rømmegrøt', '🥣', 1, 1, 6, 59, 0.9, 'Hjemmelaget', 'mat', crafted),
-  emo('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
-  emo('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
+  vare('polse_lompe', 'Pølse i lompe', '🌭', 1, 1, 12, 45, 2.0, 'Hjemmelaget', 'mat', crafted),
+  vare('rommegrot', 'Rømmegrøt', '🥣', 1, 1, 6, 59, 0.9, 'Hjemmelaget', 'mat', crafted),
+  vare('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
+  vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
   // Drikke
-  emo('kakao', 'Varm kakao', '☕', 1, 1, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
-  emo('julebrus', 'Julebrus', '🥤', 1, 2, 12, 35, 1.6, 'Bryggeriet', 'drikke'),
-  emo('eplemost_varm', 'Varm eplemost', '🍵', 1, 1, 4, 35, 1.6, 'Hjemmelaget', 'drikke', crafted),
+  vare('kakao', 'Varm kakao', '☕', 1, 1, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
+  vare('julebrus', 'Julebrus', '🥤', 1, 2, 12, 35, 1.6, 'Bryggeriet', 'drikke'),
+  // Alkohol (krever skjenkebevilling, se shared/liquor.ts). Vodka og rødvin er også råvarer i kjelen.
+  vare('vodka', 'Vodka', '🍸', 1, 2, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol', noArt),
+  vare('rodvin', 'Rødvin', '🍷', 1, 2, 90, 229, 0.45, 'Vinkjelleren', 'alkohol', noArt),
+  vare('eplecider', 'Eplecider', '🍏', 1, 2, 25, 69, 1.0, 'Fjordsideriet', 'alkohol', noArt),
+  vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', { ...crafted, ...noArt }),
+  vare('koseglogg', 'Kosegløgg', '🍷', 1, 1, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', { ...crafted, ...noArt }),
+  vare('styrkeglogg', 'Styrkegløgg', '🔥', 1, 1, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', { ...crafted, ...noArt }),
+  vare('eplemost_varm', 'Varm eplemost', '🍵', 1, 1, 4, 35, 1.6, 'Hjemmelaget', 'drikke', crafted),
   // Risikovarer: legg til `shady: { exposeChance, reputationHit, lines }` på en vare
   // (se Product over) for høy margin med fare for avsløring. Ingen varer bruker det nå.
 ];

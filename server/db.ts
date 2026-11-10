@@ -168,6 +168,9 @@ if (!hasColumn('stalls', 'storage_wide')) {
 if (!hasColumn('stalls', 'microplastic')) db.exec('ALTER TABLE stalls ADD COLUMN microplastic INTEGER NOT NULL DEFAULT 0');
 // AvtaleGiro i banken: regningene betales automatisk kl. 08 når det er dekning.
 if (!hasColumn('stalls', 'autogiro')) db.exec('ALTER TABLE stalls ADD COLUMN autogiro INTEGER NOT NULL DEFAULT 0');
+// Skjenkebevilling: 1 = har den. liquor_ban = spilltid (ms) da man kan kjøpe ny etter inndragning.
+if (!hasColumn('stalls', 'liquor_license')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_license INTEGER NOT NULL DEFAULT 0');
+if (!hasColumn('stalls', 'liquor_ban')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_ban INTEGER NOT NULL DEFAULT 0');
 // Hovedsikringen (uten egen sikringsboks): 1 = gått, ingen strøm før den byttes.
 if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN main_blown INTEGER NOT NULL DEFAULT 0');
 // Lageret ble 26 ruter (én kolonne mindre på hver side): 0 = ting under disken er ikke flyttet ennå.
