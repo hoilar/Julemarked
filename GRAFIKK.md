@@ -731,9 +731,27 @@ fjernes fra varene i `shared/products.ts`.
 en grønn snakkeboble med et lite par solbriller i hjørnet. Original ferdig:
 `GFX_assets/ChatGPT/app-meldinger.png`, klar til å erstatte 💬.
 
-### Bestilt: såpe og nøkler (snoking)
+### Ferdig laget: såpe og nøkler (snoking)
 
-I spillet med emoji som plassholder. Samme pikselstil som verktøyene, uten lesbar tekst.
+**✅ Alle fem transparente PNG-originaler er ferdige i `GFX_assets/ChatGPT`:**
+`sapestykke.png`, `sapeavtrykk.png`, `blank-nokkel.png`, `kopinokkel.png` og
+`nokkelmaskin.png`. Alle er **1254×1254 px** som store originaler; såpe og nøkler
+er 1×1-gjenstander og maskinen er 2×2. Samme grove pikselstil som verktøyene,
+med mørk kontur, få materialtoner og uten lesbar tekst, tall eller julepynt.
+
+Såpevariantene deler form, plassering og lerret. Avtrykket er en nøkkelformet
+fordypning i den hvite oversiden. Nøkkelemnet har glatt skaft; kopinøkkelen har
+grove, stiliserte tagger og ferske filemerker, med samme hode, lengde og plassering.
+Begge nøklene ligger helt vannrett, med rundt nøkkelhode til venstre og skaft mot høyre.
+Nøkkelmaskinen har en slitt blågrå kropp, skrustikke, sveiv og vannrett fil.
+
+Alle fem er kontrollert for transparent ytterområde og hele silhuetter, samt
+visuelt over mørk bakgrunn og nedskalert til 128 px visningsfelt på lys bakgrunn.
+Svært svak alfa-støy er fjernet; øvrig gjennomsiktighet er bevart.
+Oversikter: `sape-nokler-oversikt.jpg` og `sape-nokler-liten.jpg`.
+Prompter fra bildegeneratoren: `sape-nokler-prompter.json`.
+Kontrolldata: `sape-nokler-kontroll.json`. Originalene er klare til innlegging;
+spillfilene og koden er ikke endret i denne leveransen. Skaler med nearest neighbor.
 
 | Fil i spillet | Rutenett | Motiv |
 |---|---|---|
@@ -743,12 +761,27 @@ I spillet med emoji som plassholder. Samme pikselstil som verktøyene, uten lesb
 | `art/verktoy/kopinokkel.png` | 1×1 | En litt grovt filt messingnøkkel med ferske filemerker, liggende vannrett. I dag 🔑. |
 | `art/verktoy/nokkelmaskin.png` | 2×2 | Liten, skitten nøkkelkopieringsmaskin med skrustikke, sveiv og fil – litt shabby, fra Fyren. I dag 🛠️. |
 
+### Bestilt: bilene, ryggsekken og Bilbutikken (steg 6)
+
+I spillet med emoji som plassholder. Samme pikselstil, uten lesbar tekst, ekte bilmerker eller skilt.
+Bilene sees **rett bakfra** (de står parkert til venstre for boden), med to bilder per bil: bagasjerommet lukket og åpent (samme beskjæring).
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/biler/bil-tennis.png` + `bil-tennis-apen.png` | ca. 4:3 | WV Tennis 1995: liten, rusten kompaktbil i falmet rødt, bulkete støtfanger. I dag 🚗. |
+| `art/biler/bil-toforr.png` + `bil-toforr-apen.png` | ca. 4:3 | Volvo Toførr 2004: lang, lav stasjonsvogn i mørkeblått, kantete baklys. I dag 🚙. |
+| `art/biler/bil-highass.png` + `bil-highass-apen.png` | ca. 4:3 | Toyota HighAss 2014: høy, bred SUV i sølvgrått, reservehjul på bakluka. I dag 🚙. |
+| `art/biler/bil-fuzz.png` + `bil-fuzz-apen.png` | ca. 4:3 | ID Fuzz: rund, moderne elbil i hvitt med lysstripe bak, ladeluke. I dag 🚘. |
+| `art/ryggsekk.png` | 3×3 | Slitt tursekk i rødt og grått med lommer og stropper. I dag 🎒. |
+| `art/telefon/app-bilbutikken.png` | 128×128 | App-ikon i samme stil som de andre: en liten bil på kremfarget ramme. I dag 🚗. |
+
 ### Gjenstår å lage eller rette
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Bestilt: såpe og nøkler (snoking)» | ⏳ Bestilt (emoji til de er klare) |
-| 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Ferdig laget: luguberte varer og Meldinger-appen» | ✅ Alle ni PNG-originaler ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
+| Fire biler (lukket + åpent bagasjerom), ryggsekk og app-ikon til Bilbutikken | se «Bestilt: bilene, ryggsekken og Bilbutikken (steg 6)» | ⏳ Bestilt (emoji til de er klare) |
+| Såpestykke, såpeavtrykk, blank nøkkel, kopinøkkel og nøkkelmaskin | se «Ferdig laget: såpe og nøkler (snoking)» | ✅ i bruk: `art/verktoy/{sapestykke,sapeavtrykk,blank-nokkel,kopinokkel}.png` (1×1), `art/verktoy/nokkelmaskin.png` (2×2) |
+| 6 luguberte varer, gjær, falsk logo og app-ikon til Meldinger | se «Ferdig laget: luguberte varer og Meldinger-appen» | ✅ i bruk: `art/goods/{smuglersigaretter,piratfilm,kinaputter,juletre-tyv,hjemmebrent,merkevotter}.png`, `art/ravarer/{gjaer,falsk-logo}.png`, `art/telefon/app-meldinger.png` |
 | To safer (liten sort 2×2 og stor grå 3×4, lukket + åpen), kodelapp, notat og forstørrelsesglass | se «Bestilt: safe, lapper og forstørrelsesglass» | ✅ i bruk: `art/safe-liten{,-apen}.png` (2×2), `art/safe-stor{,-apen}.png` (3×4, åpent bilde når safen er låst opp), `art/verktoy/{kodelapp,notat,lupe}.png` |
 | Skjenkebevilling med vokssegl og kommuneskjold | 1×1 | ✅ i bruk: `art/verktoy/skjenkebevilling.png` |
 | 6 alkoholvarer og app-ikon til Kommunen | se «Ferdig laget: alkohol og Kommunen-appen» | ✅ i bruk: `art/goods/` og `art/telefon/app-kommunen.png` (originaler i `GFX_assets/ChatGPT`) |

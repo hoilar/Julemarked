@@ -3,6 +3,7 @@
 import { findFree, fits, type GridSize } from './grid.ts';
 import { CELL_GRID, FOLDER_BY_ID, PHONE, FUSE, FUSEBOX, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
+import { BACKPACK } from './car.ts';
 
 export interface Spot {
   place: Place;
@@ -25,6 +26,7 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   if (place === 'trash') return TRASH_GRID;
   if (place === 'nail') return NAIL_GRID;
   if (place === 'mail') return MAIL_GRID;
+  if (place === 'carry') return CARRY_GRID;
   const box = items.find((i) => i.id === boxId);
   const t = box && ITEM_TYPES[box.typeId];
   if (place === 'box') return t?.kind === 'container' ? t.inner : null;
@@ -37,6 +39,46 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
 
 export function itemsIn(items: Item[], place: Place, boxId: number | null): Item[] {
   return items.filter((i) => i.place === place && (!NESTED.has(place) || i.boxId === boxId));
+}
+
+/** Det du bærer: tre plasser (venstre hånd, høyre hånd, ryggen). */
+export const CARRY_GRID: GridSize = { cols: 3, rows: 1 };
+
+/** Bilen gjenstanden står i (direkte i bagasjerommet, eller i en eske/pose der), eller undefined. */
+export function carOf(items: Item[], item: Item): Item | undefined {
+  let cur: Item | undefined = item;
+  for (let n = 0; cur && n < 4; n++) {
+    if (cur.place === 'car') return cur;
+    if (!NESTED.has(cur.place)) return undefined;
+    cur = items.find((b) => b.id === cur!.boxId);
+  }
+  return undefined;
+}
+
+/** Bærer du gjenstanden (i hånda, på ryggen, eller oppi en pose/sekk du bærer)? */
+export function isCarried(items: Item[], item: Item): boolean {
+  if (item.place === 'carry') return true;
+  if (item.place !== 'box') return false;
+  return items.find((b) => b.id === item.boxId)?.place === 'carry';
+}
+
+/** Hvor det du tar med deg havner: en ledig hånd (poser) eller ryggen (sekken), ellers oppi det du bærer. */
+export function findCarrySpot(items: Item[], typeId: string): Spot | null {
+  const t = ITEM_TYPES[typeId];
+  const free = (x: number) => !items.some((i) => i.place === 'carry' && i.x === x);
+  if (t.kind === 'container') {
+    if (t.shopBag) for (const x of [0, 1]) if (free(x)) return { place: 'carry', boxId: null, x, y: 0 };
+    if (t.id === BACKPACK && free(2)) return { place: 'carry', boxId: null, x: 2, y: 0 };
+    return null; // esker kan ikke ligge oppi poser
+  }
+  const { w, h } = t.size;
+  for (const c of items.filter((i) => i.place === 'carry').sort((a, b) => a.x - b.x)) {
+    const ct = ITEM_TYPES[c.typeId];
+    if (ct.kind !== 'container') continue;
+    const s = findFree(w, h, itemsIn(items, 'box', c.id), ct.inner);
+    if (s) return { place: 'box', boxId: c.id, ...s };
+  }
+  return null;
 }
 
 /** Gjenstander som ligger inni en eske eller kjele. */
@@ -68,10 +110,24 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   const intoFolder = spot.place === 'pot_in' && boxKind(spot.boxId) === 'folder';
   const machine = spot.boxId == null ? undefined : FOLDER_BY_ID[items.find((b) => b.id === spot.boxId)?.typeId ?? ''];
   const shredder = machine?.mode === 'shred';
+  // Bilen står der den står. Bagasjerommet er rutenettet inni den.
+  if (t.kind === 'container' && t.car) return 'Bilen står parkert der den står.';
+  const parent = spot.boxId == null ? undefined : items.find((b) => b.id === spot.boxId);
+  const intoTrunk = spot.place === 'box' && !!parent && ITEM_TYPES[parent.typeId]?.kind === 'container' && !!(ITEM_TYPES[parent.typeId] as { car?: boolean }).car;
+  if (spot.place === 'carry') {
+    if (spot.y !== 0 || spot.x < 0 || spot.x > 2) return 'Ugyldig plass.';
+    if (t.kind !== 'container') return 'Du bærer ting i en pose eller en ryggsekk. Legg den i hånda eller på ryggen først.';
+    if (spot.x === 2 && t.id !== BACKPACK) return 'På ryggen bærer du bare en ryggsekk.';
+    if (spot.x < 2 && !t.shopBag) return t.id === BACKPACK ? 'Ryggsekken bærer du på ryggen.' : `${t.name} er for stor å bære rundt på. Bruk en pose.`;
+    if (items.some((i) => i.place === 'carry' && i.x === spot.x && i.id !== item.id)) return spot.x === 2 ? 'Du har allerede en ryggsekk på.' : 'Den hånden er opptatt.';
+    return null;
+  }
   const shreddable = t.kind === 'paper' || t.kind === 'doc' || t.kind === 'policy' || t.kind === 'folded' || (t.kind === 'container' && !!t.shopBag);
   if (t.kind === 'container') {
     if (intoFolder && t.shopBag) {
       if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du bretter den sammen.`;
+    } else if (intoTrunk) {
+      if (t.safe) return 'Safen er for tung for bagasjerommet.';
     } else if (spot.place !== 'storage' && spot.place !== 'trash') {
       return intoFolder ? (shredder ? 'Makuleringsmaskinen tar papir og tomme plastposer.' : 'Posebretteren tar bare tomme handleposer.') : 'Esker må stå under disken.';
     }

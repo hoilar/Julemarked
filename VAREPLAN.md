@@ -2,12 +2,23 @@
 
 Planlegging av nye varer, råvarer og gameplay.
 
-**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Steg 3 er bygget – åpne søplekasser, safe med PIN-kode og kodelapp, egne lapper og notater, og forstørrelsesglass mot falske varer. Steg 4 er bygget – Fyren bak containeren (Meldinger-appen, kontant betaling, levering i søppelkassa kl. 04), seks luguberte varer, gjær og falsk logo, nattsalg (kl. 21–08) og at Tilsynsmannen leter under disken (ikke i låst safe). Steg 5 er bygget – snoking bak disken, Tyttebærpolitiet, spor og forstørrelsesglass, nøkkelplassen, såpeavtrykk, nøkkelmaskin og kopinøkkel. Bæring og bil er ikke bygget.
+**Status:** Steg 1 er bygget – sjeldenhet i nettbutikken og de nye varene og råvarene i Dekor, Klær, Leketøy, Kaker, Godteri, Mat og Drikke (med emoji til grafikken er klar). Steg 2 er bygget – alkoholvarene, de nye gløggene, Kommunen-appen og skjenkebevillingen (se under). Steg 3 er bygget – åpne søplekasser, safe med PIN-kode og kodelapp, egne lapper og notater, og forstørrelsesglass mot falske varer. Steg 4 er bygget – Fyren bak containeren (Meldinger-appen, kontant betaling, levering i søppelkassa kl. 04), seks luguberte varer, gjær og falsk logo, nattsalg (kl. 21–08) og at Tilsynsmannen leter under disken (ikke i låst safe). Steg 5 er bygget – snoking bak disken, Tyttebærpolitiet, spor og forstørrelsesglass, nøkkelplassen, såpeavtrykk, nøkkelmaskin og kopinøkkel. Steg 6 er bygget – bære poser og ryggsekk, bilen med bagasjerom, handletur med bilen, Bilbutikken og bensinprisen. Alle stegene i planen er bygget.
+
+**Valg i steg 6** (tallene står i `shared/car.ts`):
+- **Du bærer** (øverst til høyre, både hjemme og hos andre): en pose i hver hånd og en ryggsekk på ryggen. Dra en tom handlepose eller ryggsekken dit. Trykk på den for å se oppi.
+- Det du tar fra andres søplekasser og bak andres disk, havner i det du bærer. Uten pose eller ryggsekk får du ikke med deg noe (unntatt en tom pose, som du tar i hånda).
+- **Ryggsekken** (249 kr hos Klas Olsen) rommer 4×6, som en pappkartong.
+- **Bilen** står parkert til venstre for boden. Den er en gjenstand med bagasjerommet som rutenett. Trykk på bilen for å åpne bagasjerommet. Esker og poser kan stå der, men ikke safer.
+- **Handletur:** i nettbutikken velger du «🚗 Hent selv». Det koster bensin i stedet for frakt (ID Fuzz bruker ett fulladet batteri, som blir tomt). Skiltet snus til Stengt, og du er borte så mange minutter som bilen tar.
+- Varene legges i eskene i bagasjerommet først, så i nye poser der. Er det ikke plass til alt, kan du ikke kjøre.
+- Mens du er ute, kan du ikke snu skiltet, snoke, kjøre en ny tur eller røre bagasjerommet. Når du er tilbake, ligger varene i bilen, og skiltet står fortsatt på Stengt.
+- **Bilbutikken** er en ny app på telefonen. Den gamle bilen tas i innbytte for halv pris, og bagasjerommet må være tomt.
+- **Bensinprisen** er 16–22 kr/l. Noen perioder på tre dager er den 2,4 ganger så dyr. Prisen står i Bilbutikken og i kassa i nettbutikken.
 
 **Valg i steg 5** (tallene står i `shared/snoop.ts`):
 - Du snoker fra en annens bod med knappen «🕵️ Snok bak disken». Det går når boden er Selvbetjent eller «Åpent» uten noen bak disken, og når den er stengt hvis du har kopinøkkel til den.
 - Bak disken ser du det som ligger under disken og i eskene. Lapper og notater kan leses. Låste safer kan du taste kode på.
-- Telefonen, safer, forsikringsbevis og skjenkebevillingen kan ikke tas. Det du tar, havner under disken din (forenkling til bæring er bygget).
+- Telefonen, safer, forsikringsbevis og skjenkebevillingen kan ikke tas. Det du tar, bærer du (se steg 6).
 - **Tyttebærpolitiet** kan ta deg ved hver handling: når du titter inn, tar noe, tar avtrykk eller taster feil kode. Risikoen er 12 % ved Selvbetjent, 6 % ved «Åpent» uten folk og 8 % i en stengt bod. Alarm på boden ganger risikoen med 2,5.
 - Blir du tatt: det du har tatt går tilbake, bot 2 × verdien (minst 300 kr), omdømme −15, hendelse for hele markedet, og du kan ikke snoke i den boden på 12 timer.
 - Hver snoke-runde legger igjen **ett spor** i en tilfeldig rute under disken (forenkling: ikke oppå disken ennå). Sporet varer i 24 timer.
@@ -18,7 +29,7 @@ Planlegging av nye varer, råvarer og gameplay.
 
 **Valg i steg 4:** Fyren tar kontant fra kassa. Han leverer kl. 04 – etter søppelbilen kl. 03 – så varene ligger i den åpne søppelkassa hele dagen til du henter dem. Det som ikke får plass, kommer neste natt. Oppskriften på hjemmebrent står i SMS-ene hans, og oppskriften på «merkevotter» følger med første falske logo; luguberte oppskrifter står aldri i avisa. Tilsynsmannen finner luguberte varer overalt (bord, under disken, esker, søpla) unntatt i en låst safe: beslag, bot 2 × verdien og −20 omdømme.
 
-**Forenklinger i steg 3 (til bæring er bygget):** det du tar fra andres søplekasse havner rett under din egen disk. Forsikringsbevis kan ikke tas fra andres søpel. Tilsynsmannen sjekker fortsatt bare bordet og søpla (ikke under disken) – å lete under disken kommer sammen med de luguberte varene.
+**Valg i steg 3:** det du tar fra andres søplekasse bærer du (se steg 6). Forsikringsbevis kan ikke tas fra andres søpel. Tilsynsmannen sjekker fortsatt bare bordet og søpla (ikke under disken) – å lete under disken kommer sammen med de luguberte varene.
 Kategoriene finnes i `shared/categories.ts`. ★ = sjelden: dukker bare opp noen dager, i én butikk, med lite på lager.
 
 ## Avklart

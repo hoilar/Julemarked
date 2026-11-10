@@ -1347,3 +1347,69 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 
 /* Hovedforgreneren: litt mindre, krympet rundt foten på høyre bordben (x 1289, y 1007 i bodbildet) */
 .strip-wrap { position: absolute; inset: 0; transform: scale(0.85); transform-origin: 83.92% 98.34%; pointer-events: none; }
+
+/* ---------- Steg 6: bilen og det du bærer ---------- */
+.car {
+  position: absolute;
+  left: 0.6%;
+  top: 72%;
+  width: 5%;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: 0.2cqw;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  color: #fff;
+}
+.car .sprite { font-size: 5cqw; line-height: 1; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.6)); }
+.car img.sprite { width: 100%; object-fit: contain; image-rendering: pixelated; }
+.car small, .car.away small { font-size: 0.75cqw; background: rgba(20, 16, 40, 0.75); padding: 0.1cqw 0.4cqw; border-radius: 0.4cqw; white-space: nowrap; }
+.car.open { outline: 0.2cqw solid #ffe08a; outline-offset: 0.3cqw; border-radius: 0.6cqw; }
+.car.away { cursor: default; }
+.car-tracks { font-size: 3cqw; opacity: 0.7; }
+.trunk-panel { background: #2b2b33; border-color: #6c6c80; }
+
+.carry {
+  position: absolute;
+  right: 1%;
+  top: 1.5%;
+  z-index: 6;
+  display: grid;
+  gap: 0.3cqw;
+  justify-items: end;
+}
+.carry-label { font-size: 0.8cqw; color: #fff; background: rgba(20, 16, 40, 0.7); padding: 0.1cqw 0.5cqw; border-radius: 0.4cqw; }
+.carry-slots { display: flex; gap: 0.4cqw; }
+.carry-slot {
+  width: 5cqw;
+  height: 5cqw;
+  border-radius: 0.6cqw;
+  border: 0.15cqw dashed rgba(255, 255, 255, 0.45);
+  background: rgba(20, 16, 40, 0.45);
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.carry-slot.full { border-style: solid; border-color: rgba(255, 233, 168, 0.6); }
+.carry-slot small { position: absolute; bottom: -1.1cqw; left: 50%; transform: translateX(-50%); font-size: 0.6cqw; color: #fff; white-space: nowrap; text-shadow: 0 0 0.3cqw #000; }
+.carry-slot.target { border-color: #8be28b; background: rgba(60, 160, 60, 0.35); }
+.carry-slot.target.bad { border-color: #ff7a6a; background: rgba(200, 60, 40, 0.35); }
+.carry-empty { font-size: 2cqw; opacity: 0.35; }
+.carry-item { width: 100%; height: 100%; display: grid; place-items: center; cursor: grab; position: relative; }
+.carry-item .sprite { font-size: 3.4cqw; line-height: 1; }
+.carry-item img.sprite { width: 90%; height: 90%; object-fit: contain; image-rendering: pixelated; }
+.carry-item.open { outline: 0.2cqw solid #ffe08a; border-radius: 0.5cqw; }
+.carry-count { position: absolute; top: 0.2cqw; right: 0.2cqw; font-size: 0.7cqw; background: #e23; color: #fff; border-radius: 1cqw; padding: 0 0.35cqw; }
+
+.phone-widget.fuel.dear b { color: #ff8a6a; }
+.car-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.car-list li { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.4rem; border-radius: 8px; background: rgba(127, 127, 127, 0.12); }
+.car-list li.mine { outline: 1px solid rgba(255, 233, 168, 0.6); }
+.car-what { flex: 1; min-width: 0; display: flex; gap: 0.4rem; align-items: flex-start; font-size: 0.78rem; }
+.car-what small { display: block; font-size: 0.68rem; opacity: 0.8; }
+.car-emoji { font-size: 1.5rem; line-height: 1; }
+.ship-choice label small { display: block; margin-left: 1.5rem; opacity: 0.75; font-size: 0.8em; }

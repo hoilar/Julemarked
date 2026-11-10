@@ -20,7 +20,8 @@ export interface BillView {
 // box = i en eske/pose; pot_in / pot_out = i kjelens råvare- eller ferdig-rutenett (boxId = kjelen).
 // transit = poser på vei fra nettbutikken; ground = levert, står ved siden av boden.
 // nail = hengt opp på spikeren under grenuttaket (bare etterlysninger).
-export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail' | 'cell' | 'fuse' | 'mail';
+// carry = det du bærer (x 0/1 = hendene, 2 = ryggen); car = bilen som står parkert (bagasjerommet er place 'box' i den).
+export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail' | 'cell' | 'fuse' | 'mail' | 'carry' | 'car';
 
 /** Dagens tilbud i en nettbutikk, med hvor mange du kan kjøpe til (lageret er per spiller). */
 export interface ShopView {
@@ -198,6 +199,8 @@ export interface GameState {
     /** Gavekortselgeren ved disken (null når ingen står der). offer = null: du har ingenting hen vil ha. */
     gift: { store: string; name: string; seed: string; pitch: string; offer: { productId: string; qty: number; value: number } | null } | null;
     meter: { kwh: number; sinceBill: number; cost: number; rolledToday: boolean } | null;
+    /** Bilen: dagens bensinpris, og handleturen du er på (null når bilen står parkert). */
+    car: { fuelPrice: number; fuelExpensive: boolean; trip: { store: string; until: number } | null };
   };
   events: GameEvent[];
 }

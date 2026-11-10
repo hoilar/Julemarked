@@ -178,6 +178,8 @@ if (!hasColumn('stalls', 'liquor_license')) db.exec('ALTER TABLE stalls ADD COLU
 if (!hasColumn('stalls', 'liquor_order')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_order INTEGER NOT NULL DEFAULT 0');
 if (!hasColumn('stalls', 'liquor_ban')) db.exec('ALTER TABLE stalls ADD COLUMN liquor_ban INTEGER NOT NULL DEFAULT 0');
 // Hovedsikringen (uten egen sikringsboks): 1 = gått, ingen strøm før den byttes.
+// Handleturen med bilen (JSON, se CarTrip i server/game.ts), eller NULL når bilen står parkert.
+if (!hasColumn('stalls', 'car_trip')) db.exec('ALTER TABLE stalls ADD COLUMN car_trip TEXT');
 if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN main_blown INTEGER NOT NULL DEFAULT 0');
 // Lageret ble 26 ruter (én kolonne mindre på hver side): 0 = ting under disken er ikke flyttet ennå.
 if (!hasColumn('stalls', 'storage_26')) db.exec('ALTER TABLE stalls ADD COLUMN storage_26 INTEGER NOT NULL DEFAULT 0');
@@ -192,6 +194,7 @@ if (!hasColumn('stalls', 'meter_kwh')) {
 }
 
 export function tx<T>(fn: () => T): T {
+  if (db.isTransaction) return fn(); // allerede i en transaksjon: bli med i den
   db.exec('BEGIN');
   try {
     const result = fn();

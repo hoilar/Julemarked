@@ -1,5 +1,6 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { findTrashSpot, gridOf, isTrashed, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
+import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost } from '../shared/car.ts';
 import {
   CONTAINERS,
   LOUPE,
@@ -145,7 +146,7 @@ let modal: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: ligger bak disken (eller i hjørnet), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'bil' = 'home';
 let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
 let phonePos: { x: number; y: number } | null = null;
 let phoneDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
@@ -508,7 +509,7 @@ function phoneWindow(s: GameState): string {
   const cartLines = dl.offer.filter((o) => (dealerCart[o.typeId] ?? 0) > 0);
   const cartSum = cartLines.reduce((n, o) => n + o.price * (dealerCart[o.typeId] ?? 0), 0);
   const tip = DEALER_TIPS[Math.floor(s.clock.gameTime / (6 * 3_600_000)) % DEALER_TIPS.length];
-  const meldinger = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>💬 ${esc(DEALER.name)}</b></div>
+  const meldinger = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('meldinger').replace('<img ', '<img class="title-icon" ')} ${esc(DEALER.name)}</b></div>
     <div class="sms-thread">
       <div class="sms in">Yo. Trenger du noe? Kontant. Jeg legger det i søppelkassa di kl. 0${DEALER_HOUR} – hent det før noen andre gjør det.</div>
       <div class="sms in">${esc(tip)}</div>
@@ -531,8 +532,31 @@ function phoneWindow(s: GameState): string {
       .join('')}</ul>
     <button class="dealer-send" data-action="dealer-send" ${cartSum > 0 && s.me.cash >= cartSum ? '' : 'disabled'}>📱 Send SMS · ${kr(cartSum)} kontant</button>
     <p class="phone-empty">Luguberte varer selger bare om natta (kl. 21–08). ${esc(INSPECTOR.name)} leter under disken – en låst safe ser han ikke inn i.</p>`;
+  // Bilbutikken: bytt bil, og dagens bensinpris.
+  const myCar = s.me.items.find((i) => i.place === 'car');
+  const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
+  const tradeIn = carSpec ? Math.round(carSpec.price * TRADE_IN) : 0;
+  const trunkSize = (id: string) => {
+    const t = ITEM_TYPES[id];
+    return t.kind === 'container' ? `${t.inner.cols}×${t.inner.rows}` : '';
+  };
+  const fuelInfo = (c: (typeof CARS)[number]) => (c.fuel === 'bensin' ? `${c.liters} l bensin per tur (${kr(tripFuelCost(c, s.me.car.fuelPrice))} i dag)` : '1 fulladet batteri per tur');
+  const bil = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>🚗 Bilbutikken</b></div>
+    <div class="phone-widget fuel ${s.me.car.fuelExpensive ? 'dear' : ''}"><small>Bensin i dag</small><b>${s.me.car.fuelPrice.toFixed(2).replace('.', ',')} kr/l</b>
+      ${s.me.car.fuelExpensive ? '<small>⚠️ Dyr periode – det varer noen dager.</small>' : '<small>Prisen byttes kl. 07.</small>'}</div>
+    <div class="phone-kicker">Bilene</div>
+    <ul class="car-list">${CARS.map((c) => {
+      const mine = c.id === myCar?.typeId;
+      const cost = c.price - tradeIn;
+      return `<li class="${mine ? 'mine' : ''}"><span class="car-what"><span class="car-emoji">${ITEM_TYPES[c.id].emoji}</span>
+          <span><b>${esc(c.name)}</b><small>${c.minutes} min borte · bagasjerom ${trunkSize(c.id)} (${esc(c.trunkNote)}) · ${fuelInfo(c)}</small><small class="muted">${esc(c.blurb)}</small></span></span>
+        ${mine ? '<span class="pill">Din bil</span>' : `<button class="small" data-action="buy-car" data-car="${c.id}" ${s.me.cash >= cost ? '' : 'disabled'} title="${tradeIn ? `${kr(c.price)} minus ${kr(tradeIn)} i innbytte` : ''}">${cost > 0 ? kr(cost) : cost < 0 ? `Få ${kr(-cost)}` : 'Bytt'}</button>`}</li>`;
+    }).join('')}</ul>
+    <p class="phone-empty">Den gamle bilen tas i innbytte for halv pris. Bagasjerommet må være tomt før du bytter.</p>`;
   const body =
-    phonePage === 'meldinger'
+    phonePage === 'bil'
+      ? bil
+      : phonePage === 'meldinger'
       ? meldinger
       : phonePage === 'kommunen'
       ? kommunen
@@ -560,7 +584,8 @@ function phoneWindow(s: GameState): string {
            ${app('phone-page', appIcon('varsler'), 'Varsler', 'data-page="events"', unreadCount(s))}
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
-           ${mine ? app('phone-page', '<span class="app-emoji">💬</span>', 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length) : ''}
+           ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length) : ''}
+           ${mine ? app('phone-page', '<span class="app-emoji">🚗</span>', 'Bilbutikken', 'data-page="bil"') : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -590,7 +615,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${shopSign(s, stall, own)}
       ${own ? '' : sellerView(stall)}
       ${counterView(stall, own)}
-      ${own ? storageView(s) + keyHookView(s) + trashView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall)}
+      ${own ? storageView(s) + keyHookView(s) + trashView(s) + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
     </div>
     ${own ? '' : phoneSprite(s, false)}
   </div>`;
@@ -883,9 +908,41 @@ function storageView(s: GameState): string {
   </div>`;
 }
 
-/** Alle åpne eske-/pose-vinduer. Hvert kan dras i tittellinjen og husker plassen sin. */
-function boxPanels(s: GameState): string {
-  return openPanels.map((k, n) => boxPanel(s, k, n)).join('');
+/** Alle åpne eske-/pose-vinduer. Hvert kan dras i tittellinjen og husker plassen sin. Hos andre: bare det du bærer. */
+function boxPanels(s: GameState, carriedOnly = false): string {
+  return openPanels
+    .map((k, n) => (!carriedOnly || s.me.items.find((i) => i.id === k)?.place === 'carry' ? boxPanel(s, k, n) : ''))
+    .join('');
+}
+
+const hhmm = (t: number) => formatClock(osloParts(t)).replace(/^.* kl\. /, '');
+
+/** Bilen din står parkert til venstre (du ser baksiden). Trykk for å åpne bagasjerommet. */
+function carView(s: GameState): string {
+  const car = s.me.items.find((i) => i.place === 'car');
+  if (!car) return '';
+  const spec = CAR_BY_ID[car.typeId];
+  const trip = s.me.car.trip;
+  if (trip)
+    return `<div class="car away" title="Du er ute og handler hos ${esc(STORE_BY_ID[trip.store]?.name ?? 'butikken')}"><span class="car-tracks">💨</span><small>Ute og handler · tilbake kl. ${hhmm(trip.until)}</small></div>`;
+  const n = itemsIn(s.me.items, 'box', car.id).length;
+  return `<button class="car ${isOpen(car.id) ? 'open' : ''}" data-action="open-car" data-item="${car.id}" title="${esc(spec?.name ?? 'Bilen')} – trykk for å åpne bagasjerommet">
+    ${sprite(ITEM_TYPES[car.typeId])}<small>${n ? `${n} i bagasjerommet` : 'Bagasjerom'}</small></button>`;
+}
+
+/** Det du bærer: en pose i hver hånd og ryggsekken på ryggen. Dra en pose eller sekk hit. */
+function carryView(s: GameState): string {
+  if (!s.me.stallId) return '';
+  const slots = CARRY_SLOTS.map((sl) => {
+    const it = s.me.items.find((i) => i.place === 'carry' && i.x === sl.x);
+    const t = it && ITEM_TYPES[it.typeId];
+    const count = it ? itemsIn(s.me.items, 'box', it.id).length : 0;
+    const inner = it && t
+      ? `<div class="carry-item ${isOpen(it.id) ? 'open' : ''}" data-drag="${it.id}" title="${esc(t.name)} med ${count} ${count === 1 ? 'ting' : 'ting'} – trykk for å se oppi">${sprite(t)}${count ? `<b class="carry-count">${count}</b>` : ''}</div>`
+      : `<span class="carry-empty">${sl.x === 2 ? '🎒' : '✋'}</span>`;
+    return `<div class="carry-slot ${it ? 'full' : ''}" data-carry-slot="${sl.x}" title="${sl.name}: ${sl.x === 2 ? 'dra en ryggsekk hit' : 'dra en handlepose hit'}">${inner}<small>${sl.name}</small></div>`;
+  }).join('');
+  return `<div class="carry ${screen.kind === 'visit' ? 'visit' : ''}"><div class="carry-label">Du bærer</div><div class="carry-slots">${slots}</div></div>`;
 }
 
 function boxPanel(s: GameState, key: PanelKey, n: number): string {
@@ -908,8 +965,10 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     if (box && t?.id === STRIP.id) return stripPanel(s, box, n);
     if (box && t?.id === FUSEBOX.id) return fusePanel(s, box, n);
     if (!box || t?.kind !== 'container') return '';
+    if (t.car && s.me.car.trip) return '';
     ({ cols, rows } = t.inner);
-    title = `${icon(t)} ${esc(t.name)}`;
+    title = t.car ? `${icon(t)} Bagasjerommet · ${esc(t.name)}` : `${icon(t)} ${esc(t.name)}`;
+    if (t.car) cls = 'trunk-panel';
     grid = `data-grid="box" data-box="${box.id}"`;
     const contents = itemsIn(s.me.items, 'box', box.id);
     if (contents.length > 0) {
@@ -1310,7 +1369,7 @@ function snoopModal(s: GameState, view: SnoopView | null, caught?: string): stri
         ${soap ? '<button class="small" data-action="snoop-imprint">🧼 Ta avtrykk i såpe</button>' : '<span class="muted">Med et såpestykke kunne du tatt avtrykk av den.</span>'}</p>`
     : '';
   return `<h2>🕵️ Bak disken hos «${esc(view.stallName)}»</h2>
-    <p class="muted">Det du tar, havner under disken din. Alt du gjør, kan ${POLICE.name} se – og du legger igjen spor.</p>
+    <p class="muted">Det du tar, bærer du med deg – i en pose i hånda eller i ryggsekken. Alt du gjør, kan ${POLICE.name} se – og du legger igjen spor.</p>
     ${key}
     ${rows ? `<ul class="trash-list snoop-list">${rows}</ul>` : '<p class="muted">Tomt under disken.</p>'}
     <div class="row auto-row"><button class="ghost" data-action="close">Gå ut igjen</button></div>`;
@@ -1448,7 +1507,7 @@ function eventList(s: GameState): string {
 type ShopTab = 'kiwi' | 'rema' | 'extra' | 'klas';
 let shopTab: ShopTab = 'kiwi';
 const carts: Record<string, Record<string, number>> = {}; // butikk → vare → antall
-let express = false;
+let shipMode: 'standard' | 'express' | 'car' = 'standard';
 
 let useCards = true; // trekk gavekort i kassen
 
@@ -1517,7 +1576,12 @@ function storeView(s: GameState, storeId: string): string {
   const goodsSum = lines.reduce((n, l) => n + l.qty * l.price, 0);
   const bags = lines.length ? packBags(lines).length : 0;
   const expressCost = expressPrice(state!.clock.firstDay);
-  const ship = express ? expressCost : SHIPPING.standard;
+  const myCar = s.me.items.find((i) => i.place === 'car');
+  const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
+  const fuelCost = carSpec ? tripFuelCost(carSpec, s.me.car.fuelPrice) : 0;
+  if (shipMode === 'car' && (!carSpec || s.me.car.trip)) shipMode = 'standard';
+  const express = shipMode === 'express';
+  const ship = shipMode === 'car' ? fuelCost : express ? expressCost : SHIPPING.standard;
   const gross = goodsSum + bags * BAG_PRICE + (lines.length ? ship : 0);
   // Kuponger (som serveren: beste per vare, hele linja) og gavekort i samme butikk.
   const couponLines = lines
@@ -1539,8 +1603,11 @@ function storeView(s: GameState, storeId: string): string {
          ${cardUsed > 0 ? `<li class="cart-card"><span>🎁 Gavekort</span><span>−${kr(cardUsed)}</span></li>` : ''}</ul>
        ${cardBalance > 0 ? `<label class="card-toggle"><input type="checkbox" data-action="use-cards" ${useCards ? 'checked' : ''}> Bruk gavekort (${kr(cardBalance)} på ${esc(store.name)}-kort)</label>` : ''}
        <div class="ship-choice">
-         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${express ? '' : 'checked'}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
          <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : '<b>GRATIS i dag</b>'} – innen 1 time</label>
+         ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}"><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}>
+           🚗 Hent selv med ${esc(carSpec.name)} – ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin${s.me.car.fuelExpensive ? ' (dyr bensin nå)' : ''}` : '1 fulladet batteri'}, ingen frakt
+           <small>Boden stenges i ${carSpec.minutes} min mens du er borte. Varene legges i bagasjerommet – i eskene der først, så i poser.</small></label>` : ''}
        </div>
        <div class="cart-total"><span>Totalt</span><b>${kr(total)}</b></div>
        <button class="order-btn" data-action="shop-order" data-store="${storeId}" style="--brand:${store.color};--brand-ink:${store.ink}">Bestill fra ${esc(store.name)}</button>`
@@ -1566,7 +1633,7 @@ function storeView(s: GameState, storeId: string): string {
     ${
       lines.length
         ? `<div class="cart-bar" style="--brand:${store.color};--brand-ink:${store.ink}">
-             <span>🛒 ${lines.reduce((n, l) => n + l.qty, 0)} varer · <b>${kr(total)}</b> <small>(${express ? 'ekspress' : 'levering i morgen'})</small></span>
+             <span>🛒 ${lines.reduce((n, l) => n + l.qty, 0)} varer · <b>${kr(total)}</b> <small>(${shipMode === 'car' ? 'hent selv' : express ? 'ekspress' : 'levering i morgen'})</small></span>
              <button class="small" data-action="shop-order" data-store="${storeId}">Bestill</button>
            </div>`
         : ''
@@ -1592,7 +1659,7 @@ function klasView(s: GameState): string {
     `<form class="klas-form" data-form="supplies" data-type="${id}"><input name="qty" type="number" min="1" max="${max}" value="1" aria-label="Antall"><button class="small">Kjøp</button></form>`;
   const kw = (n: number) => n.toString().replace('.', ',');
 
-  const boxes = CONTAINERS.filter((c) => !c.shopBag).map((c) =>
+  const boxes = CONTAINERS.filter((c) => !c.shopBag && !c.car).map((c) =>
     klasCard({ name: c.name, image: c.image, emoji: c.emoji, size: c.size, price: c.price, sub: `Rommer ${c.inner.cols}×${c.inner.rows} (${c.inner.cols * c.inner.rows} ruter)`, have: has(c.id), buy: form(c.id) }),
   );
   const tools = TOOLS.filter((t) => t.id !== PHONE && !t.dealerOnly).map((t) =>
@@ -2120,7 +2187,7 @@ function modalView(s: GameState): string {
           })
           .join('')}</ul>`
       : '<p class="muted">Søppelkassa er tom.</p>';
-    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, havner under disken din.</p>${list}`;
+    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, bærer du – i en pose i hånda eller i ryggsekken.</p>${list}`;
   }
 
   if (modal.kind === 'product') {
@@ -2253,7 +2320,12 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
     inPanel = true;
     break;
   }
-  if (!inPanel) grids = [...document.querySelectorAll<HTMLElement>('[data-grid="storage"]')];
+  if (!inPanel) {
+    for (const el of document.querySelectorAll<HTMLElement>('[data-carry-slot]'))
+      if (inside(el.getBoundingClientRect(), px, py)) return { place: 'carry', boxId: null, x: Number(el.dataset.carrySlot), y: 0 };
+    if (screen.kind !== 'stall') return null;
+    grids = [...document.querySelectorAll<HTMLElement>('[data-grid="storage"]')];
+  }
   for (const el of grids) {
     const r = el.getBoundingClientRect();
     if (!inside(r, px, py)) continue;
@@ -2294,8 +2366,15 @@ function showPreview(d: Drag | null) {
   document.querySelector('.drop-preview')?.remove();
   const nail = document.querySelector('[data-nail]');
   nail?.classList.remove('target', 'bad');
+  document.querySelectorAll('[data-carry-slot]').forEach((el) => el.classList.remove('target', 'bad'));
   if (!d?.spot) return;
   const { spot } = d;
+  if (spot.place === 'carry') {
+    const el = document.querySelector(`[data-carry-slot="${spot.x}"]`);
+    el?.classList.add('target');
+    el?.classList.toggle('bad', !!d.error);
+    return;
+  }
   if (spot.place === 'nail') {
     nail?.classList.add('target');
     nail?.classList.toggle('bad', !!d.error);
@@ -2635,7 +2714,7 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'snoop-take' && modal?.kind === 'snoop' && modal.view) {
-    void snoopAct('/api/snoop/take', { stallId: modal.view.stallId, itemId: Number(el.dataset.item) }, '🕵️ Tatt med – den ligger under disken din.');
+    void snoopAct('/api/snoop/take', { stallId: modal.view.stallId, itemId: Number(el.dataset.item) }, '🕵️ Tatt med – du bærer den.');
     return;
   }
   if (action === 'snoop-imprint' && modal?.kind === 'snoop' && modal.view) {
@@ -2675,9 +2754,15 @@ app.addEventListener('click', (e) => {
     phonePage = 'home';
   }
   if (action === 'phone-close') phoneOpen = false;
+  if (action === 'open-car') togglePanel(Number(el.dataset.item));
+  if (action === 'buy-car') {
+    const c = CAR_BY_ID[el.dataset.car ?? ''];
+    if (c && confirm(`Kjøpe ${c.name}? Den gamle bilen tas i innbytte.`)) void act('/api/car/buy', { car: c.id }, `🚗 ${c.name} står parkert ved boden.`);
+    return;
+  }
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'bil' ? p : 'home';
   }
   if (action === 'autogiro' && state) {
     const on = !state.me.autogiro;
@@ -2757,7 +2842,7 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'other-trash') modal = { kind: 'othertrash', stallId: Number(el.dataset.stall) };
   if (action === 'take-trash') {
-    act('/api/trash/take', { stallId: Number(el.dataset.stall), itemId: Number(el.dataset.item) }, '🗑️ Tatt med – den ligger under disken din.');
+    act('/api/trash/take', { stallId: Number(el.dataset.stall), itemId: Number(el.dataset.item) }, '🗑️ Tatt med – du bærer den.');
     return;
   }
   if (action === 'loupe') {
@@ -2856,7 +2941,7 @@ app.addEventListener('click', (e) => {
     const left = state.shops.find((x) => x.id === el.dataset.store)?.items.find((i) => i.typeId === id)?.left ?? 0;
     cart[id] = Math.max(0, Math.min(left, (cart[id] ?? 0) + Number(el.dataset.delta)));
   }
-  if (action === 'ship') express = el.dataset.express === '1';
+  if (action === 'ship') shipMode = el.dataset.mode === 'car' ? 'car' : el.dataset.express === '1' ? 'express' : 'standard';
   if (action === 'use-cards') useCards = !useCards;
   if (action === 'shop-order') {
     const store = el.dataset.store!;
@@ -2864,7 +2949,13 @@ app.addEventListener('click', (e) => {
       .filter(([, n]) => n > 0)
       .map(([typeId, qty]) => ({ typeId, qty }));
     const name = STORE_BY_ID[store].name;
-    act('/api/shop/order', { store, lines, express, useCards }, express ? `🚚 Ekspress fra ${name} – kommer innen en time.` : `📦 Bestilt fra ${name} – kommer ${osloParts(state!.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.`).then(
+    const okMsg =
+      shipMode === 'car'
+        ? `🚗 Du kjører til ${name}. Varene ligger i bagasjerommet når du er tilbake.`
+        : shipMode === 'express'
+          ? `🚚 Ekspress fra ${name} – kommer innen en time.`
+          : `📦 Bestilt fra ${name} – kommer ${osloParts(state!.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.`;
+    act('/api/shop/order', { store, lines, mode: shipMode, useCards }, okMsg).then(
       (ok) => {
         if (ok) {
           carts[store] = {};
