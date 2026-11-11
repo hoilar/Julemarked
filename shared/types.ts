@@ -63,6 +63,12 @@ export interface Item {
   note?: { kind: 'code' | 'text'; text: string }; // bare kodelapper og notater
   key?: { stallId: number; stallName: string }; // bare såpeavtrykk og kopinøkler: hvilken bod de passer til
   keyJob?: { stallName: string; until: number };
+  /**
+   * Noen har tuklet med gjenstanden mens de snoket. Bare eieren får vite det (når de trykker på den).
+   * looksLike: etiketten er byttet – den ser ut som denne varen (typeId er da det den ser ut som, real det den egentlig er).
+   * forged: noen har skrevet «Hjemmelaget» på den. planted: den lå ikke her før – noen har lagt den her.
+   */
+  tamper?: { looksLike?: string; real?: string; forged?: boolean; planted?: boolean };
   tabs?: string[]; // bare dokumentmapper: navnene på fanene // bare nøkkelmaskinen: kopien den holder på med (ferdig da)
   boxId: number | null; // eskens id når place = 'box'
   x: number;
@@ -80,24 +86,38 @@ export interface Power {
 }
 
 /** Det du ser når du snoker bak disken hos en annen. */
+export interface SnoopItem {
+  id: number;
+  typeId: string; // det den ser ut som (en byttet etikett viser den vanlige varen)
+  place: 'storage' | 'box';
+  boxId: number | null;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  cantTake?: string; // hvorfor du ikke kan ta den med
+  locked?: boolean; // safer: låst
+  note?: string; // lapper og notater: det som står på dem
+  label?: 'store' | 'home'; // salgsvarer: hva etiketten sier
+  tabs?: string[]; // dokumentmappa: fanene
+  yours?: string; // du har tuklet med den: hva du gjorde
+}
+
 export interface SnoopView {
   stallId: number;
   stallName: string;
   key: boolean; // nøkkelen henger på plassen sin (boden er ikke stengt)
-  items: {
-    id: number;
-    typeId: string;
-    where: string; // «Under disken», «I pappkartong», «I safen»
-    takeable: boolean;
-    locked?: boolean; // safer: låst
-    note?: string; // lapper og notater: det som står på dem
-  }[];
+  since: number; // ekte ms da du gikk inn bak disken
+  big: number; // store ting du har tatt
+  alarm: boolean; // alarmsystemet er på
+  items: SnoopItem[];
 }
 
 /** Svar fra snoke-handlinger: ny utsikt, eller at Tyttebærpolitiet tok deg. */
 export interface SnoopResult {
   view?: SnoopView;
   caught?: string;
+  left?: string; // du gikk ut uten å bli tatt
 }
 
 export interface StallPublic {

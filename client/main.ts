@@ -58,7 +58,7 @@ import {
   type Label,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
-import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS } from '../shared/snoop.ts';
+import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS, disguisesFor, leaveRisk } from '../shared/snoop.ts';
 import {
   avatarFor,
   inspectorImage,
@@ -130,7 +130,8 @@ type Modal =
   | { kind: 'plug'; strip: number | null; index: number }
   | { kind: 'safe'; itemId: number }
   | { kind: 'othertrash'; stallId: number }
-  | { kind: 'snoop'; view: SnoopView | null; caught?: string };
+  | { kind: 'snoop'; view: SnoopView | null; caught?: string }
+  | { kind: 'tampered'; itemId: number };
 
 // Forstørrelsesglasset under din egen disk: ruter du har sjekket (nøkkel «x,y» → fant spor?).
 let loupeMode = false;
@@ -365,7 +366,7 @@ function playNewSales(s: GameState) {
 function render() {
   // Ikke tegn på nytt midt i et drag eller mens brukeren skriver i et felt.
   const active = document.activeElement;
-  if (drag || panelDrag || paperDrag || phoneDrag || (active && app.contains(active) && /INPUT|SELECT/.test(active.tagName))) {
+  if (drag || sdrag || panelDrag || paperDrag || phoneDrag || (active && app.contains(active) && /INPUT|SELECT/.test(active.tagName))) {
     pendingRender = true;
     return;
   }
@@ -1461,28 +1462,132 @@ function snoopButton(stall: StallPublic): string {
   return '';
 }
 
-function snoopModal(s: GameState, view: SnoopView | null, caught?: string): string {
-  if (caught) return `<h2>🫐 ${POLICE.name}!</h2><p>${esc(caught.replace(/^🫐 /, ''))}</p><div class="row auto-row"><button data-action="close">Au</button></div>`;
-  if (!view) return '<p class="muted">Titter bak disken …</p>';
-  const soap = hasTool(s, SOAP);
-  const rows = view.items
-    .map((i) => {
-      const t = ITEM_TYPES[i.typeId];
-      const what = `<span class="trash-thing">${icon(t)} ${esc(t.name)}<small>${esc(i.where)}${i.note ? ` · «${esc(i.note)}»` : ''}</small></span>`;
-      if (i.locked)
-        return `<li>${what}<form data-form="snoop-safe" data-safe="${i.id}" class="snoop-safe"><input name="code" inputmode="numeric" pattern="\\d{4}" maxlength="4" autocomplete="off" placeholder="••••" required><button class="small">Prøv</button></form></li>`;
-      return `<li>${what}${i.takeable ? `<button class="small" data-action="snoop-take" data-item="${i.id}">Ta med</button>` : ''}</li>`;
+// --- Bak disken hos en annen: rutenettet deres, det du bærer, og det du kan gjøre ---
+
+let snoopOpen = new Set<number>(); // esker/poser/mapper du har åpnet hos den andre
+let snoopSel: number | null = null; // gjenstanden du har trykket på
+const snoopTab = new Map<number, number>(); // dokumentmapper: fanen som vises
+
+function snoopReset() {
+  snoopOpen = new Set();
+  snoopSel = null;
+  snoopTab.clear();
+}
+
+function snoopItemView(i: { id: number; typeId: string; x: number; y: number; w: number; h: number; locked?: boolean }, cols: number, rows: number, yoff: number, attr: string, extra = ''): string {
+  const t = ITEM_TYPES[i.typeId];
+  const box = t.kind === 'container';
+  const style = `left:${(i.x / cols) * 100}%;top:${((i.y - yoff) / rows) * 100}%;width:${(i.w / cols) * 100}%;height:${(i.h / rows) * 100}%;--min:${Math.min(i.w, i.h)}`;
+  const img = box && t.imageOpen && i.locked === false ? t.imageOpen : t.image;
+  return `<div class="gitem ${t.image ? 'has-img' : ''} ${box ? 'box' : ''} ${extra}" style="${style}" ${attr}="${i.id}" title="${esc(t.name)}">${sprite({ emoji: t.emoji, image: img })}</div>`;
+}
+
+/** Et rutenett hos den andre (under disken eller i en eske). Dokumentmappa viser én fane av gangen. */
+function snoopGrid(view: SnoopView, place: 'storage' | 'box', boxId: number | null, cols: number, rows: number, yoff = 0): string {
+  const items = view.items
+    .filter((i) => i.place === place && i.boxId === boxId && i.y >= yoff && i.y < yoff + rows)
+    .map((i) => snoopItemView(i, cols, rows, yoff, 'data-sdrag', `${snoopOpen.has(i.id) ? 'open' : ''} ${snoopSel === i.id ? 'sel' : ''} ${i.yours ? 'yours' : ''}`))
+    .join('');
+  return `<div class="grid snoop-grid" data-sgrid="${place}" ${boxId != null ? `data-box="${boxId}"` : ''} data-yoff="${yoff}" style="--cols:${cols};--rows:${rows};width:calc(var(--cell) * ${cols});height:calc(var(--cell) * ${rows})">${items}</div>`;
+}
+
+function snoopBoxes(view: SnoopView): string {
+  return [...snoopOpen]
+    .map((id) => {
+      const it = view.items.find((i) => i.id === id);
+      if (!it) return '';
+      const t = ITEM_TYPES[it.typeId];
+      if (t.kind !== 'container' || it.locked) return '';
+      const folder = (t as { docFolder?: { tabs: number; tabGrid: { cols: number; rows: number } } }).docFolder;
+      let tabs = '';
+      let rows = t.inner.rows;
+      let yoff = 0;
+      if (folder) {
+        const tab = snoopTab.get(id) ?? 0;
+        rows = folder.tabGrid.rows;
+        yoff = tab * rows;
+        tabs = `<div class="snoop-tabs">${(it.tabs ?? []).map((n, k) => `<button class="small ${k === tab ? '' : 'ghost'}" data-action="snoop-tab" data-item="${id}" data-tab="${k}">${esc(n)}</button>`).join('')}</div>`;
+      }
+      return `<div class="snoop-box"><div class="snoop-box-title">${icon(t)} ${esc(t.name)}<button class="small ghost" data-action="snoop-open" data-item="${id}" aria-label="Lukk">✕</button></div>${tabs}${snoopGrid(view, 'box', id, t.inner.cols, rows, yoff)}</div>`;
     })
     .join('');
+}
+
+/** Det du bærer: posene i hendene og ryggsekken, med det som ligger i dem. Slipp noe her for å ta det med. */
+function snoopCarried(s: GameState): string {
+  const carried = s.me.items.filter((i) => i.place === 'carry' && ITEM_TYPES[i.typeId].kind === 'container').sort((a, b) => a.x - b.x);
+  const bags = carried
+    .map((c) => {
+      const t = ITEM_TYPES[c.typeId];
+      if (t.kind !== 'container') return '';
+      const { cols, rows } = t.inner;
+      const items = s.me.items
+        .filter((x) => x.place === 'box' && x.boxId === c.id)
+        .map((x) => snoopItemView(x, cols, rows, 0, 'data-mdrag'))
+        .join('');
+      return `<div class="snoop-carry"><small>${icon(t)} ${esc(t.name)}</small><div class="grid snoop-grid" style="--cols:${cols};--rows:${rows};width:calc(var(--cell) * ${cols});height:calc(var(--cell) * ${rows})">${items}</div></div>`;
+    })
+    .join('');
+  return `<div class="snoop-mine" data-mgrid>
+    <h3>Du bærer</h3>
+    ${bags || '<p class="muted">Ingenting å bære i. Ta en pose i hånda eller ryggsekken på før du snoker.</p>'}
+    <p class="muted small-note">Dra ting hit for å ta dem med, og fra posen din inn under disken deres for å legge dem der.</p>
+  </div>`;
+}
+
+/** Det du har trykket på: hva det er, og hva du kan gjøre med det. */
+function snoopDetail(s: GameState, view: SnoopView): string {
+  const it = view.items.find((i) => i.id === snoopSel);
+  if (!it) return '<p class="muted">Trykk på noe for å se nærmere på det. Dra for å flytte det rundt.</p>';
+  const t = ITEM_TYPES[it.typeId];
+  const parent = it.boxId != null ? view.items.find((i) => i.id === it.boxId) : undefined;
+  const where = parent ? `I ${ITEM_TYPES[parent.typeId].name.toLowerCase()}` : 'Under disken';
+  const pen = hasTool(s, PEN);
+  const bits: string[] = [];
+  if (it.label) bits.push(it.label === 'home' ? 'Etikett: «Hjemmelaget»' : 'Kjøpt i butikk');
+  if (it.note) bits.push(`«${esc(it.note)}»`);
+  const acts: string[] = [];
+  if (it.locked)
+    acts.push(`<form data-form="snoop-safe" data-safe="${it.id}" class="snoop-safe"><input name="code" inputmode="numeric" pattern="\\d{4}" maxlength="4" autocomplete="off" placeholder="••••" required><button class="small">Prøv koden</button></form>`);
+  else if (t.kind === 'container') acts.push(`<button class="small ghost" data-action="snoop-open" data-item="${it.id}">${snoopOpen.has(it.id) ? 'Lukk' : 'Åpne'}</button>`);
+  acts.push(it.cantTake ? `<span class="muted">${esc(it.cantTake)}</span>` : `<button class="small" data-action="snoop-take" data-item="${it.id}">Ta med</button>`);
+  if (t.kind === 'product' && it.label === 'store')
+    acts.push(pen ? `<button class="small ghost" data-action="snoop-forge" data-item="${it.id}" title="Forstørrelsesglasset og Tilsynsmannen avslører det – eieren får skylda.">🖊️ Skriv «Hjemmelaget»</button>` : '<span class="muted">Med en penn kunne du skrevet «Hjemmelaget» på den.</span>');
+  const fakes = disguisesFor(it.typeId);
+  if (fakes.length)
+    acts.push(
+      pen
+        ? `<span class="snoop-relabel"><select data-snoop-as>${fakes.map((id) => `<option value="${id}">${esc(ITEM_TYPES[id].name)}</option>`).join('')}</select><button class="small ghost" data-action="snoop-relabel" data-item="${it.id}" title="Eieren ser den vanlige varen til de trykker på den. Tilsynsmannen ser alkoholen.">🏷️ Bytt etikett</button></span>`
+        : '<span class="muted">Med en penn kunne du byttet etiketten, så den ser ut som en vanlig drikke.</span>',
+    );
+  return `<div class="snoop-detail">
+    <div class="snoop-detail-head">${icon(t)} <strong>${esc(t.name)}</strong><small>${where}</small></div>
+    ${bits.length ? `<p>${bits.join(' · ')}</p>` : ''}
+    ${it.yours ? `<p class="snoop-yours">${esc(it.yours)}.</p>` : ''}
+    <div class="snoop-acts">${acts.join('')}</div>
+  </div>`;
+}
+
+function snoopModal(s: GameState, view: SnoopView | null, caught?: string): string {
+  if (caught) return `<h2>🫐 ${POLICE.name}!</h2><p>${esc(caught.replace(/^🫐 /, ''))}</p><div class="row auto-row"><button data-action="close">Au</button></div>`;
+  if (!view) return '<p class="muted">Sniker deg inn bak disken …</p>';
+  const minutes = Math.max(0, (Date.now() - view.since) / 60_000);
+  const risk = Math.round(leaveRisk(minutes, view.big, view.alarm) * 100);
+  const why = [`inne i ${Math.floor(minutes)} min`, view.alarm ? 'alarmen er på' : '', view.big ? `${view.big} store ting` : ''].filter(Boolean).join(', ');
+  const soap = hasTool(s, SOAP);
   const key = view.key
-    ? `<p class="snoop-key">🔑 Nøkkelen til hengelåsen henger på plassen sin.
+    ? `<p class="snoop-key"><img class="icon" src="/art/nokkel-krok.png" alt=""> Nøkkelen til hengelåsen henger på plassen sin.
         ${soap ? '<button class="small" data-action="snoop-imprint">🧼 Ta avtrykk i såpe</button>' : '<span class="muted">Med et såpestykke kunne du tatt avtrykk av den.</span>'}</p>`
     : '';
+  const { cols, rows } = STORAGE_GRID;
   return `<h2>🕵️ Bak disken hos «${esc(view.stallName)}»</h2>
-    <p class="muted">Det du tar, bærer du med deg – i en pose i hånda eller i ryggsekken. Alt du gjør, kan ${POLICE.name} se – og du legger igjen spor.</p>
-    ${key}
-    ${rows ? `<ul class="trash-list snoop-list">${rows}</ul>` : '<p class="muted">Tomt under disken.</p>'}
-    <div class="row auto-row"><button class="ghost" data-action="close">Gå ut igjen</button></div>`;
+    <p class="snoop-risk ${risk >= 20 ? 'high' : ''}">Sjanse for at ${POLICE.name} ser deg når du går: <strong>${risk} %</strong> <small>(${why})</small></p>
+    <div class="snoop-storage"><div class="storage-label">Under disken</div>${snoopGrid(view, 'storage', null, cols, rows)}</div>
+    <div class="snoop-lower">
+      <div class="snoop-boxes">${snoopBoxes(view)}${snoopDetail(s, view)}${key}</div>
+      ${snoopCarried(s)}
+    </div>
+    <div class="row auto-row"><button data-action="snoop-leave">Gå tilbake til boden din</button></div>`;
 }
 
 /** Utfører en snoke-handling og oppdaterer vinduet (eller viser at du ble tatt). */
@@ -1491,9 +1596,12 @@ async function snoopAct(path: string, body: Record<string, unknown>, ok?: string
     const r = await api<SnoopResult>(path, body);
     if (r.caught) {
       modal = { kind: 'snoop', view: null, caught: r.caught };
+      snoopReset();
       toast(`🫐 ${POLICE.name} tok deg!`, true);
     } else if (r.view) {
       modal = { kind: 'snoop', view: r.view };
+      if (snoopSel != null && !r.view.items.some((i) => i.id === snoopSel)) snoopSel = null;
+      for (const id of snoopOpen) if (!r.view.items.some((i) => i.id === id)) snoopOpen.delete(id);
       if (ok) toast(ok);
     }
   } catch (err) {
@@ -1501,6 +1609,197 @@ async function snoopAct(path: string, body: Record<string, unknown>, ok?: string
   }
   await refresh();
 }
+
+/** Går ut fra disken og tilbake til boden din – først nå kan Tyttebærpolitiet se deg. */
+async function snoopLeaveNow() {
+  modal = null;
+  snoopReset();
+  render();
+  try {
+    const r = await api<SnoopResult>('/api/snoop/end', {});
+    if (r.caught) {
+      modal = { kind: 'snoop', view: null, caught: r.caught };
+      toast(`🫐 ${POLICE.name} tok deg!`, true);
+    } else if (r.left) toast(r.left);
+  } catch (err) {
+    toast((err as Error).message, true);
+  }
+  await refresh();
+}
+
+/** Eieren trykker på noe en snoker har tuklet med. */
+function tamperedModal(s: GameState, itemId: number): string {
+  const it = s.me.items.find((i) => i.id === itemId);
+  if (!it?.tamper) return '<p class="muted">Den ser helt vanlig ut nå.</p><div class="row auto-row"><button data-action="close">Lukk</button></div>';
+  const t = ITEM_TYPES[it.typeId];
+  const tm = it.tamper;
+  const lines: string[] = [];
+  let fix = 'Greit';
+  if (tm.looksLike && tm.real) {
+    const real = ITEM_TYPES[tm.real];
+    lines.push(`Etiketten er byttet! Det står «${esc(t.name)}» på den, men det er ${icon(real)} <strong>${esc(real.name)}</strong>${isAlcohol(tm.real) ? ' – alkohol' : ''}.`);
+    fix = 'Riv av etiketten';
+  }
+  if (tm.forged) {
+    lines.push('Noen har skrevet «Hjemmelaget» på den med penn. Den er kjøpt i butikk.');
+    fix = tm.looksLike ? fix : 'Stryk det over';
+  }
+  if (tm.planted) {
+    lines.push('Denne lå ikke her før. Noen har lagt den under disken din.');
+    if (!tm.looksLike && !tm.forged) fix = 'Greit, den er min nå';
+  }
+  return `<h2>⚠️ Noen har tuklet med denne</h2>
+    <p>${icon(t)} ${lines.join('</p><p>')}</p>
+    <p class="muted">Noen har snoket under disken din. Med forstørrelsesglasset kan du lete etter sporet de la igjen.</p>
+    <div class="row auto-row"><button data-action="fix-tamper" data-item="${it.id}">${fix}</button><button class="ghost" data-action="close">Lukk</button></div>`;
+}
+
+// Dra-og-slipp bak disken hos en annen (egne enkle håndterere; serveren sjekker plassene).
+interface SnoopDrag {
+  id: number;
+  mine: boolean; // noe du bærer (legges inn hos dem) – ellers deres (flyttes eller tas med)
+  startX: number;
+  startY: number;
+  dx: number;
+  dy: number;
+  ow: number;
+  oh: number;
+  grabCX: number;
+  grabCY: number;
+  w: number;
+  h: number;
+  moved: boolean;
+  origin: HTMLElement;
+  ghost: HTMLElement | null;
+  target: { kind: 'mine' } | { kind: 'their'; place: 'storage' | 'box'; boxId: number | null; x: number; y: number } | null;
+}
+let sdrag: SnoopDrag | null = null;
+let sdragEndAt = 0;
+
+function snoopTarget(d: SnoopDrag, px: number, py: number): SnoopDrag['target'] {
+  if (!d.mine) {
+    const mine = document.querySelector<HTMLElement>('[data-mgrid]');
+    if (mine && inside(mine.getBoundingClientRect(), px, py)) return { kind: 'mine' };
+  }
+  const grids = [...document.querySelectorAll<HTMLElement>('[data-sgrid]')].reverse(); // eskene ligger etter lageret
+  for (const el of grids) {
+    const r = el.getBoundingClientRect();
+    if (!inside(r, px, py)) continue;
+    const cell = r.width / Number(el.style.getPropertyValue('--cols'));
+    return {
+      kind: 'their',
+      place: el.dataset.sgrid === 'box' ? 'box' : 'storage',
+      boxId: el.dataset.box ? Number(el.dataset.box) : null,
+      x: Math.round((px - r.left) / cell - d.grabCX),
+      y: Math.round((py - r.top) / cell - d.grabCY) + Number(el.dataset.yoff ?? 0),
+    };
+  }
+  return null;
+}
+
+function snoopPreview(d: SnoopDrag | null) {
+  document.querySelector('.snoop-preview')?.remove();
+  document.querySelector('[data-mgrid]')?.classList.remove('target');
+  const tg = d?.target;
+  if (!d || !tg) return;
+  if (tg.kind === 'mine') {
+    document.querySelector('[data-mgrid]')?.classList.add('target');
+    return;
+  }
+  const sel = tg.place === 'box' ? `[data-sgrid="box"][data-box="${tg.boxId}"]` : '[data-sgrid="storage"]';
+  const grid = document.querySelector<HTMLElement>(sel);
+  if (!grid) return;
+  const cols = Number(grid.style.getPropertyValue('--cols'));
+  const rows = Number(grid.style.getPropertyValue('--rows'));
+  const yoff = Number(grid.dataset.yoff ?? 0);
+  const el = document.createElement('div');
+  const fits = tg.x >= 0 && tg.y - yoff >= 0 && tg.x + d.w <= cols && tg.y - yoff + d.h <= rows;
+  el.className = `drop-preview snoop-preview ${fits ? 'ok' : 'bad'}`;
+  Object.assign(el.style, { left: `${(tg.x / cols) * 100}%`, top: `${((tg.y - yoff) / rows) * 100}%`, width: `${(d.w / cols) * 100}%`, height: `${(d.h / rows) * 100}%` });
+  grid.appendChild(el);
+}
+
+app.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || modal?.kind !== 'snoop' || !modal.view || !state) return;
+  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-sdrag], [data-mdrag]');
+  if (!el) return;
+  const mine = el.dataset.mdrag !== undefined;
+  const id = Number(mine ? el.dataset.mdrag : el.dataset.sdrag);
+  const it = mine ? state.me.items.find((i) => i.id === id) : modal.view.items.find((i) => i.id === id);
+  if (!it) return;
+  e.preventDefault();
+  const r = el.getBoundingClientRect();
+  sdrag = {
+    id,
+    mine,
+    startX: e.clientX,
+    startY: e.clientY,
+    dx: e.clientX - r.left,
+    dy: e.clientY - r.top,
+    ow: r.width,
+    oh: r.height,
+    grabCX: Math.min(it.w - 0.5, (e.clientX - r.left) / (r.width / it.w)),
+    grabCY: Math.min(it.h - 0.5, (e.clientY - r.top) / (r.height / it.h)),
+    w: it.w,
+    h: it.h,
+    moved: false,
+    origin: el,
+    ghost: null,
+    target: null,
+  };
+});
+
+window.addEventListener('pointermove', (e) => {
+  const d = sdrag;
+  if (!d) return;
+  if (!d.moved) {
+    if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 6) return;
+    d.moved = true;
+    const ghost = d.origin.cloneNode(true) as HTMLElement;
+    ghost.removeAttribute('data-sdrag');
+    ghost.removeAttribute('data-mdrag');
+    ghost.classList.add('snoop-ghost');
+    Object.assign(ghost.style, { width: `${d.ow}px`, height: `${d.oh}px` });
+    document.querySelector('.snoop-modal')?.appendChild(ghost);
+    d.ghost = ghost;
+    d.origin.classList.add('lifted');
+    document.body.classList.add('dragging');
+  }
+  d.ghost!.style.left = `${e.clientX - d.dx}px`;
+  d.ghost!.style.top = `${e.clientY - d.dy}px`;
+  d.target = snoopTarget(d, e.clientX, e.clientY);
+  snoopPreview(d);
+});
+
+window.addEventListener('pointerup', () => {
+  const d = sdrag;
+  if (!d) return;
+  sdrag = null;
+  d.ghost?.remove();
+  d.origin.classList.remove('lifted');
+  document.body.classList.remove('dragging');
+  snoopPreview(null);
+  sdragEndAt = Date.now();
+  if (modal?.kind !== 'snoop' || !modal.view) return render();
+  const view = modal.view;
+  if (!d.moved) {
+    if (!d.mine) {
+      const it = view.items.find((i) => i.id === d.id);
+      snoopSel = d.id;
+      if (it && ITEM_TYPES[it.typeId].kind === 'container' && !it.locked) {
+        if (snoopOpen.has(d.id)) snoopOpen.delete(d.id);
+        else snoopOpen.add(d.id);
+      }
+    }
+    return render();
+  }
+  const tg = d.target;
+  if (!tg) return render();
+  if (tg.kind === 'mine') void snoopAct('/api/snoop/take', { stallId: view.stallId, itemId: d.id }, '🕵️ Tatt med – du bærer den.');
+  else if (d.mine) void snoopAct('/api/snoop/plant', { stallId: view.stallId, itemId: d.id, place: tg.place, boxId: tg.boxId, x: tg.x, y: tg.y }, '🕵️ Lagt under disken deres.');
+  else void snoopAct('/api/snoop/move', { stallId: view.stallId, itemId: d.id, place: tg.place, boxId: tg.boxId, x: tg.x, y: tg.y });
+  render();
+});
 
 /** Nøkkelplassen og forstørrelsesglasset ved lageret ditt. */
 function keyHookView(s: GameState): string {
@@ -2317,6 +2616,7 @@ function modalView(s: GameState): string {
       </form>`;
   }
   if (modal.kind === 'snoop') inner = snoopModal(s, modal.view, modal.caught);
+  if (modal.kind === 'tampered') inner = tamperedModal(s, modal.itemId);
   if (modal.kind === 'othertrash') {
     const id = modal.stallId;
     const st = s.slots.find((x) => x.stall?.id === id)?.stall;
@@ -2416,7 +2716,7 @@ function modalView(s: GameState): string {
     );
   }
 
-  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'suspect' ? 'suspect-modal' : ''}" role="dialog">
+  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'suspect' ? 'suspect-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''}" role="dialog">
     <button class="close ghost small" data-action="close" aria-label="Lukk">✕</button>${inner}</div></div>`;
 }
 
@@ -2628,6 +2928,10 @@ function endDrag(cancelled = false) {
   if (cancelled) return render();
 
   const t = ITEM_TYPES[d.item.typeId];
+  if (!d.moved && d.item.tamper) {
+    modal = { kind: 'tampered', itemId: d.item.id };
+    return render();
+  }
   if (!d.moved) {
     // Avisa: dobbeltklikk (to trykk på samme avis innen 0,4 s) for å lese.
     if (t.kind === 'paper') {
@@ -2852,11 +3156,13 @@ app.addEventListener('click', (e) => {
   const action = el.dataset.action;
   if (action === 'close') {
     if (e.target !== el && el.classList.contains('modal-backdrop')) return; // klikk inni dialogen
-    if (modal?.kind === 'snoop') void api('/api/snoop/end', {}).catch(() => {});
+    if (Date.now() - sdragEndAt < 400) return; // slapp noe utenfor vinduet
+    if (modal?.kind === 'snoop' && modal.view) return void snoopLeaveNow();
     modal = null;
   }
   if (action === 'snoop') {
     const stallId = Number(el.dataset.stall);
+    snoopReset();
     modal = { kind: 'snoop', view: null };
     render();
     void snoopAct('/api/snoop/start', { stallId });
@@ -2864,6 +3170,33 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'snoop-take' && modal?.kind === 'snoop' && modal.view) {
     void snoopAct('/api/snoop/take', { stallId: modal.view.stallId, itemId: Number(el.dataset.item) }, '🕵️ Tatt med – du bærer den.');
+    return;
+  }
+  if (action === 'snoop-leave') return void snoopLeaveNow();
+  if (action === 'snoop-open' && modal?.kind === 'snoop') {
+    const id = Number(el.dataset.item);
+    if (snoopOpen.has(id)) snoopOpen.delete(id);
+    else snoopOpen.add(id);
+    return render();
+  }
+  if (action === 'snoop-tab') {
+    snoopTab.set(Number(el.dataset.item), Number(el.dataset.tab));
+    return render();
+  }
+  if (action === 'snoop-forge' && modal?.kind === 'snoop' && modal.view) {
+    void snoopAct('/api/snoop/forge', { stallId: modal.view.stallId, itemId: Number(el.dataset.item) }, '🖊️ Det står «Hjemmelaget» på den nå.');
+    return;
+  }
+  if (action === 'snoop-relabel' && modal?.kind === 'snoop' && modal.view) {
+    const as = el.parentElement?.querySelector<HTMLSelectElement>('[data-snoop-as]')?.value ?? '';
+    void snoopAct('/api/snoop/relabel', { stallId: modal.view.stallId, itemId: Number(el.dataset.item), as }, `🏷️ Nå ser den ut som ${ITEM_TYPES[as]?.name.toLowerCase() ?? 'noe annet'}.`);
+    return;
+  }
+  if (action === 'fix-tamper') {
+    void act('/api/item/fix', { itemId: Number(el.dataset.item) }, '✅ Rettet opp.').then((ok) => {
+      if (ok) modal = null;
+      render();
+    });
     return;
   }
   if (action === 'snoop-imprint' && modal?.kind === 'snoop' && modal.view) {
@@ -3225,7 +3558,7 @@ document.addEventListener('keydown', (e) => {
     return render();
   }
   if (e.key === 'Escape' && (modal || paperWin || openPanels.length > 0)) {
-    if (modal?.kind === 'snoop') void api('/api/snoop/end', {}).catch(() => {});
+    if (modal?.kind === 'snoop' && modal.view) return void snoopLeaveNow();
     if (modal) modal = null;
     else if (paperWin) paperWin = null;
     else openPanels = openPanels.slice(0, -1); // lukk det øverste vinduet

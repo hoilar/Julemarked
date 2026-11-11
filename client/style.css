@@ -245,6 +245,40 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .snoop-btn { margin-top: 0.4em; }
 .snoop-key { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5em; }
 .snoop-list small { display: block; color: var(--muted, #888); font-size: 0.8em; }
+/* Bak disken hos en annen: rutenettet deres øverst, åpne esker og det du bærer under. */
+.modal.snoop-modal { width: min(1000px, 96vw); --cell: min(34px, calc((min(1000px, 96vw) - 3rem) / 26)); }
+.snoop-modal .grid.snoop-grid { position: relative; }
+.snoop-modal .gitem .sprite { font-size: calc(var(--min, 1) * var(--cell) * 0.7); }
+.snoop-modal .gitem.box .sprite { font-size: calc(var(--min, 1) * var(--cell) * 0.8); }
+.snoop-modal .gitem.sel::before { outline: 2px solid #ffe08a; background: rgba(255, 230, 160, 0.18); }
+.snoop-modal .gitem.yours::after { content: '🕵️'; position: absolute; right: 1px; top: 1px; font-size: 10px; }
+.snoop-modal .gitem.lifted { opacity: 0.3; }
+.snoop-storage { position: relative; margin-top: 1.6rem; width: fit-content; }
+.snoop-storage .storage-label { font-size: 11px; }
+.snoop-risk { margin: 0.2rem 0 0; }
+.snoop-risk small { color: var(--muted, #888); }
+.snoop-risk.high strong { color: #ff8a6a; }
+.snoop-lower { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; align-items: flex-start; }
+.snoop-boxes { flex: 1 1 320px; display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-start; min-width: 0; }
+.snoop-box { display: grid; gap: 0.25rem; }
+.snoop-box-title { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85em; }
+.snoop-box-title button { margin-left: auto; padding: 0 0.4em; }
+.snoop-tabs { display: flex; gap: 0.2rem; flex-wrap: wrap; }
+.snoop-tabs button { font-size: 0.75em; padding: 0.1em 0.5em; }
+.snoop-detail { flex: 1 1 100%; padding: 0.5rem 0.6rem; border-radius: 6px; background: rgba(127, 127, 127, 0.12); }
+.snoop-detail p { margin: 0.3rem 0; }
+.snoop-detail-head { display: flex; align-items: center; gap: 0.4rem; }
+.snoop-detail-head small { color: var(--muted, #888); margin-left: auto; }
+.snoop-acts { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.3rem; }
+.snoop-relabel { display: inline-flex; gap: 0.3rem; align-items: center; }
+.snoop-yours { color: #ffd58a; font-size: 0.9em; }
+.snoop-mine { flex: 0 1 260px; padding: 0.5rem 0.6rem; border-radius: 6px; border: 2px dashed rgba(255, 233, 168, 0.35); display: grid; gap: 0.4rem; align-content: start; }
+.snoop-mine.target { border-color: #8be28b; background: rgba(60, 160, 60, 0.18); }
+.snoop-mine h3 { margin: 0; font-size: 1em; }
+.snoop-carry { display: grid; gap: 0.15rem; }
+.snoop-carry small { font-size: 0.8em; }
+.small-note { font-size: 0.8em; margin: 0; }
+.snoop-ghost { position: fixed; z-index: 1000; pointer-events: none; opacity: 0.9; }
 .snoop-safe { display: flex; gap: 0.3em; }
 .snoop-safe input { width: 4.5em; text-align: center; letter-spacing: 0.2em; }
 .key-hook { position: absolute; transform: translateY(-100%); margin-top: -0.25cqw; display: flex; align-items: flex-end; gap: 0.4cqw; z-index: 5; }

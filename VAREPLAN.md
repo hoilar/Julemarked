@@ -19,16 +19,19 @@ Planlegging av nye varer, råvarer og gameplay.
 
 **Valg i steg 5** (tallene står i `shared/snoop.ts`):
 - Du snoker fra en annens bod med knappen «🕵️ Snok bak disken». Det går når boden er Selvbetjent eller «Åpent» uten noen bak disken, og når den er stengt hvis du har kopinøkkel til den.
-- Bak disken ser du det som ligger under disken og i eskene. Lapper og notater kan leses. Låste safer kan du taste kode på.
-- Telefonen, safer, forsikringsbevis og skjenkebevillingen kan ikke tas. Det du tar, bærer du (se steg 6).
-- **Tyttebærpolitiet** kan ta deg ved hver handling: når du titter inn, tar noe, tar avtrykk eller taster feil kode. Risikoen er 12 % ved Selvbetjent, 6 % ved «Åpent» uten folk og 8 % i en stengt bod. Alarm på boden ganger risikoen med 2,5.
-- Blir du tatt: det du har tatt går tilbake, bot 2 × verdien (minst 300 kr), omdømme −15, hendelse for hele markedet, og du kan ikke snoke i den boden på 12 timer.
+- Bak disken ser du **rutenettet deres** slik eieren ser det. Esker, poser og dokumentmapper åpnes med et trykk, og lapper og notater kan leses (f.eks. koden til safen). Låste safer kan du taste kode på.
+- Du kan **romstere**: dra ting rundt under disken og inn og ut av eskene deres. Dra noe til «Du bærer» for å ta det med, og dra noe fra posen din inn under disken deres for å legge det der.
+- Du kan **stjele alt** som får plass i posen eller ryggsekken du bærer, også maskiner. Får det ikke plass, kan du ikke ta det. Bare telefonen, forsikringsbevis, skjenkebevillingen og bilen kan ikke tas.
+- **Tukle med varene** (med penn): skriv «Hjemmelaget» på en butikkvare, eller **bytt etiketten** på alkohol så den ser ut som vanlig drikke i samme størrelse (kosegløgg som gløgg i kopp, rødvin som gløggflaske). Du kan også legge inn dine egne varer, f.eks. falske hjemmelagde.
+- Eieren ser varen som før (byttet etikett = den vanlige varen), helt til de **trykker på den**: da står det at noen har tuklet med den, og de kan rive av etiketten. Sjekker de ikke varene etter innbrudd, kan de gå i fella: Tilsynsmannen ser alkoholen og de falske etikettene, og andre kan **avsløre dem med forstørrelsesglasset** dagen etter (bot til eieren, dusør til den som fant det).
+- **Tyttebærpolitiet** ser deg bare når du **går tilbake til din egen bod**, ikke for hver handling. Risikoen er 10 %, pluss 1 % for hvert femte ekte minutt du har stått bak disken, pluss 5 % for hver stor ting du har tatt (maskiner, kjeler, apparater). Alarm på boden ganger risikoen med 2,5. Den står øverst i vinduet mens du snoker. Gjør du ingenting på 20 minutter, går du ut av deg selv.
+- Blir du tatt: det du har tatt går tilbake, det du har lagt inn blir beslaglagt, byttede etiketter og falske «Hjemmelaget» rettes opp, bot 2 × verdien (minst 300 kr), omdømme −15, hendelse for hele markedet, og du kan ikke snoke i den boden på 12 timer. Finner eieren sporet ditt med forstørrelsesglasset, rettes tuklingen også opp.
 - Hver snoke-runde legger igjen **ett spor** i en tilfeldig rute under disken (forenkling: ikke oppå disken ennå). Sporet varer i 24 timer.
 - Eieren finner det med «🔍 Let etter spor» ved lageret: trykk rute for rute. Funnet gir dusør etter gata pluss 200 kr, det som ble tatt kommer tilbake (det snokeren fortsatt har), og snokeren får samme straff som over.
 - **Nøkkelen** har en fast plass ved «Under disken». Den henger der når skiltet er Åpent eller Selvbetjent, og er borte (🔒) når boden er stengt.
 - **Såpestykke** (19 kr hos Klas Olsen) gir et såpeavtrykk av nøkkelen når du snoker og nøkkelen henger der. **Nøkkelmaskinen** (900 kr, noen dager) og **blanke nøkler** (30 kr) får du hos Fyren. Såpeavtrykket og en blank nøkkel legges i maskinen, og en time senere ligger kopinøkkelen under disken. Maskinen tar én kopi om gangen. Kopinøkkelen kan brukes så mange ganger du vil.
 - Blir du tatt av Tyttebærpolitiet i en **stengt** bod (der du låste deg inn), tar de også kopinøkkelen til den boden.
-- Safer kan ikke bæres bort eller brytes opp – bare åpnes med koden.
+- Safer kan ikke brytes opp – bare åpnes med koden. En safe kan tas med bare hvis den får plass i det du bærer.
 
 **Valg i steg 4:** Fyren tar kontant fra kassa. Han leverer kl. 04 – etter søppelbilen kl. 03 – så varene ligger i den åpne søppelkassa hele dagen til du henter dem. Det som ikke får plass, kommer neste natt. Oppskriften på hjemmebrent står i SMS-ene hans, og oppskriften på «merkevotter» følger med første falske logo; luguberte oppskrifter står aldri i avisa. Tilsynsmannen finner luguberte varer overalt (bord, under disken, esker, søpla) unntatt i en låst safe: beslag, bot 2 × verdien og −20 omdømme.
 
