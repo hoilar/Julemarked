@@ -187,6 +187,8 @@ if (!hasColumn('stalls', 'car_trip')) db.exec('ALTER TABLE stalls ADD COLUMN car
 if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN main_blown INTEGER NOT NULL DEFAULT 0');
 // Lageret ble 26 ruter (én kolonne mindre på hver side): 0 = ting under disken er ikke flyttet ennå.
 if (!hasColumn('stalls', 'storage_26')) db.exec('ALTER TABLE stalls ADD COLUMN storage_26 INTEGER NOT NULL DEFAULT 0');
+// Bordet ble 20 ruter (to kolonner mindre på hver side): 0 = varene på disken er ikke flyttet ennå.
+if (!hasColumn('stalls', 'counter_20')) db.exec('ALTER TABLE stalls ADD COLUMN counter_20 INTEGER NOT NULL DEFAULT 0');
 // Skiltet på boden: 'open' (Åpent), 'self' (Selvbetjent) eller 'closed' (Stengt).
 if (!hasColumn('stalls', 'sign')) db.exec("ALTER TABLE stalls ADD COLUMN sign TEXT NOT NULL DEFAULT 'open'");
 // Strømmåleren: målerstand (kWh totalt), dagen den sist ble skrudd tilbake, og kWh skrudd tilbake

@@ -193,20 +193,32 @@ const togglePanel = (k: PanelKey) => (isOpen(k) ? closePanel(k) : openPanel(k));
 // Hovedforgreneren på høyre bordben (lagene i art/power/ er i full bodstørrelse).
 const POWER_SWITCH = { x: 1270, y: 793, w: 38, h: 35 };
 const POWER_SOCKETS = [0, 1, 2, 3].map((i) => ({ x: 1266, y: 832 + i * 35, w: 46, h: 34 }));
+// Lagene over er tegnet mot den gamle boden (1536×1024). I «Ny Layout» (GFX_assets/ChatGPT/Ny Layout.aseprite)
+// står de andre steder: flytt (dx, dy i bodpiksler) og skaler (s) hele laget, så klikkflatene følger med.
+interface Shift { dx: number; dy: number; s?: number }
+const SHIFT: Record<'lights' | 'alarm' | 'strip' | 'mailbox', Shift> = {
+  lights: { dx: 62, dy: -27 }, // lyslenkene langs det nye taket
+  alarm: { dx: 1102, dy: 250 }, // over grenuttaket på høyre bordben
+  // Hovedforgreneren på høyre bordben, 85 % – bunnen (1289,5; 1008) står fast: dx/dy = (85; −117) + 0,15 × bunnpunktet.
+  strip: { dx: 278.4, dy: 34.2, s: 0.85 },
+  mailbox: { dx: 66.3, dy: -90.9, s: 0.9 }, // på venstre stolpe, 90 %
+};
+const frameStyle = ({ dx, dy, s = 1 }: Shift) =>
+  `translate:${(dx / 1536) * 100}% ${(dy / 1024) * 100}%;${s !== 1 ? `scale:${s};` : ''}`;
 // Vinduet som flyttes nå (dras i tittellinjen).
 let panelDrag: { key: PanelKey; el: HTMLElement; dx: number; dy: number } | null = null;
 let clockBase = { game: 0, real: 0, speed: 1 };
 let pendingRender = false;
 
 // ---------- Geometri for bod_selger.png (prosent av bildet, 1536×1024) ----------
-// Bordplata: bakkant y ≈ 682, forkant y ≈ 752, x ≈ 234–1304. Rutenettet ligger over plata.
-const TABLE = { left: 17.5, right: 83.0, top: 66.6, bottom: 73.4 };
+// Bordplata: bakkant y ≈ 537, forkant y ≈ 578. 20 kolonner à ~2,98 % midt på (x ≈ 372–1288). Rutenettet ligger over plata.
+const TABLE = { left: 24.2, right: 83.87, top: 52.44, bottom: 56.45 };
 const CW = (TABLE.right - TABLE.left) / COUNTER_GRID.cols; // rutebredde, % av bredden
 const RH = (TABLE.bottom - TABLE.top) / COUNTER_GRID.rows; // radhøyde, % av høyden
 const rowFoot = (r: number) => TABLE.top + (r + 0.8) * RH; // der varer i rad r står
 const rowScale = (r: number) => 0.84 + (r / (COUNTER_GRID.rows - 1)) * 0.16;
-// Lageret under disken: 24×6 ruter à 2,5 % av bildebredden.
-const STORAGE = { left: 17.5, top: 77, cell: 2.5 }; // 26 ruter à 2,5 % = 17,5–82,5 % (forgreneren står på høyre bordben)
+// Lageret under disken: STORAGE_GRID (27×7) ruter à 2,4 % av bildebredden.
+const STORAGE = { left: 21.7, top: 61.3, cell: 2.4 }; // 27×7 ruter à 2,4 %, midt på forhenget mellom bordbena
 const BOX_CELL = 2.5; // cqw – samme rutestørrelse inni eskene
 
 // ---------- Hjelpere ----------
@@ -350,7 +362,7 @@ function hasTool(s: GameState, typeId: string): Item | undefined {
 /** Bakgrunnen etter tid på døgnet (desember: mørkt fra kl. 15). */
 const daypart = (h: number) => (h >= 7 && h < 10 ? 'morgen' : h >= 10 && h < 15 ? 'dag' : h >= 15 && h < 21 ? 'kveld' : 'natt');
 // Last alle fire bakgrunnene med en gang, så byttet skjer uten blink.
-for (const p of ['morgen', 'dag', 'kveld', 'natt']) new Image().src = `/art/bg/hovedgata-${p}.jpg`;
+new Image().src = '/art/bg/marked-dag.jpg'; // torget (bare dagslys foreløpig; kveld/natt er et fargelag)
 
 let shownStall: StallPublic | null = null; // boden som vises nå (egen eller besøkt)
 let lastSaleId: number | null = null; // nyeste salg vi allerede har vist
@@ -600,7 +612,10 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
   return `
   <div class="stage">
     <div class="tint"></div>
+    <div class="world">
     <div class="scene ${own ? 'own' : 'visit'}">
+      <img class="bod-art" src="/art/bod_selger.png" alt="" draggable="false">
+      <img class="ground" src="/art/bakke.png" alt="" draggable="false">
       <div class="tint"></div>
       ${powerView(stall, own)}
       ${own ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
@@ -608,7 +623,8 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${shopSign(s, stall, own)}
       ${own ? '' : sellerView(stall)}
       ${counterView(stall, own)}
-      ${own ? storageView(s) + keyHookView(s) + trashView(s) + legOverlay() + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
+      ${own ? storageView(s) + keyHookView(s) + trashView(s) + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
+    </div>
     </div>
     ${own ? '' : phoneSprite(s, false)}
   </div>`;
@@ -666,7 +682,9 @@ function powerView(stall: StallPublic, own: boolean): string {
     .filter((d) => d?.layers) // kjelen er en gjenstand, ikke et lag
     .map((d) => {
       const running = powered.has(d.id);
-      return layer(running ? d.layers!.on : d.layers!.off, running);
+      const img = layer(running ? d.layers!.on : d.layers!.off, running);
+      const shift = d.light ? SHIFT.lights : d.id === 'alarm' ? SHIFT.alarm : null;
+      return shift ? `<div class="frame" style="${frameStyle(shift)}">${img}</div>` : img;
     })
     .join('');
   const kwText = (n: number) => n.toString().replace('.', ',');
@@ -680,7 +698,7 @@ function powerView(stall: StallPublic, own: boolean): string {
   const kw = totalKw(power, items);
   return `<div class="power ${power.on ? 'on' : ''}">
     ${devices}
-    <div class="strip-wrap">
+    <div class="strip-wrap" style="${frameStyle(SHIFT.strip)}">
     ${layer('/art/power/off.png')}${power.on && !power.blown ? layer('/art/power/on.png') : ''}
     ${power.sockets.map((d, i) => (d ? layer(`/art/power/s${i + 1}.png`) : '')).join('')}
     ${hot(POWER_SWITCH, 'power-switch', power.blown ? '💥 Hovedsikringen har gått – trykk for å skru inn en ny skrusikring' : `${power.on ? 'Slå av' : 'Slå på'} grenuttaket (trekker nå ${kw.toString().replace('.', ',')} kW)`)}
@@ -691,7 +709,7 @@ function powerView(stall: StallPublic, own: boolean): string {
 
 // --- Spikeren under grenuttaket: her kan etterlysningen henge ---
 
-const NAIL = { x: 1283, y: 452 }; // spikerhodet i bildepiksler (1536×1024)
+const NAIL = { x: 1341.5, y: 372 }; // spikerhodet i bildepiksler (1536×1024): på høyre stolpe, som plakaten i Ny Layout
 
 /** Plakaten med tyvens ansikt (avisa, spikeren og nærbildet bruker samme). */
 function posterHtml(w: { seed: string; alias: string; caught?: boolean }, reward = true): string {
@@ -721,18 +739,10 @@ function mailboxView(s: GameState): string {
   const up = s.me.bills.length > 0 || s.me.mailPaper;
   const label = up ? 'Postkassa – det ligger noe i den' : 'Postkassa';
   const badge = '';
-  return `<button class="mailbox-hot ${isOpen('mail') ? 'open' : ''}" data-action="mail" aria-label="${label}" title="${label}"
+  return `<div class="frame mailbox-frame" style="${frameStyle(SHIFT.mailbox)}">
+    <button class="mailbox-hot ${isOpen('mail') ? 'open' : ''}" data-action="mail" aria-label="${label}" title="${label}"
       style="left:${(MAILBOX.x / 1536) * 100}%;top:${(MAILBOX.y / 1024) * 100}%;width:${(MAILBOX.w / 1536) * 100}%;height:${(MAILBOX.h / 1024) * 100}%">${badge}</button>
-    <img class="power-layer mailbox-layer" src="/art/postkasse-${up ? 'oppe' : 'nede'}.png" alt="" draggable="false">`;
-}
-
-/**
- * Ben-overlag: et utsnitt av bod-bildet over venstre bordben, tegnet oppå søppelkassa, så
- * kassa ser ut til å stå bak benet. Samme bilde og skala som scenens bakgrunn = ligger perfekt.
- * Koordinatene (left/top/width/height i .leg-overlay) kan finjusteres hvis benet ikke dekker helt.
- */
-function legOverlay(): string {
-  return '<div class="leg-overlay"><img src="/art/bod_selger.png" alt="" draggable="false"></div>';
+    <img class="power-layer mailbox-layer" src="/art/postkasse-${up ? 'oppe' : 'nede'}.png" alt="" draggable="false"></div>`;
 }
 
 // --- Kjelen ---
@@ -954,6 +964,21 @@ function carSprite(t: (typeof ITEM_TYPES)[string], open: boolean): string {
   return sprite({ emoji: t.emoji, image: img });
 }
 
+/**
+ * Hvor bilbildet (1152×864) står i boden, per modell – målt fra Ny Layout (hver bil har sin skala).
+ * left/top/width i % av boden (1536×1024); bilene står delvis utenfor, til venstre for boden.
+ */
+const CAR_FRAME: Record<string, { left: number; top: number; width: number }> = {
+  bil_tennis: { left: -14.45, top: 38.17, width: 33.98 },
+  bil_toforr: { left: -11.87, top: 42.48, width: 29.96 },
+  bil_highass: { left: -13.46, top: 37.5, width: 33.67 },
+  bil_fuzz: { left: -13.98, top: 37.82, width: 34.08 },
+};
+function carFrame(typeId: string): string {
+  const f = CAR_FRAME[typeId] ?? CAR_FRAME.bil_fuzz;
+  return `left:${f.left}%;top:${f.top}%;width:${f.width}%`;
+}
+
 /** Bilen din står parkert til venstre (du ser baksiden). Trykk for å åpne bagasjerommet. */
 function carView(s: GameState): string {
   const car = s.me.items.find((i) => i.place === 'car');
@@ -961,7 +986,7 @@ function carView(s: GameState): string {
   const spec = CAR_BY_ID[car.typeId];
   const trip = s.me.car.trip;
   if (trip)
-    return `<div class="car away" title="Du er ute og kjører til ${esc(tripPlaceName(trip.store, STORE_BY_ID))}"><img class="sprite" src="/art/biler/parkering-tom.png" alt=""><small>${trip.store === 'gjenbruk' ? 'På gjenbruksstasjonen' : 'Ute og handler'}<br>tilbake kl. ${hhmm(trip.until)}</small></div>`;
+    return `<div class="car away" style="${carFrame(car.typeId)}" title="Du er ute og kjører til ${esc(tripPlaceName(trip.store, STORE_BY_ID))}"><img class="sprite" src="/art/biler/parkering-tom.png" alt=""><small>${trip.store === 'gjenbruk' ? 'På gjenbruksstasjonen' : 'Ute og handler'}<br>tilbake kl. ${hhmm(trip.until)}</small></div>`;
   const t = ITEM_TYPES[car.typeId];
   const open = isOpen(car.id);
   const n = itemsIn(s.me.items, 'box', car.id).length;
@@ -977,7 +1002,7 @@ function carView(s: GameState): string {
     trunk = carCell(s, car) + `<div class="trunk" data-panel="${car.id}" style="left:${(gx / CAR_ART.w) * 100}%;top:${(gy / CAR_ART.h) * 100}%;width:${(gw / CAR_ART.w) * 100}%;height:${(gh / CAR_ART.h) * 100}%">
       <div class="grid trunk-grid" data-grid="box" data-box="${car.id}" style="--cols:${cols};--rows:${rows}">${items}</div></div>`;
   }
-  return `<div class="car ${open ? 'open' : ''}">
+  return `<div class="car ${open ? 'open' : ''}" style="${carFrame(car.typeId)}">
     ${carSprite(t, open)}
     <button class="car-hit" data-action="open-car" data-item="${car.id}" aria-label="Bagasjerommet" title="${esc(spec?.name ?? 'Bilen')} – ${n ? `${n} ting i bagasjerommet` : 'tomt bagasjerom'}. Trykk for å ${open ? 'lukke' : 'åpne'}."></button>
     ${mirrorButton(car.typeId)}
@@ -1274,7 +1299,7 @@ function chargerPanel(s: GameState, c: Item, n: number): string {
         : 'Legg batterier her for å lade dem';
   const { cols, rows } = CHARGER.input;
   return smallPanel(c.id, n, 'charger-panel', `${icon(CHARGER)} ${esc(entryName(itemSocket(CHARGER.id, c.id), items).name)}`, `
-    <div class="grid box-grid innmat" data-grid="pot_in" data-box="${c.id}" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows};--innmat:url(/art/innmat/ladestasjon.png)">
+    <div class="grid box-grid charger-grid" data-grid="pot_in" data-box="${c.id}" style="width:${cols * BOX_CELL * 1.5}cqw;height:${rows * BOX_CELL * 1.5}cqw;--cols:${cols};--rows:${rows}">
       ${itemsIn(items, 'pot_in', c.id).map((i) => gridItemView(i, cols, rows)).join('')}
     </div>
     <div class="pot-status">${plugIcon(c, stall)}<span>${status}</span></div>`, 14, 26);
@@ -1895,8 +1920,8 @@ function keyHookView(s: GameState): string {
   const stall = myStall(s);
   if (!stall) return '';
   const hasKey = stall.sign !== 'closed';
-  // Henger ned fra bordkanten/sargen, rett under postkassa (senter ≈ 15,8 %; juster ved behov).
-  return `<div class="key-hook" style="left:13.9%;top:73.5%">
+  // Henger på venstre bordkant, under postkassa (Ny Layout: krok-bildet ved x 240, y 581 i boden).
+  return `<div class="key-hook" style="left:15.64%;top:56.77%">
     <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}"><img src="/art/${hasKey ? 'nokkel-krok' : 'nokkel-krok-tom'}.png" alt="${hasKey ? 'Nøkkel' : 'Låst'}"></div>
 </div>`;
 }

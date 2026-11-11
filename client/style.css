@@ -99,21 +99,28 @@ label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
 .stage {
   position: fixed;
   inset: 0;
-  background: #1a1630 var(--bg, url('/art/bg-jm.jpg')) center bottom / cover no-repeat;
+  background: #1a1630 var(--bg, url('/art/bg/marked-dag.jpg')) center / cover no-repeat;
   /* Med vilje litt uskarp: skiller bakgrunnen fra det man kan trykke på. */
   display: grid;
   place-items: center;
   overflow: hidden;
 }
-.scene {
+/* Hele torget (16:9, 1672×941 px i Aseprite-fila «Ny Layout»): bil, bod og søppelbøtte. */
+.world {
   position: absolute;
   left: 50%;
   top: 50%;
   translate: -50% -50%;
-  /* Hele bildet synlig, så stort som vinduet tillater (3:2). */
-  width: min(100vw, 150dvh);
+  width: min(100vw, 177.68dvh);
+  aspect-ratio: 1672 / 941;
+}
+/* Bodens koordinatsystem: 1536×1024 px, fra x = 120 i torget. Bil og bøtte står delvis utenfor. */
+.scene {
+  position: absolute;
+  left: 7.177%;
+  top: 0;
+  width: 91.866%;
   aspect-ratio: 3 / 2;
-  background: url('/art/bod_selger.png') center / 100% 100% no-repeat;
   container-type: inline-size;
   user-select: none;
   -webkit-user-select: none;
@@ -133,13 +140,18 @@ body.night .tint { background: rgba(20, 30, 90, 0.28); }
   mask: url('/art/bod_selger.png') center / 100% 100% no-repeat;
 }
 .scene { z-index: 1; }
+/* Slaps og hjulspor (hele torget) og selve boden ligger nederst i scenen. */
+.ground { position: absolute; left: -7.8125%; top: 0; width: 108.854%; height: 91.895%; pointer-events: none; image-rendering: pixelated; }
+.bod-art { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+body.night .ground { filter: brightness(0.72) saturate(0.85); }
 
 /* Søppelkassa står på bakken til venstre for boden. */
 .trash {
   position: absolute;
-  left: 5.6%;
-  bottom: 1%;
-  width: 8.6%;
+  /* Til høyre for boden (Ny Layout: x 1497, y 611 i torget, 25,4 % av bildet). */
+  left: 90.6%;
+  top: 59.69%;
+  width: 13.26%;
   aspect-ratio: 802 / 1264; /* samme utsnitt som soppelkasse-tom/full.png */
   z-index: 4;
   display: grid;
@@ -152,14 +164,12 @@ body.dragging .trash { outline: 0.2cqw dashed rgba(255, 230, 180, 0.5); outline-
 .trash.hot { transform: scale(1.12) rotate(-4deg); }
 body.dragging .trash.hot { outline: 0.25cqw solid #7fe39a; }
 body.dragging .trash.hot.bad { outline-color: #ff7b7b; transform: scale(1.05) rotate(3deg); }
-/* Venstre bordben tegnet oppå søppelkassa, så kassa ser ut til å stå bak benet. Utsnittet er
-   et fullskala bod-bilde klippet til ben-boksen (juster left/top/width/height ved behov). */
-/* Kun benet der søppelkassa overlapper – holdes klar av rutenettet (som starter på x 17,5 %). */
-.leg-overlay { position: absolute; left: 10.5%; top: 74%; width: 6%; height: 25%; overflow: hidden; pointer-events: none; z-index: 5; }
-.leg-overlay img { position: absolute; width: 1666.7%; height: 400%; left: -175%; top: -296%; image-rendering: pixelated; }
-body.night .leg-overlay img { filter: brightness(0.85); }
 /* ---------- Grenuttaket (lag i full bodstørrelse) ---------- */
 .power { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+/* Lag tegnet mot den gamle boden flyttes (og skaleres) dit de står i Ny Layout. */
+.frame { position: absolute; inset: 0; pointer-events: none; transform-origin: 0 0; }
+.mailbox-frame { z-index: 3; }
+.mailbox-frame .mailbox-hot { pointer-events: auto; } /* rammen slipper klikk gjennom; knappen skal ta dem */
 .power-layer { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 body.night .power-layer { filter: brightness(0.85); }
 /* Ting som lyser (på-lampa, lyslenka) dempes ikke om natta – de gløder litt i stedet */
@@ -204,7 +214,7 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 }
 
 /* ---------- Leveranser ved boden ---------- */
-.deliveries { position: absolute; left: 86.5%; bottom: 3%; width: 7cqw; height: 22cqw; z-index: 3; pointer-events: none; }
+.deliveries { position: absolute; left: 0.5%; bottom: 9.5%; /* under bilen, til venstre for boden */ width: 7cqw; height: 22cqw; z-index: 3; pointer-events: none; }
 .delivery-bag {
   position: absolute;
   width: 6.4cqw;
@@ -217,7 +227,7 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
   cursor: pointer;
   transition: translate 0.12s;
 }
-.delivery-bag:hover { translate: 0 -0.4cqw; filter: drop-shadow(0 0 0.4cqw #ffe08a); }
+.delivery-bag:hover { filter: brightness(1.1) drop-shadow(0 0 0.4cqw #ffe08a); } /* ikke løft: da flyttes trykkflaten under musa */
 .delivery-bag img.sprite { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 0.4cqw 0.3cqw rgba(0, 0, 0, 0.55)); }
 .delivery-bag span.sprite { font-size: 5cqw; }
 .delivery-more, .delivery-coming {
@@ -304,7 +314,7 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .key-hook button { font-size: 0.85cqw; padding: 0.15cqw 0.6cqw; }
 .key-slot img { width: 100%; height: 100%; image-rendering: pixelated; }
 /* Nøkkelen henger fritt (uten ramme), dobbel størrelse. */
-.key-slot { width: 3.8cqw; height: 3.8cqw; display: grid; place-items: center; font-size: 2.2cqw; line-height: 1; filter: drop-shadow(0 0.3cqw 0.3cqw rgba(0, 0, 0, 0.45)); }
+.key-slot { width: 5.42cqw; height: 5.42cqw; display: grid; place-items: center; font-size: 2.2cqw; line-height: 1; filter: drop-shadow(0 0.3cqw 0.3cqw rgba(0, 0, 0, 0.45)); }
 .loupe-sweep { position: absolute; pointer-events: none; background: rgba(255, 233, 168, 0.35); animation: loupe-sweep 0.9s ease-out forwards; z-index: 6; }
 @keyframes loupe-sweep { to { opacity: 0; } }
 .loupe-mark { position: absolute; z-index: 7; pointer-events: none; }
@@ -590,7 +600,7 @@ body.dragging .nail:not(.used) .nail-head { box-shadow: 0 0 0 0.25cqw rgba(255, 
   translate: -50% 0;
   rotate: 3deg;
   transform-origin: 50% 0;
-  width: 5.6cqw;
+  width: 5.9cqw; /* som plakaten i Ny Layout (91 px) */
   filter: drop-shadow(0.2cqw 0.35cqw 0.4cqw rgba(0, 0, 0, 0.55));
   cursor: grab;
   pointer-events: auto;
@@ -644,10 +654,10 @@ body.dragging .nail:not(.used) .nail-head { box-shadow: 0 0 0 0.25cqw rgba(255, 
 /* Feltet slutter ved bakkanten av bordplata, så bordet «skjuler» resten av kroppen. */
 .customers {
   position: absolute;
-  left: 20.5%;
-  width: 59%;
-  top: 20%;
-  height: 46%; /* ned til y ≈ 676 px: over den 5 px mørke kanten på bordplata */
+  left: 23.1%;
+  width: 62.2%;
+  top: 10%;
+  height: 42.9%; /* ned til y ≈ 542 px: bakkanten av bordplata */
   /* Klipp bare nederst (bordet skjuler kroppen) – hoder og luer får stikke opp over feltet. */
   clip-path: inset(-60% 0 -8% 0); /* kroppene fortsetter litt ned bak bordkanten (.table-front dekker dem) */
   pointer-events: none;
@@ -759,7 +769,7 @@ body.night .customers { filter: brightness(0.8) saturate(0.9); }
 
 /* Stående mobil: zoom inn så boden fyller bredden (de svarte kantene beskjæres). */
 @media (max-aspect-ratio: 1/1) {
-  .scene { width: 135vw; }
+  .world { width: 147vw; }
 }
 
 /* HUD og ticker ligger i vinduets hjørner, utenfor selve bildet. */
@@ -784,10 +794,10 @@ body.night .customers { filter: brightness(0.8) saturate(0.9); }
 /* Navnet er brent inn i skiltbrettet i bildet (x 667–867, y 244–298). */
 .sign {
   position: absolute;
-  left: 43.4%;
-  top: 23.8%;
-  width: 13%;
-  height: 5.3%;
+  left: 47.66%;
+  top: 22.07%;
+  width: 12.9%;
+  height: 3.71%;
   z-index: 2;
   display: grid;
   place-items: center;
@@ -809,7 +819,7 @@ body.night .customers { filter: brightness(0.8) saturate(0.9); }
   background-image:
     linear-gradient(to right, rgba(255, 230, 180, 0.13) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 230, 180, 0.13) 1px, transparent 1px);
-  background-size: calc(100% / 24) calc(100% / 4);
+  background-size: calc(100% / 20) calc(100% / 4);
   transition: background-color 0.15s;
 }
 body.dragging .table-grid {
@@ -820,12 +830,13 @@ body.dragging .table-grid {
 
 .citem {
   position: absolute;
-  pointer-events: auto;
+  pointer-events: none; /* bare bildet (og prislappen) kan gripes – ikke hele den høye boksen over varen */
   display: flex;
   justify-content: center;
   align-items: flex-end;
   touch-action: none;
 }
+.citem > .sprite, .citem > img.sprite, .citem > .tag { pointer-events: auto; }
 .scene.own .citem { cursor: grab; }
 .scene.visit .citem { cursor: pointer; }
 .citem .sprite {
@@ -834,9 +845,10 @@ body.dragging .table-grid {
   transform: scale(var(--scale, 1));
   transform-origin: bottom center;
   filter: drop-shadow(0 0.3cqw 0.2cqw rgba(0, 0, 0, 0.55));
-  transition: translate 0.12s;
 }
-.citem:hover .sprite { translate: 0 -0.25cqw; }
+/* Hover lyser opp i stedet for å løfte: et løft flyttet gripeflaten bort fra musa, så hoveren
+   slo av og på i en løkke og hele scenen ble tegnet på nytt (alt «hakket»). */
+.citem:hover .sprite { filter: drop-shadow(0 0.3cqw 0.2cqw rgba(0, 0, 0, 0.55)) brightness(1.1) drop-shadow(0 0 0.35cqw rgba(255, 224, 138, 0.7)); }
 .citem .tag {
   position: absolute;
   bottom: -0.5cqw;
@@ -936,6 +948,10 @@ img.sprite {
   user-select: none;
 }
 .gitem.box.has-img .sprite { opacity: 1; font-size: inherit; }
+/* Bildet ligger midt i ruta og holder seg innenfor den: prosenthøyde virker ikke i en auto-rad,
+   så uten dette fikk høye bilder (dekormaskinen) høyden fra bredden og rant ned forbi ruta. */
+.gitem > img.sprite { position: absolute; inset: 0; margin: auto; }
+.gitem.box.has-img img.sprite { width: 96%; height: 96%; } /* maskiner og esker: bildene er beskåret tett, litt luft igjen */
 .citem img.sprite { width: calc(var(--sp, 1) * 2.3cqw); height: auto; }
 img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.3em; image-rendering: pixelated; }
 .gitem.box .sprite { font-size: 2.6cqw; opacity: 0.85; }
@@ -1138,6 +1154,21 @@ body.night .top { background: #0c1020; }
   max-width: calc(100% - 32px);
 }
 #toast.show { transform: translate(-50%, 0); }
+/* Ved boden: midt over lyslenka, på snøen under mønet (x 951, y ≈ 24 i torget på 1672×941).
+   --ww = bredden på torget (.world), samme regel som i .world. */
+body:has(.world) { --ww: min(100vw, 177.68dvh); }
+@media (max-aspect-ratio: 1/1) { body:has(.world) { --ww: 147vw; } }
+body:has(.world) #toast {
+  left: calc(50vw + var(--ww) * 0.0688);
+  top: max(8px, calc(50dvh - var(--ww) * 0.2670));
+  transform: translate(-50%, -0.6rem);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s, opacity 0.25s;
+  max-width: min(calc(var(--ww) * 0.45), calc(100% - 32px));
+  text-align: center;
+}
+body:has(.world) #toast.show { transform: translate(-50%, 0); opacity: 1; }
 #toast.error { background: var(--red); }
 
 /* Ekstra grenuttak og sikringsboks (vinduer) */
@@ -1183,9 +1214,9 @@ body.night .top { background: #0c1020; }
 .charger-panel { color: #f5d9b0; font-size: max(10px, 0.85cqw); }
 
 /* Skiltet: Åpent / Selvbetjent / Stengt (henger på venstre stolpe) */
-.shop-sign { position: absolute; left: 10.8%; top: 36.5%; width: 10.5%; z-index: 4; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; cursor: pointer; transform-origin: 50% 0; animation: sign-sway 5s ease-in-out infinite; }
+.shop-sign { position: absolute; left: 14.59%; top: 31.33%; width: 11.84%; z-index: 0; /* bak lyslenkene (.power har z-index 1) */ padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
 .shop-sign[disabled] { cursor: default; }
-.shop-sign-cord { width: 55%; height: 1.4cqw; border: 0.18cqw solid #3b2414; border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.shop-sign-cord { display: none; width: 55%; height: 1.4cqw; border: 0.18cqw solid #3b2414; border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
 .shop-sign-board { width: 100%; padding: 0.35cqw 0.3cqw; border-radius: 0.4cqw; border: 0.22cqw solid #3b2414; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; font-size: max(8px, 0.95cqw); line-height: 1.1; text-align: center; box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.45); }
 .shop-sign.open .shop-sign-board { background: #f4ecd2; color: #1f7a3c; }
 .shop-sign.self .shop-sign-board { background: #fff2b8; color: #8a5a00; }
@@ -1208,7 +1239,7 @@ body.night .top { background: #0c1020; }
 @keyframes lead-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
 /* Andres boder: eieren står bak disken */
-.seller { position: absolute; left: 41%; width: 18%; bottom: 33.6%; z-index: 1; display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: bob 2.4s ease-in-out infinite; }
+.seller { position: absolute; left: 44.6%; width: 18%; bottom: 47.07%; z-index: 1; display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: bob 2.4s ease-in-out infinite; }
 .seller img { width: 100%; aspect-ratio: 1; filter: drop-shadow(0 0.3cqw 0.4cqw rgba(0, 0, 0, 0.45)); }
 .seller span { position: absolute; top: -1.6cqw; padding: 0.1cqw 0.6cqw; border-radius: 99px; background: rgba(29, 26, 22, 0.75); color: #fff7e6; font-size: max(9px, 0.8cqw); font-weight: 700; white-space: nowrap; }
 
@@ -1262,12 +1293,11 @@ body.night .top { background: #0c1020; }
 .maker-none { margin: 0; max-width: 34cqw; color: #f5d9b0; font-size: max(9px, 0.75cqw); font-style: italic; }
 
 /* Bakgrunnen følger spillklokka (body[data-daypart] settes i tickClock). */
-body[data-daypart="morgen"] .stage { --bg: url('/art/bg/hovedgata-morgen.jpg'); }
-body[data-daypart="dag"] .stage { --bg: url('/art/bg/hovedgata-dag.jpg'); }
-body[data-daypart="kveld"] .stage { --bg: url('/art/bg/hovedgata-kveld.jpg'); }
-body[data-daypart="natt"] .stage { --bg: url('/art/bg/hovedgata-natt.jpg'); }
-/* Nattbildet er mørkt fra før – bare boden dempes om natta. */
-body.night .stage > .tint { background: none; }
+/* Det nye torget finnes foreløpig bare i dagslys: kveld og natt dempes med fargelaget over bakgrunnen.
+   Kommer det egne versjoner, settes de her (som hovedgata-*.jpg før). */
+body[data-daypart] .stage { --bg: url('/art/bg/marked-dag.jpg'); }
+body[data-daypart="kveld"] .stage > .tint { background: rgba(40, 30, 90, 0.35); }
+body[data-daypart="natt"] .stage > .tint { background: rgba(10, 15, 60, 0.62); }
 
 /* Innkjøp: fast topp, bare varene scroller */
 .modal:has(.shop-body) { display: flex; flex-direction: column; overflow: hidden; }
@@ -1376,7 +1406,7 @@ img.title-icon { height: 1.3em; width: auto; vertical-align: -0.3em; image-rende
 .phone-screen { background: #1b2440 url('/art/telefon/bakgrunn.jpg') center / cover no-repeat; }
 
 /* Bordkanten (en stripe av bodbildet) oppå kundene og under varene */
-.table-front { position: absolute; inset: 0; pointer-events: none; background: url('/art/bod_selger.png') center / 100% 100% no-repeat; clip-path: inset(65.4% 20% 29% 20%); } /* bare der kundene står (20–80 %), så postkassa ikke dekkes */
+.table-front { position: absolute; inset: 0; pointer-events: none; background: url('/art/bod_selger.png') center / 100% 100% no-repeat; clip-path: inset(51.76% 14.7% 43.85% 23.1%); } /* bordplata mellom stolpene, der kundene står */
 .table-front::after { content: ''; position: absolute; inset: 0; background: rgba(20, 30, 90, 0); transition: background 1.2s; -webkit-mask: url('/art/bod_selger.png') center / 100% 100% no-repeat; mask: url('/art/bod_selger.png') center / 100% 100% no-repeat; }
 body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 
@@ -1427,17 +1457,12 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .paper-coupon.cut { color: #6a604f; }
 
 /* Hovedforgreneren: litt mindre, krympet rundt foten på høyre bordben (x 1289, y 1007 i bodbildet) */
-.strip-wrap { position: absolute; inset: 0; transform: scale(0.85); transform-origin: 83.92% 98.34%; pointer-events: none; }
+.strip-wrap { position: absolute; inset: 0; pointer-events: none; transform-origin: 0 0; }
 
 /* ---------- Steg 6: bilen og det du bærer ---------- */
 .car {
   position: absolute;
-  /* Står på bakken, jamt med boden. På brede skjermer står den ute i den ledige plassen til venstre for boden
-     (--room = bakgrunnen som synes utenfor scenen); på smale står den delvis utenfor kanten. */
-  --room: max(0px, (100vw - 150dvh) / 2);
-  left: calc(-26cqw + 5cqw - min(var(--room), 16cqw));
-  bottom: -5cqw; /* litt under kanten: bilen står nærmere deg enn boden */
-  width: 52cqw;
+  /* Til venstre for boden. left/top/width settes per bilmodell (CAR_FRAME i main.ts, fra Ny Layout). */
   pointer-events: none; /* bildet har mye tom plass rundt bilen – bare selve bilen kan trykkes */
   z-index: 2;
   color: #fff;
@@ -1579,3 +1604,27 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .plug-state { width: 2.4cqw; height: 2.4cqw; min-width: 22px; min-height: 22px; flex: none; image-rendering: pixelated; }
 .plug-state.off { animation: plug-nudge 1.6s ease-in-out infinite; }
 @keyframes plug-nudge { 50% { transform: translateY(-0.15cqw); filter: drop-shadow(0 0 0.3cqw #ff7a5c); } }
+
+/* Ladestasjonen: bildet (innmat/ladestasjon.png, 512×128) har de fire plassene midt på, med ventiler på sidene.
+   Plassene står 85,2 px fra hverandre (sentre x 123–378,5, y ≈ 60), så bildet tegnes 6,01 × 1,5 ruter stort
+   og forskjøvet slik at hver plass havner rett over sin rute. */
+.grid.charger-grid {
+  position: relative;
+  isolation: isolate;
+  margin: 0.85cqw 3.7cqw 1.2cqw; /* rutene er 1,5 × vanlig størrelse (se chargerPanel) */
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+.grid.charger-grid::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: -24.3%; /* finjustert mot batteriene (bildet litt til venstre for utregnet plass) */
+  top: -13.7%; /* finjustert: bildet ~2 px ned, så batteriene står litt høyere */
+  width: 150.2%;
+  height: 150.2%;
+  background: url('/art/innmat/ladestasjon.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}

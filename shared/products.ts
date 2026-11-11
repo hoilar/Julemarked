@@ -398,7 +398,7 @@ export const MAKERS: Maker[] = [
     emoji: '🧶',
     image: '/art/maskiner/strikkemaskin.png',
     imageOn: '/art/maskiner/strikkemaskin-pa.png',
-    size: { w: 5, h: 4 },
+    size: { w: 5, h: 3 },
     input: { cols: 4, rows: 4 },
     output: { cols: 4, rows: 4 },
     sprite: 4,
@@ -422,7 +422,7 @@ export const MAKERS: Maker[] = [
     emoji: '🎨',
     image: '/art/maskiner/dekormaskin.png',
     imageOn: '/art/maskiner/dekormaskin-pa.png',
-    size: { w: 4, h: 4 },
+    size: { w: 3, h: 4 },
     input: { cols: 4, rows: 4 },
     output: { cols: 4, rows: 4 },
     sprite: 3,
@@ -921,9 +921,9 @@ export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
 );
 
 /** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */
-export const COUNTER_GRID: GridSize = { cols: 24, rows: 4 };
+export const COUNTER_GRID: GridSize = { cols: 20, rows: 4 };
 /** Lageret under disken. */
-export const STORAGE_GRID: GridSize = { cols: 26, rows: 6 };
+export const STORAGE_GRID: GridSize = { cols: 27, rows: 7 };
 
 /** Søppelkassa er et eget rutenett. Alt i den forsvinner når søppelbilen kommer om natta. */
 export const TRASH_GRID: GridSize = { cols: 4, rows: 4 };

@@ -47,6 +47,7 @@ import {
   NEWSPAPER,
   SOCKETS,
   STORAGE_GRID,
+  COUNTER_GRID,
   itemSocket,
   socketEntry,
   type Device,
@@ -628,6 +629,21 @@ export function migrate() {
       }
       db.prepare('UPDATE stalls SET storage_26 = 1 WHERE id = ?').run(s.id);
     }
+    // Bordet ble 20 ruter bredt: flytt alt to ruter mot venstre; det som ikke får plass, legges under disken.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE counter_20 = 0'))) {
+      const stuck: Item[] = [];
+      for (const i of itemsOf(s.id).filter((x) => x.place === 'counter')) {
+        const nx = i.x - 2;
+        if (nx >= 0 && nx + i.w <= COUNTER_GRID.cols) q.moveItem.run('counter', null, nx, i.y, i.id);
+        else stuck.push(i);
+      }
+      for (const i of stuck) {
+        const spot = findStorageSpot(itemsOf(s.id).filter((x) => x.id !== i.id), i.typeId);
+        if (spot) q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, i.id);
+        else q.moveItem.run('counter', null, Math.max(0, Math.min(COUNTER_GRID.cols - i.w, i.x - 2)), i.y, i.id);
+      }
+      db.prepare('UPDATE stalls SET counter_20 = 1 WHERE id = ?').run(s.id);
+    }
     // Skjenkebevillingen er nå et dokument: de som hadde den, får dokumentet under disken.
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE liquor_license = 1'))) {
       const items = itemsOf(s.id);
@@ -884,7 +900,7 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
       throw new GameError('Plassen er allerede tatt.');
     }
     if (def.price > 0) q.insertTx.run(market.id, nowFor(market), 'plass', id, null, null, null, def.price);
-    db.prepare('UPDATE stalls SET storage_26 = 1 WHERE id = ?').run(id);
+    db.prepare('UPDATE stalls SET storage_26 = 1, counter_20 = 1 WHERE id = ?').run(id);
     giveStarterPhone(id);
     giveStarterCar(id);
     giveStarterFusebox(id);

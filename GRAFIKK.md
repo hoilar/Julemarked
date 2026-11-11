@@ -136,6 +136,52 @@ gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scen
 
 ## Gjenstående grafikk-ønsker
 
+### Bestilling (11.11.2026): torget om morgenen, kvelden og natta
+
+Den nye layouten (`GFX_assets/ChatGPT/Ny Layout.aseprite`, lerret **1672×941 px**) bruker
+laget «Background» som bakgrunn: `client/public/art/bg/marked-dag.jpg`. Det finnes bare i dagslys;
+spillet legger i dag et blått fargelag over om kvelden og natta. Vi trenger tre versjoner til:
+
+- `GFX_assets/ChatGPT/marked-morgen.png`: tidlig morgen (cirka kl. 07–09), lav, rosa-oransje sol
+  fra venstre, lyseblå himmel som går mot fersken nederst. Gatelyktene er fortsatt tent, men svakt.
+  Noen vinduer lyser.
+- `GFX_assets/ChatGPT/marked-kveld.png`: skumring (cirka kl. 15–18, mørkt tidlig i desember),
+  dyp blå-lilla himmel med litt oransje nede i horisonten. Alle gatelykter og de fleste vinduer
+  lyser varmt gult. Markedsbodene i bakgrunnen har lysslynger som lyser.
+- `GFX_assets/ChatGPT/marked-natt.png`: natt, mørk marineblå himmel med stjerner og gjerne månen.
+  Gatelykter og noen vinduer lyser; snøen får kalde blå skygger med varme lysflekker under lyktene.
+  Bodene i bakgrunnen er stengt (lysslyngene av eller svake).
+
+**Krav, felles for alle tre:**
+- Nøyaktig samme motiv, utsnitt og perspektiv som dagversjonen, piksel for piksel: hus,
+  stabbur, juletre, kirke og boder står på samme sted. Bare lys, farger, himmel og vinduer endres.
+  Legg dagversjonen ved som referanse og be om «same image, different time of day».
+- Samme lerret: 1672×941 px, ugjennomsiktig. Ingen bod, bil, bøtte eller hjulspor i forgrunnen
+  (de er egne lag i spillet).
+- Snøplassen i forgrunnen (nederste 40 %) skal være rolig, som i dagversjonen.
+- Fin pikselstil som dagversjonen, ikke gjennom `pixelify.py` (store flater blir grove).
+
+Spillet bytter bakgrunn etter tid på døgnet (`body[data-daypart]` i `style.css`); når de tre er
+levert, blir de `art/bg/marked-{morgen,kveld,natt}.jpg`, og fargelaget over kveld/natt fjernes.
+
+### Bestilling (11.11.2026): lengre hjulspor bak bilen som fader ut
+
+Dagens hjulspor (laget «Bil_spor» i Ny Layout, 322×66 px ved x 15, y 701) er bare en kort
+flekk under bakhjulene og ser ut som en grå klatt. Ønsket:
+
+- To tydelige hjulspor fra bakhjulene som går **rett nedover mot nederste kant** av bildet
+  (fra y ≈ 700 til y ≈ 941), litt bredere nederst (nærmere kameraet).
+- Sporene **fader gradvis ut** nedover: tydelige under bilen, nesten borte nederst
+  (gjennomsiktigheten øker jevnt).
+- Sammentrykket, litt gråblå/brunlig slaps med mønster fra dekkene og små kremhvite snøkanter
+  langs sidene; samme snøfarger som slapsen under boden («Bakke_slaps»).
+- Hjulene står ulikt for de fire bilene, men omtrent ved **x 40–110** og **x 230–300**
+  (se lagene «Bil_*» i Ny Layout). Lag sporene så brede at de dekker alle fire bilene.
+- Vareposene som blir levert, står i snøen under bilen, så sporene skal ikke være for urolige der.
+- Lever som gjennomsiktig PNG i **fullt lerret 1672×941 px**, med sporene på plass:
+  `GFX_assets/ChatGPT/bilspor-lange.png` (gjerne også som laget «Bil_spor» i Aseprite-fila).
+  Spillet legger det i `art/bakke.png` sammen med slapsen.
+
 ### Ferdig laget: ny søppelbøtte, tom og full, med snø og julevarer (versjon 2)
 
 **✅ Ferdig i `GFX_assets/ChatGPT`:** `soppelkasse-tom.png` og `soppelkasse-full.png`,
@@ -168,13 +214,29 @@ Disse trenger ny/oppdatert grafikk (bruk grunnprompten og `tools/pixelify.py` so
 - **Brettemaskinen** (tidligere «Posebretter», `art/posebretter/off.png` + `on.png`): samme
   maskin, men den bretter nå både poser og pappkartonger. Navnet er endret i spillet; grafikken
   kan beholdes, men om den skal gjenspeile papp-bretting, tegn en litt større/kraftigere brettemaskin.
-- **Større maskiner:** footprinten er økt – bakemaskin 3×2 → **4×3**, dekormaskin 3×3 → **4×4**,
-  strikkemaskin 4×3 → **5×4**. Dagens bilder strekkes til ny størrelse; tegn dem på nytt i de nye
+- **Større maskiner:** footprinten er økt – bakemaskin 3×2 → **4×3**, dekormaskin 3×3 → **3×4**,
+  strikkemaskin 4×3 → **5×3**. Dagens bilder er beskåret tett og passer omtrent; tegn dem gjerne på nytt i de nye
   rutemålene (`maskiner/bakemaskin{,-pa}.png`, `maskiner/dekormaskin{,-pa}.png`, `maskiner/strikkemaskin{,-pa}.png`).
 
 ## Bakgrunnen (markedet bak boden)
 
-**Nyeste bodforslag, versjon 11 – under vurdering:** Samme høye stolper og
+**Nyeste bodforslag, versjon 12 – under vurdering:** Boden er nytegnet bredere
+og høyere med versjon 11 som stilreferanse, ikke strukket fra den gamle boden.
+Ønsket var cirka 20 % bredere og 5 % høyere; synlig silhuett er målt til
+18,1 % større bredde og 5,7 % større høyde. Takstolpene er høyere, mens
+diskplatens overkant fortsatt ligger ved scene-y≈643,5. Fin pikselstil,
+langt rødt skjørt og snø rundt bena er beholdt.
+Fil: `GFX_assets/ChatGPT/bod-bredere20-hoyere5-v12.png` (transparent, 1844×1192 px).
+Scene: `bod-bredere20-hoyere5-forhandsvisning-v12.png` (2048×1152 px).
+Sammenligning ved lik diskhøyde: `bod-v11-v12-sammenligning.jpg`.
+Boden tegnes ved x=481, y=27, størrelse 1660×1073; lokal diskoverkant y=685.
+Maskinstørrelser og plasseringer er beholdt. Søppelbøtta er flyttet 55 px til
+venstre for å gi plass til det bredere venstre benet. Bil og hjulspor står som før.
+Generert original: `bod-bredere20-hoyere5-v12-malrettet-original.png`.
+Prompter og oppsett: `bod-v12-oppsett-prompter.json`. Kontroll: `bod-v12-kontroll.json`.
+Tidligere varianter er bevart. Spillkoden er ikke endret.
+
+**Tidligere bodforslag, versjon 11:** Samme høye stolper og
 proporsjoner som versjon 10, men mindre pikselgrupper og finere materialdetaljer
 etter søppelbøtta og varene som stilreferanser. Treverk, granbar, snø og stoffolder
 er bearbeidet med høyere detaljtetthet. Konturen er fortsatt tynn og mørkebrun.
