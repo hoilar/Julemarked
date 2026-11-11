@@ -77,6 +77,63 @@ enn dobbelt så stort som en rute vises på skjermen, også på telefon, og hold
 Skaler alltid ned med et helt tall (1024 → 256 → 128) med nearest neighbor.
 Tabellen over er størrelsen på **spillfilene**.
 
+> **Bruk helst `tools/pixelify.py` i stedet for ren nearest-neighbor-skalering** (se neste
+> seksjon). Den gir et mer «ekte» pixel art-uttrykk og binder alle assets til samme palett.
+
+## Ekte pixel art fra AI (`tools/pixelify.py`)
+
+AI lager et *bilde av* pixel art, ikke ekte pixel art: tusenvis av farger, myke/anti-aliasede
+kanter («smudge» når man skalerer) og ingen fast pikselrute. `tools/pixelify.py` fejker ekte
+pixel art i fire steg:
+
+1. **Area-nedskaler** til lav intern oppløsning (default 64 px/rute) – snitter bort blur i
+   stedet for å plukke uskarpe piksler slik ren nearest-neighbor gjør ved nedskalering.
+2. **Perseptuell palett-remap** (Lab/nærmeste) mot en kanonisk palett i `tools/palett.json`.
+3. **Alfa-terskel** – binariserer gjennomsiktighet og fjerner myke kantpiksler.
+4. **Nearest-opp** til spillstørrelse – harde, like store piksler.
+
+Typisk faller en vare fra 10 000–20 000 farger til ~20–34, fra én felles palett.
+
+### To paletter, valgt etter mappe
+
+- **Varm** (`goods/`, `ravarer/`, poser, skilt, avis, …): festlige julefarger – rød, grangrønn,
+  krem, gull, snøblått, pluss hudtoner og en kald blåaksent.
+- **Nøytral** (`elektro/`, `verktoy/`, `maskiner/`, `power/`, `devices/`, `kjele/`,
+  `posebretter/`, `innmat/`, samt kartong/plastboks/safe/nøkkelkrok/søppelkasse): grafitt,
+  metall, messing og dempede sikkerhets-LED-er. Holder elektro/verktøy «praktisk, ikke julete».
+
+Begge deler **samme konturfarge (`#1d1a16`) og nøytraler**, så alt føles som én verden.
+Verktøyet velger palett automatisk fra stien; overstyr med `--palett varm|noytral`.
+Referanse-swatcher: `tools/palett-varm.png` og `tools/palett-noytral.png`
+(regenerer med `python tools/pixelify.py --swatches tools`).
+
+### Bruk
+
+```bash
+# stor original -> spillfil (oppgi rutenett):
+python tools/pixelify.py GFX_assets/ChatGPT/vare.png client/public/art/goods/vare.png --rute 2x2
+
+# enkeltfil som allerede er spillstørrelse (128 px/rute):
+python tools/pixelify.py inn.png ut.png
+
+# hel mappe (speiler treet, auto-palett, hopper over bg/ og .jpg):
+python tools/pixelify.py --batch GFX_assets/ChatGPT client/public/art
+
+# grovere nivå (32 px/rute) – bare for enkle, store former, ALDRI tekst/finmønster:
+python tools/pixelify.py inn.png ut.png --div 4
+```
+
+**Regler:** 64 px/rute (`--div 2`) er gulvet og trygt for alt, også tekst (KIWI) og fint
+mønster (lusekofte). `--div 4` smuldrer tynne detaljer. Bakgrunner (`bg/`, `.jpg`) skal
+**ikke** kjøres gjennom – de skal være myke. Krever `Pillow` + `numpy`.
+
+**Bare små grid-varer – ikke store scene-/struktur-/UI-assets.** Batch hopper automatisk
+over filer der største side er over `maks_dim` (600 px i `palett.json`). Store, myke flater
+(boden `bod_selger.png`, telefonrammen, postkassa, lyslenkene, bilene, store ark) blir
+«rustne» og får banding av den lille paletten, så de skal beholdes som originale, høyoppløste
+bilder. Ekte grid-varer er ≤512 px og går fint gjennom. Kjører du en enkeltfil manuelt,
+gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scene-asset.
+
 ## Bakgrunnen (markedet bak boden)
 
 Bakgrunnen er et eget lag bak boden (`art/bg-jm.jpg`). Den fyller hele vinduet («cover») og er

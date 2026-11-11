@@ -1,0 +1,37 @@
+{
+  "_kommentar": "Kanoniske paletter for Julemarked. Brukes av pixelify.py. Ankerfarger fra GRAFIKK.md, utvidet til verdiramper. Varm = festlige varer; noytral = elektro/verktoy/maskiner. De deler kontur og noytraler.",
+  "varm": [
+    "#1d1a16", "#2a2420",
+    "#3a2a1e", "#5a3f28", "#7a5635", "#9c7245", "#c0935a", "#ddb47e",
+    "#d9c89e", "#f4ecd2", "#fff8e6",
+    "#6e1420", "#9a1a28", "#c8102e", "#e23b45", "#f26d6d",
+    "#1c3a2a", "#245438", "#2f7d4f", "#4ba06a", "#7ac089",
+    "#8a6418", "#b8881f", "#e0b02c", "#f0cb55", "#f7e38c",
+    "#3a4766", "#566a94", "#8aa0c4", "#b9c8e0", "#d8c9e8",
+    "#e8731e", "#ffb24d",
+    "#e68aa0", "#f4b9c6", "#7a1340", "#b8325f",
+    "#4a2f22", "#8a5a42", "#c08a6a", "#e8c0a0",
+    "#163a6e", "#2f6ab0", "#6aa0e0"
+  ],
+  "noytral": [
+    "#1d1a16", "#2a2420",
+    "#2d3230", "#454b49", "#5d6360", "#767c79", "#929995", "#b4b9b6", "#d2d6d3",
+    "#cfd3cc", "#e6e9e4", "#f2f4ef",
+    "#27405a", "#3a5e82", "#5a86ad", "#90b4d6",
+    "#4a463e", "#6e675a", "#948b78", "#c0b69c",
+    "#7a5a22", "#b08a3a", "#dcc070",
+    "#7a1f1a", "#d23a2e", "#e6a21f", "#35c06a",
+    "#4a5560", "#6f7d88", "#9fb0ba",
+    "#5a3f28", "#9c7245", "#f4ecd2"
+  ],
+  "noytral_mapper": ["elektro", "verktoy", "maskiner", "power", "devices", "kjele", "posebretter", "innmat"],
+  "noytral_filer": [
+    "plastboks.png", "kartong.png",
+    "safe-liten.png", "safe-liten-apen.png", "safe-stor.png", "safe-stor-apen.png",
+    "nokkel-krok.png", "nokkel-krok-tom.png",
+    "soppelkasse-full.png", "soppelkasse-tom.png"
+  ],
+  "hopp_over_mapper": ["bg"],
+  "maks_dim": 600,
+  "_maks_dim_kommentar": "Filer der storste side > maks_dim hoppes over i batch. Store scene-/struktur-/UI-assets (boden, telefonramme, postkasse, lyslenker, biler, store ark) skal IKKE pixelifiseres - den lille paletten gir 'rust' og banding paa store, myke flater. Ekte grid-varer er <=512 px."
+}
