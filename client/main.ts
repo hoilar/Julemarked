@@ -689,11 +689,14 @@ function powerView(stall: StallPublic, own: boolean): string {
 const NAIL = { x: 1283, y: 452 }; // spikerhodet i bildepiksler (1536×1024)
 
 /** Plakaten med tyvens ansikt (avisa, spikeren og nærbildet bruker samme). */
-function posterHtml(w: { seed: string; alias: string }, reward = true): string {
-  return `<div class="poster-head">ETTERLYST</div>
-    <img src="${avatarFor(w.seed)}" alt="" draggable="false">
+function posterHtml(w: { seed: string; alias: string; caught?: boolean }, reward = true): string {
+  return `<div class="poster-art ${w.caught ? 'caught' : ''}">
+    <div class="poster-head">${w.caught ? 'PÅGREPET' : 'ETTERLYST'}</div>
+    <img class="poster-face" src="${avatarFor(w.seed)}" alt="" draggable="false">
+    ${w.caught ? '<img class="poster-x" src="/art/verktoy/etterlyst-kryss.png" alt="" draggable="false">' : ''}
     <div class="poster-name">${esc(w.alias)}</div>
-    ${reward ? `<div class="poster-reward">Dusør ${kr(THIEF_REWARD)}</div>` : ''}`;
+    ${reward && !w.caught ? `<div class="poster-reward">Dusør ${kr(THIEF_REWARD)}</div>` : ''}
+  </div>`;
 }
 
 function nailView(s: GameState): string {
@@ -732,7 +735,7 @@ function machineRuns(i: Item, stall: StallPublic | null): boolean {
 function feedProblem(i: Item, stall: StallPublic | null): string | null {
   const st = machineFeed(i, stall);
   if (st !== 'ok' && stall && state && machineSource(stall.power, state.me.items, i) === 'battery') return null; // går på batteri
-  if (st === 'unplugged') return '⚠️ Ikke plugget inn – trykk på en ledig kontakt';
+  if (st === 'unplugged') return ''; // pluggikonet viser det
   if (st === 'strip-unplugged') return '⚠️ Det ekstra grenuttaket står ikke i grenuttaket på stolpen';
   if (st === 'main-off') return '⚠️ Grenuttaket er slått av';
   if (st === 'fuse-off') return '⚠️ Ingen sikring i sikringsboksen – dra en skrusikring inn';
@@ -740,6 +743,18 @@ function feedProblem(i: Item, stall: StallPublic | null): string | null {
   if (st === 'main-blown') return '💥 Hovedsikringen har gått – trykk på bryteren på grenuttaket for å bytte';
   return null;
 }
+/** Lite bilde av støpselet: i kontakten eller løst. Erstatter teksten om at maskinen ikke er plugget inn. */
+function plugIcon(i: Item, stall: StallPublic | null): string {
+  const plugged = machineFeed(i, stall) !== 'unplugged';
+  return plugImg(plugged);
+}
+function plugImg(plugged: boolean): string {
+  return `<img class="plug-state ${plugged ? '' : 'off'}" src="/art/elektro/${plugged ? 'plugget-inn' : 'ikke-plugget-inn'}.png" alt="${plugged ? 'Plugget inn' : 'Ikke plugget inn'}"
+    title="${plugged ? 'Plugget inn' : 'Ikke plugget inn – trykk på en ledig kontakt på stolpen eller i et grenuttak'}" draggable="false">`;
+}
+/** Innsiden av maskinen bak rutenettet (kjele, bakemaskin, … ). */
+const innmat = (typeId: string, place: 'pot_in' | 'pot_out') => `--innmat:url(/art/innmat/${typeId}-${place === 'pot_in' ? 'inn' : 'ut'}.png)`;
+
 function kettleHot(i: Item, stall: StallPublic | null): boolean {
   return !!(i.kettle?.on && machineRuns(i, stall) && i.place !== 'trash');
 }
@@ -961,7 +976,7 @@ function carCell(s: GameState, car: Item): string {
   const b = itemsIn(s.me.items, 'cell', car.id)[0];
   const pct = b ? batteryPct(b) : 0;
   return `<div class="car-cell" title="Batteriplass: dra et batteri hit. En tur bruker et standard batteri (2 kWh).">
-    <div class="grid cell-grid" data-grid="cell" data-box="${car.id}" style="--cols:1;--rows:1">${b ? gridItemView(b, 1, 1) : ''}</div>
+    <div class="grid cell-grid ${b ? '' : 'empty'}" data-grid="cell" data-box="${car.id}" style="--cols:1;--rows:1">${b ? gridItemView(b, 1, 1) : ''}</div>
     <span class="car-cell-pct ${b && pct < 95 ? 'low' : ''}">🔋 ${b ? `${pct} %` : 'Tom'}</span></div>`;
 }
 
@@ -1135,7 +1150,7 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
   const grid = (place: 'pot_in' | 'pot_out', size: { cols: number; rows: number }, label: string) => `
     <div class="pot-col">
       <div class="pot-label">${label}</div>
-      <div class="grid box-grid" data-grid="${place}" data-box="${k.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows}">
+      <div class="grid box-grid innmat" data-grid="${place}" data-box="${k.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows};${innmat(k.typeId, place)}">
         ${itemsIn(s.me.items, place, k.id).map((i) => gridItemView(i, size.cols, size.rows)).join('')}
       </div>
     </div>`;
@@ -1165,7 +1180,7 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
         .map((l) => `<button class="pot-level ${st.level === l ? 'on' : ''}" data-action="kettle-level" data-kettle="${k.id}" data-level="${l}" aria-pressed="${st.level === l}">${l}</button>`)
         .join('')}
     </div>
-    <div class="pot-status">${status}</div>
+    <div class="pot-status">${plugIcon(k, stall)}<span>${status}</span></div>
   </div>`;
 }
 
@@ -1179,15 +1194,15 @@ function cellView(s: GameState, m: Item): string {
   const src = stall ? machineSource(stall.power, s.me.items, m) : null;
   const pct = b ? batteryPct(b) : 0;
   const text = !b
-    ? 'Ingen batteri'
+    ? ''
     : src === 'battery'
       ? `Går på batteri · ${pct} % · ca. ${Math.max(0, Math.floor((b.charge ?? 0) / Math.max(0.1, machineKw(m, s.me.items))))} t igjen`
       : `Reserve · ${pct} %`;
   return `<div class="cell-slot" title="Dra et batteri hit. Maskinen bruker det når den ikke får strøm fra grenuttaket.">
-    <div class="grid box-grid cell-grid" data-grid="cell" data-box="${m.id}" style="width:${BOX_CELL}cqw;height:${BOX_CELL}cqw;--cols:1;--rows:1">
+    <div class="grid box-grid cell-grid ${b ? '' : 'empty'}" data-grid="cell" data-box="${m.id}" style="width:${BOX_CELL}cqw;height:${BOX_CELL}cqw;--cols:1;--rows:1">
       ${itemsIn(s.me.items, 'cell', m.id).map((i) => gridItemView(i, CELL_GRID.cols, CELL_GRID.rows)).join('')}
     </div>
-    <div class="cell-info"><div class="cell-bar ${src === 'battery' ? 'draining' : ''}"><span style="width:${pct}%"></span></div><span>🔋 ${text}</span></div>
+    ${b ? `<div class="cell-info"><div class="cell-bar ${src === 'battery' ? 'draining' : ''}"><span style="width:${pct}%"></span></div><span>🔋 ${text}</span></div>` : ''}
   </div>`;
 }
 
@@ -1201,18 +1216,23 @@ function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart
   const list =
     kind === 'bypass'
       ? '<p class="meter-sub">🔧 Ledningene går rett forbi. Ingenting kan ryke, og måleren står stille.</p>'
-      : `<ul class="breakers">${slots
-          .map((entry) => {
-            const nm = entryName(entry, items);
-            const tripped = !!box.fuse?.tripped?.includes(entry);
-            const off = !tripped && !!box.fuse?.off?.includes(entry);
-            const st = feedStatus(stall.power, items, entry);
-            const label = tripped ? (kind === 'smart' ? '⚡ Gått – slår seg på selv' : '⚡ Gått – vipp opp') : off ? 'Av' : st === 'ok' ? `${kwStr(entryKw(entry, items))} kW` : 'ingen strøm inn';
-            return `<li class="breaker ${tripped ? 'tripped' : off ? 'off' : 'on'}"><span>${icon(nm)} ${esc(nm.name)}</span>
-              <button class="breaker-switch" data-action="fuse-toggle" data-entry="${esc(entry)}" title="${tripped ? 'Vipp sikringen opp igjen' : off ? 'Slå på' : 'Slå av'}" aria-pressed="${!tripped && !off}"><i></i></button>
-              <small class="muted">${label}</small></li>`;
-          })
-          .join('') || '<li class="muted">Ingenting er plugget inn.</li>'}</ul>`;
+      : slots.length
+        ? `<div class="breaker-rail">${slots
+            .map((entry) => {
+              const nm = entryName(entry, items);
+              const tripped = !!box.fuse?.tripped?.includes(entry);
+              const off = !tripped && !!box.fuse?.off?.includes(entry);
+              const st = feedStatus(stall.power, items, entry);
+              const label = tripped ? (kind === 'smart' ? 'Gått – slår seg på selv' : 'Gått – vipp opp') : off ? 'Av' : st === 'ok' ? `${kwStr(entryKw(entry, items))} kW` : 'ingen strøm inn';
+              const img = `/art/elektro/${kind === 'smart' ? 'smart' : 'automat'}-${tripped ? 'gatt' : off ? 'av' : 'pa'}.png`;
+              const tip = `${nm.name}: ${label}. ${tripped ? 'Trykk for å vippe sikringen opp igjen.' : off ? 'Trykk for å slå på.' : 'Trykk for å slå av.'}`;
+              return `<div class="breaker ${tripped ? 'tripped' : off ? 'off' : 'on'}">
+                <span class="breaker-dev">${icon(nm)}</span>
+                <button class="breaker-switch" data-action="fuse-toggle" data-entry="${esc(entry)}" title="${esc(tip)}" aria-label="${esc(tip)}" aria-pressed="${!tripped && !off}"><img src="${img}" alt="" draggable="false"></button>
+                <small>${tripped ? '⚡' : off ? 'av' : st === 'ok' ? kwStr(entryKw(entry, items)) : '–'}</small></div>`;
+            })
+            .join('')}</div>`
+        : '<p class="meter-sub muted">Ingenting er plugget inn.</p>';
   const digits = m ? m.kwh.toFixed(1).padStart(7, '0').replace('.', ',') : '—';
   return smallPanel(box.id, n, 'fuse-panel', `${icon(bt)} ${esc(bt.name)}`, `
     <div class="meter ${kind === 'bypass' ? 'stopped' : ''}"><span class="meter-digits">${digits}</span><span class="meter-unit">kWh</span></div>
@@ -1236,10 +1256,10 @@ function chargerPanel(s: GameState, c: Item, n: number): string {
         : 'Legg batterier her for å lade dem';
   const { cols, rows } = CHARGER.input;
   return smallPanel(c.id, n, 'charger-panel', `${icon(CHARGER)} ${esc(entryName(itemSocket(CHARGER.id, c.id), items).name)}`, `
-    <div class="grid box-grid" data-grid="pot_in" data-box="${c.id}" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">
+    <div class="grid box-grid innmat" data-grid="pot_in" data-box="${c.id}" style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows};--innmat:url(/art/innmat/ladestasjon.png)">
       ${itemsIn(items, 'pot_in', c.id).map((i) => gridItemView(i, cols, rows)).join('')}
     </div>
-    <div class="pot-status">${status}</div>`, 14, 26);
+    <div class="pot-status">${plugIcon(c, stall)}<span>${status}</span></div>`, 14, 26);
 }
 
 /** Felles ramme for små vinduer (grenuttak, sikringsboks): standardplass, tittel og lukkeknapp. */
@@ -1267,10 +1287,10 @@ function stripPanel(s: GameState, strip: Item, n: number): string {
   const where = stall.power.sockets.indexOf(stripEntry(strip.id));
   const feed =
     where < 0
-      ? '⚠️ Ikke plugget inn. Trykk på en ledig kontakt på stolpen.'
+      ? plugImg(false)
       : !stall.power.on
         ? `⚠️ I kontakt ${where + 1} på stolpen, men grenuttaket der er slått av.`
-        : `✅ I kontakt ${where + 1} på stolpen.`;
+        : `${plugImg(true)}<span>I kontakt ${where + 1} på stolpen.</span>`;
   const rows = stripSockets(strip)
     .map((e, i) => {
       if (!e)
@@ -1378,7 +1398,7 @@ function makerPanel(s: GameState, m: Item, n: number): string {
   const grid = (place: 'pot_in' | 'pot_out', size: { cols: number; rows: number }, label: string) => `
     <div class="pot-col">
       <div class="pot-label">${label}</div>
-      <div class="grid box-grid" data-grid="${place}" data-box="${m.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows}">
+      <div class="grid box-grid innmat" data-grid="${place}" data-box="${m.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows};${innmat(m.typeId, place)}">
         ${itemsIn(s.me.items, place, m.id).map((i) => gridItemView(i, size.cols, size.rows)).join('')}
       </div>
     </div>`;
@@ -1421,7 +1441,7 @@ function makerPanel(s: GameState, m: Item, n: number): string {
       <button class="pot-power ${st.on ? 'on' : ''}" data-action="maker-power" data-maker="${m.id}" aria-pressed="${st.on}" title="${st.on ? 'Slå av' : 'Slå på'}">⏻</button>
       <div class="maker-bar"><span style="width:${pct}%"></span></div>
     </div>
-    <div class="pot-status">${status}</div>
+    <div class="pot-status">${plugIcon(m, stall)}<span>${status}</span></div>
   </div>`;
 }
 
@@ -1435,7 +1455,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
   const grid = (place: 'pot_in' | 'pot_out', size: { cols: number; rows: number }, label: string) => `
     <div class="pot-col">
       <div class="pot-label">${label}</div>
-      <div class="grid box-grid" data-grid="${place}" data-box="${m.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows}">
+      <div class="grid box-grid innmat" data-grid="${place}" data-box="${m.id}" style="width:${size.cols * BOX_CELL}cqw;height:${size.rows * BOX_CELL}cqw;--cols:${size.cols};--rows:${size.rows};${innmat(m.typeId, place)}">
         ${itemsIn(s.me.items, place, m.id).map((i) => gridItemView(i, size.cols, size.rows)).join('')}
       </div>
     </div>`;
@@ -1464,7 +1484,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
     <div class="pot-controls">
       <button class="fold-run ${on ? 'on' : ''}" data-action="folder-power" data-folder="${m.id}" aria-pressed="${on}">${on ? 'Stopp' : shred ? 'Makuler' : 'Brett sammen'}</button>
     </div>
-    <div class="pot-status">${status}</div>
+    <div class="pot-status">${plugIcon(m, stall)}<span>${status}</span></div>
   </div>`;
 }
 
@@ -2260,11 +2280,13 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
     <h1 class="paper-headline">Økonomi</h1>
     <div class="paper-cols">
       <section class="paper-power ${level}">
+        <img class="paper-art" src="/art/avis/strom.png" alt="" draggable="false">
         <div class="paper-kicker">⚡ Strømprisen i dag</div>
         <div class="paper-price">${price}<small> kr/kWh</small></div>
         <p>Gjelder hele døgnet. Apparater som står i grenuttaket, trekker strøm så lenge bryteren er på.</p>
       </section>
       <section>
+        <img class="paper-art wide" src="/art/avis/marked.png" alt="" draggable="false">
         <div class="paper-kicker">📈 Markedet i går</div>
         ${
           y
@@ -2279,15 +2301,17 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
   const recipe = `
     <h1 class="paper-headline">Eivblås Halvstrøms hjørne</h1>
     <section class="paper-recipe">
+      <img class="paper-art" src="/art/avis/kjele.png" alt="" draggable="false">
       <div class="paper-kicker">🍲 Dagens oppskrift: ${esc(p.recipe.name)}</div>
       <p>Legg ${recipeList(p.recipe.inputs)} i kjelen. Kok på <b>styrke ${p.recipe.level}</b> i én time,
         så får du ${recipeList(p.recipe.outputs)}.</p>
       ${copyRecipeButton(s, p, !!held)}
     </section>
-    <blockquote class="paper-quote">«${esc(p.recipe.quote)}»<cite>– Eivblå Halvstrøm</cite></blockquote>
+    <blockquote class="paper-quote has-face"><img class="paper-face" src="/art/avis/eivbla.png" alt="Eivblå Halvstrøm" draggable="false"><div>«${esc(p.recipe.quote)}»<cite>– Eivblå Halvstrøm</cite></div></blockquote>
     ${
       p.machineRecipe
         ? `<section class="paper-recipe">
+            <img class="paper-art" src="/art/avis/verksted.png" alt="" draggable="false">
             <div class="paper-kicker">🛠️ Fra verkstedet: ${esc(p.machineRecipe.name)}</div>
             <p>Legg ${recipeList(p.machineRecipe.inputs)} i ${esc(p.machineRecipe.machineName.toLowerCase())}en, velg programmet og la den stå i
               <b>${p.machineRecipe.hours} ${p.machineRecipe.hours === 1 ? 'time' : 'timer'}</b>. Da får du ${recipeList(p.machineRecipe.outputs)}.
@@ -2315,6 +2339,7 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
       </div>
     </section>
     <section class="paper-crime">
+      <img class="paper-art" src="/art/avis/nattetyv.png" alt="" draggable="false">
       <div class="paper-kicker">🦝 Natt til i dag</div>
       ${
         thefts.length
@@ -2329,7 +2354,7 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
       }
       <p class="paper-small">Politiet minner om at varer som står ute på bordet mellom kl. ${THEFT_FROM} og 0${THEFT_TO}, er tyvenes favoritt.</p>    </section>
     <div class="paper-kicker">🚓 Politiloggen</div>
-    <p class="paper-log">${esc(p.crime.log)}</p>`;
+    <p class="paper-log"><img class="paper-art wide" src="/art/avis/politi.png" alt="" draggable="false">${esc(p.crime.log)}</p>`;
 
   const scissors = !!hasTool(s, SCISSORS);
   const coupons = `

@@ -903,7 +903,7 @@ Lagt inn i spillet. Parkeringsplassen er skalert fra originalen til 1152×864 so
 | `art/biler/parkering-tom.png` | 384×288 (samme lerret som bilene, 4:3) | Tom parkeringsplass når bilen er ute og handler: nedtråkket snø med to tydelige hjulspor og litt slaps. Samme plassering og bakkelinje som bilbildene, ingen bil. I dag 💨. |
 | `art/verktoy/spor.png` | 128×128 | Spor etter snoking, som vises i ruta der du finner det med lupa: et skittent fotavtrykk eller fingeravtrykk, litt gjennomsiktig. I dag en rød rute. |
 
-### Ferdig laget: maskininnmat, automatsikringer, notatblokk, Eivblå, avisa og etterlysningen
+### ✅ i bruk: maskininnmat, automatsikringer, notatblokk, Eivblå, avisa og etterlysningen
 
 **✅ Ferdig 11.11.2026: alle 35 PNG-bildene ligger i `GFX_assets/ChatGPT`.** Samme grunnprompt og grove pikselstil som før,
 med rette hovedakser etter gridet og **ingen tekst eller tall** (spillet skriver alt selv).
@@ -925,8 +925,7 @@ Plakatparet har identisk bakgrunn, med rødt kryss som eneste forskjell.
 Oversikt: `bestilling-11nov-oversikt.jpg`. Detaljer: `maskininnmat-oversikt.jpg` og
 `avis-elektro-papir-oversikt.jpg`. Prompter fra den innebygde bildegeneratoren:
 `bestilling-11nov-prompter.json`. Kontrolldata: `bestilling-11nov-kontroll.json`.
-Filoversikt med størrelser: `ny-bestilling-manifest.json`. Klart til innlegging;
-spillfiler og kode er ikke endret i denne leveransen.
+Filoversikt med størrelser: `ny-bestilling-manifest.json`. **Lagt inn i spillet 11.11.2026.** Plakatkrysset er i tillegg skilt ut som `etterlyst-kryss.png` (bare de røde pikslene), så det kan ligge over ansiktet.
 
 **1. Innmaten i maskinene (bakgrunn bak rutenettene) og pluggstatus.**
 Når du åpner en maskin, ser du to tomme, mørke rutenett («Råvarer» og «Ferdig»). De skal
@@ -1009,7 +1008,7 @@ ferdige originaler og bilder som er markert som tatt i bruk i spillet.
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
-| Maskininnmat, pluggikoner, automatsikringer, notatark, Eivblå, avisgrafikk og etterlysningsplakat | se «Ferdig laget: maskininnmat, automatsikringer, …» | ✅ Alle 35 PNG-er ferdige i `GFX_assets/ChatGPT`, klare til innlegging |
+| Maskininnmat, pluggikoner, automatsikringer, notatark, Eivblå, avisgrafikk og etterlysningsplakat | se «✅ i bruk: maskininnmat, automatsikringer, …» | ✅ i bruk: `art/innmat/*.png` (bak rutenettene i maskinene), `art/elektro/{plugget-inn,ikke-plugget-inn,batteriplass-tom,din-skinne}.png`, `art/elektro/{automat,smart}-{pa,av,gatt}.png` (sikringene på skinna), `art/papir/{notatark,kodelapp-ark}.png`, `art/avis/*.png`, `art/verktoy/etterlyst-plakat{,-tatt}.png` (+ `etterlyst-kryss.png`, krysset alene, lagt over ansiktet når tyven er tatt) |
 | Nøkkelkrok (med/uten nøkkel), tomme bæreplasser (hånd, sekk), tom parkeringsplass og spor | se «✅ i bruk: små ting i grensesnittet» | ✅ i bruk |
 | Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Ferdig laget: sikringsbokser og dokumentmappe» | ✅ i bruk: `art/elektro/sikringsboks{,-av,-smart,-smart-av,-automat,-bypass}.png` (2×2, av-bildet når boden er uten strøm), `art/verktoy/dokumentmappe.png` (2×3) og `dokumentmappe-apen.png` (640×768, bakgrunn i vinduet; fanenavnene står på fargede knapper over) |
 | Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |

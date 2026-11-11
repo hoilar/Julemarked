@@ -476,6 +476,10 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .paper .paper-teaser small { font-family: system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; color: #6a604f; white-space: nowrap; }
 .paper .paper-teaser.alarm span { color: #8b1f25; }
 .paper-quote { margin: 0 0 0.6rem; padding: 0.4rem 0 0.4rem 0.9rem; border-left: 3px solid #8b1f25; font-size: 1.05rem; font-style: italic; }
+.paper-quote.has-face { display: flex; gap: 0.8rem; align-items: center; }
+.paper-face { flex: 0 0 5.5rem; width: 5.5rem; height: 5.5rem; border-radius: 50%; background: #e6dcc6; border: 2px solid #1d1a16; image-rendering: pixelated; object-fit: cover; }
+.paper-art { float: right; width: 4.2rem; margin: 0 0 0.3rem 0.6rem; image-rendering: pixelated; filter: sepia(0.2); }
+.paper-art.wide { width: 6.3rem; }
 .paper-quote cite { display: block; margin-top: 0.3rem; font-size: 0.8rem; font-style: normal; color: #6a604f; }
 .paper-crime { background: #e6dcc6; padding: 0.6rem 0.7rem; border-left: 4px solid #8b1f25; margin-bottom: 0.8rem; }
 .paper-crime p { margin: 0.3rem 0; font-size: 0.9rem; }
@@ -514,26 +518,27 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .paper-wanted { display: grid; grid-template-columns: 9rem 1fr; gap: 0.9rem; align-items: start; margin-bottom: 0.9rem; padding-bottom: 0.8rem; border-bottom: 1px solid #b8ad97; }
 @media (max-width: 480px) { .paper-wanted { grid-template-columns: 1fr; } }
 .paper-wanted p { margin: 0.3rem 0; font-size: 0.9rem; }
-.paper-wanted.caught .poster img { filter: grayscale(1); }
-.paper-wanted.caught .poster::after {
-  content: 'TATT';
-  position: absolute;
-  inset: 40% -6% auto;
-  rotate: -14deg;
-  text-align: center;
-  font: 900 1.6rem/1 system-ui, sans-serif;
-  color: #b3262d;
-  border: 3px solid #b3262d;
-  background: rgba(243, 236, 220, 0.8);
-}
 .poster-hole { aspect-ratio: 3 / 4; display: grid; place-items: center; border: 2px dashed #8b7d63; color: #6a604f; font-size: 0.8rem; background: #e6dcc6; }
 
 /* Plakaten: avis, spiker, nærbilde og «Angi til politiet» */
-.poster { position: relative; background: #f7eed8; border: 2px solid #1d1a16; padding: 0.4rem; text-align: center; font-family: Georgia, serif; color: #1d1a16; }
-.poster img { width: 100%; aspect-ratio: 1; display: block; background: #e3d6b8; border: 1px solid #1d1a16; }
-.poster-head { font: 900 1.05rem/1 system-ui, sans-serif; letter-spacing: 0.12em; color: #8b1f25; margin-bottom: 0.3rem; }
-.poster-name { font-weight: 800; margin-top: 0.25rem; font-size: 0.9rem; }
-.poster-reward { font: 700 0.72rem system-ui, sans-serif; text-transform: uppercase; color: #8b1f25; }
+.poster { position: relative; }
+/* Selve plakaten (art/verktoy/etterlyst-plakat.png, 384×512): tekst og ansikt legges på de tomme feltene. */
+.poster-art {
+  position: relative;
+  aspect-ratio: 384 / 512;
+  container-type: inline-size;
+  background: url('/art/verktoy/etterlyst-plakat.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  text-align: center;
+  font-family: Georgia, serif;
+  color: #2a1d12;
+}
+.poster-art .poster-head { position: absolute; left: 12%; right: 12%; top: 15%; font: 900 12cqi/1 system-ui, sans-serif; letter-spacing: 0.08em; color: #8b1f25; }
+.poster-art .poster-face { position: absolute; left: 13%; top: 31%; width: 74%; height: 45%; object-fit: contain; image-rendering: auto; }
+.poster-art .poster-x { position: absolute; inset: 0; width: 100%; height: 100%; }
+.poster-art.caught .poster-face { filter: grayscale(1); }
+.poster-art .poster-name { position: absolute; left: 8%; right: 8%; top: 79%; font: 800 8.5cqi/1.1 Georgia, serif; }
+.poster-art .poster-reward { position: absolute; left: 8%; right: 8%; top: 89%; font: 700 6cqi/1 system-ui, sans-serif; text-transform: uppercase; color: #8b1f25; }
 .poster.big { width: min(240px, 70vw); margin: 0 auto 0.6rem; }
 
 /* ---------- Spikeren under grenuttaket ---------- */
@@ -556,14 +561,8 @@ body.dragging .nail:not(.used) .nail-head { box-shadow: 0 0 0 0.25cqw rgba(255, 
   translate: -50% 0;
   rotate: 3deg;
   transform-origin: 50% 0;
-  width: 5.2cqw;
-  padding: 0.25cqw;
-  background: #f7eed8;
-  border: 0.12cqw solid #1d1a16;
-  box-shadow: 0.2cqw 0.35cqw 0.5cqw rgba(0, 0, 0, 0.55);
-  text-align: center;
-  font-family: Georgia, serif;
-  color: #1d1a16;
+  width: 5.6cqw;
+  filter: drop-shadow(0.2cqw 0.35cqw 0.4cqw rgba(0, 0, 0, 0.55));
   cursor: grab;
   pointer-events: auto;
   touch-action: none; /* ellers avbryter nettleseren draget på berøringsskjerm */
@@ -571,9 +570,6 @@ body.dragging .nail:not(.used) .nail-head { box-shadow: 0 0 0 0.25cqw rgba(255, 
   z-index: 1;
 }
 .nail-poster:hover { rotate: 0deg; }
-.nail-poster .poster-head { font-size: 0.75cqw; margin-bottom: 0.15cqw; }
-.nail-poster img { width: 100%; aspect-ratio: 1; display: block; background: #e3d6b8; border: 0.08cqw solid #1d1a16; }
-.nail-poster .poster-name { font-size: 0.6cqw; margin-top: 0.1cqw; }
 .scene:not(.own) .nail { display: none; }
 
 /* «Angi til politiet?» */
@@ -581,21 +577,28 @@ body.dragging .nail:not(.used) .nail-head { box-shadow: 0 0 0 0.25cqw rgba(255, 
 .suspect-face { width: 130px; text-align: center; }
 .suspect-face > img { width: 130px; height: 130px; border-radius: 10px; background: #f3e6d0; border: 2px solid var(--line); display: block; }
 .suspect-face small { display: block; color: var(--muted); margin-top: 0.2rem; }
-.suspect-face.poster-mini { background: #f7eed8; border: 2px solid #1d1a16; padding: 0.3rem; color: #1d1a16; font-family: Georgia, serif; }
-.suspect-face.poster-mini img { width: 100%; aspect-ratio: 1; display: block; background: #e3d6b8; }
-.suspect-face.poster-mini small { color: #6a604f; }
+.suspect-face.poster-mini small { color: var(--muted); }
 
 /* Avskrevet oppskrift */
+/* Arket fra notatblokka (art/papir/notatark.png, 640×800): linjene ligger hver 7,5 % av bredden,
+   første linje 26,6 % ned. Teksten følger linjene; blir det mer tekst, strekkes arket. */
 .note-sheet {
-  background: repeating-linear-gradient(#fffdf4, #fffdf4 1.45rem, #bcd3ea 1.45rem, #bcd3ea 1.5rem);
+  container-type: inline-size;
+  width: min(340px, 82vw);
+  min-height: calc(min(340px, 82vw) * 1.25);
+  margin: 0 auto 0.6rem;
+  padding: 0.1px 0;
+  background: url('/art/papir/notatark.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
   color: #1d2a6b;
-  padding: 0.8rem 1rem;
-  border-left: 3px solid #e09a9a;
   font-family: 'Segoe Print', 'Comic Sans MS', cursive;
   rotate: -1deg;
 }
-.note-sheet h2 { color: #1d2a6b; margin-top: 0; }
-.note-sheet small { color: #5a6aa0; }
+.note-sheet > * { margin: 0 8cqi 7.5cqi 20cqi; font-size: 4.4cqi; line-height: 7.5cqi; }
+.note-sheet > :first-child { margin-top: 20.5cqi; }
+.note-sheet > :last-child { margin-bottom: 8cqi; }
+.note-sheet h2 { color: #1d2a6b; font-size: 5.4cqi; margin-bottom: 0; }
+.note-sheet small { display: block; color: #5a6aa0; }
 
 /* Produsent i varedialogen */
 .label-head { font-weight: 700; margin: 0.6rem 0 0.3rem; }
@@ -713,9 +716,11 @@ body.night .customers { filter: brightness(0.8) saturate(0.9); }
 .trash-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.35rem 0.5rem; border-radius: 6px; background: rgba(127, 127, 127, 0.12); }
 .trash-thing { display: flex; align-items: center; gap: 0.4rem; }
 .trash-thing .icon { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; }
-.note-sheet.code { text-align: center; }
-.note-code { font: 700 2.6rem/1.2 'Courier New', monospace; letter-spacing: 0.3em; color: #1d2a6b; padding: 0.6rem 0 0.3rem; }
-.note-text { font: 1.05rem/1.5 'Segoe Print', 'Comic Sans MS', cursive; color: #1d2a6b; white-space: pre-wrap; word-break: break-word; }
+/* Kodelappen: gul klistrelapp (art/papir/kodelapp-ark.png), koden stort i midten. */
+.note-sheet.code { width: min(240px, 70vw); min-height: 0; aspect-ratio: 1; display: grid; place-items: center; background-image: url('/art/papir/kodelapp-ark.png'); rotate: 2deg; }
+.note-sheet.code > * { margin: 0; }
+.note-code { font: 700 19cqi/1 'Courier New', monospace; letter-spacing: 0.2em; color: #1d2a6b; padding-left: 0.2em; }
+.note-text { white-space: pre-wrap; word-break: break-word; }
 .note-form { margin-top: 0.8rem; }
 .safe-form input { font: 700 1.8rem/1 'Courier New', monospace; letter-spacing: 0.4em; text-align: center; max-width: 9rem; }
 .loupe-btn { margin-top: 0.6rem; width: 100%; }
@@ -1196,9 +1201,10 @@ body.night .top { background: #0c1020; }
 
 /* Avisa: kuponger med stiplet klippekant */
 .paper-coupons { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; margin: 0.6rem 0; }
-.paper-coupon { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: 0.6rem 0.5rem; border: 2px dashed #1d1a16; background: #fffaf0; text-align: center; }
-.paper-coupon::before { content: '✂'; position: absolute; left: -0.6rem; top: -0.85rem; font-size: 1rem; }
-.paper-coupon.cut { border-style: dotted; background: #e6dcc6; color: #6a604f; justify-content: center; min-height: 8rem; }
+/* Kupongen står i en tegnet ramme med stiplet klippekant og saks (art/avis/kupongramme.png). */
+.paper-coupon { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: 10% 8% 8%; background: url('/art/avis/kupongramme.png') center / 100% 100% no-repeat, #fffaf0; image-rendering: pixelated; text-align: center; }
+.paper-coupon > * { image-rendering: auto; }
+.paper-coupon.cut { border: 2px dotted #8b7d63; background: #e6dcc6; color: #6a604f; justify-content: center; min-height: 8rem; }
 .paper-coupon.cut::before { content: none; }
 .coupon-store { align-self: stretch; padding: 0.1rem; background: var(--brand); color: var(--brand-ink); font: 900 0.85rem system-ui, sans-serif; letter-spacing: 0.05em; }
 .coupon-pct { font: 900 2rem/1 Georgia, serif; color: #8b1f25; }
@@ -1434,15 +1440,24 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .folder-tab small { opacity: 0.7; }
 .folder-sheet .folder-grid { position: absolute; left: 6.25%; top: 20.2%; width: 87.2%; height: 72.7%; background-color: transparent; }
 /* Automatsikringer */
-.breakers { list-style: none; margin: 0.4cqw 0 0; padding: 0; display: grid; gap: 0.3cqw; }
-.breaker { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 0.5cqw; font-size: 0.85cqw; padding: 0.2cqw 0.3cqw; border-radius: 0.3cqw; background: rgba(255, 255, 255, 0.05); }
-.breaker small { grid-column: 1 / -1; font-size: 0.7cqw; }
-.breaker.tripped { background: rgba(255, 120, 60, 0.18); }
-.breaker-switch { width: 1.6cqw; height: 2.2cqw; min-width: 16px; min-height: 22px; padding: 0; border-radius: 0.25cqw; background: #222; border: 0.1cqw solid #555; position: relative; box-shadow: none; }
-.breaker-switch i { position: absolute; left: 15%; right: 15%; height: 40%; border-radius: 0.15cqw; background: #ddd; top: 8%; transition: top 0.12s; }
-.breaker.off .breaker-switch i, .breaker.tripped .breaker-switch i { top: 52%; }
-.breaker.on .breaker-switch { border-color: #6c6; }
-.breaker.tripped .breaker-switch { border-color: #f84; }
+/* Automatsikringene står på en DIN-skinne (art/elektro/din-skinne.png) */
+.breaker-rail {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.15cqw 0.25cqw;
+  margin: 0.5cqw 0 0; padding: 0.5cqw 0.6cqw 0.3cqw;
+  border-radius: 0.4cqw;
+  background: url('/art/elektro/din-skinne.png') center 48% / 100% 46% no-repeat, rgba(0, 0, 0, 0.25);
+  image-rendering: pixelated;
+}
+.breaker { display: flex; flex-direction: column; align-items: center; width: 3.2cqw; }
+.breaker-dev { height: 1.7cqw; display: grid; place-items: center; }
+.breaker-dev img, .breaker-dev .ico { max-height: 1.6cqw; max-width: 2.4cqw; }
+.breaker-switch { width: 2.8cqw; height: 5.6cqw; min-width: 14px; min-height: 28px; padding: 0; border: 0; background: none; box-shadow: none; border-radius: 0.2cqw; }
+.breaker-switch:hover { background: none; filter: brightness(1.15); }
+.breaker-switch img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.breaker.tripped .breaker-switch img { animation: breaker-blink 1s steps(2) infinite; }
+@keyframes breaker-blink { 50% { filter: brightness(1.35) drop-shadow(0 0 0.3cqw #ff7a3c); } }
+.breaker small { font-size: 0.72cqw; color: #f5d9b0; white-space: nowrap; }
+.breaker.off small { opacity: 0.6; }
 .meter.stopped .meter-digits { opacity: 0.5; }
 .car-cell { position: absolute; left: 60%; top: 13%; /* på den løftede bakluka – unna sidespeilet (figuren) og søppelkassa */ width: 6.5%; z-index: 1; pointer-events: auto; display: grid; gap: 0.2cqw; justify-items: center; }
 .car-cell .cell-grid { position: relative; width: 100%; aspect-ratio: 1; }
@@ -1517,3 +1532,21 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
   .look-preview { position: static; flex: none; }
   .look-preview img { width: 140px; height: 140px; }
 }
+
+/* Maskininnmat: bildet av innsiden ligger bak rutenettet */
+.grid.innmat {
+  background-color: rgba(28, 10, 6, 0.5);
+  background-image:
+    linear-gradient(to right, rgba(110, 90, 70, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(110, 90, 70, 0.35) 1px, transparent 1px),
+    var(--innmat);
+  background-size: calc(100% / var(--cols)) calc(100% / var(--rows)), calc(100% / var(--cols)) calc(100% / var(--rows)), 100% 100%;
+  image-rendering: pixelated;
+}
+/* Tom batteriplass: tegnet omriss */
+.cell-grid.empty { background: url('/art/elektro/batteriplass-tom.png') center / 80% 80% no-repeat, rgba(28, 10, 6, 0.6); image-rendering: pixelated; }
+/* Støpselet: i kontakten eller løst */
+.pot-status { display: flex; align-items: center; gap: 0.4cqw; }
+.plug-state { width: 2.4cqw; height: 2.4cqw; min-width: 22px; min-height: 22px; flex: none; image-rendering: pixelated; }
+.plug-state.off { animation: plug-nudge 1.6s ease-in-out infinite; }
+@keyframes plug-nudge { 50% { transform: translateY(-0.15cqw); filter: drop-shadow(0 0 0.3cqw #ff7a5c); } }
