@@ -28,10 +28,9 @@ const ALIASES = [
 
 /** Dagens etterlyste tyv (dayKey = avisutgaven, ÅÅÅÅMMDD). Seed gir ansiktet (DiceBear). */
 export function thiefOf(marketId: number, dayKey: number): { seed: string; alias: string } {
-  return {
-    seed: `tyv-${marketId}-${dayKey}`,
-    alias: ALIASES[Math.floor(hash01('tyvenavn', marketId, dayKey) * ALIASES.length)],
-  };
+  const alias = ALIASES[Math.floor(hash01('tyvenavn', marketId, dayKey) * ALIASES.length)];
+  // Aliaset står i seeden, så ansiktet passer til navnet (Lange-Lise uten skjegg).
+  return { seed: `tyv-${marketId}-${dayKey}-${alias}`, alias };
 }
 
 const NIGHT_HOURS = [23, 0, 1, 2, 3, 4, 5]; // samme som tyvetimene 23–06

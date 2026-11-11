@@ -5,6 +5,7 @@ import { createAvatar } from '@dicebear/core';
 import { micah } from '@dicebear/collection';
 import { moodFor, randomTolerance, type Mood } from '../shared/mood.ts';
 import type { Look } from '../shared/look.ts';
+import { styleOfSeed, type FaceStyle } from '../shared/names.ts';
 
 /** En vare på bordet slik kundene ser den. */
 export interface Offer {
@@ -23,6 +24,7 @@ const FACE: Record<Mood, { mouth: string[]; eyes: string[]; eyebrows: string[] }
 
 // Naturlige hårfarger og vinterlige klær i stedet for standardpaletten.
 const HAIR = ['000000', '2c1b18', '77311d', 'ac6651', 'f4d150', 'd6d6d6'];
+const SKIN = ['f9c9b6', 'ac6651', '77311d']; // DiceBear sine standard hudfarger
 const SHIRT = ['b3262d', '2f6b4f', '1f3a5f', '6b4224', '8a8a8a', 'e8dcc8', '5b2a6e'];
 
 function hash(s: string): number {
@@ -32,9 +34,26 @@ function hash(s: string): number {
 }
 const pick = <T>(arr: T[], seed: string, salt: string) => arr[hash(seed + salt) % arr.length];
 
+// Jente-/guttefigurer: navnet i seeden (eller seeden selv) bestemmer hår, skjegg, vipper og øredobber,
+// så figuren henger sammen (ingen «Rema-Rita» med helskjegg).
+const STYLE: Record<FaceStyle, { hair: string[]; facialHair: number; earrings: number }> = {
+  f: { hair: ['full', 'pixie', 'dannyPhantom', 'turban', 'fonze'], facialHair: 0, earrings: 45 },
+  m: { hair: ['fonze', 'mrT', 'dougFunny', 'mrClean', 'dannyPhantom', 'turban'], facialHair: 35, earrings: 8 },
+};
+
 function svgFor(seed: string, mood: Mood, look: Look = {}): string {
-  const f = FACE[mood];
+  const st = styleOfSeed(seed);
+  const face = FACE[mood];
+  // Vipper på jentene, vanlige bryn og ikke sminke på guttene.
+  const f = {
+    mouth: face.mouth,
+    eyebrows: face.eyebrows.filter((b) => (st === 'f') === b.startsWith('eyelashes')),
+    eyes: st === 'm' ? face.eyes.filter((e) => !e.includes('Shadow')) : face.eyes,
+  };
   const one = (v: string | undefined) => (v ? ([v] as never) : undefined);
+  // Hud først, og håret i en annen farge enn huden (ellers ser brunt hår på brun hud skallet ut).
+  const skin = look.skin ?? pick(SKIN, seed, 's');
+  const hairColor = pick(HAIR.filter((c) => c !== skin), seed, 'hc');
   const opts: Record<string, unknown> = {
     seed,
     size: 256,
@@ -42,12 +61,15 @@ function svgFor(seed: string, mood: Mood, look: Look = {}): string {
     mouth: one(look.mouth) ?? [pick(f.mouth, seed, 'm')],
     eyes: one(look.eyes) ?? [pick(f.eyes, seed, 'e')],
     eyebrows: one(look.eyebrows) ?? [pick(f.eyebrows, seed, 'b')],
-    hairColor: one(look.hairColor) ?? HAIR,
-    facialHairColor: one(look.hairColor) ?? HAIR,
+    hairColor: one(look.hairColor) ?? [hairColor],
+    facialHairColor: one(look.hairColor) ?? [hairColor],
+    baseColor: [skin],
     shirtColor: one(look.shirtColor) ?? SHIRT,
+    hair: [pick(STYLE[st].hair, seed, 'h')],
+    facialHairProbability: STYLE[st].facialHair,
+    earringsProbability: STYLE[st].earrings,
   };
   // Valgene fra speilet på bilen (figurredigeringen).
-  if (look.skin) opts.baseColor = [look.skin];
   if (look.hair) Object.assign(opts, { hair: [look.hair], hairProbability: 100 });
   if (look.nose) opts.nose = [look.nose];
   if (look.shirt) opts.shirt = [look.shirt];
