@@ -136,7 +136,20 @@ gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scen
 
 ## Gjenstående grafikk-ønsker
 
-### Bestilling (11.11.2026): torget om morgenen, kvelden og natta
+### ✅ I bruk (12.11.2026): torget om morgenen, kvelden og natta
+
+**I spillet:** `art/bg/marked-{morgen,dag,kveld,natt}.jpg`; fargelaget over kveld/natt er fjernet.
+
+**✅ Ferdig i `GFX_assets/ChatGPT`:** `marked-morgen.png`, `marked-kveld.png`
+og `marked-natt.png`, alle ugjennomsiktige PNG-er på **1672×941 px**.
+Dagbildet er brukt direkte som redigeringsreferanse; utsnitt og plasseringer er
+visuelt kontrollert mot dagversjonen. Morgen har rosa/ferskenlys, kveld har
+blålilla skumring og varme lykter, natt har stjerner, måne og lukkede markedsboder.
+Oversikt med dagbildet: `marked-dognvarianter-oversikt.jpg`.
+Genererte originaler er bevart som `marked-{morgen,kveld,natt}-original.png`.
+Prompter og oppsett: `marked-og-bilspor-prompter.json`.
+Kontroll: `marked-og-bilspor-kontroll.json`. Ikke kjørt gjennom `pixelify.py`.
+Klare for innlegging; spillfiler og Aseprite-fila er ikke endret.
 
 Den nye layouten (`GFX_assets/ChatGPT/Ny Layout.aseprite`, lerret **1672×941 px**) bruker
 laget «Background» som bakgrunn: `client/public/art/bg/marked-dag.jpg`. Det finnes bare i dagslys;
@@ -164,7 +177,20 @@ spillet legger i dag et blått fargelag over om kvelden og natta. Vi trenger tre
 Spillet bytter bakgrunn etter tid på døgnet (`body[data-daypart]` i `style.css`); når de tre er
 levert, blir de `art/bg/marked-{morgen,kveld,natt}.jpg`, og fargelaget over kveld/natt fjernes.
 
-### Bestilling (11.11.2026): lengre hjulspor bak bilen som fader ut
+### ✅ I bruk (12.11.2026): lengre hjulspor bak bilen som fader ut
+
+**I spillet:** lagt sammen med slapsen i `art/bakke.png` (erstatter det korte sporet).
+
+**✅ Ferdig i `GFX_assets/ChatGPT`:** `bilspor-lange.png`, transparent **1672×941 px**.
+To loddrette dekkspor med gråblå/brun slaps og lyse snøkanter, sentrert ved
+x=75 og x=265. Hvert spor er plassert i et 120×241-felt fra y=700, slik at
+de dekker hjulplasseringene og blir litt bredere nedover. Alfa avtar gradvis;
+de svakeste pikslene er ryddet bort og nederkanten er helt gjennomsiktig.
+Forhåndsvisning på dagbakgrunnen: `bilspor-lange-forhandsvisning.png`.
+Stor generert original: `bilspor-lange-original.png`.
+Prompter/oppsett og kontroll: `marked-og-bilspor-{prompter,kontroll}.json`.
+Ved innlegging: erstatt det gamle «Bil_spor»-laget, behold «Bakke_slaps»,
+og legg sporene bak bilene og leveransene. Aseprite-fila og spillfiler er ikke endret.
 
 Dagens hjulspor (laget «Bil_spor» i Ny Layout, 322×66 px ved x 15, y 701) er bare en kort
 flekk under bakhjulene og ser ut som en grå klatt. Ønsket:
@@ -1260,6 +1286,7 @@ ferdige originaler og bilder som er markert som tatt i bruk i spillet.
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
+| Markedsbakgrunn morgen, kveld og natt, samt lange hjulspor | 1672×941 hver | ✅ Originaler ferdige i `GFX_assets/ChatGPT/marked-{morgen,kveld,natt}.png` og `bilspor-lange.png`; klare for innlegging. Oversikt: `marked-dognvarianter-oversikt.jpg` |
 | Maskininnmat, pluggikoner, automatsikringer, notatark, Eivblå, avisgrafikk og etterlysningsplakat | se «✅ i bruk: maskininnmat, automatsikringer, …» | ✅ i bruk: `art/innmat/*.png` (bak rutenettene i maskinene), `art/elektro/{plugget-inn,ikke-plugget-inn,batteriplass-tom,din-skinne}.png`, `art/elektro/{automat,smart}-{pa,av,gatt}.png` (sikringene på skinna), `art/papir/{notatark,kodelapp-ark}.png`, `art/avis/*.png`, `art/verktoy/etterlyst-plakat{,-tatt}.png` (+ `etterlyst-kryss.png`, krysset alene, lagt over ansiktet når tyven er tatt) |
 | Nøkkelkrok (med/uten nøkkel), tomme bæreplasser (hånd, sekk), tom parkeringsplass og spor | se «✅ i bruk: små ting i grensesnittet» | ✅ i bruk |
 | Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Ferdig laget: sikringsbokser og dokumentmappe» | ✅ i bruk: `art/elektro/sikringsboks{,-av,-smart,-smart-av,-automat,-bypass}.png` (2×2, av-bildet når boden er uten strøm), `art/verktoy/dokumentmappe.png` (2×3) og `dokumentmappe-apen.png` (640×768, bakgrunn i vinduet; fanenavnene står på fargede knapper over) |

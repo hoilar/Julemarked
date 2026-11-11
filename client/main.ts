@@ -362,7 +362,7 @@ function hasTool(s: GameState, typeId: string): Item | undefined {
 /** Bakgrunnen etter tid på døgnet (desember: mørkt fra kl. 15). */
 const daypart = (h: number) => (h >= 7 && h < 10 ? 'morgen' : h >= 10 && h < 15 ? 'dag' : h >= 15 && h < 21 ? 'kveld' : 'natt');
 // Last alle fire bakgrunnene med en gang, så byttet skjer uten blink.
-new Image().src = '/art/bg/marked-dag.jpg'; // torget (bare dagslys foreløpig; kveld/natt er et fargelag)
+for (const p of ['morgen', 'dag', 'kveld', 'natt']) new Image().src = `/art/bg/marked-${p}.jpg`;
 
 let shownStall: StallPublic | null = null; // boden som vises nå (egen eller besøkt)
 let lastSaleId: number | null = null; // nyeste salg vi allerede har vist
@@ -1246,6 +1246,17 @@ function cellView(s: GameState, m: Item): string {
 }
 
 /** Sikringsboks med automatsikringer (vipp opp igjen / slår seg på selv), eller forbikoblet (ingen sikringer, måleren står). */
+/**
+ * Kort navn til merkelappen over en sikring: første ord uten «-maskin», «-system» osv. («Bake», «Alarm»),
+ * pluss nummeret hvis det er flere like («Uttak 2»). Hele navnet står i title.
+ */
+function shortLabel(name: string): string {
+  const num = name.match(/ (\d+)$/)?.[1];
+  let first = name.replace(/ \d+$/, '').split(/[\s,(«-]/)[0];
+  first = first.replace(/(maskin|system|stasjon|lenke|terminal)$/i, '').replace(/^Grenuttak$/i, 'Uttak') || first;
+  return num ? `${first} ${num}` : first;
+}
+
 function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart' | 'bypass'): string {
   const stall = myStall(s)!;
   const items = s.me.items;
@@ -1268,7 +1279,7 @@ function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart
                   const img = `/art/elektro/${kind === 'smart' ? 'smart' : 'automat'}-${tripped ? 'gatt' : off ? 'av' : 'pa'}.png`;
                   const tip = `${nm.name}: ${label}. ${tripped ? 'Trykk for å vippe sikringen opp igjen.' : off ? 'Trykk for å slå på.' : 'Trykk for å slå av.'}`;
                   return `<div class="breaker ${tripped ? 'tripped' : off ? 'off' : 'on'}">
-                <span class="breaker-dev">${icon(nm)}</span>
+                <span class="breaker-label" title="${esc(nm.name)}">${icon(nm)}<b>${esc(shortLabel(nm.name))}</b></span>
                 <button class="breaker-switch" data-action="fuse-toggle" data-entry="${esc(entry)}" title="${esc(tip)}" aria-label="${esc(tip)}" aria-pressed="${!tripped && !off}"><img src="${img}" alt="" draggable="false"></button>
                 <small>${tripped ? '⚡' : off ? 'av' : st === 'ok' ? kwStr(entryKw(entry, items)) : '–'}</small></div>`;
                 })
