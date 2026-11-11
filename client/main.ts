@@ -147,6 +147,9 @@ let token = localStorage.getItem('jm_token');
 let state: GameState | null = null;
 let screen: Screen = { kind: 'stall' };
 let modal: Modal = null;
+// Når man åpner et info-kort for en ingrediens/vare fra en oppskrift, husker vi modalen under
+// så «lukk» tar deg tilbake dit i stedet for helt ut.
+let modalBack: Modal = null;
 // Avisa er et eget vindu som kan dras rundt og ligger oppå scenen uten å blokkere den
 // (så du kan sammenligne etterlysningen med folka ved disken).
 let paperWin: { edition: number; page: number } | null = null;
@@ -220,7 +223,9 @@ function sprite(t: { emoji: string; image?: string }): string {
 }
 /** Råvarer/varer i en oppskrift, med bildene: «2 [bilde] tyttebær og 1 [bilde] sukker». */
 function recipeList(lines: { id: string; n: number }[]): string {
-  return lines.map(({ id, n }) => `${n} ${icon(ITEM_TYPES[id])} ${esc(ITEM_TYPES[id].name.toLowerCase())}`).join(' og ');
+  return lines
+    .map(({ id, n }) => `${n} <button type="button" class="ingredient-link" data-action="item-info" data-type="${id}">${esc(ITEM_TYPES[id].name.toLowerCase())}</button>`)
+    .join(' og ');
 }
 const linesOf = (m: Record<string, number>) => Object.entries(m).map(([id, n]) => ({ id, n }));
 
@@ -1351,7 +1356,7 @@ function fusePanel(s: GameState, box: Item, n: number): string {
       <div class="grid box-grid fuse-grid" data-grid="fuse" data-box="${box.id}" style="width:${BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:1;--rows:${rows}">${fuses}</div>
       <ul class="fuse-labels" style="--rows:${rows}">${labels}</ul>
     </div>
-    <div class="meter-sub muted">🔩 Reservesikringer under disken: ${spares}${spares ? '' : ' – Klas Olsen har'}. Dra dem inn i en plass.</div>
+    <div class="meter-sub muted">🔩 Reservesikringer under disken: ${spares}${spares ? '' : ' – Klas Olsen har'}</div>
     ${roll}`, 24, 46);
 }
 
@@ -1416,9 +1421,9 @@ function makerPanel(s: GameState, m: Item, n: number): string {
   const status = !knowsCurrent
     ? 'Velg en oppskrift'
     : !st.on
-      ? `Av – legg i råvarene til ${prog.name.toLowerCase()} og trykk ⏻`
+      ? 'Av'
       : (feedProblem(m, stall) ??
-        (!ready ? '⏳ Tom – legg i råvarene' : `${def.emoji} ${def.verb} · ${kwStr(def.kw)} kW · ${st.progress}/${prog.hours} t`));
+        (!ready ? '⏳ Tom' : `${def.emoji} ${def.verb} · ${kwStr(def.kw)} kW · ${st.progress}/${prog.hours} t`));
   const pct = Math.round((Math.min(st.progress, prog.hours) / prog.hours) * 100);
   if (!panelPos.has(m.id)) {
     const w = (def.input.cols + def.output.cols) * BOX_CELL + 6;
@@ -1462,8 +1467,8 @@ function folderPanel(s: GameState, m: Item, n: number): string {
   const kw = def.kw.toString().replace('.', ',');
   const status = !on
     ? shred
-      ? `Av – legg aviser, lapper eller tomme plastposer i venstre felt og trykk «Makuler». Plast kan bli mikroplast (${Math.round(MICROPLASTIC_CHANCE * 100)} %).`
-      : 'Av – legg tomme poser i venstre felt og trykk «Brett sammen»'
+      ? `Av · plast kan bli mikroplast (${Math.round(MICROPLASTIC_CHANCE * 100)} %)`
+      : 'Av'
     : (feedProblem(m, stall) ?? (shred ? `${def.emoji} Makulerer · ${kw} kW · ${def.perHour} ting per time` : `🗜️ Bretter · ${kw} kW · én pose per time`));
   if (!panelPos.has(m.id)) {
     const w = (def.input.cols + def.output.cols) * BOX_CELL + 6;
@@ -2547,7 +2552,7 @@ function itemView(s: GameState, it: Item): string {
     const how = r.machine
       ? `${list(r.inputs)} i ${esc(MAKER_BY_ID[r.machine].name.toLowerCase())}.<br>Programmet «${esc(r.name)}», ${r.hours} timer.`
       : `${list(r.inputs)} i kjelen.<br>Styrke <b>${r.level}</b>, én time.`;
-    return `<div class="note-sheet"><h2>📝 ${esc(r.name)}</h2>
+    return `<div class="note-sheet"><h2>${esc(r.name)}</h2>
       <p>${how}<br>= ${list(r.outputs)}</p>
       <small>Skrevet av fra Verdens Undergang.</small></div>`;
   }
@@ -2577,12 +2582,12 @@ function itemView(s: GameState, it: Item): string {
       <p>Kommunen gir med dette «${esc(stallName)}» bevilling til å selge alkohol på julemarkedet.</p>
       <p><b>Salg er bare tillatt etter kl. ${LIQUOR_FROM_HOUR}.</b> Brudd fører til at bevillingen inndras.</p>
       <small>Gjelder så lenge dokumentet er i bodens besittelse.</small></div>
-      <p class="muted">Kaster du dokumentet, er bevillingen borte – og søpla er åpen for alle.</p>`;
+      <p class="muted">Kaster du dokumentet, er bevillingen borte.</p>`;
   }
   if (it.note) {
     return `<div class="note-sheet ${it.note.kind === 'code' ? 'code' : ''}">
       ${it.note.kind === 'code' ? `<div class="note-code">${esc(it.note.text)}</div>` : `<p class="note-text">${esc(it.note.text)}</p>`}
-      </div><p class="muted">${it.note.kind === 'code' ? 'Fire siffer på en lapp. Hvem vet hva de låser opp.' : 'Et notat skrevet med penn.'} Kast den i søpla hvis du vil bli kvitt den – men husk at søpla er åpen for alle.</p>`;
+      </div><p class="muted">${it.note.kind === 'code' ? 'Fire siffer på en lapp. Hvem vet hva de låser opp.' : 'Et notat skrevet med penn.'}</p>`;
   }
   if (it.typeId === IMPRINT && it.key) {
     const can = s.me.items.some((i) => i.typeId === KEY_MACHINE && !i.keyJob && !isTrashed(s.me.items, i)) && hasTool(s, BLANK_KEY);
@@ -3268,7 +3273,18 @@ app.addEventListener('click', (e) => {
     if (e.target !== el && el.classList.contains('modal-backdrop')) return; // klikk inni dialogen
     if (Date.now() - sdragEndAt < 400) return; // slapp noe utenfor vinduet
     if (modal?.kind === 'snoop' && modal.view) return void snoopLeaveNow();
-    modal = null;
+    modal = modalBack;
+    modalBack = null;
+  }
+  if (action === 'item-info') {
+    const id = el.dataset.type ?? '';
+    const t = ITEM_TYPES[id];
+    if (t) {
+      if (modal && modal.kind !== 'ingredient' && modal.kind !== 'product') modalBack = modal;
+      modal = t.kind === 'ingredient' ? { kind: 'ingredient', typeId: id } : { kind: 'product', productId: id };
+    }
+    render();
+    return;
   }
   if (action === 'snoop') {
     const stallId = Number(el.dataset.stall);
