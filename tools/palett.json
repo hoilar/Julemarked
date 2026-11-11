@@ -31,6 +31,30 @@
     "nokkel-krok.png", "nokkel-krok-tom.png",
     "soppelkasse-full.png", "soppelkasse-tom.png"
   ],
+  "_rekker_kommentar": "Materialrekker (mork -> lys) for --palett material. Hver piksel velger forst rekke (fargetone), saa trinn (lyshet), saa brun papp aldri faar graa skygger. Skyggene drar mot rodt/lilla, lyset mot gult. Kontur er felles for alle.",
+  "rekker": {
+    "kontur": ["#120c0a", "#1d1a16", "#2a2420"],
+    "papp":   ["#2d1d17", "#4e2e22", "#6f412c", "#8f5639", "#a9683f", "#ba764e", "#cb8556", "#dd9a64", "#ebb67e", "#f4cd9c"],
+    "laer":   ["#261a14", "#3f221b", "#552a21", "#704032", "#8f614c", "#a76f4d", "#b0754e", "#bf885c", "#d3a272"],
+    "papir":  ["#5e4a3e", "#86705e", "#a8917c", "#c8b098", "#ddc8aa", "#e6d6bc", "#eee3cc", "#f5eddb", "#fbf6ea"],
+    "emalje": ["#302926", "#4e4247", "#6e6068", "#8d7f88", "#ab9aa4", "#c8b8ba", "#e2d3cc", "#f4ebe2", "#fbf5ec"],
+    "metall": ["#1d1a1c", "#2e2b30", "#3a3232", "#5b5459", "#726c74", "#887d83", "#a39aa0", "#bba595", "#dcd6d8"],
+    "stal":   ["#232838", "#3a4152", "#535b72", "#63677c", "#7d8399", "#9ca2b6", "#c0c5d4", "#e4e8f0"],
+    "messing":["#3e2a10", "#6b4b18", "#9a7224", "#c69a36", "#e3c058", "#f5e08f"],
+    "rod":    ["#4a1018", "#7a1a24", "#b3262d", "#d94a4a", "#f07a72", "#f8b0a8"],
+    "gronn":  ["#18301f", "#245438", "#2f7d4f", "#4ba06a", "#7ac089", "#b4dcb8"],
+    "bla":    ["#163a6e", "#2f5a96", "#4c7cc0", "#7aa4dc", "#a8c8ec"],
+    "gul":    ["#8a6418", "#c2921f", "#e0b02c", "#f0cb55", "#f7e38c"]
+  },
+  "_materialer_kommentar": "Filer som bruker materialrekkene. rekker = hvilke rekker bildet faar velge mellom (kontur legges alltid til). glatt = hvor mye rolige flater jevnes ut for fargevalget (0-3). oy = minste flekk i piksler (intern oppl.) som faar bli staaende.",
+  "materialer": {
+    "kartong.png":            { "rekker": ["papp", "papir"], "glatt": 2, "oy": 3 },
+    "dokumentmappe.png":      { "rekker": ["laer", "rod", "bla", "gronn", "gul", "messing"], "glatt": 2, "oy": 3 },
+    "dokumentmappe-apen.png": { "rekker": ["laer", "papir", "rod", "bla", "gronn", "gul"], "glatt": 0, "oy": 1 },
+    "nokkelmaskin.png":       { "rekker": ["metall", "stal", "messing", "papir"], "glatt": 0, "oy": 1 },
+    "bakemaskin-inn.png":     { "rekker": ["emalje", "papir", "metall"], "glatt": 3, "oy": 4 },
+    "bakemaskin-ut.png":      { "rekker": ["papir", "emalje", "metall", "stal"], "glatt": 8, "oy": 6 }
+  },
   "hopp_over_mapper": ["bg"],
   "maks_dim": 600,
   "_maks_dim_kommentar": "Filer der storste side > maks_dim hoppes over i batch. Store scene-/struktur-/UI-assets (boden, telefonramme, postkasse, lyslenker, biler, store ark) skal IKKE pixelifiseres - den lille paletten gir 'rust' og banding paa store, myke flater. Ekte grid-varer er <=512 px."

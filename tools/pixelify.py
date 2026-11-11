@@ -68,8 +68,134 @@ def remap(rgb_arr, navn):
     d = ((lab[:, None, :] - plab[None, :, :]) ** 2).sum(-1)
     return prgb[d.argmin(1)].astype(np.uint8).reshape(rgb_arr.shape)
 
+# ---------- materialrekker ----------
+# Vekter i Lab naar rekka velges: fargetone/metning teller mest, lyshet lite (lysheten er jo
+# det rekka selv dekker). Inne i rekka velges trinnet med vanlig Lab-avstand.
+W_VELG = np.array([0.35, 1.0, 1.0])
+
+def rekke_lab(navn):
+    key = ("rekke", navn)
+    if key not in _LAB_CACHE:
+        rgb = np.array([hex2rgb(h) for h in PALETT["rekker"][navn]], dtype=np.float64)
+        _LAB_CACHE[key] = (rgb, rgb2lab(rgb))
+    return _LAB_CACHE[key]
+
+def avstand_til_rekke(lab, rlab):
+    """Avstand fra hver piksel til polylinja gjennom rekka (vektet Lab)."""
+    P = lab * W_VELG
+    R = rlab * W_VELG
+    if len(R) == 1:
+        return ((P - R[0]) ** 2).sum(-1)
+    A, B = R[:-1], R[1:]
+    AB = B - A
+    t = ((P[:, None, :] - A[None]) * AB[None]).sum(-1) / np.maximum((AB ** 2).sum(-1), 1e-9)[None]
+    t = np.clip(t, 0, 1)
+    Q = A[None] + t[..., None] * AB[None]
+    return ((P[:, None, :] - Q) ** 2).sum(-1).min(1)
+
+def glatt_flater(rgb, mask, runder, sigma=7.0):
+    """Kantbevarende utjevning: snitter 3x3-naboer som ligner (Lab), saa smaa flekker paa
+    rolige flater forsvinner mens skarpe kanter staar."""
+    if runder <= 0:
+        return rgb
+    lab = rgb2lab(rgb.astype(np.float64))
+    cur = rgb.astype(np.float64)
+    h, w = mask.shape
+    for _ in range(runder):
+        acc = np.zeros_like(cur); wsum = np.zeros((h, w))
+        padc = np.pad(cur, ((1, 1), (1, 1), (0, 0)), mode="edge")
+        padl = np.pad(lab, ((1, 1), (1, 1), (0, 0)), mode="edge")
+        padm = np.pad(mask, 1, mode="constant")
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                c = padc[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+                l = padl[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+                m = padm[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+                wt = np.exp(-((l - lab) ** 2).sum(-1) / (2 * sigma * sigma)) * m
+                acc += c * wt[..., None]; wsum += wt
+        cur = np.where(mask[..., None], acc / np.maximum(wsum, 1e-9)[..., None], cur)
+        lab = rgb2lab(cur)
+    return np.clip(cur, 0, 255)
+
+def flertall_filter(lab_idx, mask, grense=6):
+    """Rekkevalg som avviker fra minst `grense` av 8 naboer, tar naboenes valg (mindre prikkete)."""
+    h, w = lab_idx.shape
+    pad = np.pad(lab_idx, 1, constant_values=-1)
+    stack = np.stack([pad[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+                      for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx])
+    out = lab_idx.copy()
+    for k in np.unique(lab_idx[mask]):
+        cnt = (stack == k).sum(0)
+        flip = mask & (lab_idx != k) & (cnt >= grense)
+        out[flip] = k
+    return out
+
+def fjern_oyer(idx, mask, minste):
+    """Sammenhengende flekker (4-nabo) mindre enn `minste` piksler faar fargen rundt seg."""
+    if minste <= 1:
+        return idx
+    h, w = idx.shape
+    sett = np.zeros((h, w), bool)
+    out = idx.copy()
+    for y0 in range(h):
+        for x0 in range(w):
+            if sett[y0, x0] or not mask[y0, x0]:
+                continue
+            k = idx[y0, x0]; stk = [(y0, x0)]; sett[y0, x0] = True; comp = []
+            while stk:
+                y, x = stk.pop(); comp.append((y, x))
+                for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                    if 0 <= ny < h and 0 <= nx < w and not sett[ny, nx] and mask[ny, nx] and idx[ny, nx] == k:
+                        sett[ny, nx] = True; stk.append((ny, nx))
+            if len(comp) >= minste:
+                continue
+            nab = {}
+            cs = set(comp)
+            for y, x in comp:
+                for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                    if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] and (ny, nx) not in cs:
+                        nab[idx[ny, nx]] = nab.get(idx[ny, nx], 0) + 1
+            if nab:
+                ny = max(nab, key=nab.get)
+                for y, x in comp:
+                    out[y, x] = ny
+    return out
+
+def remap_material(rgb, mask, cfg):
+    """Rekke foerst (fargetone), saa trinn (lyshet). Returnerer RGB."""
+    navn = ["kontur"] + [r for r in cfg.get("rekker", list(PALETT["rekker"])) if r != "kontur"]
+    rgb = glatt_flater(rgb, mask, cfg.get("glatt", 1))
+    h, w = mask.shape
+    lab = rgb2lab(rgb.astype(np.float64)).reshape(-1, 3)
+    d = np.stack([avstand_til_rekke(lab, rekke_lab(n)[1]) for n in navn], 1)
+    valg = d.argmin(1).reshape(h, w)
+    valg = flertall_filter(valg, mask)
+    # felles fargeliste: indeks = (rekke, trinn)
+    farger, flat_lab, start = [], [], {}
+    for i, n in enumerate(navn):
+        r, l = rekke_lab(n); start[i] = len(farger); farger.extend(r); flat_lab.extend(l)
+    farger = np.array(farger); flat_lab = np.array(flat_lab)
+    idx = np.zeros(h * w, int)
+    vflat = valg.reshape(-1)
+    for i, n in enumerate(navn):
+        sel = vflat == i
+        if not sel.any():
+            continue
+        rl = rekke_lab(n)[1]
+        dd = ((lab[sel][:, None, :] - rl[None]) ** 2).sum(-1)
+        idx[sel] = start[i] + dd.argmin(1)
+    idx = fjern_oyer(idx.reshape(h, w), mask, cfg.get("oy", 2))
+    return farger[idx].astype(np.uint8)
+
+def material_cfg(*paths):
+    m = PALETT.get("materialer", {})
+    for p in paths:
+        if p and Path(p).name.lower() in m:
+            return m[Path(p).name.lower()]
+    return None
+
 # ---------- pipeline ----------
-def pixelify(im, navn, div=2, rute=None, alfa_terskel=128):
+def pixelify(im, navn, div=2, rute=None, alfa_terskel=128, cfg=None):
     im = im.convert("RGBA")
     if rute:
         disp = (128 * rute[0], 128 * rute[1])
@@ -79,13 +205,19 @@ def pixelify(im, navn, div=2, rute=None, alfa_terskel=128):
     small = im.resize(internal, Image.LANCZOS)          # 1) area-nedskaler
     arr = np.array(small)
     mask = arr[..., 3] >= alfa_terskel                  # 3) alfa-terskel
-    rgb = remap(arr[..., :3], navn)                     # 2) palett-remap
+    if navn == "material":                              # 2) palett-remap
+        rgb = remap_material(arr[..., :3], mask, cfg or {})
+    else:
+        rgb = remap(arr[..., :3], navn)
     out = np.dstack([rgb, np.where(mask, 255, 0).astype(np.uint8)])
     return Image.fromarray(out, "RGBA").resize(disp, Image.NEAREST)  # 4) nearest-opp
 
 # ---------- auto-palett etter sti ----------
 def velg_palett(*paths):
-    """Noytral hvis EN av stiene (input/output) peker paa en noytral mappe/fil."""
+    """Material hvis fila har oppsett i 'materialer', ellers noytral hvis EN av stiene
+    (input/output) peker paa en noytral mappe/fil, ellers varm."""
+    if material_cfg(*paths):
+        return "material"
     nmapper = set(PALETT["noytral_mapper"])
     nfiler = set(f.lower() for f in PALETT["noytral_filer"])
     for rel_path in paths:
@@ -132,7 +264,7 @@ def main():
     ap = argparse.ArgumentParser(description="Fake ekte pixel art mot kanonisk palett.")
     ap.add_argument("input", nargs="?")
     ap.add_argument("output", nargs="?")
-    ap.add_argument("--palett", choices=["auto", "varm", "noytral"], default="auto")
+    ap.add_argument("--palett", choices=["auto", "varm", "noytral", "material"], default="auto")
     ap.add_argument("--div", type=int, default=2, help="2=64px/rute (default), 4=32px/rute (grovt)")
     ap.add_argument("--rute", help="rutenett WxH for stor original, f.eks. 2x2")
     ap.add_argument("--batch", nargs=2, metavar=("SRC", "DST"))
@@ -162,7 +294,7 @@ def main():
             navn = velg_palett(rel) if a.palett == "auto" else a.palett
             ut = dst / rel
             ut.parent.mkdir(parents=True, exist_ok=True)
-            pixelify(im, navn, div=a.div).save(ut)
+            pixelify(im, navn, div=a.div, cfg=material_cfg(rel)).save(ut)
             n += 1
             print(f"  [{navn[0].upper()}] {rel}")
         print(f"ferdig: {n} filer -> {dst}  ({hoppet} store hoppet over)")
@@ -171,7 +303,8 @@ def main():
     if not a.input or not a.output:
         ap.error("oppgi input og output (eller --batch / --swatches)")
     navn = velg_palett(a.input, a.output) if a.palett == "auto" else a.palett
-    out = pixelify(Image.open(a.input), navn, div=a.div, rute=parse_rute(a.rute))
+    out = pixelify(Image.open(a.input), navn, div=a.div, rute=parse_rute(a.rute),
+                   cfg=material_cfg(a.input, a.output))
     Path(a.output).parent.mkdir(parents=True, exist_ok=True)
     out.save(a.output)
     print(f"[{navn}] {a.input} -> {a.output}  ({out.size[0]}x{out.size[1]})")
