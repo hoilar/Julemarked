@@ -127,6 +127,7 @@ export interface StallPublic {
   id: number;
   name: string;
   ownerName: string;
+  ownerLook: import('./look.ts').Look; // figuren bak disken (tomt = laget av navnet)
   reputation: number;
   counter: Item[]; // varene på bordet
   trash: Item[]; // det som ligger i søppelkassa (den er åpen for alle)

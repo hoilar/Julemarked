@@ -903,14 +903,94 @@ Lagt inn i spillet. Parkeringsplassen er skalert fra originalen til 1152×864 so
 | `art/biler/parkering-tom.png` | 384×288 (samme lerret som bilene, 4:3) | Tom parkeringsplass når bilen er ute og handler: nedtråkket snø med to tydelige hjulspor og litt slaps. Samme plassering og bakkelinje som bilbildene, ingen bil. I dag 💨. |
 | `art/verktoy/spor.png` | 128×128 | Spor etter snoking, som vises i ruta der du finner det med lupa: et skittent fotavtrykk eller fingeravtrykk, litt gjennomsiktig. I dag en rød rute. |
 
+### Bestilling: maskininnmat, automatsikringer, notatblokk, Eivblå, avisa og etterlysningen
+
+**Status: bestilt 11.11.2026, ikke laget ennå.** Samme grunnprompt og grove pikselstil som før,
+med rette hovedakser etter gridet og **ingen tekst eller tall** (spillet skriver alt selv).
+Maskiner, sikringer og elektro følger de faste reglene for nøytral elektro (ingen julepynt).
+
+**1. Innmaten i maskinene (bakgrunn bak rutenettene) og pluggstatus.**
+Når du åpner en maskin, ser du to tomme, mørke rutenett («Råvarer» og «Ferdig»). De skal
+erstattes av et bilde av innsiden av maskinen, sett **rett ovenfra**, som ligger bak rutene.
+Bildet må være jevnt og rolig i midten (varene legges oppå), med detaljene langs kantene.
+Rutelinjene tegnes av spillet, så de skal ikke være i bildet.
+Hver maskin trenger **to bilder: inn og ut**. 4×4 ruter = **512×512 px**, 4×2 = **512×256 px**, 4×1 = **512×128 px**.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/innmat/kjele-inn.png` | 4×4 | Innsiden av kjelen ovenfra: blank stålbunn med svak rand, litt damp i kantene. |
+| `art/innmat/kjele-ut.png` | 4×4 | Et stort, tomt serveringsbrett i tre eller stål ovenfra. |
+| `art/innmat/bakemaskin-inn.png` | 4×4 | Bakebolle/deigtrau ovenfra med litt mel i kantene. |
+| `art/innmat/bakemaskin-ut.png` | 4×4 | Tomt stekebrett med bakepapir ovenfra. |
+| `art/innmat/strikkemaskin-inn.png` | 4×4 | Garnkurv/skuff ovenfra, tom bunn med noen trådrester langs kanten. |
+| `art/innmat/strikkemaskin-ut.png` | 4×4 | Utmatingsbrett med nålerekke langs toppkanten. |
+| `art/innmat/dekormaskin-inn.png` | 4×4 | Innmatingsbrett med små dyser/sprøyter langs kanten. |
+| `art/innmat/dekormaskin-ut.png` | 4×4 | Tom ferdighylle med rist. |
+| `art/innmat/posebretter-inn.png` | 4×4 | Innmatingsbord med førerskinner på sidene. |
+| `art/innmat/posebretter-ut.png` | 4×4 | Utmatingsskuff i grå plast. |
+| `art/innmat/makulator-inn.png` | 4×4 | Innkastsprekk/trakt ovenfra med skjæretenner i mørket langs midten av øvre kant. |
+| `art/innmat/makulator-ut.png` | 4×2 | Oppsamlingsskuff, tom, grå plast. |
+| `art/innmat/ladestasjon.png` | 4×1 | Fire tomme batterispor på rad med kontaktpinner (ingen batterier). |
+| `art/elektro/plugget-inn.png` | 128×128 | Ikon: støpsel som står i en stikkontakt, liten grønn lampe. Erstatter teksten om strøm. |
+| `art/elektro/ikke-plugget-inn.png` | 128×128 | Ikon: løst støpsel med ledning som henger ved siden av kontakten, liten rød lampe. |
+| `art/elektro/batteriplass-tom.png` | 128×128 | Tom batteriplass: lyst, halvgjennomsiktig omriss av et batteri (som `baere-hand.png`), maks ca. 55 % alfa. Erstatter «Ingen batteri». |
+
+**2. Automatsikringene inni sikringsboksen.** I vinduet til automat- og smartboksen står
+sikringene i dag som en liste med vippeknapper. De skal bli tegnede sikringer på en DIN-skinne.
+Én sikring = **64×128 px (1:2)**, stående, samme lerret i alle tilstander.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/elektro/automat-pa.png` | 64×128 | Hvit/lysegrå automatsikring, svart vippe **oppe**, liten grønn stripe synlig. |
+| `art/elektro/automat-av.png` | 64×128 | Samme sikring, vippe **nede**, ingen farge. |
+| `art/elektro/automat-gatt.png` | 64×128 | Samme sikring, vippe **nede**, rødt flagg i vinduet (har løst ut). |
+| `art/elektro/smart-pa.png` / `-av.png` / `-gatt.png` | 64×128 | Som over, men moderne svart sikring med liten LED: grønn (på), mørk (av), blinkende rød/oransje (gått – slår seg på selv). |
+| `art/elektro/din-skinne.png` | 512×160 | Bakgrunn: grå metallskinne inni boksen som sikringene står på, med tomt plastdeksel over og under. |
+
+**3. Notatblokka.** Når du åpner et notat, en oppskrift eller en kodelapp, vises teksten på
+et blått kort. Det skal se ut som et ekte ark. Stående, **640×800 px**, tomt i midten.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/papir/notatark.png` | 640×800 | Revet ark fra en spiralblokk: perforert/fliset toppkant, svake blå linjer, rød marglinje til venstre, litt gulnet. |
+| `art/papir/kodelapp-ark.png` | 640×640 | Stor gul klistrelapp sett forfra, litt bøyd hjørne nede til høyre, ingen linjer (koden skrives stort i midten). |
+
+**4. Eivblå Halvstrøm.** Byline-portrett til «Eivblås Halvstrøms hjørne» i avisa, ved
+dagens oppskrift og sitatet. **512×512 px**, brystbilde, rund eller firkantet beskjæring
+tåler begge. Selvsikker, litt kaotisk kjøkkensjef i 50-årene: kokkelue på snei, forkle med
+flekker, tresleiv i hånda, et lurt smil. Har meninger om alt som koker («Brenner det seg,
+kaller vi det karamellisert»). Varm, lun bakgrunn eller gjennomsiktig.
+Fil: `art/avis/eivbla.png`.
+
+**5. Grafikk i avisa.** Små illustrasjoner til sidene i Verdens Undergang. Svart-hvitt eller
+dempet sepia som trykk i en avis (rasterpreg er greit), gjennomsiktig bakgrunn.
+
+| Fil i spillet | Størrelse | Motiv |
+|---|---|---|
+| `art/avis/strom.png` | 256×256 | Strømmåler/lynbolt til strømprisen (Økonomi). |
+| `art/avis/marked.png` | 384×256 | Liten markedsscene med boder og folk (Markedet i går). |
+| `art/avis/kjele.png` | 256×256 | Kjele som koker over, til dagens oppskrift. |
+| `art/avis/verksted.png` | 256×256 | Tannhjul og skiftenøkkel, til «Fra verkstedet». |
+| `art/avis/politi.png` | 384×256 | Politibil med blålys i snøen (Kriminalitet / Politiloggen). |
+| `art/avis/nattetyv.png` | 256×256 | Vaskebjørn med sekk som sniker seg forbi en bod om natta (Natt til i dag). |
+| `art/avis/kupongramme.png` | 384×256 | Tom kupongramme med stiplet klippekant og saksesymbol i hjørnet. |
+
+**6. Etterlysningsplakaten.** Bakgrunn bak ansiktet på etterlysningen, både i avisa og på
+spikeren under grenuttaket. **384×512 px (3:4)**. Gulnet, litt krøllete plakat med en
+tegnestift eller tapebit øverst, et tomt felt øverst til overskriften (spillet skriver «ETTERLYST»),
+en tom, innrammet portrettrute i midten og et tomt felt nederst til navn og dusør.
+Fil: `art/verktoy/etterlyst-plakat.png`. Lag også `etterlyst-plakat-tatt.png` med samme
+lerret og et stort rødt stempel/kryss på skrå over (brukes når tyven er tatt; stempelet uten tekst).
+
 ### Status og innlegging
 
 **Statuskontroll 10.11.2026:** Alle grafikkbestillingene i dette dokumentet er ferdig
-laget. Det ligger ingen nye bilder i produksjonskøen. Tabellen under skiller mellom
+laget, bortsett fra bestillingen 11.11.2026 (maskininnmat, automatsikringer, notatblokk, Eivblå, avisa og etterlysningsplakaten). Tabellen under skiller mellom
 ferdige originaler og bilder som er markert som tatt i bruk i spillet.
 
 | Hva | Størrelse | Mappe / fil i spillet |
 |---|---|---|
+| Maskininnmat, pluggikoner, automatsikringer, notatark, Eivblå, avisgrafikk og etterlysningsplakat | se «Bestilling: maskininnmat, automatsikringer, …» | ⏳ bestilt |
 | Nøkkelkrok (med/uten nøkkel), tomme bæreplasser (hånd, sekk), tom parkeringsplass og spor | se «✅ i bruk: små ting i grensesnittet» | ✅ i bruk |
 | Ny vanlig og smart sikringsboks (av + på), automat- og forbikoblet boks, dokumentmappe (lukket + åpen) | se «Ferdig laget: sikringsbokser og dokumentmappe» | ✅ i bruk: `art/elektro/sikringsboks{,-av,-smart,-smart-av,-automat,-bypass}.png` (2×2, av-bildet når boden er uten strøm), `art/verktoy/dokumentmappe.png` (2×3) og `dokumentmappe-apen.png` (640×768, bakgrunn i vinduet; fanenavnene står på fargede knapper over) |
 | Alarmsystem på boden (av + på) og butikkikon | se «Ferdig laget: alarmsystem» | ✅ i bruk: `art/devices/alarm-{av,pa}.png` (lag over boden) og `art/devices/ikon-alarm.png` |

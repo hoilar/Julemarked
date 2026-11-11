@@ -58,6 +58,7 @@ import {
   type Label,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
+import { LOOK_CHOICES, type Look } from '../shared/look.ts';
 import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS, disguisesFor, leaveRisk } from '../shared/snoop.ts';
 import {
   avatarFor,
@@ -122,6 +123,8 @@ type Modal =
   | { kind: 'gift' }
   | { kind: 'policy'; typeId: string }
   | { kind: 'product'; productId: string }
+  | { kind: 'ingredient'; typeId: string }
+  | { kind: 'look'; draft: Look }
   | { kind: 'buy'; stallId: number; productId: string }
   | { kind: 'suspect'; seed: string }
   | { kind: 'inspector' }
@@ -134,8 +137,8 @@ type Modal =
   | { kind: 'tampered'; itemId: number };
 
 // Forstørrelsesglasset under din egen disk: ruter du har sjekket (nøkkel «x,y» → fant spor?).
-let loupeMode = false;
-const loupeChecked = new Map<string, boolean>();
+// Forstørrelsesglasset: ruter under disken der lupa så noe («?») eller fant et ekte spor.
+const loupeHints = new Map<string, 'hint' | 'found'>();
 
 const app = document.getElementById('app')!;
 const toastEl = document.getElementById('toast')!;
@@ -609,8 +612,10 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
 /** I andres boder står eieren bak disken (når hen er der) – du er selv kunden. */
 function sellerView(stall: StallPublic): string {
   if (stall.serving !== 'open') return '';
-  return `<div class="seller" title="${esc(stall.ownerName)} står bak disken"><img src="${avatarFor(`eier-${stall.id}-${stall.ownerName}`)}" alt="" draggable="false"><span>${esc(stall.ownerName)}</span></div>`;
+  return `<div class="seller" title="${esc(stall.ownerName)} står bak disken"><img src="${avatarFor(sellerSeed(stall), stall.ownerLook)}" alt="" draggable="false"><span>${esc(stall.ownerName)}</span></div>`;
 }
+/** Figuren til eieren lages av navnet; valgene fra speilet på bilen legges oppå. */
+const sellerSeed = (stall: StallPublic) => `eier-${stall.id}-${stall.ownerName}`;
 
 // --- Skiltet: Åpent / Selvbetjent / Stengt ---
 
@@ -831,9 +836,8 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   const t = ITEM_TYPES[i.typeId];
   const style = `left:${(i.x / cols) * 100}%;top:${(i.y / rows) * 100}%;width:${(i.w / cols) * 100}%;height:${(i.h / rows) * 100}%;--min:${Math.min(i.w, i.h)}`;
   if (t.kind === 'container') {
-    const inside = state!.me.items.filter((x) => x.place === 'box' && x.boxId === i.id).length;
     return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
-      ${sprite(t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t)}<span class="fill">${inside}</span></div>`;
+      ${sprite(t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t)}</div>`;
   }
   if (t.kind === 'battery') {
     const pct = batteryPct(i);
@@ -889,8 +893,7 @@ function storageView(s: GameState): string {
   const items = itemsIn(s.me.items, 'storage', null).map((i) => gridItemView(i, cols, rows)).join('');
   const style = `left:${STORAGE.left}%;top:${STORAGE.top}%;width:${STORAGE.cell * cols}%;aspect-ratio:${cols}/${rows};--cols:${cols};--rows:${rows}`;
   return `
-  <div class="storage grid ${loupeMode ? 'loupe-on' : ''}" data-grid="storage" style="${style}">
-    <div class="storage-label">Under disken</div>
+  <div class="storage grid" data-grid="storage" style="${style}">
     ${items}${loupeMarks()}
     ${s.me.items.length === 0 ? '<button class="small empty-hint" data-action="modal" data-modal="wholesale">Tomt. Kjøp inn varer.</button>' : ''}
   </div>`;
@@ -948,6 +951,7 @@ function carView(s: GameState): string {
   return `<div class="car ${open ? 'open' : ''}">
     ${carSprite(t, open)}
     <button class="car-hit" data-action="open-car" data-item="${car.id}" aria-label="Bagasjerommet" title="${esc(spec?.name ?? 'Bilen')} – ${n ? `${n} ting i bagasjerommet` : 'tomt bagasjerom'}. Trykk for å ${open ? 'lukke' : 'åpne'}."></button>
+    ${mirrorButton(car.typeId)}
     ${trunk}</div>`;
 }
 
@@ -959,6 +963,52 @@ function carCell(s: GameState, car: Item): string {
   return `<div class="car-cell" title="Batteriplass: dra et batteri hit. En tur bruker et standard batteri (2 kWh).">
     <div class="grid cell-grid" data-grid="cell" data-box="${car.id}" style="--cols:1;--rows:1">${b ? gridItemView(b, 1, 1) : ''}</div>
     <span class="car-cell-pct ${b && pct < 95 ? 'low' : ''}">🔋 ${b ? `${pct} %` : 'Tom'}</span></div>`;
+}
+
+/** Sidespeilet til høyre på bilen (384×288-skala). Trykk for å se deg i speilet og endre figuren. */
+const MIRROR: Record<string, { x: number; y: number; w: number; h: number }> = {
+  bil_tennis: { x: 262, y: 164, w: 30, h: 26 },
+  bil_toforr: { x: 304, y: 154, w: 33, h: 30 },
+  bil_highass: { x: 287, y: 129, w: 36, h: 33 },
+  bil_fuzz: { x: 280, y: 124, w: 33, h: 38 },
+};
+function mirrorButton(typeId: string): string {
+  const m = MIRROR[typeId];
+  if (!m) return '';
+  return `<button class="car-mirror" data-action="look-open" aria-label="Speilet" title="Se deg i speilet – endre hvordan du ser ut bak disken"
+    style="left:${(m.x / CAR_ART.w) * 100}%;top:${(m.y / CAR_ART.h) * 100}%;width:${(m.w / CAR_ART.w) * 100}%;height:${(m.h / CAR_ART.h) * 100}%"></button>`;
+}
+
+/** Figurredigeringen: forhåndsvisning og et valg per del av figuren. */
+function lookView(s: GameState, draft: Look): string {
+  const stall = myStall(s);
+  if (!stall) return '';
+  const seed = sellerSeed(stall);
+  const rows = LOOK_CHOICES.map((c) => {
+    const opts = c.options
+      .map((o) => {
+        const on = draft[c.key] === o.id;
+        const attrs = `data-action="look-pick" data-key="${c.key}" data-val="${o.id}" aria-pressed="${on}" title="${esc(o.name)}"`;
+        return c.color
+          ? `<button class="look-swatch ${on ? 'on' : ''}" style="--c:#${o.id}" ${attrs}></button>`
+          : `<button class="look-opt ${on ? 'on' : ''}" ${attrs}><img src="${avatarFor(seed, { ...draft, [c.key]: o.id })}" alt="" draggable="false"><small>${esc(o.name)}</small></button>`;
+      })
+      .join('');
+    return `<div class="look-row"><div class="look-label">${esc(c.label)}</div><div class="look-opts ${c.color ? 'colors' : ''}">${opts}</div></div>`;
+  }).join('');
+  const changed = JSON.stringify(draft) !== JSON.stringify(stall.ownerLook ?? {});
+  return `<h2>🪞 Speilet</h2>
+    <p class="muted">Slik ser kundene og de andre bodeierne deg når du står bak disken.</p>
+    <div class="look-editor">
+      <div class="look-preview"><img src="${avatarFor(seed, draft)}" alt="" draggable="false"><b>${esc(stall.ownerName)}</b>
+        <div class="look-actions">
+          <button class="small ghost" data-action="look-random">🎲 Tilfeldig</button>
+          <button class="small ghost" data-action="look-reset" title="Slik du så ut fra starten">↺ Som fra start</button>
+          <button data-action="look-save" ${changed ? '' : 'disabled'}>Lagre</button>
+        </div>
+      </div>
+      <div class="look-choices">${rows}</div>
+    </div>`;
 }
 
 /** Åpningen i bagasjerommet (der rutenettet tegnes), målt i 384×288-skala. Bildene er 1152×864 (3×), samme beskjæring. */
@@ -1806,21 +1856,23 @@ function keyHookView(s: GameState): string {
   const stall = myStall(s);
   if (!stall) return '';
   const hasKey = stall.sign !== 'closed';
-  const loupe = hasTool(s, LOUPE)
-    ? `<button class="small ghost loupe-mode-btn ${loupeMode ? 'on' : ''}" data-action="loupe-mode" title="Undersøk rutene under disken én og én etter spor fra snokere">🔍 ${loupeMode ? 'Ferdig' : 'Let etter spor'}</button>`
-    : '';
   return `<div class="key-hook" style="left:${STORAGE.left + 8.6}%;top:${STORAGE.top}%">
     <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}"><img src="/art/${hasKey ? 'nokkel-krok' : 'nokkel-krok-tom'}.png" alt="${hasKey ? 'Nøkkel' : 'Låst'}"></div>
-    ${loupe}</div>`;
+</div>`;
 }
 
+const cellStyle = (x: number, y: number) =>
+  `left:${(x / STORAGE_GRID.cols) * 100}%;top:${(y / STORAGE_GRID.rows) * 100}%;width:${100 / STORAGE_GRID.cols}%;height:${100 / STORAGE_GRID.rows}%`;
+function loupeMark(x: number, y: number, st: 'hint' | 'found'): string {
+  return st === 'hint'
+    ? `<button class="loupe-mark hint" data-action="loupe-check" data-x="${x}" data-y="${y}" style="${cellStyle(x, y)}" title="Noe rart her – trykk for å se nærmere">?</button>`
+    : `<div class="loupe-mark found" style="${cellStyle(x, y)}" title="Spor etter snoking"></div>`;
+}
 function loupeMarks(): string {
-  if (!loupeMode) return '';
-  const { cols, rows } = STORAGE_GRID;
-  return [...loupeChecked]
-    .map(([k, found]) => {
+  return [...loupeHints]
+    .map(([k, st]) => {
       const [x, y] = k.split(',').map(Number);
-      return `<div class="loupe-mark ${found ? 'found' : ''}" style="left:${(x / cols) * 100}%;top:${(y / rows) * 100}%;width:${100 / cols}%;height:${100 / rows}%"></div>`;
+      return loupeMark(x, y, st);
     })
     .join('');
 }
@@ -2528,7 +2580,7 @@ function itemView(s: GameState, it: Item): string {
   }
   if (it.typeId === LOUPE)
     return itemCard(t, `<h2>${esc(t.name)}</h2><p>Med forstørrelsesglasset kan du avsløre falske «Hjemmelaget»-etiketter hos andre (trykk på en vare på bordet deres).</p>
-      <p class="muted">Har noen snoket under disken din, ligger det et spor i én av rutene der i ${TRACE_HOURS} timer. Trykk «🔍 Let etter spor» ved lageret og undersøk rute for rute.</p>`);
+      <p class="muted">Har noen snoket under disken din, ligger det et spor i én av rutene der i ${TRACE_HOURS} timer. Dra lupa bortover rutene under disken: der den ser noe, kommer det et «?» du kan trykke på. Noen spor er falske.</p>`);
   const tool = TOOLS.find((x) => x.id === it.typeId);
   // Papirblokka: skriv en kodelapp eller et notat (krever penn).
   const write =
@@ -2632,6 +2684,33 @@ function modalView(s: GameState): string {
     inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, bærer du – i en pose i hånda eller i ryggsekken.</p>${list}`;
   }
 
+  if (modal.kind === 'look') inner = lookView(s, modal.draft);
+
+  if (modal.kind === 'ingredient') {
+    const t = ITEM_TYPES[modal.typeId];
+    if (t.kind !== 'ingredient') return '';
+    const mine = s.me.items.filter((i) => !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i));
+    const held = mine.filter((i) => i.typeId === t.id).length;
+    // Bare oppskriftene du har skrevet av, så råvarevinduet ikke røper resten.
+    const uses = [...new Set(mine.filter((i) => i.typeId === RECIPE_NOTE && i.recipe).map((i) => i.recipe!))]
+      .map((id) => BOOK_BY_ID[id])
+      .filter((r) => r && r.inputs[t.id])
+      .map((r) => `<li>${esc(r.name)} <small class="muted">(${r.inputs[t.id]} stk · ${r.machine ? esc(ITEM_TYPES[r.machine]?.name.toLowerCase() ?? '') : 'kjelen'})</small></li>`)
+      .join('');
+    const where = t.price <= 0 ? 'Kan ikke kjøpes' : t.dealerOnly ? `Bare hos ${esc(DEALER.name)}` : `${kr(t.price)}${t.rare ? ' · sjelden i butikkene' : ''}`;
+    inner = itemCard(
+      t,
+      `<h2>${esc(t.name)}</h2>
+      <p class="cat-pill">Råvare</p>
+      <p class="muted">${t.price <= 0 ? 'Den hører hjemme i søpla.' : 'Råvarer selges ikke på bordet. Legg dem i kjelen eller en maskin.'}</p>
+      <dl class="item-stats">
+        <dt>Du har</dt><dd>${held}</dd>
+        <dt>Innkjøp</dt><dd>${where}</dd>
+      </dl>
+      ${uses ? `<div class="label-head">Brukes i oppskriftene dine</div><ul class="ingredient-uses">${uses}</ul>` : ''}`,
+    );
+  }
+
   if (modal.kind === 'product') {
     const p = PRODUCT_BY_ID[modal.productId];
     const inv = s.me.inventory.find((r) => r.productId === p.id) ?? { qty: 0, onCounter: 0, avgCost: p.wholesale };
@@ -2716,7 +2795,7 @@ function modalView(s: GameState): string {
     );
   }
 
-  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'suspect' ? 'suspect-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''}" role="dialog">
+  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'suspect' ? 'suspect-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''} ${modal.kind === 'look' ? 'look-modal' : ''}" role="dialog">
     <button class="close ghost small" data-action="close" aria-label="Lukk">✕</button>${inner}</div></div>`;
 }
 
@@ -2884,6 +2963,54 @@ app.addEventListener('pointerdown', (e) => {
   };
 });
 
+// Forstørrelsesglasset: dra det bortover rutene under disken. Linsen sjekker ruta den er over,
+// og ruter der det er noe (et spor eller noe som ligner) får et «?» du kan trykke på.
+let loupeDrag: unknown = null;
+const loupeSeen = new Set<string>();
+let loupeQueue: { x: number; y: number }[] = [];
+let loupeTimer: number | null = null;
+async function flushLoupe() {
+  loupeTimer = null;
+  const cells = loupeQueue;
+  loupeQueue = [];
+  if (!cells.length) return;
+  try {
+    const r = await api<{ hints: { x: number; y: number }[] }>('/api/loupe/scan', { cells });
+    const grid = document.querySelector<HTMLElement>('[data-grid="storage"]');
+    for (const c of r.hints) {
+      const k = `${c.x},${c.y}`;
+      if (loupeHints.has(k)) continue;
+      loupeHints.set(k, 'hint');
+      grid?.insertAdjacentHTML('beforeend', loupeMark(c.x, c.y, 'hint'));
+    }
+  } catch (err) {
+    toast((err as Error).message, true);
+  }
+}
+window.addEventListener('pointermove', (e) => {
+  const d = drag;
+  if (!d?.moved || d.item.typeId !== LOUPE) return;
+  if (loupeDrag !== d) {
+    loupeDrag = d;
+    loupeSeen.clear();
+  }
+  const grid = document.querySelector<HTMLElement>('[data-grid="storage"]');
+  if (!grid) return;
+  const r = grid.getBoundingClientRect();
+  // Linsen sitter til venstre i bildet av lupa.
+  const lx = e.clientX - d.grabDX + d.originW * 0.23;
+  const ly = e.clientY - d.grabDY + d.originH * 0.5;
+  const x = Math.floor(((lx - r.left) / r.width) * STORAGE_GRID.cols);
+  const y = Math.floor(((ly - r.top) / r.height) * STORAGE_GRID.rows);
+  if (x < 0 || y < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) return;
+  const k = `${x},${y}`;
+  if (loupeSeen.has(k)) return;
+  loupeSeen.add(k);
+  grid.insertAdjacentHTML('beforeend', `<div class="loupe-sweep" style="${cellStyle(x, y)}"></div>`);
+  loupeQueue.push({ x, y });
+  loupeTimer ??= window.setTimeout(() => void flushLoupe(), 200);
+});
+
 window.addEventListener('pointermove', (e) => {
   const d = drag;
   if (!d) return;
@@ -2956,8 +3083,7 @@ function endDrag(cancelled = false) {
       phoneOpen = !phoneOpen;
       phonePage = 'home';
     } else if (t.kind === 'tool') modal = { kind: 'tool', itemId: d.item.id };
-    else if (t.kind === 'ingredient')
-      toast(t.price <= 0 ? `${t.emoji} ${t.name}. Den hører hjemme i søpla.` : `${t.emoji} ${t.name} – råvare.`);
+    else if (t.kind === 'ingredient') modal = { kind: 'ingredient', typeId: t.id };
     else modal = { kind: 'product', productId: t.id };
     return render();
   }
@@ -3109,47 +3235,6 @@ window.addEventListener('pointercancel', endPhoneDrag);
 
 // ---------- Klikk og skjema ----------
 
-function loupeCellAt(e: MouseEvent): { x: number; y: number } | null {
-  if (!loupeMode) return null;
-  const grid = (e.target as HTMLElement).closest<HTMLElement>('[data-grid="storage"]');
-  if (!grid) return null;
-  const r = grid.getBoundingClientRect();
-  const x = Math.floor(((e.clientX - r.left) / r.width) * STORAGE_GRID.cols);
-  const y = Math.floor(((e.clientY - r.top) / r.height) * STORAGE_GRID.rows);
-  if (x < 0 || y < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) return null;
-  return { x, y };
-}
-app.addEventListener(
-  'pointerdown',
-  (e) => {
-    if (!loupeCellAt(e)) return;
-    e.preventDefault();
-    e.stopPropagation(); // ikke start dra-og-slipp i lupemodus
-  },
-  { capture: true },
-);
-app.addEventListener(
-  'click',
-  (e) => {
-    const cell = loupeCellAt(e);
-    if (!cell) return;
-    e.stopPropagation();
-    const k = `${cell.x},${cell.y}`;
-    if (loupeChecked.has(k)) return;
-    void (async () => {
-      try {
-        const r = await api<{ found: boolean; reward: number; returned: number }>('/api/loupe/cell', cell);
-        loupeChecked.set(k, r.found);
-        if (r.found) toast(`🔍 Spor! Noen har snoket her. Dusør og kompensasjon ${kr(r.reward)}${r.returned ? `, ${r.returned} ting levert tilbake` : ''}.`);
-      } catch (err) {
-        toast((err as Error).message, true);
-      }
-      await refresh();
-    })();
-  },
-  { capture: true },
-);
-
 app.addEventListener('click', (e) => {
   const el = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
   if (!el) return;
@@ -3210,10 +3295,48 @@ app.addEventListener('click', (e) => {
     });
     return;
   }
-  if (action === 'loupe-mode') {
-    loupeMode = !loupeMode;
-    if (!loupeMode) loupeChecked.clear();
+  if (action === 'look-open') {
+    const stall = state && myStall(state);
+    if (stall) modal = { kind: 'look', draft: { ...(stall.ownerLook ?? {}) } };
     render();
+    return;
+  }
+  if (modal?.kind === 'look' && action?.startsWith('look-')) {
+    const d = modal.draft;
+    if (action === 'look-pick') d[el.dataset.key as keyof Look] = el.dataset.val;
+    if (action === 'look-reset') modal.draft = {};
+    if (action === 'look-random')
+      modal.draft = Object.fromEntries(LOOK_CHOICES.map((c) => [c.key, c.options[Math.floor(Math.random() * c.options.length)].id])) as Look;
+    if (action === 'look-save') {
+      const look = modal.draft;
+      void act('/api/look', { look }, '🪞 Slik ser du ut nå.').then((ok) => {
+        if (ok) modal = null;
+        render();
+      });
+      return;
+    }
+    render();
+    return;
+  }
+  if (action === 'loupe-check') {
+    const x = Number(el.dataset.x);
+    const y = Number(el.dataset.y);
+    const k = `${x},${y}`;
+    void (async () => {
+      try {
+        const r = await api<{ found: boolean; reward: number; returned: number; fake?: string }>('/api/loupe/cell', { x, y });
+        if (r.found) {
+          loupeHints.set(k, 'found');
+          toast(`🔍 Spor! Noen har snoket her. Dusør og kompensasjon ${kr(r.reward)}${r.returned ? `, ${r.returned} ting levert tilbake` : ''}.`);
+        } else {
+          loupeHints.delete(k);
+          toast(r.fake ? `🔍 Falskt spor – det var bare ${r.fake}.` : '🔍 Ingenting her likevel.');
+        }
+      } catch (err) {
+        toast((err as Error).message, true);
+      }
+      await refresh();
+    })();
     return;
   }
   if (action === 'pick') screen = { kind: 'claim', slot: Number(el.dataset.slot) };

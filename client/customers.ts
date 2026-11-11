@@ -4,6 +4,7 @@
 import { createAvatar } from '@dicebear/core';
 import { micah } from '@dicebear/collection';
 import { moodFor, randomTolerance, type Mood } from '../shared/mood.ts';
+import type { Look } from '../shared/look.ts';
 
 /** En vare på bordet slik kundene ser den. */
 export interface Offer {
@@ -31,32 +32,42 @@ function hash(s: string): number {
 }
 const pick = <T>(arr: T[], seed: string, salt: string) => arr[hash(seed + salt) % arr.length];
 
-function svgFor(seed: string, mood: Mood): string {
+function svgFor(seed: string, mood: Mood, look: Look = {}): string {
   const f = FACE[mood];
-  return createAvatar(micah, {
+  const one = (v: string | undefined) => (v ? ([v] as never) : undefined);
+  const opts: Record<string, unknown> = {
     seed,
     size: 256,
     // Velg ett uttrykk deterministisk, så personen ikke «skifter ansikt» innen samme humør.
-    mouth: [pick(f.mouth, seed, 'm')] as never,
-    eyes: [pick(f.eyes, seed, 'e')] as never,
-    eyebrows: [pick(f.eyebrows, seed, 'b')] as never,
-    hairColor: HAIR,
-    facialHairColor: HAIR,
-    shirtColor: SHIRT,
-  }).toString();
+    mouth: one(look.mouth) ?? [pick(f.mouth, seed, 'm')],
+    eyes: one(look.eyes) ?? [pick(f.eyes, seed, 'e')],
+    eyebrows: one(look.eyebrows) ?? [pick(f.eyebrows, seed, 'b')],
+    hairColor: one(look.hairColor) ?? HAIR,
+    facialHairColor: one(look.hairColor) ?? HAIR,
+    shirtColor: one(look.shirtColor) ?? SHIRT,
+  };
+  // Valgene fra speilet på bilen (figurredigeringen).
+  if (look.skin) opts.baseColor = [look.skin];
+  if (look.hair) Object.assign(opts, { hair: [look.hair], hairProbability: 100 });
+  if (look.nose) opts.nose = [look.nose];
+  if (look.shirt) opts.shirt = [look.shirt];
+  if (look.glasses) Object.assign(opts, look.glasses === 'none' ? { glassesProbability: 0 } : { glasses: [look.glasses], glassesProbability: 100 });
+  if (look.facialHair) Object.assign(opts, look.facialHair === 'none' ? { facialHairProbability: 0 } : { facialHair: [look.facialHair], facialHairProbability: 100 });
+  if (look.earrings) Object.assign(opts, look.earrings === 'none' ? { earringsProbability: 0 } : { earrings: [look.earrings], earringsProbability: 100 });
+  return createAvatar(micah, opts as never).toString();
 }
 
 const cache = new Map<string, string>();
 
 /** Et ansikt med nøytral mine – brukes på etterlysningen og for tyven ved disken. */
-export const avatarFor = (seed: string) => avatarUrl(seed, 'noytral');
+export const avatarFor = (seed: string, look?: Look) => avatarUrl(seed, 'noytral', look);
 
 /** Figuren som skarp SVG (data-URL), mellomlagret per person og humør. */
-function avatarUrl(seed: string, mood: Mood): string {
-  const key = `${seed}|${mood}`;
+function avatarUrl(seed: string, mood: Mood, look?: Look): string {
+  const key = `${seed}|${mood}|${look ? JSON.stringify(look) : ''}`;
   let url = cache.get(key);
   if (!url) {
-    url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgFor(seed, mood))}`;
+    url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgFor(seed, mood, look))}`;
     cache.set(key, url);
   }
   return url;

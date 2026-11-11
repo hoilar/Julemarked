@@ -144,6 +144,8 @@ if (!hasColumn('stalls', 'power_on')) {
 if (!hasColumn('items', 'state')) db.exec('ALTER TABLE items ADD COLUMN state TEXT'); // JSON, f.eks. kjelens innstillinger
 if (!hasColumn('items', 'edition')) db.exec('ALTER TABLE items ADD COLUMN edition INTEGER');
 if (!hasColumn('players', 'paper_read')) db.exec('ALTER TABLE players ADD COLUMN paper_read INTEGER NOT NULL DEFAULT 0');
+// Figuren bak disken (JSON, se shared/look.ts). Tom = laget av navnet.
+if (!hasColumn('players', 'look')) db.exec("ALTER TABLE players ADD COLUMN look TEXT NOT NULL DEFAULT '{}'");
 if (!hasColumn('stalls', 'trash_fill')) db.exec('ALTER TABLE stalls ADD COLUMN trash_fill INTEGER NOT NULL DEFAULT 0');
 // Antall poser kastet siden forrige byråkratifond-regning (2 kr per pose).
 if (!hasColumn('stalls', 'bags_binned')) db.exec('ALTER TABLE stalls ADD COLUMN bags_binned INTEGER NOT NULL DEFAULT 0');

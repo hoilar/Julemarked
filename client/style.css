@@ -286,10 +286,18 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .key-slot img { width: 100%; height: 100%; image-rendering: pixelated; }
 .key-slot { width: 1.9cqw; height: 1.9cqw; display: grid; place-items: center; border: 0.15cqw dashed rgba(255,255,255,0.4); border-radius: 0.3cqw 0.3cqw 0 0; background: rgba(40, 24, 12, 0.35); font-size: 1.1cqw; line-height: 1; }
 .key-slot.has { border-style: solid; border-color: rgba(255, 215, 120, 0.7); }
-.loupe-mode-btn.on { background: #ffe9a8; color: #3a2a00; }
-.storage.loupe-on { cursor: zoom-in; outline: 2px dashed #ffe9a8; }
-.storage.loupe-on .gitem { pointer-events: none; opacity: 0.55; }
-.loupe-mark { position: absolute; background: rgba(255, 255, 255, 0.18); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); pointer-events: none; }
+.loupe-sweep { position: absolute; pointer-events: none; background: rgba(255, 233, 168, 0.35); animation: loupe-sweep 0.9s ease-out forwards; z-index: 6; }
+@keyframes loupe-sweep { to { opacity: 0; } }
+.loupe-mark { position: absolute; z-index: 7; pointer-events: none; }
+.loupe-mark.hint {
+  pointer-events: auto; cursor: zoom-in; border: 0; padding: 0; margin: 0; border-radius: 0;
+  background: rgba(255, 233, 168, 0.22); box-shadow: inset 0 0 0 2px #ffe9a8;
+  color: #ffe9a8; font: 700 1.6cqw/1 system-ui, sans-serif; text-shadow: 0 0 3px #000, 0 1px 0 #000;
+  display: flex; align-items: center; justify-content: center;
+  animation: loupe-hint 1.4s ease-in-out infinite;
+}
+.loupe-mark.hint:hover { background: rgba(255, 233, 168, 0.4); }
+@keyframes loupe-hint { 50% { box-shadow: inset 0 0 0 2px #fff6d2; } }
 .loupe-mark.found { background: rgba(255, 80, 60, 0.3) url('/art/verktoy/spor.png') center / contain no-repeat; image-rendering: pixelated; box-shadow: inset 0 0 0 2px #ff5a3c; }
 .dealer-what { display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; }
 .dealer-what .icon { width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; }
@@ -1405,6 +1413,8 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car small { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); pointer-events: auto; }
 .car-hit { position: absolute; left: 24%; right: 24%; bottom: 4%; height: 62%; pointer-events: auto; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }
 .car-hit:hover { background: none; }
+.car-mirror { position: absolute; z-index: 2; pointer-events: auto; padding: 0; border: 0; border-radius: 40%; background: none; box-shadow: none; cursor: pointer; }
+.car-mirror:hover { background: rgba(255, 246, 210, 0.25); box-shadow: 0 0 0 2px rgba(255, 233, 168, 0.8); }
 .car img.sprite { display: block; }
 .trunk { position: absolute; z-index: 1; pointer-events: auto; }
 .dump-btn { margin-top: 0.3cqw; font-size: max(10px, 0.75cqw); }
@@ -1434,7 +1444,7 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .breaker.on .breaker-switch { border-color: #6c6; }
 .breaker.tripped .breaker-switch { border-color: #f84; }
 .meter.stopped .meter-digits { opacity: 0.5; }
-.car-cell { position: absolute; left: 73%; top: 50%; width: 6.5%; z-index: 1; pointer-events: auto; display: grid; gap: 0.2cqw; justify-items: center; }
+.car-cell { position: absolute; left: 60%; top: 13%; /* på den løftede bakluka – unna sidespeilet (figuren) og søppelkassa */ width: 6.5%; z-index: 1; pointer-events: auto; display: grid; gap: 0.2cqw; justify-items: center; }
 .car-cell .cell-grid { position: relative; width: 100%; aspect-ratio: 1; }
 .car-cell-pct { font-size: 0.7cqw; background: rgba(20, 16, 40, 0.75); padding: 0 0.3cqw; border-radius: 0.3cqw; white-space: nowrap; }
 .car-cell-pct.low { color: #ff9a7a; }
@@ -1484,3 +1494,26 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car-emoji { font-size: 1.5rem; line-height: 1; width: 3.2rem; flex: none; }
 .car-emoji img.sprite { width: 100%; image-rendering: pixelated; }
 .ship-choice label small { display: block; margin-left: 1.5rem; opacity: 0.75; font-size: 0.8em; }
+
+.ingredient-uses { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+.ingredient-uses li { margin: 0.15rem 0; }
+
+/* Speilet på bilen: figurredigering */
+.modal.look-modal { width: min(860px, 96vw); }
+.look-editor { display: flex; gap: 1.2rem; align-items: flex-start; }
+.look-preview { position: sticky; top: 0; flex: 0 0 210px; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.look-preview img { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #fff6d2, #c9b48a); box-shadow: 0 0 0 4px #6b4224, 0 0 0 7px #e0b02c; }
+.look-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: 0.3rem; }
+.look-choices { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.look-label { font-size: 0.8rem; font-weight: 700; opacity: 0.8; margin-bottom: 0.2rem; }
+.look-opts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.look-opt { display: flex; flex-direction: column; align-items: center; width: 64px; padding: 0.2rem; border-radius: 0.5rem; background: rgba(127, 127, 127, 0.12); border: 2px solid transparent; }
+.look-opt img { width: 54px; height: 54px; }
+.look-opt small { font-size: 0.62rem; line-height: 1.1; text-align: center; }
+.look-opt.on, .look-swatch.on { border-color: #e0b02c; background: rgba(224, 176, 44, 0.2); }
+.look-swatch { width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--c); border: 3px solid rgba(127, 127, 127, 0.35); }
+@media (max-width: 640px) {
+  .look-editor { flex-direction: column; align-items: stretch; }
+  .look-preview { position: static; flex: none; }
+  .look-preview img { width: 140px; height: 140px; }
+}

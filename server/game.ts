@@ -197,6 +197,7 @@ import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FA
 import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree } from '../shared/grid.ts';
 import { hash01 } from '../shared/hash.ts';
+import { cleanLook, type Look } from '../shared/look.ts';
 import {
   INSURANCE_BY_KIND,
   INSURER,
@@ -324,7 +325,7 @@ const q = {
   stallByOwner: db.prepare('SELECT * FROM stalls WHERE owner_id = ?'),
   stallById: db.prepare('SELECT * FROM stalls WHERE id = ?'),
   stallsInMarket: db.prepare(
-    'SELECT s.*, p.name AS owner_name FROM stalls s JOIN players p ON p.id = s.owner_id WHERE s.market_id = ?',
+    'SELECT s.*, p.name AS owner_name, p.look AS owner_look FROM stalls s JOIN players p ON p.id = s.owner_id WHERE s.market_id = ?',
   ),
   items: db.prepare('SELECT id, type_id, place, box_id, x, y, edition, state, label FROM items WHERE stall_id = ? ORDER BY id'),
   setLabel: db.prepare('UPDATE items SET label = ? WHERE id = ?'),
@@ -1643,26 +1644,76 @@ function finishKeyJobs(market: MarketRow, s: StallRow, t: number) {
   }
 }
 
+// Falske spor: noen få ruter per døgn ser mistenkelige ut under lupa, men er ingenting.
+const FAKE_TRACE_CHANCE = 0.03;
+const FAKE_TRACES = ['en gammel kvittering', 'litt sølt sukker', 'en bortkommen rosin', 'ditt eget tommelavtrykk', 'et musespor', 'en granbar', 'glitter fra en julekule', 'en smule pepperkake'];
+const checkedFakes = new Set<string>(); // falske spor du allerede har sett på (glemmes ved omstart)
+function fakeTraceAt(stallId: number, t: number, x: number, y: number): string | null {
+  const key = `${stallId}:${Math.floor(t / (24 * HOUR))}:${x}:${y}`;
+  if (checkedFakes.has(key) || hash01('falskt-spor', key) >= FAKE_TRACE_CHANCE) return null;
+  return FAKE_TRACES[Math.floor(hash01('falskt-spor-hva', key) * FAKE_TRACES.length)];
+}
+const traceAt = (stallId: number, t: number, x: number, y: number) =>
+  one<TraceRow>(
+    db.prepare('SELECT * FROM snoop_traces WHERE stall_id = ? AND x = ? AND y = ? AND resolved = 0 AND created_at > ? ORDER BY id LIMIT 1'),
+    stallId,
+    x,
+    y,
+    t - TRACE_HOURS * HOUR,
+  );
+
+function parseLook(json: string | null | undefined): Look {
+  try {
+    return cleanLook(JSON.parse(json || '{}'));
+  } catch {
+    return {};
+  }
+}
+
+/** Speilet på bilen: lagrer hvordan figuren din ser ut bak disken. */
+export function setLook(player: PlayerRow, raw: unknown): { look: Look } {
+  const look = cleanLook(raw);
+  db.prepare('UPDATE players SET look = ? WHERE id = ?').run(JSON.stringify(look), player.id);
+  return { look };
+}
+
+/**
+ * Forstørrelsesglasset dras over rutene under disken din. Svarer med rutene der det ser ut
+ * til å være noe (et ekte spor eller et falskt). Hva det er, får du vite når du trykker på ruta.
+ */
+export function loupeScan(player: PlayerRow, cells: unknown): { hints: { x: number; y: number }[] } {
+  const mine = myStall(player);
+  const t = nowFor(marketOf(player));
+  if (!Array.isArray(cells) || cells.length > 200) throw new GameError('Ugyldige ruter.');
+  if (!holds(itemsOf(mine.id), LOUPE)) throw new GameError('Du har ikke noe forstørrelsesglass.');
+  const hints: { x: number; y: number }[] = [];
+  for (const c of cells as { x: unknown; y: unknown }[]) {
+    const x = Number(c?.x);
+    const y = Number(c?.y);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) continue;
+    if (traceAt(mine.id, t, x, y) || fakeTraceAt(mine.id, t, x, y)) hints.push({ x, y });
+  }
+  return { hints };
+}
+
 /**
  * Undersøker én rute under din egen disk med forstørrelsesglasset. Finner du et spor:
  * det snokeren tok kommer tilbake, du får dusør etter gata pluss kompensasjon, og snokeren
  * får bot (2 × verdien), mister omdømme og havner i avisa.
  */
-export function loupeCell(player: PlayerRow, x: number, y: number): { found: boolean; reward: number; returned: number } {
+export function loupeCell(player: PlayerRow, x: number, y: number): { found: boolean; reward: number; returned: number; fake?: string } {
   const market = marketOf(player);
   const mine = myStall(player);
   const t = nowFor(market);
   if (int(x, 'x') < 0 || int(y, 'y') < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) throw new GameError('Utenfor rutenettet.');
   return tx(() => {
     if (!holds(itemsOf(mine.id), LOUPE)) throw new GameError('Du har ikke noe forstørrelsesglass.');
-    const trace = one<TraceRow>(
-      db.prepare('SELECT * FROM snoop_traces WHERE stall_id = ? AND x = ? AND y = ? AND resolved = 0 AND created_at > ? ORDER BY id LIMIT 1'),
-      mine.id,
-      x,
-      y,
-      t - TRACE_HOURS * HOUR,
-    );
-    if (!trace) return { found: false, reward: 0, returned: 0 };
+    const trace = traceAt(mine.id, t, x, y);
+    if (!trace) {
+      const fake = fakeTraceAt(mine.id, t, x, y);
+      if (fake) checkedFakes.add(`${mine.id}:${Math.floor(t / (24 * HOUR))}:${x}:${y}`);
+      return { found: false, reward: 0, returned: 0, ...(fake ? { fake } : {}) };
+    }
     db.prepare('UPDATE snoop_traces SET resolved = 1 WHERE id = ?').run(trace.id);
     const snooper = one<StallRow>(q.stallById, trace.snooper_stall_id);
     const { value, returned } = returnTaken(trace, mine);
@@ -1793,7 +1844,7 @@ export function getState(player: PlayerRow): GameState {
   const t = nowFor(market);
   const parts = osloParts(t);
 
-  const stalls = all<StallRow & { owner_name: string }>(q.stallsInMarket, market.id);
+  const stalls = all<StallRow & { owner_name: string; owner_look: string }>(q.stallsInMarket, market.id);
   const bySlot = new Map(stalls.map((s) => [s.slot_index, s]));
 
   const slots: MarketSlot[] = LAYOUT.map((def) => {
@@ -1817,6 +1868,7 @@ export function getState(player: PlayerRow): GameState {
         id: s.id,
         name: s.name,
         ownerName: s.owner_name,
+        ownerLook: parseLook(s.owner_look),
         reputation: Math.round(s.reputation),
         counter,
         trash,
