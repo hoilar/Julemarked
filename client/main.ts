@@ -1231,21 +1231,25 @@ function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart
     kind === 'bypass'
       ? '<p class="meter-sub">🔧 Ledningene går rett forbi. Ingenting kan ryke, og måleren står stille.</p>'
       : slots.length
-        ? `<div class="breaker-rail">${slots
-            .map((entry) => {
-              const nm = entryName(entry, items);
-              const tripped = !!box.fuse?.tripped?.includes(entry);
-              const off = !tripped && !!box.fuse?.off?.includes(entry);
-              const st = feedStatus(stall.power, items, entry);
-              const label = tripped ? (kind === 'smart' ? 'Gått – slår seg på selv' : 'Gått – vipp opp') : off ? 'Av' : st === 'ok' ? `${kwStr(entryKw(entry, items))} kW` : 'ingen strøm inn';
-              const img = `/art/elektro/${kind === 'smart' ? 'smart' : 'automat'}-${tripped ? 'gatt' : off ? 'av' : 'pa'}.png`;
-              const tip = `${nm.name}: ${label}. ${tripped ? 'Trykk for å vippe sikringen opp igjen.' : off ? 'Trykk for å slå på.' : 'Trykk for å slå av.'}`;
-              return `<div class="breaker ${tripped ? 'tripped' : off ? 'off' : 'on'}">
+        ? Array.from({ length: Math.ceil(slots.length / 4) }, (_, r) => slots.slice(r * 4, r * 4 + 4))
+            .map(
+              (row) => `<div class="breaker-rail">${row
+                .map((entry) => {
+                  const nm = entryName(entry, items);
+                  const tripped = !!box.fuse?.tripped?.includes(entry);
+                  const off = !tripped && !!box.fuse?.off?.includes(entry);
+                  const st = feedStatus(stall.power, items, entry);
+                  const label = tripped ? (kind === 'smart' ? 'Gått – slår seg på selv' : 'Gått – vipp opp') : off ? 'Av' : st === 'ok' ? `${kwStr(entryKw(entry, items))} kW` : 'ingen strøm inn';
+                  const img = `/art/elektro/${kind === 'smart' ? 'smart' : 'automat'}-${tripped ? 'gatt' : off ? 'av' : 'pa'}.png`;
+                  const tip = `${nm.name}: ${label}. ${tripped ? 'Trykk for å vippe sikringen opp igjen.' : off ? 'Trykk for å slå på.' : 'Trykk for å slå av.'}`;
+                  return `<div class="breaker ${tripped ? 'tripped' : off ? 'off' : 'on'}">
                 <span class="breaker-dev">${icon(nm)}</span>
                 <button class="breaker-switch" data-action="fuse-toggle" data-entry="${esc(entry)}" title="${esc(tip)}" aria-label="${esc(tip)}" aria-pressed="${!tripped && !off}"><img src="${img}" alt="" draggable="false"></button>
                 <small>${tripped ? '⚡' : off ? 'av' : st === 'ok' ? kwStr(entryKw(entry, items)) : '–'}</small></div>`;
-            })
-            .join('')}</div>`
+                })
+                .join('')}</div>`,
+            )
+            .join('')
         : '<p class="meter-sub muted">Ingenting er plugget inn.</p>';
   const digits = m ? m.kwh.toFixed(1).padStart(7, '0').replace('.', ',') : '—';
   return smallPanel(box.id, n, 'fuse-panel', `${icon(bt)} ${esc(bt.name)}`, `
@@ -1474,11 +1478,12 @@ function folderPanel(s: GameState, m: Item, n: number): string {
       </div>
     </div>`;
   const kw = def.kw.toString().replace('.', ',');
+  const inputEmpty = itemsIn(s.me.items, 'pot_in', m.id).length === 0;
   const status = !on
     ? shred
       ? `Av · plast kan bli mikroplast (${Math.round(MICROPLASTIC_CHANCE * 100)} %)`
       : 'Av'
-    : (feedProblem(m, stall) ?? (shred ? `${def.emoji} Makulerer · ${kw} kW · ${def.perHour} ting per time` : `🗜️ Bretter · ${kw} kW · én pose per time`));
+    : (feedProblem(m, stall) ?? (inputEmpty ? '⏳ Tom' : shred ? `Makulerer · ${kw} kW · ${def.perHour} ting per time` : `Bretter · ${kw} kW · én per time`));
   if (!panelPos.has(m.id)) {
     const w = (def.input.cols + def.output.cols) * BOX_CELL + 6;
     const h = (def.input.rows * BOX_CELL + 11) * 1.5;
@@ -1491,7 +1496,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
     <div class="box-head" data-panel-head title="Dra for å flytte"><span>${icon(ITEM_TYPES[m.typeId])} ${esc(entryName(itemSocket(m.typeId, m.id), s.me.items).name)}</span><button class="small ghost" data-action="close-box" data-panel-key="${m.id}" aria-label="Lukk">✕</button></div>
     <div class="pot-grids">
       ${grid('pot_in', def.input, shred ? 'Inn' : 'Poser')}
-      <div class="pot-arrow">${hot ? def.emoji : '➜'}</div>
+      <div class="pot-arrow">➜</div>
       ${grid('pot_out', def.output, shred ? 'Mikroplast' : 'Ferdig')}
     </div>
     ${cellView(s, m)}
