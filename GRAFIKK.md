@@ -136,6 +136,30 @@ gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scen
 
 ## Gjenstående grafikk-ønsker
 
+### Ferdig laget: ny søppelbøtte, tom og full, med snø og julevarer (versjon 2)
+
+**✅ Ferdig i `GFX_assets/ChatGPT`:** `soppelkasse-tom.png` og `soppelkasse-full.png`,
+begge **802×1264 px**, samme stående format som dagens søppelbøtte i spillet.
+Galvanisert stål med loddrette ribber, sidehåndtak og svart pose brettet over kanten;
+nøytral palett, fin pikselstil og tynn mørkebrun kontur som passer bodforslaget.
+Begge har nå små snøansamlinger rundt bunnen, med kremhvite topper og blå/lilla
+skygger som ved bodens bordben. Full versjon har rester av eksisterende julevarer:
+skåret gløggkopp med snøkrystallmotiv, pepperkakerester, brukket polkagris, sprukket
+rød julekule og en slitt kremhvit/rød vott, med varebildene som referanser. Ingen tekst.
+Begge har transparent ytterområde, samme lerret, plassering og bunnlinje. Metallkropp
+og håndtak er identiske, og snøen nederst er lik; bare poseåpning og innhold skifter.
+Behold hele lerretet, eller bruk én felles beskjæring for paret, så bøtta ikke hopper
+eller endrer størrelse ved tilstandsbytte. Store `*-original.png` er bevart.
+Tidligere varianter uten snø/generisk avfall er bevart som `soppelkasse-tom-uten-sno-v1.png`
+og `soppelkasse-full-generisk-v1.png`.
+Oversikt: `soppelkasse-sno-julevarer-oversikt-v2.jpg`.
+I bodscenen: `soppelkasse-sno-julevarer-ved-boden-v2.png`.
+Prompter: `soppelkasse-sno-julevarer-prompter-v2.json`.
+Kontroll: `soppelkasse-sno-julevarer-kontroll-v2.json`.
+Klar til `art/soppelkasse-{tom,full}.png`; spillfilene er ikke endret i denne leveransen.
+
+### Øvrige ønsker
+
 Disse trenger ny/oppdatert grafikk (bruk grunnprompten og `tools/pixelify.py` som ellers):
 
 - **Flatpakket papp** (`art/goods/flatpakket-papp.png`, 2×1): en tom pappkartong brettet flat –
@@ -149,6 +173,85 @@ Disse trenger ny/oppdatert grafikk (bruk grunnprompten og `tools/pixelify.py` so
   rutemålene (`maskiner/bakemaskin{,-pa}.png`, `maskiner/dekormaskin{,-pa}.png`, `maskiner/strikkemaskin{,-pa}.png`).
 
 ## Bakgrunnen (markedet bak boden)
+
+**Nyeste bodforslag, versjon 11 – under vurdering:** Samme høye stolper og
+proporsjoner som versjon 10, men mindre pikselgrupper og finere materialdetaljer
+etter søppelbøtta og varene som stilreferanser. Treverk, granbar, snø og stoffolder
+er bearbeidet med høyere detaljtetthet. Konturen er fortsatt tynn og mørkebrun.
+Fil: `GFX_assets/ChatGPT/bod-finpiksel-v11.png` (1536×1120 px).
+Scene: `bod-finpiksel-forhandsvisning-v11.png` (2048×1152 px).
+Detaljer ved samme visningsstørrelse: `bod-v10-v11-detaljsammenligning.jpg`.
+Boden tegnes ved x=620, y=72, størrelse 1382×1008; diskplatens overkant ligger
+ved scene-y≈643,5, under én piksel fra tidligere høyde. Alt annet står som før.
+Prompter og oppsett: `bod-v11-oppsett-prompter.json`. Kontroll: `bod-v11-kontroll.json`.
+Stor generert original og tidligere varianter er bevart. Spillkoden er ikke endret.
+
+**Tidligere bodforslag, versjon 10, med V8 som utgangspunkt:**
+De loddrette stolpene mellom disken og taket er forlenget, så hele taket løftes.
+V8-takets bredde og takvinkel er beholdt; dette er høyere stolper, ikke en brattere
+takgavl. Treverket har litt flere årringer, kvister og detaljer, med tynnere mørkebrun
+kontur og fortsatt tydelig pikselstil. Langt rødt skjørt og snø rundt bena er beholdt.
+Fil: `GFX_assets/ChatGPT/bod-v8-hoyere-stolper-v10.png` (1536×1120 px).
+Scene: `bod-hoyere-stolper-forhandsvisning-v10.png` (2048×1152 px).
+Sammenligning med V8 ved lik diskhøyde: `bod-v8-v10-sammenligning.jpg`.
+Boden tegnes ved x=620, y=75, størrelse 1382×1008. Diskplatens overkant ligger
+ved lokal y=632, som gir uendret scene-y=643,8. Maskiner, bil og hjulspor står
+som før; sceneprøven bruker nå den nye søppelbøtta med snø og julevarer.
+Prompter og oppsett: `bod-v10-oppsett-prompter.json`. Kontroll: `bod-v10-kontroll.json`.
+Original og tidligere forslag er bevart; spillkoden er ikke endret.
+
+**Tidligere bodforslag, versjon 9:** Finere pikselgrupper og
+tynnere mørkebrune konturer, litt bredere bod og høyere møne. Det lange røde
+skjørtet og snøen rundt bena er beholdt. **Diskplatens høyde er uendret i scenen.**
+Fil: `GFX_assets/ChatGPT/bod-finere-bredere-hoyere-tak-v9.png` (1536×1120 px).
+Forhåndsvisning: `bod-finere-hoyere-tak-forhandsvisning-v9.png` (2048×1152 px).
+Bakgrunn, hjulspor, bil, søppelbøtte og maskinplasseringer fra versjon 8 er beholdt.
+Bodens lerret har mer plass over taket. Den tegnes ved x=620, y=84, størrelse
+1382×1008 i scenen; diskplatens målte overkant ved lokal y=622 gir scene-y=643,8,
+samme høyde som tidligere. Behold dette ankeret ved innlegging.
+Prompter og oppsett: `bod-v9-oppsett-prompter.json`. Kontroll: `bod-v9-kontroll.json`.
+Generert original og tidligere forslag er bevart. Spillkoden er ikke endret.
+
+**Bakgrunn og sceneoppsett, versjon 8:** Bred scene på
+**2048×1152 px (16:9)**, med tydelig pikselstil etter grunnprompten igjen:
+rene pikselgrupper, mørk brun kontur og få avgrensede skyggetoner.
+Ny bod: `GFX_assets/ChatGPT/bod-piksel-langtskjort-snofot-v8.png` (1536×1024 px),
+med langt rødt skjørt og små snøansamlinger rundt bena. Ny bakgrunn med mer
+bebyggelse, to stabbur, trehus og flere markedsboder, og langt færre trær:
+`bakgrunn-bygg-stabbur-boder-v8.png` (2048×1152 px).
+Samlet skisse: `bod-bygg-bilspor-forhandsvisning-v8.png`.
+Boden står ved x=620, y=165, skala 0,9, altså **35 px lenger ned enn versjon 7**.
+Maskinene følger samme skalering. Bil og bøtte ligger innenfor scenen.
+Hjulspor er et separat transparent lag, `bilspor-under-varebil-v8.png`
+(2048×1152 px), lagt rett under bakdekkene på den elektriske varebilen. De to
+sporene starter ved x=153/440, y=1002, hver 58×140 px, og ligger bak bilen.
+Store genererte originaler og tidligere versjoner er bevart. Forhåndsvisningen
+bruker nearest neighbor for å bevare pikseluttrykket; store strukturer og
+bakgrunn er ikke presset gjennom varepaletten i pixelify.py.
+Prompter og oppsett: `bod-bygg-bilspor-v8-oppsett.json`.
+Kontroll av transparente bilder: `bod-bilspor-v8-kontroll.json`.
+Ved innlegging må boden være et eget indre lag med sitt eksisterende rutenett,
+mens bil og bøtte plasseres i den brede hovedscenen. Dagens bil ligger delvis
+utenfor 3:2-scenen; bare å bytte bakgrunn løser ikke den beskjæringen.
+Dette er en plasseringsskisse, ikke en endring av spillkode.
+
+**Tidligere designforslag 11.11.2026, versjon 6:** Ny høybeint bod i en
+illustrert mellomstil mellom den grove pikselversjonen og den realistiske versjonen,
+med langt rødt skjørt og små snøansamlinger rundt bena:
+`GFX_assets/ChatGPT/bod-mellomstil-snofot-v6.png` (transparent, 1536×1024 px).
+Roligere treverk og stoff uten realistisk mikrostruktur; transparent åpning over disken.
+Ny markedsbakgrunn inspirert av eksisterende miljø:
+`bakgrunn-markedsplass-tilpasset-v6.png` (ugjennomsiktig, 1536×1200 px), med roligere
+åpen plass rundt boden, små boder i bakgrunnen, juletre og kirke. Snøovergangen er
+beholdt: en lav, slitt slapsstripe foran boden går naturlig over i ren snø.
+Snøen rundt bena ligger i selve bodfilen og møter snøfargene i den nye bakgrunnen.
+Genererte originaler er bevart som `*-original.png`, også bakgrunnens opprinnelige
+1536×1024-versjon. Tidligere skisser er beholdt.
+`bod-mellomstil-markedsplass-forhandsvisning-v6.png` (1536×1200 px) viser boden plassert
+ved x=0, y=0 i den utvidede scenen, med de sju eksisterende maskinbildene i samme
+størrelse og posisjon som før. Behold denne innbyrdes plasseringen ved vurdering.
+Prompter: `bod-bakgrunn-v6-prompter.json`. Kontroll av boden: `bod-v6-kontroll.json`.
+Forslaget ligger i `GFX_assets/ChatGPT` og er ikke lagt inn som spillgrafikk.
 
 Bakgrunnen er et eget lag bak boden (`art/bg-jm.jpg`). Den fyller hele vinduet («cover») og er
 festet nederst, så **sidene kuttes på telefon på høykant** og **toppen kuttes på brede skjermer**.
@@ -504,6 +607,22 @@ Klar til `art/telefon/ramme.png`; spillfiler og telefonvinduets utforming er ikk
 i denne leveransen.
 
 ### Nye originaler: lyslenker og butikkikoner
+
+**Pikselretting, versjon 2:** `lyslenke-stjerner-{av,pa}.png` og
+`lyslenke-farger-{av,pa}.png` i `GFX_assets/ChatGPT` er oppdatert med tydeligere
+pikselkanter, avgrensede skyggetoner og mindre lokal glød. Den vanlige gulhvite
+lenken er beholdt som stilreferanse. Av/på-parene har samme grunnlag for ledning
+og oppheng; bare områdene rundt pærene skifter. Lysgløden er begrenset til omtrent
+5 px utenfor pæresilhuetten, med trinnvis alfa. Alle fire er transparente
+1536×1024-PNG-er med samme takkurve som de tidligere originalene, kontrollert
+på den eksisterende `bod_selger.png`. Dette er stilretting av dagens taklag;
+den nye bodskissens endrede takform er ikke et nytt monteringsgrunnlag her.
+Tidligere filer er bevart som `lyslenke-{stjerner,farger}-{av,pa}-forrige-v1.png`,
+og genererte originaler som `*-piksel-v2-original.png`.
+Oversikt med vanlig lenke som sammenligning: `lyslenker-piksel-v2-oversikt.jpg`.
+Prompter: `lyslenker-piksel-v2-prompter.json`. Kontroll: `lyslenker-piksel-v2-kontroll.json`.
+Butikkikonene er uendret. Nye lyslenkefiler er klare til innlegging i
+`art/devices/lys-{stjerner,farger}-{av,pa}.png`; spillfilene er ikke endret her.
 
 **Ferdig laget i `GFX_assets/ChatGPT`:** tre lyslenker med av/på-versjon og ett
 matchende butikkikon per type til Klas Olsen. Alle ni filer er transparente PNG-er.
