@@ -154,8 +154,9 @@ body.dragging .trash.hot { outline: 0.25cqw solid #7fe39a; }
 body.dragging .trash.hot.bad { outline-color: #ff7b7b; transform: scale(1.05) rotate(3deg); }
 /* Venstre bordben tegnet oppå søppelkassa, så kassa ser ut til å stå bak benet. Utsnittet er
    et fullskala bod-bilde klippet til ben-boksen (juster left/top/width/height ved behov). */
-.leg-overlay { position: absolute; left: 10%; top: 74%; width: 13%; height: 25%; overflow: hidden; pointer-events: none; z-index: 5; }
-.leg-overlay img { position: absolute; width: 769.2%; height: 400%; left: -76.9%; top: -296%; image-rendering: pixelated; }
+/* Kun benet der søppelkassa overlapper – holdes klar av rutenettet (som starter på x 17,5 %). */
+.leg-overlay { position: absolute; left: 10.5%; top: 74%; width: 6%; height: 25%; overflow: hidden; pointer-events: none; z-index: 5; }
+.leg-overlay img { position: absolute; width: 1666.7%; height: 400%; left: -175%; top: -296%; image-rendering: pixelated; }
 body.night .leg-overlay img { filter: brightness(0.85); }
 /* ---------- Grenuttaket (lag i full bodstørrelse) ---------- */
 .power { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
@@ -174,7 +175,7 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
   box-shadow: none;
   cursor: pointer;
 }
-.power-hot:hover { outline: 0.15cqw solid rgba(255, 224, 138, 0.8); }
+.power-hot:hover { box-shadow: 0 0 0.8cqw rgba(255, 210, 120, 0.75); }
 
 /* ---------- Vareoppslag: bilde til venstre, info til høyre ---------- */
 .modal:has(.item-card) { max-width: 600px; }
@@ -1448,7 +1449,7 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .car-hit { position: absolute; left: 24%; right: 24%; bottom: 4%; height: 62%; pointer-events: auto; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }
 .car-hit:hover { background: none; }
 .car-mirror { position: absolute; z-index: 2; pointer-events: auto; padding: 0; border: 0; border-radius: 40%; background: none; box-shadow: none; cursor: pointer; }
-.car-mirror:hover { background: rgba(255, 246, 210, 0.25); box-shadow: 0 0 0 2px rgba(255, 233, 168, 0.8); }
+.car-mirror:hover { box-shadow: 0 0 0.8cqw rgba(255, 210, 120, 0.75); }
 .car img.sprite { display: block; }
 .trunk { position: absolute; z-index: 1; pointer-events: auto; }
 .dump-btn { margin-top: 0.3cqw; font-size: max(10px, 0.75cqw); }
