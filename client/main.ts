@@ -608,7 +608,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${shopSign(s, stall, own)}
       ${own ? '' : sellerView(stall)}
       ${counterView(stall, own)}
-      ${own ? storageView(s) + keyHookView(s) + trashView(s) + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
+      ${own ? storageView(s) + keyHookView(s) + trashView(s) + legOverlay() + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
     </div>
     ${own ? '' : phoneSprite(s, false)}
   </div>`;
@@ -721,9 +721,18 @@ function mailboxView(s: GameState): string {
   const up = s.me.bills.length > 0 || s.me.mailPaper;
   const label = up ? 'Postkassa – det ligger noe i den' : 'Postkassa';
   const badge = '';
-  return `<img class="power-layer mailbox-layer" src="/art/postkasse-${up ? 'oppe' : 'nede'}.png" alt="" draggable="false">
-    <button class="mailbox-hot ${isOpen('mail') ? 'open' : ''}" data-action="mail" aria-label="${label}" title="${label}"
-      style="left:${(MAILBOX.x / 1536) * 100}%;top:${(MAILBOX.y / 1024) * 100}%;width:${(MAILBOX.w / 1536) * 100}%;height:${(MAILBOX.h / 1024) * 100}%">${badge}</button>`;
+  return `<button class="mailbox-hot ${isOpen('mail') ? 'open' : ''}" data-action="mail" aria-label="${label}" title="${label}"
+      style="left:${(MAILBOX.x / 1536) * 100}%;top:${(MAILBOX.y / 1024) * 100}%;width:${(MAILBOX.w / 1536) * 100}%;height:${(MAILBOX.h / 1024) * 100}%">${badge}</button>
+    <img class="power-layer mailbox-layer" src="/art/postkasse-${up ? 'oppe' : 'nede'}.png" alt="" draggable="false">`;
+}
+
+/**
+ * Ben-overlag: et utsnitt av bod-bildet over venstre bordben, tegnet oppå søppelkassa, så
+ * kassa ser ut til å stå bak benet. Samme bilde og skala som scenens bakgrunn = ligger perfekt.
+ * Koordinatene (left/top/width/height i .leg-overlay) kan finjusteres hvis benet ikke dekker helt.
+ */
+function legOverlay(): string {
+  return '<div class="leg-overlay"><img src="/art/bod_selger.png" alt="" draggable="false"></div>';
 }
 
 // --- Kjelen ---
@@ -1881,7 +1890,8 @@ function keyHookView(s: GameState): string {
   const stall = myStall(s);
   if (!stall) return '';
   const hasKey = stall.sign !== 'closed';
-  return `<div class="key-hook" style="left:${STORAGE.left + 8.6}%;top:${STORAGE.top}%">
+  // Henger ned fra bordkanten/sargen, under postkassa (juster left/top ved behov).
+  return `<div class="key-hook" style="left:17%;top:73.5%">
     <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}"><img src="/art/${hasKey ? 'nokkel-krok' : 'nokkel-krok-tom'}.png" alt="${hasKey ? 'Nøkkel' : 'Låst'}"></div>
 </div>`;
 }
@@ -2654,11 +2664,15 @@ function modalView(s: GameState): string {
     const it = s.me.items.find((i) => i.id === id);
     const t = it && ITEM_TYPES[it.typeId];
     if (!it || !t || t.kind !== 'folded') return '';
+    const canUnfold = !!(t as { bag?: string }).bag;
     inner = itemCard(
       t,
-      `<h2>${esc(t.name)}</h2>
+      canUnfold
+        ? `<h2>${esc(t.name)}</h2>
       <p class="muted">En sammenbrettet handlepose. Du kan brette den ut igjen til en vanlig pose – det krever ingen maskin.</p>
-      <div class="row auto-row"><button data-action="unfold" data-item="${it.id}">Brett ut</button></div>`,
+      <div class="row auto-row"><button data-action="unfold" data-item="${it.id}">Brett ut</button></div>`
+        : `<h2>${esc(t.name)}</h2>
+      <p class="muted">Flatpakket papp fra Brettemaskinen. Den kan ikke brettes ut til en hel kartong igjen.</p>`,
     );
   }
   if (modal.kind === 'insurer') inner = insurerView(s);

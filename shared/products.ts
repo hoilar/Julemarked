@@ -136,9 +136,9 @@ export interface FoldedBag {
   id: string;
   name: string;
   emoji: string;
-  image: string;
+  image?: string;
   size: Size;
-  bag: string; // hvilken butikkpose den bretter ut til
+  bag: string; // hvilken butikkpose den bretter ut til (tom = kan ikke brettes ut, f.eks. flatpakket papp)
 }
 
 /** Forsikringsbevis (1×1). Gjelder så lenge det ligger hos deg og ikke i søpla. */
@@ -323,11 +323,12 @@ export const KETTLE: Kettle = {
 };
 export const KETTLE_KW_PER_LEVEL = 0.5;
 
-// Posebretteren: bretter sammen tomme handleposer til 1×1-klumper, én per time mens den står på.
+// Brettemaskinen: bretter sammen tomme handleposer (1×1-klumper) og tomme pappkartonger
+// (flatpakket papp), én per time mens den står på. Flatpakket papp kan ikke brettes ut igjen.
 export const POSEBRETTER: Folder = {
   kind: 'folder',
   id: 'posebretter',
-  name: 'Posebretter',
+  name: 'Brettemaskin',
   emoji: '🗜️',
   image: '/art/posebretter/off.png',
   imageOn: '/art/posebretter/on.png',
@@ -373,7 +374,7 @@ export const MAKERS: Maker[] = [
     emoji: '🥮',
     image: '/art/maskiner/bakemaskin.png',
     imageOn: '/art/maskiner/bakemaskin-pa.png',
-    size: { w: 3, h: 2 },
+    size: { w: 4, h: 3 },
     input: { cols: 4, rows: 4 },
     output: { cols: 4, rows: 4 },
     sprite: 3,
@@ -397,7 +398,7 @@ export const MAKERS: Maker[] = [
     emoji: '🧶',
     image: '/art/maskiner/strikkemaskin.png',
     imageOn: '/art/maskiner/strikkemaskin-pa.png',
-    size: { w: 4, h: 3 },
+    size: { w: 5, h: 4 },
     input: { cols: 4, rows: 4 },
     output: { cols: 4, rows: 4 },
     sprite: 4,
@@ -421,7 +422,7 @@ export const MAKERS: Maker[] = [
     emoji: '🎨',
     image: '/art/maskiner/dekormaskin.png',
     imageOn: '/art/maskiner/dekormaskin-pa.png',
-    size: { w: 3, h: 3 },
+    size: { w: 4, h: 4 },
     input: { cols: 4, rows: 4 },
     output: { cols: 4, rows: 4 },
     sprite: 3,
@@ -585,6 +586,12 @@ export const FOLDED_BAGS: FoldedBag[] = [
 /** Butikkpose-id → sammenbretta variant, og motsatt. */
 export const FOLDED_BY_BAG: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.bag, f.id]));
 export const BAG_BY_FOLDED: Record<string, string> = Object.fromEntries(FOLDED_BAGS.map((f) => [f.id, f.bag]));
+
+// Flatpakket papp: det Brettemaskinen lager av en tom pappkartong. Kan ikke brettes ut igjen
+// (bag: '' → ikke i BAG_BY_FOLDED). Emoji til ekte grafikk er klar (se GRAFIKK.md).
+export const FLATPACK: FoldedBag = { kind: 'folded', id: 'flatpakket_papp', name: 'Flatpakket papp', emoji: '📦', size: { w: 2, h: 1 }, bag: '' };
+/** Hva Brettemaskinen lager av en gitt tom beholder: butikkposer → sammenbretta pose, kartong → flatpakket papp. */
+export const FOLD_OUTPUT: Record<string, string> = { ...FOLDED_BY_BAG, kartong: FLATPACK.id };
 
 // Forsikringsbevis: ett dokument per forsikring, i forsikringens farge.
 export const POLICIES: Policy[] = INSURANCES.map((d) => ({
@@ -844,11 +851,11 @@ export const DEVICES: Device[] = [
   },
   {
     id: 'posebretter',
-    name: 'Posebretter',
+    name: 'Brettemaskin',
     emoji: '🗜️',
     price: 299,
     kw: FOLDER_KW,
-    effect: 'Bretter sammen tomme handleposer til 1×1-klumper – én pose per time',
+    effect: 'Bretter sammen tomme handleposer og pappkartonger – én per time. Flatpakket papp kan ikke brettes ut igjen.',
     item: 'posebretter',
   },
   {
@@ -910,7 +917,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER].map((t) => [t.id, t]),
 );
 
 /** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */

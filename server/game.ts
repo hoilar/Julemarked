@@ -42,6 +42,7 @@ import {
   FOLDER_KW,
   FOLDED_BY_BAG,
   BAG_BY_FOLDED,
+  FOLD_OUTPUT,
   LIGHT_BOOST,
   NEWSPAPER,
   SOCKETS,
@@ -2781,6 +2782,7 @@ export function unfoldBag(player: PlayerRow, itemId: number) {
     if (!it || ITEM_TYPES[it.typeId]?.kind !== 'folded') throw new GameError('Fant ikke en sammenbrettet pose.');
     if (isUndelivered(items, it)) throw new GameError('Posen er ikke under disken.');
     const bagId = BAG_BY_FOLDED[it.typeId];
+    if (!bagId) throw new GameError('Flatpakket papp kan ikke brettes ut igjen.');
     const spot = findStorageSpot(items, bagId); // esker går bare under disken
     if (!spot) throw new GameError('Det er ikke plass til en utbrettet pose under disken. Rydd litt først.');
     q.deleteItem.run(it.id);
@@ -2800,20 +2802,21 @@ function foldOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: It
   if (def.mode === 'shred') return shredOne(market, s, t, items, m);
   const bag = itemsIn(items, 'pot_in', m.id).find((i) => {
     const type = ITEM_TYPES[i.typeId];
-    return type.kind === 'container' && type.shopBag && contentsOf(items, i.id).length === 0;
+    return type.kind === 'container' && !!FOLD_OUTPUT[i.typeId] && contentsOf(items, i.id).length === 0;
   });
   if (!bag) return;
-  const foldedId = FOLDED_BY_BAG[bag.typeId];
+  const foldedId = FOLD_OUTPUT[bag.typeId];
   if (!foldedId) return;
+  const fsize = ITEM_TYPES[foldedId].size;
   const out = itemsIn(items, 'pot_out', m.id);
-  const free = findFree(1, 1, out, POSEBRETTER.output);
+  const free = findFree(fsize.w, fsize.h, out, def.output);
   if (!free) {
-    event(market, s.owner_id, t, '🗜️ Posebretteren står på, men ferdig-feltet er fullt.');
+    event(market, s.owner_id, t, '🗜️ Brettemaskinen står på, men ferdig-feltet er fullt.');
     return;
   }
   q.deleteItem.run(bag.id);
   q.insertItem.run(s.id, foldedId, 'pot_out', m.id, free.x, free.y, null);
-  event(market, s.owner_id, t, `🗜️ Posebretteren brettet sammen en ${ITEM_TYPES[bag.typeId].name.toLowerCase()}.`);
+  event(market, s.owner_id, t, `🗜️ Brettemaskinen brettet sammen en ${ITEM_TYPES[bag.typeId].name.toLowerCase()}.`);
 }
 
 /**

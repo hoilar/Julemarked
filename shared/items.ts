@@ -1,7 +1,7 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
-import { CELL_GRID, FOLDER_BY_ID, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
+import { CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 import { BACKPACK, CAR_BY_ID } from './car.ts';
 
@@ -133,16 +133,18 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   }
   const shreddable = t.kind === 'paper' || t.kind === 'doc' || t.kind === 'policy' || t.kind === 'folded' || (t.kind === 'container' && !!t.shopBag);
   if (t.kind === 'container') {
-    if (intoFolder && t.shopBag) {
+    if (intoFolder && !shredder && FOLD_OUTPUT[t.id]) {
       if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du bretter den sammen.`;
     } else if (intoTrunk) {
       if (t.safe) return 'Safen er for tung for bagasjerommet.';
+    } else if (intoFolder && shredder && t.shopBag) {
+      if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du makulerer den.`;
     } else if (spot.place !== 'storage' && spot.place !== 'trash') {
-      return intoFolder ? (shredder ? 'Makuleringsmaskinen tar papir og tomme plastposer.' : 'Posebretteren tar bare tomme handleposer.') : 'Esker må stå under disken.';
+      return intoFolder ? (shredder ? 'Makuleringsmaskinen tar papir og tomme plastposer.' : 'Brettemaskinen tar tomme handleposer og pappkartonger.') : 'Esker må stå under disken.';
     }
   }
   if (intoFolder && shredder && !shreddable) return 'Makuleringsmaskinen tar papir og tomme plastposer.';
-  if (intoFolder && !shredder && !(t.kind === 'container' && t.shopBag)) return 'Posebretteren tar bare tomme handleposer.';
+  if (intoFolder && !shredder && !FOLD_OUTPUT[t.id]) return 'Brettemaskinen tar tomme handleposer og pappkartonger.';
   if (spot.place === 'pot_out' && boxKind(spot.boxId) === 'folder' && !shredder && t.kind !== 'folded')
     return 'Her kommer bare ferdig sammenbretta poser ut.';
   if (spot.place === 'pot_out' && shredder && items.find((i) => i.id === item.id)?.boxId !== spot.boxId)

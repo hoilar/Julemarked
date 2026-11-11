@@ -134,6 +134,20 @@ over filer der største side er over `maks_dim` (600 px i `palett.json`). Store,
 bilder. Ekte grid-varer er ≤512 px og går fint gjennom. Kjører du en enkeltfil manuelt,
 gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scene-asset.
 
+## Gjenstående grafikk-ønsker
+
+Disse trenger ny/oppdatert grafikk (bruk grunnprompten og `tools/pixelify.py` som ellers):
+
+- **Flatpakket papp** (`art/goods/flatpakket-papp.png`, 2×1): en tom pappkartong brettet flat –
+  en flat, sammenbrettet brun pappeplate med synlige brettekanter, litt tape. Nøytral,
+  uten julepynt. Brukes nå i spillet med emoji 📦 til bildet er klart (id `flatpakket_papp`).
+- **Brettemaskinen** (tidligere «Posebretter», `art/posebretter/off.png` + `on.png`): samme
+  maskin, men den bretter nå både poser og pappkartonger. Navnet er endret i spillet; grafikken
+  kan beholdes, men om den skal gjenspeile papp-bretting, tegn en litt større/kraftigere brettemaskin.
+- **Større maskiner:** footprinten er økt – bakemaskin 3×2 → **4×3**, dekormaskin 3×3 → **4×4**,
+  strikkemaskin 4×3 → **5×4**. Dagens bilder strekkes til ny størrelse; tegn dem på nytt i de nye
+  rutemålene (`maskiner/bakemaskin{,-pa}.png`, `maskiner/dekormaskin{,-pa}.png`, `maskiner/strikkemaskin{,-pa}.png`).
+
 ## Bakgrunnen (markedet bak boden)
 
 Bakgrunnen er et eget lag bak boden (`art/bg-jm.jpg`). Den fyller hele vinduet («cover») og er
