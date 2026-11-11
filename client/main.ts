@@ -1890,8 +1890,8 @@ function keyHookView(s: GameState): string {
   const stall = myStall(s);
   if (!stall) return '';
   const hasKey = stall.sign !== 'closed';
-  // Henger ned fra bordkanten/sargen, under postkassa (juster left/top ved behov).
-  return `<div class="key-hook" style="left:17%;top:73.5%">
+  // Henger ned fra bordkanten/sargen, rett under postkassa (senter ≈ 15,8 %; juster ved behov).
+  return `<div class="key-hook" style="left:13.9%;top:73.5%">
     <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}"><img src="/art/${hasKey ? 'nokkel-krok' : 'nokkel-krok-tom'}.png" alt="${hasKey ? 'Nøkkel' : 'Låst'}"></div>
 </div>`;
 }
@@ -3031,13 +3031,22 @@ async function flushLoupe() {
     toast((err as Error).message, true);
   }
 }
+// Uklikkede «?»-merker (ikke bekreftede spor) skal bare vises mens/like etter at du bruker lupa.
+let loupeFadeTimer: number | null = null;
+function clearLoupeHintMarks() {
+  for (const [k, st] of [...loupeHints]) if (st === 'hint') loupeHints.delete(k);
+  document.querySelectorAll('.loupe-mark.hint').forEach((el) => el.remove());
+}
 window.addEventListener('pointermove', (e) => {
   const d = drag;
   if (!d?.moved || d.item.typeId !== LOUPE) return;
   if (loupeDrag !== d) {
     loupeDrag = d;
     loupeSeen.clear();
+    clearLoupeHintMarks(); // nytt sveip starter rent, uten gamle «?» liggende igjen
   }
+  if (loupeFadeTimer) clearTimeout(loupeFadeTimer);
+  loupeFadeTimer = window.setTimeout(clearLoupeHintMarks, 10000); // forsvinner 10 s etter siste sveip
   const grid = document.querySelector<HTMLElement>('[data-grid="storage"]');
   if (!grid) return;
   const r = grid.getBoundingClientRect();
