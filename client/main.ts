@@ -399,8 +399,13 @@ function playNewSales(s: GameState) {
 
 function render() {
   // Ikke tegn på nytt midt i et drag eller mens brukeren skriver i et felt.
+  // Radioknapper og avkrysningsbokser (frakt, gavekort) får fokus når de trykkes, men da skriver ingen: tegn med en gang.
   const active = document.activeElement;
-  if (drag || sdrag || panelDrag || paperDrag || phoneDrag || (active && app.contains(active) && /INPUT|SELECT/.test(active.tagName))) {
+  const typing =
+    !!active &&
+    app.contains(active) &&
+    (active.tagName === 'SELECT' || (active.tagName === 'INPUT' && !['radio', 'checkbox'].includes((active as HTMLInputElement).type)));
+  if (drag || sdrag || panelDrag || paperDrag || phoneDrag || typing) {
     pendingRender = true;
     return;
   }
