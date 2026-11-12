@@ -185,7 +185,7 @@ const routes: Record<string, Handler> = {
   'POST /api/paper/coupon': action((p, b) => cutCoupon(p, Number(b.edition), Number(b.index))),
   'POST /api/gift': action((p, b) => answerGift(p, !!b.accept)),
   'POST /api/paper/cut': action((p, b) => cutWanted(p, Number(b.edition))),
-  'POST /api/label': action((p, b) => ({ left: relabel(p, String(b.productId), b.to === 'store' ? 'store' : 'home') })),
+  'POST /api/label': action((p, b) => ({ label: relabel(p, Number(b.itemId)) })),
   'POST /api/police/tip': action((p, b) => tipPolice(p, String(b.seed ?? ''))),
   'POST /api/price': action((p, b) => setPrice(p, String(b.productId), Number(b.price))),
   'POST /api/buy': action((p, b) => buyFromStall(p, Number(b.stallId), String(b.productId), Number(b.qty))),

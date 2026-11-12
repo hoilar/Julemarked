@@ -124,7 +124,7 @@ type Modal =
   | { kind: 'insurer' }
   | { kind: 'gift' }
   | { kind: 'policy'; typeId: string }
-  | { kind: 'product'; productId: string }
+  | { kind: 'product'; productId: string; itemId?: number } // itemId: varen du trykket på (da kan etiketten på den skrives om)
   | { kind: 'ingredient'; typeId: string }
   | { kind: 'look'; draft: Look }
   | { kind: 'buy'; stallId: number; productId: string }
@@ -2930,18 +2930,22 @@ function modalView(s: GameState): string {
     const count = (l: Label) => held.filter((i) => i.label === l).length;
     const stallName = myStall(s)?.name ?? '';
     const pen = !!hasTool(s, PEN);
+    // Varen du trykket på: etiketten på den kan skrives om med penn (butikkjøpt ↔ «Hjemmelaget»).
+    const itemId = modal.itemId;
+    const thisItem = itemId !== undefined ? held.find((i) => i.id === itemId) : undefined;
+    const canRewrite = !!thisItem && pen && ((thisItem.label === 'store' && !p.craftedOnly) || thisItem.label === 'forged');
+    const thisRow = thisItem?.label
+      ? `<div class="label-head">Produsent</div>
+         <ul class="label-list"><li class="label-row ${thisItem.label}"><div><b>${esc(labelText(p.id, thisItem.label, stallName))}</b>${thisItem.label === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
+           <small>kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, thisItem.label !== 'store'))}</small></div>
+           ${canRewrite ? `<button class="small ghost" data-action="relabel" title="${thisItem.label === 'store' ? 'Skriv «Hjemmelaget» på etiketten med penn' : 'Skriv riktig produsent igjen'}">✏️ Skriv om</button>` : ''}</li></ul>`
+      : '';
     const groups = (['store', 'home', 'forged'] as const)
       .filter((l) => count(l) > 0)
-      .map((l) => {
-        const action =
-          l === 'store' && pen && !p.craftedOnly
-            ? `<button class="small ghost" data-action="relabel" data-to="home" title="Skriv om etiketten på én av dem med penn (de på bordet først)">✏️ Skriv «Hjemmelaget» på én</button>`
-            : l === 'forged' && pen
-              ? `<button class="small ghost" data-action="relabel" data-to="store" title="Skriv riktig produsent igjen på én av dem (de på bordet først)">✏️ Skriv riktig på én</button>`
-              : '';
-        return `<li class="label-row ${l}"><div><b>${esc(labelText(p.id, l, stallName))}</b>${l === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
-            <small>${count(l)} stk · kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, l !== 'store'))}</small></div>${action}</li>`;
-      })
+      .map(
+        (l) => `<li class="label-row ${l}"><div><b>${esc(labelText(p.id, l, stallName))}</b>${l === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
+            <small>${count(l)} stk · kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, l !== 'store'))}</small></div></li>`,
+      )
       .join('');
     // Prisreaksjonen regnes mot etiketten på flest av varene.
     const main: Label = count('store') >= count('home') + count('forged') ? 'store' : 'home';
@@ -2958,7 +2962,7 @@ function modalView(s: GameState): string {
         <dt>Snittkost</dt><dd>${kr(inv.avgCost)}</dd>
         <dt>Kunder forventer</dt><dd>~${kr(base)}</dd>
       </dl>
-      ${groups ? `<div class="label-head">Produsent</div><ul class="label-list">${groups}</ul>` : ''}
+      ${thisRow || (groups ? `<div class="label-head">Produsent</div><ul class="label-list">${groups}</ul>` : '')}
       <form data-form="price" class="stack-form" data-cost="${inv.avgCost}" data-base="${base}">
         <label>Pris per stk <input name="price" type="number" min="1" max="9999" value="${price}"></label>
         <div class="price-feedback">${priceFeedback(price, inv.avgCost, base)}</div>
@@ -3302,7 +3306,7 @@ function endDrag(cancelled = false) {
       phonePage = 'home';
     } else if (t.kind === 'tool') modal = { kind: 'tool', itemId: d.item.id };
     else if (t.kind === 'ingredient') modal = { kind: 'ingredient', typeId: t.id };
-    else modal = { kind: 'product', productId: t.id };
+    else modal = { kind: 'product', productId: t.id, itemId: d.item.id };
     return render();
   }
   if (d.error) {
@@ -3679,14 +3683,9 @@ app.addEventListener('click', (e) => {
       .catch((err) => toast((err as Error).message, true))
       .finally(() => refresh());
   }
-  if (action === 'relabel' && modal?.kind === 'product') {
-    const productId = modal.productId;
-    const to = el.dataset.to;
-    api<{ left: number }>('/api/label', { productId, to })
-      .then((r) => {
-        const left = r.left > 0 ? ` (${r.left} igjen)` : '';
-        toast(to === 'home' ? `✏️ Nå står det «Hjemmelaget» på én av dem${left}.` : `✏️ Riktig produsent står på én av dem igjen${left}.`);
-      })
+  if (action === 'relabel' && modal?.kind === 'product' && modal.itemId !== undefined) {
+    api<{ label: Label }>('/api/label', { itemId: modal.itemId })
+      .then((r) => toast(r.label === 'forged' ? '✏️ Nå står det «Hjemmelaget» på etiketten.' : '✏️ Riktig produsent står på etiketten igjen.'))
       .catch((err) => toast((err as Error).message, true))
       .finally(refresh);
     return;

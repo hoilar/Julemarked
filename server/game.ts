@@ -3494,23 +3494,22 @@ export function answerGift(player: PlayerRow, accept: boolean) {
 }
 
 /**
- * Skriver om etiketten på én vare av en type med penn (én om gangen). `home`: en butikkvare blir «Hjemmelaget»
- * (kundene forventer mer, men Tilsynsmannen liker det ikke). `store`: skriv riktig produsent igjen.
- * Varene på bordet tas først, så de under disken. Returnerer hvor mange det er igjen å skrive om.
+ * Skriver om etiketten på én bestemt vare med penn. Butikkjøpt blir «Hjemmelaget» (kundene forventer mer,
+ * men Tilsynsmannen liker det ikke), og en omskrevet etikett får riktig produsent igjen. Returnerer den nye etiketten.
  */
-export function relabel(player: PlayerRow, productId: string, to: 'home' | 'store'): number {
-  const p = product(productId);
-  if (p.craftedOnly) throw new GameError(`${p.name} kan bare lages selv.`);
+export function relabel(player: PlayerRow, itemId: number): Label {
   const stall = myStall(player);
   return tx(() => {
     const items = itemsOf(stall.id);
     if (!holds(items, PEN)) throw new GameError('Du har ingenting å skrive med.');
-    const from: Label = to === 'home' ? 'store' : 'forged';
-    const targets = items.filter((i) => i.typeId === productId && i.label === from && !isTrashed(items, i) && !isUndelivered(items, i));
-    if (targets.length === 0) throw new GameError('Det er ingen etiketter å skrive om.');
-    const one = targets.find((i) => i.place === 'counter') ?? targets[0];
-    q.setLabel.run(to === 'home' ? 'forged' : null, one.id);
-    return targets.length - 1;
+    const it = items.find((i) => i.id === itemId);
+    if (!it || !it.label || isTrashed(items, it) || isUndelivered(items, it)) throw new GameError('Fant ikke varen.');
+    if (it.label === 'home') throw new GameError('Den er laget her. Det står allerede riktig på etiketten.');
+    const p = product(it.typeId);
+    if (it.label === 'store' && p.craftedOnly) throw new GameError(`${p.name} kan bare lages selv.`);
+    const to: Label = it.label === 'store' ? 'forged' : 'store';
+    q.setLabel.run(to === 'forged' ? 'forged' : null, it.id);
+    return to;
   });
 }
 
