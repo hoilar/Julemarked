@@ -26,9 +26,12 @@ export const SHIPPING = { standard: 20, express: 150 };
 /** Ekspressfrakt koster ingenting den første markedsdagen, så man kommer i gang. */
 export const expressPrice = (firstDay: boolean) => (firstDay ? 0 : SHIPPING.express);
 export const BAG_PRICE = 1;
-/** Klas Olsen leverer med en gang, rett under disken – mot en fast leveringskostnad per bestilling. */
-export const KLAS_DELIVERY = 49;
-export const BAG_GRID = { cols: 4, rows: 4 };
+/** Klas Olsen (esker, verktøy og elektrisk): samme leveringsmåter som nettbutikkene, men tingene kommer løst, ikke i poser. */
+export const KLAS = { id: 'klas', name: 'Klas Olsen' };
+/** Alle stedene man kan handle (for navn på handleturer og leveranser). */
+export const PLACE_BY_ID: Record<string, { name: string }> = { ...STORE_BY_ID, [KLAS.id]: KLAS };
+/** Rutenettet inni butikkposene (samme for alle butikkene): hentes fra posetypen, så det følger med når rutene endres. */
+export const BAG_GRID = (ITEM_TYPES.kiwipose as unknown as { inner: { cols: number; rows: number } }).inner;
 
 export interface ShopItem {
   typeId: string;
@@ -93,7 +96,7 @@ export function isRare(typeId: string): boolean {
   return t?.rare !== undefined;
 }
 
-/** Pakker varene i poser (4×4). Største først. Returnerer innholdet i hver pose. */
+/** Pakker varene i poser (BAG_GRID). Største først. Returnerer innholdet i hver pose. */
 export function packBags(lines: { typeId: string; qty: number }[]): { typeId: string; x: number; y: number }[][] {
   const units = lines
     .flatMap((l) => Array.from({ length: l.qty }, () => l.typeId))

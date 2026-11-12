@@ -216,7 +216,7 @@ import {
   policyItemId,
   type InsuranceKind,
 } from '../shared/insurance.ts';
-import { BAG_PRICE, KLAS_DELIVERY, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
+import { BAG_PRICE, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 
 export class GameError extends Error {}
@@ -300,7 +300,7 @@ interface StallRow {
 interface CarTrip {
   store: string;
   until: number; // spilltid du er tilbake
-  bags: { typeId: string; x: number; y: number }[]; // nye poser i bagasjerommet
+  bags: { typeId: string; x: number; y: number; state?: Record<string, unknown> }[]; // nye poser (eller kartonger fra Klas Olsen) i bagasjerommet
   goods: { typeId: string; box: number | { bag: number }; x: number; y: number }[]; // i en eske i bilen eller i en ny pose
 }
 interface BillRow {
@@ -564,6 +564,9 @@ function repairGrids(stallId: number) {
   }
 }
 
+/** Kartongen maskinene (og lyslenker og alarmer) leveres i fra Klas Olsen: vanlig pappkartong, kan brukes videre som eske. */
+const MACHINE_BOX = 'kartong';
+
 function itemsOf(stallId: number): Item[] {
   return all<ItemRow>(q.items, stallId).map((r) => {
     const { w, h } = ITEM_TYPES[r.type_id].size;
@@ -593,6 +596,11 @@ function itemsOf(stallId: number): Item[] {
     if (r.type_id === COUPON && typeof st.store === 'string')
       item.coupon = { store: st.store, productId: String(st.productId), pct: Number(st.pct), from: Number(st.from), to: Number(st.to) };
     if (r.type_id.startsWith('gavekort_') && typeof st.store === 'string') item.giftcard = { store: st.store, value: Number(st.value) };
+    if (r.type_id === MACHINE_BOX && r.state) {
+      // Kartong fra Klas Olsen med noe som skal henges på boden (også mens den er på vei).
+      const dev = (JSON.parse(r.state) as { device?: unknown }).device;
+      if (typeof dev === 'string') item.device = dev;
+    }
     if (r.type_id === STRIP.id) item.strip = { sockets: Array.isArray(st.sockets) ? (st.sockets as (string | null)[]) : [] };
     const mk = MAKER_BY_ID[r.type_id];
     if (mk)
@@ -1134,46 +1142,136 @@ export function moveStall(player: PlayerRow, slotIndex: number) {
   });
 }
 
-/** Kjøper varer eller esker. Alt må få plass under disken, ellers blir det ingen handel. */
-export function buy(player: PlayerRow, typeId: string, qty: number) {
-  const t = ITEM_TYPES[typeId];
-  if (!t || t.kind === 'paper' || t.kind === 'kettle' || (t.kind === 'ingredient' && t.price <= 0))
-    throw new GameError('Ukjent vare.');
-  // Varer og råvarer kjøpes i nettbutikkene nå; her (Klas Olsen) er det esker og kontorrekvisita.
-  if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
-  if (t.kind === 'container' && t.car) throw new GameError('Biler kjøper du i Bilbutikken på telefonen.');
-  if (t.kind === 'electric' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
-  if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery'))
-    throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
-  if (int(qty, 'antall') < 1 || qty > 100) throw new GameError('Ugyldig antall.');
-  const market = marketOf(player);
-  tx(() => {
-    const stall = myStall(player);
+/** En linje i handlekurven hos Klas Olsen: id = gjenstandstype, eller «device:<id>» for et apparat. */
+export interface KlasLine {
+  id: string;
+  qty: number;
+}
+/** Det Klas Olsen sender: én gjenstand løst, eller en pappkartong med en maskin (inside) eller noe som henger på boden (device). */
+interface KlasUnit {
+  typeId: string;
+  price: number;
+  inside?: string;
+  device?: string;
+}
+
+/** Sjekker handlekurven hos Klas Olsen og gjør den om til det som skal sendes. */
+function klasUnits(stall: StallRow, lines: KlasLine[]): KlasUnit[] {
+  const items = itemsOf(stall.id);
+  const p = powerOf(stall);
+  // Lyslenker og alarmer som ligger i en kartong og ikke er hengt opp ennå (på vei, ved boden eller under disken).
+  const pending = new Set(items.filter((i) => i.device && !isTrashed(items, i)).map((i) => i.device!));
+  const units: KlasUnit[] = [];
+  let lights = 0;
+  for (const l of lines) {
+    const qty = l.qty;
+    if (!Number.isInteger(qty) || qty < 1 || qty > 100) throw new GameError('Ugyldig antall.');
+    if (l.id.startsWith('device:')) {
+      const d = DEVICE_BY_ID[l.id.slice('device:'.length)];
+      if (!d) throw new GameError('Ukjent apparat.');
+      if (d.item) {
+        // Maskiner (man kan ha flere) kommer i en pappkartong.
+        for (let n = 0; n < qty; n++) units.push({ typeId: MACHINE_BOX, price: d.price, inside: d.item });
+        continue;
+      }
+      if (qty > 1) throw new GameError(`Du trenger bare én ${d.name.toLowerCase()}.`);
+      if (p.devices.includes(d.id) || pending.has(d.id)) throw new GameError(`Du har allerede ${d.name.toLowerCase()}.`);
+      if (d.light && ++lights > 1) throw new GameError('Boden har plass til én lyslenke. Velg én av dem.');
+      units.push({ typeId: MACHINE_BOX, price: d.price, device: d.id });
+      continue;
+    }
+    const t = ITEM_TYPES[l.id];
+    if (!t || t.kind === 'paper' || t.kind === 'kettle' || (t.kind === 'ingredient' && t.price <= 0)) throw new GameError('Ukjent vare.');
+    // Varer og råvarer kjøpes i nettbutikkene; her (Klas Olsen) er det esker, verktøy og elektrisk.
+    if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
+    if (t.kind === 'container' && t.car) throw new GameError('Biler kjøper du i Bilbutikken på telefonen.');
+    if (t.kind === 'electric' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
+    if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery'))
+      throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
+    const have = items.filter((i) => i.typeId === t.id && !isTrashed(items, i)).length; // også det som er på vei
     if (t.kind === 'electric' && isFusebox(t.id)) {
       if (t.id === FUSEBOX.id) throw new GameError('Den vanlige sikringsboksen følger med boden.');
-      const items = itemsOf(stall.id);
-      if (items.some((i) => i.typeId === t.id && !isTrashed(items, i))) throw new GameError(`Du har allerede ${t.name.toLowerCase()}.`);
+      if (have > 0) throw new GameError(`Du har allerede ${t.name.toLowerCase()}.`);
       if (qty > 1) throw new GameError('Du kan bare ha én sikringsboks.');
     }
-    if (t.kind === 'electric' && t.max) {
-      const items = itemsOf(stall.id);
-      const have = items.filter((i) => i.typeId === t.id && !isTrashed(items, i)).length;
-      if (have + qty > t.max) throw new GameError(`Du kan bare ha ${t.max} ${t.name.toLowerCase()}.`);
+    if (t.kind === 'electric' && t.max && have + qty > t.max) throw new GameError(`Du kan bare ha ${t.max} ${t.name.toLowerCase()}.`);
+    for (let n = 0; n < qty; n++) units.push({ typeId: t.id, price: t.price });
+  }
+  if (units.length === 0) throw new GameError('Handlekurven er tom.');
+  return units;
+}
+
+/**
+ * Bestiller fra Klas Olsen, med samme leveringsmåter som nettbutikkene: standard (kl. 07), ekspress (innen en time)
+ * eller hent selv med bilen. Tingene kommer løst (ikke i poser) og settes ved boden; maskiner, lyslenker og
+ * alarmer kommer i en pappkartong.
+ */
+export function placeKlasOrder(player: PlayerRow, lines: unknown, mode: 'standard' | 'express' | 'car') {
+  const clean = (Array.isArray(lines) ? lines : [])
+    .map((l) => ({ id: String((l as KlasLine).id ?? ''), qty: Number((l as KlasLine).qty) }))
+    .filter((l) => l.qty > 0);
+  if (clean.length === 0) throw new GameError('Handlekurven er tom.');
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    const units = klasUnits(stall, clean);
+    const goods = units.reduce((n, u) => n + u.price, 0);
+    const trip = mode === 'car' ? planKlasTrip(market, stall, itemsOf(stall.id), units, t) : null;
+    const shipping = trip ? 0 : mode === 'express' ? expressPrice(isFirstDay(market, t)) : SHIPPING.standard;
+    const fuel = trip?.fuel ?? 0;
+    const pay = goods + shipping + fuel;
+    if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr${fuel ? ` (med ${fuel} kr i bensin)` : ''}.`);
+    q.setCash.run(stall.cash - pay, stall.id);
+    if (trip) startTrip(market, stall, trip, t);
+    else {
+      const arrives = mode === 'express' ? t : currentEdition(t).time + 24 * HOUR;
+      for (const u of units) {
+        const id = Number(q.insertItem.run(stall.id, u.typeId, 'transit', null, 0, 0, null).lastInsertRowid);
+        saveState(id, { arrives, from: KLAS.id, ...(u.device ? { device: u.device } : {}) });
+        if (u.inside) q.insertItem.run(stall.id, u.inside, 'box', id, 0, 0, null);
+      }
     }
-    const unit = t.price;
-    const cost = unit * qty + KLAS_DELIVERY; // pluss levering fra Klas Olsen
-    if (stall.cash < cost) throw new GameError(`Du har ikke råd. Det koster ${cost} kr med levering.`);
-    q.setCash.run(stall.cash - cost, stall.id);
-    storeNew(stall.id, typeId, qty);
-    if (isFusebox(typeId)) {
-      // Den nye sikringsboksen settes inn i stedet for den gamle.
-      const fresh = itemsOf(stall.id).filter((i) => i.typeId === typeId).sort((a, b) => b.id - a.id)[0];
-      const old = fresh ? installFusebox(stall.id, fresh.id) : null;
-      if (old) event(market, player.id, nowFor(market), `🎛️ ${t.name} er satt inn. Den gamle sikringsboksen ligger i søpla, og skrusikringene ligger under disken.`);
-    }
-    if (isSafe(typeId)) armSafes(stall.id);
-    q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, typeId, qty, cost);
+    q.insertTx.run(market.id, t, 'wholesale', stall.id, null, KLAS.id, units.length, pay);
+    return { pay, count: units.length, back: trip?.plan.until ?? null };
   });
+}
+
+/** Hent selv hos Klas Olsen: tingene legges løst i bagasjerommet (kartongene med det som er i dem). */
+function planKlasTrip(market: MarketRow, s: StallRow, items: Item[], units: KlasUnit[], t: number) {
+  notAway(s, t);
+  const car = carItem(items);
+  if (!car) throw new GameError('Du har ingen bil.');
+  const spec = CAR_BY_ID[car.typeId];
+  const ct = ITEM_TYPES[car.typeId];
+  if (ct.kind !== 'container') throw new GameError('Du har ingen bil.');
+  const trunk = itemsIn(items, 'box', car.id).map((i) => ({ x: i.x, y: i.y, w: i.w, h: i.h }));
+  const bags: CarTrip['bags'] = [];
+  const goods: CarTrip['goods'] = [];
+  const area = (u: KlasUnit) => ITEM_TYPES[u.typeId].size.w * ITEM_TYPES[u.typeId].size.h;
+  for (const u of [...units].sort((a, b) => area(b) - area(a))) {
+    const { w, h } = ITEM_TYPES[u.typeId].size;
+    const at = findFree(w, h, trunk, ct.inner);
+    if (!at) throw new GameError(`Det er ikke plass til alt i bagasjerommet på ${spec.name}. Rydd i bilen, eller ta litt mindre.`);
+    trunk.push({ ...at, w, h });
+    if (u.inside || u.device) {
+      bags.push({ typeId: u.typeId, ...at, ...(u.device ? { state: { device: u.device } } : {}) });
+      if (u.inside) goods.push({ typeId: u.inside, box: { bag: bags.length - 1 }, x: 0, y: 0 });
+    } else goods.push({ typeId: u.typeId, box: car.id, ...at });
+  }
+  const { fuel, battery } = tripFuel(market, items, car, t);
+  const plan: CarTrip = { store: KLAS.id, until: t + spec.minutes * 60_000, bags, goods };
+  return { plan, fuel, battery, spec };
+}
+
+/** Nye gjenstander er kommet i hus (tatt inn, eller i bagasjerommet): en ny sikringsboks settes inn, safer får kode. */
+function settleArrived(market: MarketRow, stallId: number, ownerId: number, t: number, newIds: number[]) {
+  const items = itemsOf(stallId);
+  for (const f of items.filter((i) => newIds.includes(i.id) && isFusebox(i.typeId))) {
+    const old = installFusebox(stallId, f.id);
+    if (old) event(market, ownerId, t, `🎛️ ${ITEM_TYPES[f.typeId].name} er satt inn. Den gamle sikringsboksen ligger i søpla, og skrusikringene ligger under disken.`);
+  }
+  if (items.some((i) => newIds.includes(i.id) && isSafe(i.typeId))) armSafes(stallId);
 }
 
 // ---------- Safe, lapper, åpne søplekasser og forstørrelsesglass ----------
@@ -2303,15 +2401,23 @@ function saveState(itemId: number, state: unknown) {
   db.prepare('UPDATE items SET state = ? WHERE id = ?').run(JSON.stringify(state), itemId);
 }
 
-/** Kjøper et apparat hos Klas Olsen. Det plugges inn i første ledige kontakt. Kjeler kan man ha flere av. */
-export function buyDevice(player: PlayerRow, deviceId: string) {
-  const d = DEVICE_BY_ID[deviceId];
-  if (!d) throw new GameError('Ukjent apparat.');
+/**
+ * Pakker ut en kartong fra Klas Olsen med noe som henger på boden (lyslenke, alarm): det henges opp og plugges
+ * inn i første ledige kontakt. En ny lyslenke bytter ut den gamle. Kartongen blir en vanlig, tom eske.
+ */
+export function hangDevice(player: PlayerRow, boxId: number) {
   const market = marketOf(player);
-  tx(() => {
+  return tx(() => {
     const stall = myStall(player);
+    const items = itemsOf(stall.id);
+    const box = items.find((i) => i.id === boxId && i.device);
+    if (!box || isTrashed(items, box)) throw new GameError('Fant ikke kartongen.');
+    if (isUndelivered(items, box)) throw new GameError('Ta kartongen inn først.');
+    const d = DEVICE_BY_ID[box.device!];
+    if (!d || d.item) throw new GameError('Ukjent apparat.');
     const p = powerOf(stall);
-    if (!d.item && p.devices.includes(d.id)) throw new GameError(`Du har allerede ${d.name.toLowerCase()}.`);
+    saveState(box.id, {});
+    if (p.devices.includes(d.id)) return { name: d.name }; // henger der allerede: kartongen er bare tom
     // En ny lyslenke bytter ut den gamle (de henger på samme sted). Står den gamle i en kontakt, tar den nye plassen.
     let socketOfOld = -1;
     if (d.light) {
@@ -2325,34 +2431,18 @@ export function buyDevice(player: PlayerRow, deviceId: string) {
         }
       }
     }
-    const cost = d.price + KLAS_DELIVERY; // pluss levering fra Klas Olsen
-    if (stall.cash < cost) throw new GameError(`Du har ikke råd. Det koster ${cost} kr med levering.`);
-    q.setCash.run(stall.cash - cost, stall.id);
-    if (d.item) {
-      // Maskiner kommer i en pappkartong under disken. Pakk ut og plugg inn selv – en utpakket
-      // maskin får ikke plass i kartongen igjen (maskiner kan ikke ligge i esker).
-      const items = itemsOf(stall.id);
-      const spot = findStorageSpot(items, MACHINE_BOX);
-      if (!spot || spot.place !== 'storage') throw new GameError(`Det er ikke plass til kartongen med ${d.name.toLowerCase()} under disken (den tar 3×3).`);
-      insertItem(stall.id, items, MACHINE_BOX, spot);
-      const boxId = items[items.length - 1].id;
-      q.insertItem.run(stall.id, d.item, 'box', boxId, 0, 0, null);
-    } else {
-      p.devices.push(d.id);
-      const free = socketOfOld >= 0 ? socketOfOld : p.sockets.indexOf(null);
-      if (free >= 0) p.sockets[free] = d.id;
-      savePower(stall.id, p);
-      // Ny lyslenke: ta over sikringsplassen (og sikringen) til den gamle.
-      const box = d.light ? fuseboxOf(itemsOf(stall.id)) : undefined;
-      if (box) saveState(box.id, { ...rawState(box.id), slots: (box.fuse?.slots ?? []).map((e) => (e && DEVICE_BY_ID[e]?.light ? d.id : e)) });
-      syncFuseSlots(stall.id);
-    }
-    q.insertTx.run(market.id, nowFor(market), 'wholesale', stall.id, null, d.id, 1, cost);
+    p.devices.push(d.id);
+    const free = socketOfOld >= 0 ? socketOfOld : p.sockets.indexOf(null);
+    if (free >= 0) p.sockets[free] = d.id;
+    savePower(stall.id, p);
+    // Ny lyslenke: ta over sikringsplassen (og sikringen) til den gamle.
+    const fb = d.light ? fuseboxOf(itemsOf(stall.id)) : undefined;
+    if (fb) saveState(fb.id, { ...rawState(fb.id), slots: (fb.fuse?.slots ?? []).map((e) => (e && DEVICE_BY_ID[e]?.light ? d.id : e)) });
+    syncFuseSlots(stall.id);
+    event(market, player.id, nowFor(market), `${d.emoji} ${d.name} henger på boden${free >= 0 ? ' og er plugget inn' : '. Plugg den inn når det blir en ledig kontakt'}.`);
+    return { name: d.name };
   });
 }
-
-/** Kartongen maskinene leveres i (vanlig pappkartong, kan brukes videre som eske). */
-const MACHINE_BOX = 'kartong';
 
 /** Slår grenuttaket av eller på. */
 export function togglePower(player: PlayerRow) {
@@ -2800,7 +2890,7 @@ function startTrip(market: MarketRow, s: StallRow, trip: { plan: CarTrip; fuel: 
   if (trip.battery) saveState(trip.battery.id, { charge: Math.max(0, Math.round(((trip.battery.charge ?? 0) - capacityOf(CAR_BATTERY)) * 100) / 100) });
   db.prepare("UPDATE stalls SET car_trip = ?, sign = 'closed' WHERE id = ?").run(JSON.stringify(trip.plan), s.id);
   const back = formatClock(osloParts(trip.plan.until)).replace(/^.* kl\. /, '');
-  const store = tripPlaceName(trip.plan.store, STORE_BY_ID);
+  const store = tripPlaceName(trip.plan.store, PLACE_BY_ID);
   const load = trip.plan.store === DUMP.id ? ' med søpla' : '';
   event(market, s.owner_id, t, `🚗 Du kjørte til ${store}${load} med ${trip.spec.name}${trip.fuel ? ` (${trip.fuel} kr i bensin)` : ' (2 kWh fra batteriet)'}. Boden er stengt til du er tilbake kl. ${back}.`);
   if (s.sign !== 'closed') event(market, null, t, `🪧 «${s.name}» har snudd skiltet: ${SIGN_LABEL.closed}.`);
@@ -2813,11 +2903,17 @@ function finishTrip(market: MarketRow, s: StallRow, t: number) {
   tx(() => {
     const car = carItem(itemsOf(s.id));
     if (car) {
-      const bagIds = trip.bags.map((b) => Number(q.insertItem.run(s.id, b.typeId, 'box', car.id, b.x, b.y, null).lastInsertRowid));
+      const bagIds = trip.bags.map((b) => {
+        const id = Number(q.insertItem.run(s.id, b.typeId, 'box', car.id, b.x, b.y, null).lastInsertRowid);
+        if (b.state) saveState(id, b.state); // kartong fra Klas Olsen med en lyslenke eller alarm i
+        return id;
+      });
+      const newIds = [...bagIds];
       for (const g of trip.goods) {
         const boxId = typeof g.box === 'number' ? g.box : bagIds[g.box.bag];
-        q.insertItem.run(s.id, g.typeId, 'box', boxId, g.x, g.y, null);
+        newIds.push(Number(q.insertItem.run(s.id, g.typeId, 'box', boxId, g.x, g.y, null).lastInsertRowid));
       }
+      settleArrived(market, s.id, s.owner_id, trip.until, newIds);
     }
     db.prepare('UPDATE stalls SET car_trip = NULL WHERE id = ?').run(s.id);
     event(
@@ -2826,7 +2922,7 @@ function finishTrip(market: MarketRow, s: StallRow, t: number) {
       trip.until,
       trip.store === DUMP.id
         ? '🚗 Du er tilbake fra gjenbruksstasjonen. Søpla er levert, gratis. Husk å snu skiltet.'
-        : `🚗 Du er tilbake fra ${tripPlaceName(trip.store, STORE_BY_ID)}. Varene ligger i bagasjerommet. Husk å snu skiltet.`,
+        : `🚗 Du er tilbake fra ${tripPlaceName(trip.store, PLACE_BY_ID)}. Varene ligger i bagasjerommet. Husk å snu skiltet.`,
     );
   });
 }
@@ -2856,7 +2952,7 @@ export function buyCar(player: PlayerRow, carId: string) {
   });
 }
 
-/** Leverer poser som har kommet fram: de settes ved boden. */
+/** Leverer det som har kommet fram (poser fra nettbutikkene, ting fra Klas Olsen): det settes ved boden. */
 function deliverArrived(market: MarketRow, t: number) {
   const rows = all<{ id: number; stall_id: number; type_id: string; state: string }>(
     db.prepare(
@@ -2865,29 +2961,50 @@ function deliverArrived(market: MarketRow, t: number) {
     ),
     market.id,
   );
-  const perStall = new Map<number, string[]>();
+  const perStall = new Map<number, { bags: string[]; klas: number }>();
   for (const r of rows) {
-    if ((JSON.parse(r.state ?? '{}').arrives ?? 0) > t) continue;
-    db.prepare("UPDATE items SET place = 'ground', state = NULL WHERE id = ?").run(r.id);
-    perStall.set(r.stall_id, [...(perStall.get(r.stall_id) ?? []), r.type_id]);
+    const { arrives, from, ...rest } = JSON.parse(r.state ?? '{}') as { arrives?: number; from?: string } & Record<string, unknown>;
+    if ((arrives ?? 0) > t) continue;
+    // Resten av tilstanden (f.eks. hvilken lyslenke som ligger i kartongen) blir med.
+    db.prepare("UPDATE items SET place = 'ground', state = ? WHERE id = ?").run(Object.keys(rest).length ? JSON.stringify(rest) : null, r.id);
+    const got = perStall.get(r.stall_id) ?? { bags: [], klas: 0 };
+    if (from === KLAS.id) got.klas++;
+    else got.bags.push(r.type_id);
+    perStall.set(r.stall_id, got);
   }
-  for (const [stallId, bags] of perStall) {
+  for (const [stallId, { bags, klas }] of perStall) {
     const s = one<StallRow>(q.stallById, stallId)!;
-    const names = [...new Set(bags.map((b) => STORES.find((x) => x.bag === b)?.name ?? 'butikken'))].join(' og ');
-    event(market, s.owner_id, t, `📦 ${bags.length} ${bags.length === 1 ? 'pose' : 'poser'} fra ${names} står ved boden din.`);
+    const parts: string[] = [];
+    if (bags.length) {
+      const names = [...new Set(bags.map((b) => STORES.find((x) => x.bag === b)?.name ?? 'butikken'))].join(' og ');
+      parts.push(`${bags.length} ${bags.length === 1 ? 'pose' : 'poser'} fra ${names}`);
+    }
+    if (klas) parts.push(`${klas} ${klas === 1 ? 'pakke' : 'pakker'} fra ${KLAS.name}`);
+    event(market, s.owner_id, t, `📦 ${parts.join(' og ')} står ved boden din.`);
   }
 }
 
-/** Tar en levert pose inn under disken (med varene i). Krever 2×2 ledig plass. */
-export function openDelivery(player: PlayerRow, bagId: number) {
-  const stall = myStall(player);
-  const items = itemsOf(stall.id);
-  const bag = items.find((i) => i.id === bagId && i.place === 'ground');
-  if (!bag) throw new GameError('Fant ikke posen.');
-  const { w, h } = ITEM_TYPES[bag.typeId].size;
-  const spot = findFree(w, h, itemsIn(items, 'storage', null), STORAGE_GRID);
-  if (!spot) throw new GameError('Det er ikke plass til posen under disken. Rydd litt først.');
-  q.moveItem.run('storage', null, spot.x, spot.y, bag.id);
+/** Tar en leveranse inn under disken: en pose (med varene i), eller en ting fra Klas Olsen (kan også havne i en eske). */
+export function openDelivery(player: PlayerRow, itemId: number) {
+  const market = marketOf(player);
+  return tx(() => {
+    const stall = myStall(player);
+    const items = itemsOf(stall.id);
+    const got = items.find((i) => i.id === itemId && i.place === 'ground');
+    if (!got) throw new GameError('Fant ikke leveransen.');
+    const t = ITEM_TYPES[got.typeId];
+    const spot =
+      t.kind === 'container' && t.shopBag
+        ? (() => {
+            const s = findFree(t.size.w, t.size.h, itemsIn(items, 'storage', null), STORAGE_GRID);
+            return s ? { place: 'storage' as Place, boxId: null, ...s } : null;
+          })()
+        : findStorageSpot(items, got.typeId);
+    if (!spot) throw new GameError(`Det er ikke plass til ${t.name.toLowerCase()} under disken (den tar ${t.size.w}×${t.size.h}). Rydd litt først.`);
+    q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, got.id);
+    settleArrived(market, stall.id, player.id, nowFor(market), [got.id]);
+    return { name: t.name, device: got.device ?? null };
+  });
 }
 
 // ---------- Kjelen ----------

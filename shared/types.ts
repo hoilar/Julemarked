@@ -54,6 +54,7 @@ export interface Item {
   giftcard?: { store: string; value: number }; // bare gavekort: kr igjen
   cutCoupons?: number[]; // bare aviser: kupongene som er klippet ut // bare sikringsboksen: kontakt-oppføringer med vippebryteren av
   arrives?: number; // bare poser på vei (transit): spilltid de leveres
+  device?: string; // bare pappkartonger fra Klas Olsen: lyslenka/alarmen som ligger i den og skal henges på boden
   label?: Label; // bare salgsvarer: hva etiketten sier (andres boder ser aldri «forged»)
   sheets?: number; // bare papirblokka: ark igjen
   recipe?: string; // bare avskrevne oppskrifter: oppskriftens id

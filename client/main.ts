@@ -78,7 +78,7 @@ import {
   type Offer,
 } from './customers.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, insurerHere } from '../shared/insurance.ts';
-import { BAG_PRICE, KLAS_DELIVERY, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
+import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
@@ -850,9 +850,16 @@ function deliveriesView(s: GameState): string {
       const t = ITEM_TYPES[b.typeId];
       const count = s.me.items.filter((i) => i.place === 'box' && i.boxId === b.id).length;
       const jitter = ((b.id * 37) % 7) - 3; // litt skjevt, så det ser ut som en haug
+      const inside = b.device
+        ? ` med ${(DEVICE_BY_ID[b.device]?.name ?? 'apparat').toLowerCase()}`
+        : t.kind === 'container' && t.shopBag
+          ? ` med ${count} ${count === 1 ? 'vare' : 'varer'}`
+          : count
+            ? ` med ${ITEM_TYPES[s.me.items.find((i) => i.place === 'box' && i.boxId === b.id)!.typeId].name.toLowerCase()}`
+            : '';
       return `<button class="delivery-bag" data-action="open-delivery" data-item="${b.id}"
           style="bottom:${n * 3.6}cqw;left:${(n % 2 ? 1.4 : 0) + jitter * 0.25}cqw;rotate:${jitter * 2.5}deg;z-index:${10 + n}"
-          title="${esc(t.name)} med ${count} ${count === 1 ? 'vare' : 'varer'} – trykk for å ta den inn">${sprite(t)}</button>`;
+          title="${esc(t.name)}${esc(inside)} – trykk for å ta den inn">${sprite(t)}</button>`;
     })
     .join('');
   const more = bags.length > shown.length ? `<span class="delivery-more">+${bags.length - shown.length}</span>` : '';
@@ -1152,7 +1159,13 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     if (t.car) cls = 'trunk-panel';
     grid = `data-grid="box" data-box="${box.id}"`;
     const contents = itemsIn(s.me.items, 'box', box.id);
-    if (contents.length > 0) {
+    const dev = box.device ? DEVICE_BY_ID[box.device] : undefined;
+    if (dev) {
+      // Kartong fra Klas Olsen med noe som henger på boden.
+      extra = `<div class="unpack">
+        <button class="small" data-action="hang-device" data-box="${box.id}">${dev.emoji} Heng opp ${esc(dev.name.toLowerCase())}</button>
+      </div>`;
+    } else if (contents.length > 0) {
       const sellable = contents.some((i) => PRODUCT_BY_ID[i.typeId]);
       extra = `<div class="unpack">
         <button class="small" data-action="unpack" data-box="${box.id}" data-to="storage">Alt under disken</button>
@@ -2152,6 +2165,28 @@ function carShopView(s: GameState): string {
     <div class="shop-grid">${cards.join('')}</div>`;
 }
 
+/** Leveringsmåtene (nettbutikkene og Klas Olsen): standard, ekspress eller hent selv med bilen. */
+function shipChoice(s: GameState): { html: string; cost: number; label: string } {
+  const expressCost = expressPrice(state!.clock.firstDay);
+  const myCar = s.me.items.find((i) => i.place === 'car');
+  const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
+  const fuelCost = carSpec ? tripFuelCost(carSpec, s.me.car.fuelPrice) : 0;
+  if (shipMode === 'car' && (!carSpec || s.me.car.trip)) shipMode = 'standard';
+  const express = shipMode === 'express';
+  // Før kl. 07 kommer standardleveransen samme morgen.
+  const standardWhen = osloParts(state!.clock.gameTime).hour < 7 ? 'i dag kl. 07' : 'i morgen kl. 07';
+  const html = `<div class="ship-choice">
+         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : '<b>GRATIS i dag</b>'} – innen 1 time</label>
+         ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}" title="${esc(carSpec.name)}: ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin` : '1 fulladet batteri'}. Boden stenges i ${carSpec.minutes} min, og varene legges i bagasjerommet."><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}> 🚗 Hent selv</label>` : ''}
+       </div>`;
+  return {
+    html,
+    cost: shipMode === 'car' ? fuelCost : express ? expressCost : SHIPPING.standard,
+    label: shipMode === 'car' ? 'hent selv' : express ? 'ekspress' : `levering ${standardWhen.replace(' kl. 07', '')}`,
+  };
+}
+
 function storeView(s: GameState, storeId: string): string {
   const store = STORE_BY_ID[storeId];
   const shop = s.shops.find((x) => x.id === storeId);
@@ -2191,13 +2226,8 @@ function storeView(s: GameState, storeId: string): string {
     .map(([typeId, qty]) => ({ typeId, qty, price: shop.items.find((i) => i.typeId === typeId)?.price ?? 0 }));
   const goodsSum = lines.reduce((n, l) => n + l.qty * l.price, 0);
   const bags = lines.length ? packBags(lines).length : 0;
-  const expressCost = expressPrice(state!.clock.firstDay);
-  const myCar = s.me.items.find((i) => i.place === 'car');
-  const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
-  const fuelCost = carSpec ? tripFuelCost(carSpec, s.me.car.fuelPrice) : 0;
-  if (shipMode === 'car' && (!carSpec || s.me.car.trip)) shipMode = 'standard';
-  const express = shipMode === 'express';
-  const ship = shipMode === 'car' ? fuelCost : express ? expressCost : SHIPPING.standard;
+  const shipping = shipChoice(s);
+  const ship = shipping.cost;
   const gross = goodsSum + bags * BAG_PRICE + (lines.length ? ship : 0);
   // Kuponger (som serveren: beste per vare, hele linja) og gavekort i samme butikk.
   const couponLines = lines
@@ -2210,19 +2240,13 @@ function storeView(s: GameState, storeId: string): string {
     .reduce((n, i) => n + i.giftcard!.value, 0);
   const cardUsed = useCards ? Math.min(cardBalance, gross - couponSaved) : 0;
   const total = gross - couponSaved - cardUsed;
-  // Før kl. 07 kommer standardleveransen samme morgen.
-  const standardWhen = osloParts(state!.clock.gameTime).hour < 7 ? 'i dag kl. 07' : 'i morgen kl. 07';
   const cartHtml = lines.length
     ? `<ul class="cart-lines">${lines.map((l) => `<li><span>${l.qty} × ${esc(ITEM_TYPES[l.typeId].name)}</span><span>${kr(l.qty * l.price)}</span></li>`).join('')}
          <li class="muted"><span>${bags} ${bags === 1 ? 'pose' : 'poser'} à ${kr(BAG_PRICE)}</span><span>${kr(bags * BAG_PRICE)}</span></li>
          ${couponLines.map((c) => `<li class="cart-coupon"><span>🎟️ Kupong ${c.pct} % – ${esc(c.name)}</span><span>−${kr(c.saved)}</span></li>`).join('')}
          ${cardUsed > 0 ? `<li class="cart-card"><span>🎁 Gavekort</span><span>−${kr(cardUsed)}</span></li>` : ''}</ul>
        ${cardBalance > 0 ? `<label class="card-toggle"><input type="checkbox" data-action="use-cards" ${useCards ? 'checked' : ''}> Bruk gavekort (${kr(cardBalance)} på ${esc(store.name)}-kort)</label>` : ''}
-       <div class="ship-choice">
-         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
-         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : '<b>GRATIS i dag</b>'} – innen 1 time</label>
-         ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}" title="${esc(carSpec.name)}: ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin` : '1 fulladet batteri'}. Boden stenges i ${carSpec.minutes} min, og varene legges i bagasjerommet."><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}> 🚗 Hent selv</label>` : ''}
-       </div>
+       ${shipping.html}
        <div class="cart-total"><span>Totalt</span><b>${kr(total)}</b></div>
        <button class="order-btn" data-action="shop-order" data-store="${storeId}" style="--brand:${store.color};--brand-ink:${store.ink}">Bestill fra ${esc(store.name)}</button>`
     : '<p class="muted">Handlekurven er tom.</p>';
@@ -2247,17 +2271,17 @@ function storeView(s: GameState, storeId: string): string {
     ${
       lines.length
         ? `<div class="cart-bar" style="--brand:${store.color};--brand-ink:${store.ink}">
-             <span>🛒 ${lines.reduce((n, l) => n + l.qty, 0)} varer · <b>${kr(total)}</b> <small>(${shipMode === 'car' ? 'hent selv' : express ? 'ekspress' : 'levering i morgen'})</small></span>
+             <span>🛒 ${lines.reduce((n, l) => n + l.qty, 0)} varer · <b>${kr(total)}</b> <small>(${shipping.label})</small></span>
              <button class="small" data-action="shop-order" data-store="${storeId}">Bestill</button>
            </div>`
         : ''
     }`;
 }
 
-/** Et kort hos Klas Olsen: stort bilde, navn, kort tekst, pris og kjøp (leveres med en gang). */
-function klasCard(c: { name: string; image?: string; emoji: string; size?: { w: number; h: number }; price: number; sub: string; have?: number; buy: string }): string {
+/** Et kort hos Klas Olsen (og i Bilbutikken): stort bilde, navn, kort tekst, pris og kjøp. */
+function klasCard(c: { name: string; image?: string; emoji: string; size?: { w: number; h: number }; price: number; sub: string; have?: number; buy: string; incart?: boolean }): string {
   const art = c.image ? `<img src="${c.image}" alt="" draggable="false">` : `<span class="shop-emoji">${c.emoji}</span>`;
-  return `<div class="shop-card klas-card">
+  return `<div class="shop-card klas-card ${c.incart ? 'incart' : ''}">
     <div class="shop-art">${art}${c.size ? `<span class="shop-size">${c.size.w}×${c.size.h}</span>` : ''}</div>
     <div class="shop-name">${esc(c.name)}</div>
     <div class="shop-sub">${c.sub}</div>
@@ -2267,23 +2291,43 @@ function klasCard(c: { name: string; image?: string; emoji: string; size?: { w: 
   </div>`;
 }
 
+/** Navn og pris for en linje i handlekurven hos Klas Olsen (id = gjenstandstype, eller «device:<id>»). */
+function klasLine(id: string): { name: string; price: number } | null {
+  if (id.startsWith('device:')) {
+    const d = DEVICE_BY_ID[id.slice('device:'.length)];
+    return d ? { name: d.name, price: d.price } : null;
+  }
+  const t = ITEM_TYPES[id] as { name: string; price?: number } | undefined;
+  return t ? { name: t.name, price: t.price ?? 0 } : null;
+}
+
 function klasView(s: GameState): string {
+  const cart = cartOf(KLAS.id);
   const has = (id: string) => s.me.items.filter((i) => i.typeId === id && !isTrashed(s.me.items, i)).length;
-  const form = (id: string, max = 5) =>
-    `<form class="klas-form" data-form="supplies" data-type="${id}"><input name="qty" type="number" min="1" max="${max}" value="1" aria-label="Antall"><button class="small">Kjøp</button></form>`;
+  /** − antall + (som i nettbutikkene). max = hvor mange du kan ha i kurven. */
+  const qty = (id: string, max: number) => {
+    const n = cart[id] ?? 0;
+    return `<div class="shop-qty">
+        <button class="ghost small" data-action="cart" data-store="${KLAS.id}" data-type="${id}" data-max="${max}" data-delta="-1" ${n === 0 ? 'disabled' : ''} aria-label="Færre">−</button>
+        <span>${n}</span>
+        <button class="small" data-action="cart" data-store="${KLAS.id}" data-type="${id}" data-max="${max}" data-delta="1" ${n >= max ? 'disabled' : ''} aria-label="Flere">+</button>
+      </div>`;
+  };
   const kw = (n: number) => n.toString().replace('.', ',');
 
   const boxes = CONTAINERS.filter((c) => !c.shopBag && !c.car).map((c) =>
-    klasCard({ name: c.name, image: c.image, emoji: c.emoji, size: c.size, price: c.price, sub: `Rommer ${c.inner.cols}×${c.inner.rows} (${c.inner.cols * c.inner.rows} ruter)`, have: has(c.id), buy: form(c.id) }),
+    klasCard({ name: c.name, image: c.image, emoji: c.emoji, size: c.size, price: c.price, sub: `Rommer ${c.inner.cols}×${c.inner.rows} (${c.inner.cols * c.inner.rows} ruter)`, have: has(c.id), buy: qty(c.id, 5), incart: !!cart[c.id] }),
   );
   const tools = TOOLS.filter((t) => t.id !== PHONE && !t.dealerOnly).map((t) =>
-    klasCard({ name: t.name, image: t.image, emoji: t.emoji, size: t.size, price: t.price, sub: esc(t.blurb), have: has(t.id), buy: form(t.id) }),
+    klasCard({ name: t.name, image: t.image, emoji: t.emoji, size: t.size, price: t.price, sub: esc(t.blurb), have: has(t.id), buy: qty(t.id, 5), incart: !!cart[t.id] }),
   );
-  // Maskiner er gjenstander (man kan ha flere); lyslenka og alarmen henger på boden (bare én).
+  // Maskiner er gjenstander (man kan ha flere); lyslenka og alarmen henger på boden (bare én). Alt kommer i pappkartong.
   const devices = (machines: boolean) =>
     DEVICES.filter((d) => !!d.item === machines).map((d) => {
+      const id = `device:${d.id}`;
       const t = d.item ? ITEM_TYPES[d.item] : undefined;
       const owned = !d.item && !!myStall(s)?.power.devices.includes(d.id);
+      const boxed = !d.item && s.me.items.some((i) => i.device === d.id && !isTrashed(s.me.items, i));
       const swaps = !!d.light && !owned && !!myStall(s)?.power.devices.some((x) => DEVICE_BY_ID[x]?.light);
       return klasCard({
         name: d.name,
@@ -2291,32 +2335,60 @@ function klasView(s: GameState): string {
         emoji: d.emoji,
         size: t?.size,
         price: d.price,
-        sub: `${d.item ? 'opptil ' : ''}${kw(d.kw)} kW · ${esc(d.effect)}`,
+        sub: `${d.item ? 'opptil ' : ''}${kw(d.kw)} kW · ${esc(d.effect)}${swaps ? '<br><span class="muted">Bytter ut lyslenka du har når du henger den opp.</span>' : ''}`,
         have: d.item ? has(d.item) : 0,
-        buy: owned
-          ? '<span class="pill">Henger på boden</span>'
-          : `<button class="small" data-action="buy-device" data-device="${d.id}" ${swaps ? 'title="Bytter ut lyslenka du har"' : ''}>${swaps ? 'Bytt til denne' : 'Kjøp'}</button>`,
+        buy: owned ? '<span class="pill">Henger på boden</span>' : boxed ? '<span class="pill">I kartongen</span>' : qty(id, d.item ? 5 : 1),
+        incart: !!cart[id],
       });
     });
   const electric = ELECTRICS.filter((e) => !e.dealerOnly && e.id !== FUSEBOX.id).map((e) => {
     const n = has(e.id);
-    const full = !!e.max && n >= e.max;
-    return klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: esc(e.blurb), have: n, buy: full ? '<span class="pill">Har</span>' : form(e.id, e.max ?? 10) });
+    const max = isFusebox(e.id) ? 1 : (e.max ?? 10);
+    const room = Math.max(0, max - n);
+    return klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: esc(e.blurb), have: n, buy: room === 0 ? '<span class="pill">Har</span>' : qty(e.id, room), incart: !!cart[e.id] });
   });
   const batteries = BATTERIES.map((e) =>
-    klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: `${e.capacity} kWh, fulladet. Går i batteriplassen på maskiner og i ladestasjonen.`, have: has(e.id), buy: form(e.id, 10) }),
+    klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: `${e.capacity} kWh, fulladet. Går i batteriplassen på maskiner og i ladestasjonen.`, have: has(e.id), buy: qty(e.id, 10), incart: !!cart[e.id] }),
   );
   const section = (title: string, note: string, cards: string[]) =>
     `<h3>${title}</h3>${note ? `<p class="muted">${note}</p>` : ''}<div class="shop-grid">${cards.join('')}</div>`;
+
+  // Handlekurven: ingen poser hos Klas Olsen, tingene kommer løst.
+  const lines = Object.entries(cart)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => ({ id, qty: n, info: klasLine(id) }))
+    .filter((l) => l.info);
+  const shipping = shipChoice(s);
+  const count = lines.reduce((n, l) => n + l.qty, 0);
+  const total = lines.reduce((n, l) => n + l.qty * l.info!.price, 0) + (lines.length ? shipping.cost : 0);
+  const cartHtml = lines.length
+    ? `<ul class="cart-lines">${lines.map((l) => `<li><span>${l.qty} × ${esc(l.info!.name)}</span><span>${kr(l.qty * l.info!.price)}</span></li>`).join('')}</ul>
+       ${shipping.html}
+       <div class="cart-total"><span>Totalt</span><b>${kr(total)}</b></div>
+       <button class="order-btn klas" data-action="shop-order" data-store="${KLAS.id}">Bestill fra ${esc(KLAS.name)}</button>`
+    : '<p class="muted">Handlekurven er tom.</p>';
+
   return `
-    <header class="store-banner klas"><b>Klas Olsen</b><span>Har alt du ikke visste du trengte.</span></header>
-    <p class="klas-delivery">🚚 Levering med en gang, rett under disken: <b>${kr(KLAS_DELIVERY)}</b> per bestilling (uansett antall).</p>
+    <header class="store-banner klas"><b>${esc(KLAS.name)}</b><span>Har alt du ikke visste du trengte.</span></header>
+    <p class="muted">Samme levering som nettbutikkene. Tingene kommer løst ved boden; maskiner, lyslenker og alarmer i pappkartong.</p>
     ${section('Maskiner', 'Plugges i grenuttaket. Trekker strøm mens de står på – prisen står i avisa.', devices(true))}
-    ${section('På boden', 'Henger på boden og plugges i grenuttaket.', devices(false))}
+    ${section('På boden', 'Henger på boden og plugges i grenuttaket. Kommer i en kartong: åpne den og heng den opp.', devices(false))}
     ${section('Elektrisk', '', electric)}
     ${section('Batterier', '', batteries)}
     ${section('Oppbevaring', 'Esker tar litt plass under disken, men rommer mer inni.', boxes)}
-    ${section('🧰 Verktøy', '', tools)}`;
+    ${section('🧰 Verktøy', '', tools)}
+    <div class="cart" id="cart">
+      <h3>🛒 Handlekurv</h3>
+      ${cartHtml}
+    </div>
+    ${
+      lines.length
+        ? `<div class="cart-bar klas">
+             <span>🛒 ${count} ting · <b>${kr(total)}</b> <small>(${shipping.label})</small></span>
+             <button class="small" data-action="shop-order" data-store="${KLAS.id}">Bestill</button>
+           </div>`
+        : ''
+    }`;
 }
 
 /** Vareoppslag: stort bilde til venstre, info og handlinger til høyre. */
@@ -3714,24 +3786,30 @@ app.addEventListener('click', (e) => {
   if (action === 'cart' && state) {
     const cart = cartOf(el.dataset.store!);
     const id = el.dataset.type!;
-    const left = state.shops.find((x) => x.id === el.dataset.store)?.items.find((i) => i.typeId === id)?.left ?? 0;
+    // Klas Olsen har ikke dagslager: kortet sier hvor mange du kan ha i kurven (data-max).
+    const left =
+      el.dataset.max !== undefined
+        ? Number(el.dataset.max)
+        : (state.shops.find((x) => x.id === el.dataset.store)?.items.find((i) => i.typeId === id)?.left ?? 0);
     cart[id] = Math.max(0, Math.min(left, (cart[id] ?? 0) + Number(el.dataset.delta)));
   }
   if (action === 'ship') shipMode = el.dataset.mode === 'car' ? 'car' : el.dataset.express === '1' ? 'express' : 'standard';
   if (action === 'use-cards') useCards = !useCards;
   if (action === 'shop-order') {
     const store = el.dataset.store!;
-    const lines = Object.entries(cartOf(store))
-      .filter(([, n]) => n > 0)
-      .map(([typeId, qty]) => ({ typeId, qty }));
-    const name = STORE_BY_ID[store].name;
+    const entries = Object.entries(cartOf(store)).filter(([, n]) => n > 0);
+    const klas = store === KLAS.id;
+    const name = klas ? KLAS.name : STORE_BY_ID[store].name;
     const okMsg =
       shipMode === 'car'
-        ? `🚗 Du kjører til ${name}. Varene ligger i bagasjerommet når du er tilbake.`
+        ? `🚗 Du kjører til ${name}. ${klas ? 'Tingene' : 'Varene'} ligger i bagasjerommet når du er tilbake.`
         : shipMode === 'express'
           ? `🚚 Ekspress fra ${name} – kommer innen en time.`
           : `📦 Bestilt fra ${name} – kommer ${osloParts(state!.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.`;
-    act('/api/shop/order', { store, lines, mode: shipMode, useCards }, okMsg).then(
+    const order = klas
+      ? act('/api/klas/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode }, okMsg)
+      : act('/api/shop/order', { store, lines: entries.map(([typeId, qty]) => ({ typeId, qty })), mode: shipMode, useCards }, okMsg);
+    order.then(
       (ok) => {
         if (ok) {
           carts[store] = {};
@@ -3753,7 +3831,20 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'open-delivery') {
-    act('/api/delivery/open', { itemId: Number(el.dataset.item) }, '🛍️ Posen er tatt inn under disken.');
+    api<{ name: string; device: string | null }>('/api/delivery/open', { itemId: Number(el.dataset.item) })
+      .then((r) =>
+        toast(
+          r.device
+            ? `📦 Kartongen med ${(DEVICE_BY_ID[r.device]?.name ?? 'apparatet').toLowerCase()} er tatt inn. Åpne den og heng den opp.`
+            : `📦 ${r.name} er tatt inn under disken.`,
+        ),
+      )
+      .catch((err) => toast((err as Error).message, true))
+      .finally(refresh);
+    return;
+  }
+  if (action === 'hang-device') {
+    act('/api/device/hang', { boxId: Number(el.dataset.box) }, '💡 Hengt opp på boden. Kartongen er tom og kan brukes som eske.');
     return;
   }
   if ((action === 'kettle-power' || action === 'kettle-level') && state) {
@@ -3800,16 +3891,6 @@ app.addEventListener('click', (e) => {
       if (ok) modal = null;
     });
     return;
-  }
-  if (action === 'buy-device') {
-    const id = el.dataset.device!;
-    act(
-      '/api/device/buy',
-      { deviceId: id },
-      DEVICE_BY_ID[id].item
-        ? `📦 ${DEVICE_BY_ID[id].name} er levert i en pappkartong under disken (levering ${kr(KLAS_DELIVERY)}). Pakk den ut og plugg den inn.`
-        : `${DEVICE_BY_ID[id].emoji} ${DEVICE_BY_ID[id].name} er kjøpt (levering ${kr(KLAS_DELIVERY)}) – plugget inn hvis det var en ledig kontakt.`,
-    );
   }
   if (action === 'modal') modal = { kind: el.dataset.modal as 'wholesale' | 'events' };
   if (action === 'buy') modal = { kind: 'buy', stallId: Number(el.dataset.stall), productId: el.dataset.product! };
@@ -3892,9 +3973,6 @@ app.addEventListener('submit', async (e) => {
     }
     case 'note':
       await act('/api/note/write', { kind: data.kind === 'code' ? 'code' : 'text', text: data.text }, '✏️ Lappen ligger under disken.');
-      break;
-    case 'supplies':
-      await act('/api/buy-supplies', { typeId: form.dataset.type, qty: Number(data.qty) }, `🚚 Levert under disken (levering ${kr(KLAS_DELIVERY)}).`);
       break;
     case 'price': {
       if (modal?.kind !== 'product') return;

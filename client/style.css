@@ -1404,7 +1404,7 @@ body.night .stage > .tint { background: none; }
 img.title-icon { height: 1.3em; width: auto; vertical-align: -0.3em; image-rendering: pixelated; }
 
 /* Klas Olsen: kort som i nettbutikkene, kjøp med en gang */
-.klas-delivery { margin: 0.2rem 0 0.6rem; padding: 0.5rem 0.8rem; border-radius: 10px; background: rgba(107, 66, 36, 0.35); border: 1px solid #6b4224; }
+.order-btn.klas, .cart-bar.klas { --brand: #6b4224; --brand-ink: #fff3dc; }
 .klas-card .shop-sub { min-height: 2.4em; }
 .klas-buy { margin-top: auto; padding-top: 0.3rem; }
 .klas-form { display: flex; gap: 0.35rem; align-items: center; }
