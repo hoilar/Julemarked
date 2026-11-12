@@ -3494,8 +3494,9 @@ export function answerGift(player: PlayerRow, accept: boolean) {
 }
 
 /**
- * Skriver om etiketten på alle varer av en type med penn. `home`: butikkvarer blir «Hjemmelaget»
+ * Skriver om etiketten på én vare av en type med penn (én om gangen). `home`: en butikkvare blir «Hjemmelaget»
  * (kundene forventer mer, men Tilsynsmannen liker det ikke). `store`: skriv riktig produsent igjen.
+ * Varene på bordet tas først, så de under disken. Returnerer hvor mange det er igjen å skrive om.
  */
 export function relabel(player: PlayerRow, productId: string, to: 'home' | 'store'): number {
   const p = product(productId);
@@ -3507,8 +3508,9 @@ export function relabel(player: PlayerRow, productId: string, to: 'home' | 'stor
     const from: Label = to === 'home' ? 'store' : 'forged';
     const targets = items.filter((i) => i.typeId === productId && i.label === from && !isTrashed(items, i) && !isUndelivered(items, i));
     if (targets.length === 0) throw new GameError('Det er ingen etiketter å skrive om.');
-    for (const i of targets) q.setLabel.run(to === 'home' ? 'forged' : null, i.id);
-    return targets.length;
+    const one = targets.find((i) => i.place === 'counter') ?? targets[0];
+    q.setLabel.run(to === 'home' ? 'forged' : null, one.id);
+    return targets.length - 1;
   });
 }
 

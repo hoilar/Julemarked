@@ -2935,9 +2935,9 @@ function modalView(s: GameState): string {
       .map((l) => {
         const action =
           l === 'store' && pen && !p.craftedOnly
-            ? `<button class="small ghost" data-action="relabel" data-to="home" title="Skriv om etiketten med penn">✏️ Skriv «Hjemmelaget»</button>`
+            ? `<button class="small ghost" data-action="relabel" data-to="home" title="Skriv om etiketten på én av dem med penn (de på bordet først)">✏️ Skriv «Hjemmelaget» på én</button>`
             : l === 'forged' && pen
-              ? `<button class="small ghost" data-action="relabel" data-to="store" title="Skriv riktig produsent igjen">✏️ Skriv riktig</button>`
+              ? `<button class="small ghost" data-action="relabel" data-to="store" title="Skriv riktig produsent igjen på én av dem (de på bordet først)">✏️ Skriv riktig på én</button>`
               : '';
         return `<li class="label-row ${l}"><div><b>${esc(labelText(p.id, l, stallName))}</b>${l === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
             <small>${count(l)} stk · kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, l !== 'store'))}</small></div>${action}</li>`;
@@ -3682,7 +3682,13 @@ app.addEventListener('click', (e) => {
   if (action === 'relabel' && modal?.kind === 'product') {
     const productId = modal.productId;
     const to = el.dataset.to;
-    act('/api/label', { productId, to }, to === 'home' ? '✏️ Nå står det «Hjemmelaget» på etiketten.' : '✏️ Riktig produsent står på etiketten igjen.');
+    api<{ left: number }>('/api/label', { productId, to })
+      .then((r) => {
+        const left = r.left > 0 ? ` (${r.left} igjen)` : '';
+        toast(to === 'home' ? `✏️ Nå står det «Hjemmelaget» på én av dem${left}.` : `✏️ Riktig produsent står på én av dem igjen${left}.`);
+      })
+      .catch((err) => toast((err as Error).message, true))
+      .finally(refresh);
     return;
   }
   if (action === 'pay-bill') {
