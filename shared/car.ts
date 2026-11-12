@@ -63,12 +63,12 @@ export function tripFuelCost(car: CarSpec, price: number): number {
   return car.fuel === 'bensin' ? Math.round(car.liters * price) : 0;
 }
 
-// ---------- Bære: en pose i hver hånd og ryggsekk på ryggen ----------
+// ---------- Bære: én ting i hver hånd (en maskin tar begge) og ryggsekk på ryggen ----------
 
 /** Plassene på kroppen (place = 'carry', x = plassen). */
 export const CARRY_SLOTS = [
-  { x: 0, name: 'Venstre hånd', what: 'bag' },
-  { x: 1, name: 'Høyre hånd', what: 'bag' },
+  { x: 0, name: 'Venstre hånd', what: 'hand' },
+  { x: 1, name: 'Høyre hånd', what: 'hand' },
   { x: 2, name: 'Ryggen', what: 'backpack' },
 ] as const;
 export const BACKPACK = 'ryggsekk';

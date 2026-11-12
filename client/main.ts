@@ -1,5 +1,5 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
-import { findTrashSpot, gridOf, isTrashed, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
+import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
 import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
@@ -23,6 +23,7 @@ import {
   PRODUCT_BY_ID,
   START_CASH,
   STORAGE_GRID,
+  artScale,
   TRASH_EMPTY_HOUR,
   TRASH_GRID,
   THEFT_FROM,
@@ -83,10 +84,11 @@ import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
-import { DEALER, DEALER_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
+import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange } from '../shared/deals.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
+import spillbilder from './spillbilder.json';
 import {
   batteryIn,
   chargingIn,
@@ -211,15 +213,15 @@ let clockBase = { game: 0, real: 0, speed: 1 };
 let pendingRender = false;
 
 // ---------- Geometri for bod_selger.png (prosent av bildet, 1536×1024) ----------
-// Bordplata: bakkant y ≈ 537, forkant y ≈ 578. 20 kolonner à ~2,98 % midt på (x ≈ 372–1288). Rutenettet ligger over plata.
-const TABLE = { left: 24.2, right: 83.87, top: 52.44, bottom: 56.45 };
+// Bordplata: bakkant y ≈ 537, forkant y ≈ 578. 31 kolonner à 1,9 % (som under disken), midt på plata.
+const TABLE = { left: 24.58, right: 83.48, top: 52.44, bottom: 56.45 };
 const CW = (TABLE.right - TABLE.left) / COUNTER_GRID.cols; // rutebredde, % av bredden
 const RH = (TABLE.bottom - TABLE.top) / COUNTER_GRID.rows; // radhøyde, % av høyden
 const rowFoot = (r: number) => TABLE.top + (r + 0.8) * RH; // der varer i rad r står
 const rowScale = (r: number) => 0.84 + (r / (COUNTER_GRID.rows - 1)) * 0.16;
-// Lageret under disken: STORAGE_GRID (27×7) ruter à 2,4 % av bildebredden.
-const STORAGE = { left: 21.7, top: 61.3, cell: 2.4 }; // 27×7 ruter à 2,4 %, midt på forhenget mellom bordbena
-const BOX_CELL = 2.5; // cqw – samme rutestørrelse inni eskene
+// Lageret under disken: STORAGE_GRID (34×9) ruter à 1,9 % av bildebredden.
+const STORAGE = { left: 21.8, top: 61.0, cell: 1.9 }; // 34×9 ruter à 1,9 %, midt på forhenget mellom bordbena
+const BOX_CELL = 1.95; // cqw – samme rutestørrelse inni eskene (≈ lagerets 1,9 %)
 
 // ---------- Hjelpere ----------
 
@@ -227,10 +229,17 @@ const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const kr = (n: number) => `${Math.round(n).toLocaleString('nb-NO')} kr`;
 
-/** Gjenstandens grafikk: eget bilde hvis det finnes, ellers emoji. */
+/**
+ * Ferdig nedskalert kopi (64 px per rute, art/spill/…) av et bilde som vises i rutenett og på bordet,
+ * laget av tools/spillbilder.py. Gir like skarpe pikselbilder; ellers brukes originalen.
+ */
+const SPILL = new Set<string>(spillbilder as string[]);
+const spill = (src: string) => (SPILL.has(src) ? `/art/spill/${src.slice(5)}` : src);
+
+/** Gjenstandens grafikk: eget bilde hvis det finnes (i spillstørrelse), ellers emoji. */
 function sprite(t: { emoji: string; image?: string }): string {
   return t.image
-    ? `<img class="sprite img" src="${t.image}" alt="" draggable="false">`
+    ? `<img class="sprite img" src="${spill(t.image)}" alt="" draggable="false">`
     : `<span class="sprite">${t.emoji}</span>`;
 }
 /** Råvarer/varer i en oppskrift, med bildene: «2 [bilde] tyttebær og 1 [bilde] sukker». */
@@ -243,7 +252,7 @@ const linesOf = (m: Record<string, number>) => Object.entries(m).map(([id, n]) =
 
 /** Lite ikon til tekst og lister. */
 function icon(t: { emoji: string; image?: string }): string {
-  return t.image ? `<img class="icon" src="${t.image}" alt="">` : t.emoji;
+  return t.image ? `<img class="icon" src="${spill(t.image)}" alt="">` : t.emoji;
 }
 
 let toastTimer = 0;
@@ -363,6 +372,11 @@ function hasTool(s: GameState, typeId: string): Item | undefined {
 const daypart = (h: number) => (h >= 7 && h < 10 ? 'morgen' : h >= 10 && h < 15 ? 'dag' : h >= 15 && h < 21 ? 'kveld' : 'natt');
 // Last alle fire bakgrunnene med en gang, så byttet skjer uten blink.
 for (const p of ['morgen', 'dag', 'kveld', 'natt']) new Image().src = `/art/bg/marked-${p}.jpg`;
+// Én enhetspiksel i CSS-piksler (Windows-skalering 125 % → 0,8px). CSS runder torget, boden og lagerrutene
+// av til hele slike, så pikselbildene blir like skarpe i alle kolonner.
+const setDpx = () => document.documentElement.style.setProperty('--dpx', `${1 / (window.devicePixelRatio || 1)}px`);
+setDpx();
+window.addEventListener('resize', setDpx);
 
 let shownStall: StallPublic | null = null; // boden som vises nå (egen eller besøkt)
 let lastSaleId: number | null = null; // nyeste salg vi allerede har vist
@@ -548,6 +562,12 @@ function phoneWindow(s: GameState): string {
             <div class="sms in">Greit. Kl. 0${DEALER_HOUR}, ${esc(formatClock(osloParts(o.deliverAt)).replace(/ kl\..*$/, ''))}.</div>`,
         )
         .join('')}
+      ${dl.sales
+        .map(
+          (x) => `<div class="sms out">Har ${x.qty} × ${esc(ITEM_TYPES[x.typeId].name)} til deg.</div>
+            <div class="sms in">${kr(x.price * x.qty)}. Legg det løst i søppelkassa, jeg henter kl. 0${DEALER_PICKUP_HOUR}, ${esc(formatClock(osloParts(x.pickupAt)).replace(/ kl\..*$/, ''))}. Før søppelbilen.</div>`,
+        )
+        .join('')}
     </div>
     <div class="phone-kicker">Han har i dag</div>
     <ul class="dealer-offer">${dl.offer
@@ -560,6 +580,15 @@ function phoneWindow(s: GameState): string {
       })
       .join('')}</ul>
     <button class="dealer-send" data-action="dealer-send" ${cartSum > 0 && s.me.cash >= cartSum ? '' : 'disabled'}>📱 Send SMS · ${kr(cartSum)} kontant</button>
+    <div class="phone-kicker">Han kjøper</div>
+    <ul class="dealer-offer">${dl.buys
+      .map((b) => {
+        const t = ITEM_TYPES[b.typeId];
+        const agreed = dl.sales.find((x) => x.typeId === b.typeId)?.qty ?? 0;
+        return `<li><span class="dealer-what">${icon(t)} <span>${esc(t.name)}<small>${kr(b.price)} kontant · du har ${b.have}${agreed ? ` · ${agreed} avtalt` : ''}</small></span></span>
+          <button class="small" data-action="dealer-sell" data-type="${b.typeId}" ${b.have > agreed ? '' : 'disabled'}>📱 Si fra</button></li>`;
+      })
+      .join('')}</ul>
     <p class="phone-empty">Luguberte varer selger bare om natta (kl. 21–08). ${esc(INSPECTOR.name)} leter under disken – en låst safe ser han ikke inn i.</p>`;
   const body =
     phonePage === 'meldinger'
@@ -590,7 +619,7 @@ function phoneWindow(s: GameState): string {
            ${app('phone-page', appIcon('varsler'), 'Varsler', 'data-page="events"', unreadCount(s))}
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
-           ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length) : ''}
+           ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length + s.me.dealer.sales.length) : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -850,15 +879,15 @@ function counterView(stall: StallPublic, own: boolean): string {
       const t = ITEM_TYPES[i.typeId];
       if (t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker') {
         // Maskin på bordet: dras som en vare, trykk åpner vinduet. Kunder kan ikke kjøpe den.
-        const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 16}%;height:16%;--sp:${t.sprite};--scale:${rowScale(front)};z-index:${3 + front}`;
+        const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 16}%;height:16%;--sp:${t.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
         return `<div class="citem kettle-item ${t.kind === 'maker' && makerHot(i, stall) ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" ${own ? `data-drag="${i.id}"` : ''} title="${esc(t.name)}">
-          <img class="sprite img" src="${machineImage(i, stall)}" alt="" draggable="false"></div>`;
+          <img class="sprite img" src="${spill(machineImage(i, stall))}" alt="" draggable="false"></div>`;
       }
       const p = PRODUCT_BY_ID[i.typeId];
       const attrs = own
         ? `data-drag="${i.id}"`
         : `data-action="buy" data-stall="${stall.id}" data-product="${p.id}"`;
-      const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 12}%;height:12%;--sp:${p.sprite};--scale:${rowScale(front)};z-index:${3 + front}`;
+      const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 12}%;height:12%;--sp:${p.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
       return `<div class="citem" style="${style}" ${attrs} title="${esc(p.name)}">
           ${sprite(p)}
           ${tagged.has(i.id) ? `<span class="tag">${stall.prices[p.id] ?? p.basePrice},-</span>` : ''}
@@ -873,7 +902,7 @@ function counterView(stall: StallPublic, own: boolean): string {
 
 function gridItemView(i: Item, cols: number, rows: number): string {
   const t = ITEM_TYPES[i.typeId];
-  const style = `left:${(i.x / cols) * 100}%;top:${(i.y / rows) * 100}%;width:${(i.w / cols) * 100}%;height:${(i.h / rows) * 100}%;--min:${Math.min(i.w, i.h)}`;
+  const style = `left:${(i.x / cols) * 100}%;top:${(i.y / rows) * 100}%;width:${(i.w / cols) * 100}%;height:${(i.h / rows) * 100}%;--min:${Math.min(i.w, i.h)};--art:${artScale(i.typeId)}`;
   if (t.kind === 'container') {
     return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
       ${sprite(t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t)}</div>`;
@@ -885,16 +914,16 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   if (t.kind === 'charger') {
     const busy = chargingIn(state!.me.items, i.id).length > 0;
     const inside = Math.min(4, itemsIn(state!.me.items, 'pot_in', i.id).length);
-    return `<div class="gitem box has-img ${busy ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne"><img class="sprite img" src="/art/elektro/ladestasjon-${inside}.png" alt="" draggable="false"></div>`;
+    return `<div class="gitem box has-img ${busy ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne"><img class="sprite img" src="${spill(`/art/elektro/ladestasjon-${inside}.png`)}" alt="" draggable="false"></div>`;
   }
   if (t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker') {
     return `<div class="gitem box has-img ${t.kind === 'maker' && machineHot(i, myStall(state!)) ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
-      <img class="sprite img" src="${machineImage(i, myStall(state!))}" alt="" draggable="false"></div>`;
+      <img class="sprite img" src="${spill(machineImage(i, myStall(state!)))}" alt="" draggable="false"></div>`;
   }
   if (i.place === 'fuse') {
     const blown = i.typeId === BLOWN_FUSE.id;
     return `<div class="gitem has-img fuse-item ${blown ? 'blown' : ''}" style="${style}" data-drag="${i.id}" title="${blown ? 'Røket sikring – dra den ut og kast den' : 'Skrusikring – dra den ut for å kutte strømmen'}">
-      <img class="sprite img" src="/art/elektro/sikring-${blown ? 'roket' : 'inn'}.png" alt="" draggable="false"></div>`;
+      <img class="sprite img" src="${spill(`/art/elektro/sikring-${blown ? 'roket' : 'inn'}.png`)}" alt="" draggable="false"></div>`;
   }
   if (t.id === FUSE.id || t.id === BLOWN_FUSE.id) {
     return `<div class="gitem has-img" style="${style}" data-drag="${i.id}" title="${esc(t.name)}">${sprite(t)}</div>`;
@@ -930,7 +959,8 @@ function gridItemView(i: Item, cols: number, rows: number): string {
 function storageView(s: GameState): string {
   const { cols, rows } = STORAGE_GRID;
   const items = itemsIn(s.me.items, 'storage', null).map((i) => gridItemView(i, cols, rows)).join('');
-  const style = `left:${STORAGE.left}%;top:${STORAGE.top}%;width:${STORAGE.cell * cols}%;aspect-ratio:${cols}/${rows};--cols:${cols};--rows:${rows}`;
+  // Rutene er hele skjermpiksler (--cell), og lageret står på en hel piksel: alle kolonner blir like skarpe.
+  const style = `left:round(nearest, ${STORAGE.left}%, var(--dpx));top:round(nearest, ${STORAGE.top}%, var(--dpx));--cell:round(nearest, ${STORAGE.cell}cqw, var(--dpx));width:calc(var(--cell) * ${cols});height:calc(var(--cell) * ${rows});--cols:${cols};--rows:${rows}`;
   return `
   <div class="storage grid" data-grid="storage" style="${style}">
     ${items}${loupeMarks()}
@@ -1074,17 +1104,23 @@ const TRUNK_HOLE: Record<string, { x: number; y: number; w: number; h: number }>
   bil_fuzz: { x: 122, y: 100, w: 141, h: 120 },
 };
 
-/** Det du bærer: en pose i hver hånd og ryggsekken på ryggen. Dra en pose eller sekk hit. */
+/** Det du bærer: én ting i hver hånd (en maskin tar begge) og ryggsekken på ryggen. */
 function carryView(s: GameState): string {
   if (!s.me.stallId) return '';
+  // En maskin bæres med begge hendene: den ligger på venstre hånd, og høyre hånd er opptatt.
+  const both = s.me.items.find((i) => i.place === 'carry' && i.x === 0 && isTwoHanded(i.typeId));
   const slots = CARRY_SLOTS.map((sl) => {
     const it = s.me.items.find((i) => i.place === 'carry' && i.x === sl.x);
     const t = it && ITEM_TYPES[it.typeId];
-    const count = it ? itemsIn(s.me.items, 'box', it.id).length : 0;
+    const count = it && t?.kind === 'container' ? itemsIn(s.me.items, 'box', it.id).length : 0;
+    const title = !t ? '' : t.kind === 'container' ? `${esc(t.name)} med ${count} ting – trykk for å se oppi` : esc(t.name);
     const inner = it && t
-      ? `<div class="carry-item ${isOpen(it.id) ? 'open' : ''}" data-drag="${it.id}" title="${esc(t.name)} med ${count} ${count === 1 ? 'ting' : 'ting'} – trykk for å se oppi">${sprite(t)}${count ? `<b class="carry-count">${count}</b>` : ''}</div>`
+      ? `<div class="carry-item ${isOpen(it.id) ? 'open' : ''}" data-drag="${it.id}" title="${title}">${sprite(t)}${count ? `<b class="carry-count">${count}</b>` : ''}</div>`
+      : sl.x === 1 && both
+      ? `<div class="carry-both" title="Du bærer ${esc(ITEM_TYPES[both.typeId].name.toLowerCase())} med begge hendene">🤲</div>`
       : `<img class="carry-empty" src="/art/${sl.x === 2 ? 'baere-sekk' : 'baere-hand'}.png" alt="">`;
-    return `<div class="carry-slot ${it ? 'full' : ''}" data-carry-slot="${sl.x}" title="${sl.name}: ${sl.x === 2 ? 'dra en ryggsekk hit' : 'dra en handlepose hit'}">${inner}<small>${sl.name}</small></div>`;
+    const hint = sl.x === 2 ? 'dra en ryggsekk hit' : 'dra én ting hit (en maskin tar begge hendene)';
+    return `<div class="carry-slot ${it || (sl.x === 1 && both) ? 'full' : ''}" data-carry-slot="${sl.x}" title="${sl.name}: ${hint}">${inner}<small>${sl.name}</small></div>`;
   }).join('');
   return `<div class="carry ${screen.kind === 'visit' ? 'visit' : ''}"><div class="carry-label">Du bærer</div><div class="carry-slots">${slots}</div></div>`;
 }
@@ -1267,7 +1303,7 @@ function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart
     kind === 'bypass'
       ? '<p class="meter-sub">🔧 Ledningene går rett forbi. Ingenting kan ryke, og måleren står stille.</p>'
       : slots.length
-        ? Array.from({ length: Math.ceil(slots.length / 4) }, (_, r) => slots.slice(r * 4, r * 4 + 4))
+        ? `<div class="breaker-rails">${Array.from({ length: Math.ceil(slots.length / 4) }, (_, r) => slots.slice(r * 4, r * 4 + 4))
             .map(
               (row) => `<div class="breaker-rail">${row
                 .map((entry) => {
@@ -1285,7 +1321,7 @@ function autoFusePanel(s: GameState, box: Item, n: number, kind: 'auto' | 'smart
                 })
                 .join('')}</div>`,
             )
-            .join('')
+            .join('')}</div>`
         : '<p class="meter-sub muted">Ingenting er plugget inn.</p>';
   const digits = m ? m.kwh.toFixed(1).padStart(7, '0').replace('.', ',') : '—';
   return smallPanel(box.id, n, 'fuse-panel', `${icon(bt)} ${esc(bt.name)}`, `
@@ -1310,7 +1346,7 @@ function chargerPanel(s: GameState, c: Item, n: number): string {
         : 'Legg batterier her for å lade dem';
   const { cols, rows } = CHARGER.input;
   return smallPanel(c.id, n, 'charger-panel', `${icon(CHARGER)} ${esc(entryName(itemSocket(CHARGER.id, c.id), items).name)}`, `
-    <div class="grid box-grid charger-grid" data-grid="pot_in" data-box="${c.id}" style="width:${cols * BOX_CELL * 1.5}cqw;height:${rows * BOX_CELL * 1.5}cqw;--cols:${cols};--rows:${rows}">
+    <div class="grid box-grid charger-grid" data-grid="pot_in" data-box="${c.id}" style="width:${cols * 3.75}cqw;height:${rows * 3.75}cqw;--cols:${cols};--rows:${rows}">
       ${itemsIn(items, 'pot_in', c.id).map((i) => gridItemView(i, cols, rows)).join('')}
     </div>
     <div class="pot-status">${plugIcon(c, stall)}<span>${status}</span></div>`, 14, 26);
@@ -1653,10 +1689,21 @@ function snoopCarried(s: GameState): string {
       return `<div class="snoop-carry"><small>${icon(t)} ${esc(t.name)}</small><div class="grid snoop-grid" style="--cols:${cols};--rows:${rows};width:calc(var(--cell) * ${cols});height:calc(var(--cell) * ${rows})">${items}</div></div>`;
     })
     .join('');
+  // Det du holder i hendene: én ting i hver, eller én maskin med begge.
+  const hands = s.me.items
+    .filter((i) => i.place === 'carry' && i.x < 2)
+    .sort((a, b) => a.x - b.x)
+    .map((h) => {
+      const t = ITEM_TYPES[h.typeId];
+      const where = isTwoHanded(h.typeId) ? 'Begge hender' : h.x === 0 ? 'Venstre hånd' : 'Høyre hånd';
+      return `<div class="snoop-carry"><small>${esc(where)}: ${esc(t.name)}</small><div class="grid snoop-grid" style="--cols:${h.w};--rows:${h.h};width:calc(var(--cell) * ${h.w});height:calc(var(--cell) * ${h.h})">${snoopItemView({ ...h, x: 0, y: 0 }, h.w, h.h, 0, 'data-mdrag')}</div></div>`;
+    })
+    .join('');
   return `<div class="snoop-mine" data-mgrid>
     <h3>Du bærer</h3>
-    ${bags || '<p class="muted">Ingenting å bære i. Ta en pose i hånda eller ryggsekken på før du snoker.</p>'}
-    <p class="muted small-note">Dra ting hit for å ta dem med, og fra posen din inn under disken deres for å legge dem der.</p>
+    ${hands}${bags}
+    ${hands || bags ? '' : '<p class="muted">Hendene er tomme. Du kan ta én liten ting i hver hånd (en maskin tar begge), eller mer med ryggsekken på.</p>'}
+    <p class="muted small-note">Dra ting hit for å ta dem med, og fra hendene eller sekken inn under disken deres for å legge dem der.</p>
   </div>`;
 }
 
@@ -2766,7 +2813,7 @@ function modalView(s: GameState): string {
           })
           .join('')}</ul>`
       : '<p class="muted">Søppelkassa er tom.</p>';
-    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, bærer du – i en pose i hånda eller i ryggsekken.</p>${list}`;
+    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, bærer du – én ting i hver hånd, eller i ryggsekken.</p>${list}`;
   }
 
   if (modal.kind === 'look') inner = lookView(s, modal.draft);
@@ -3585,6 +3632,10 @@ app.addEventListener('click', (e) => {
   if (action === 'dealer-cart') {
     const id = el.dataset.type!;
     dealerCart[id] = Math.max(0, (dealerCart[id] ?? 0) + Number(el.dataset.delta));
+  }
+  if (action === 'dealer-sell') {
+    void act('/api/dealer/sell', { typeId: el.dataset.type }, `📱 SMS sendt. Legg det i søppelkassa – han henter kl. 0${DEALER_PICKUP_HOUR}.`).then(() => render());
+    return;
   }
   if (action === 'dealer-send') {
     const lines = Object.entries(dealerCart).filter(([, n]) => n > 0).map(([typeId, qty]) => ({ typeId, qty }));

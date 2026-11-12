@@ -29,6 +29,7 @@
 ## Bevisst utelatt
 
 Flere markeder, roller, markedsmøter, avatarer, strøm, full dekorasjon, inspeksjoner, kjøp mellom markeder.
+Flere boder per spiller, bodsalg mellom spillere, ansatte og julelotteri kommer i 2027 (se `julemarked_simulator_konsept.md`, 12.1 og 12.2).
 
 ## Tidslinje
 

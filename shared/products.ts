@@ -233,16 +233,16 @@ export type ItemType = Battery | Charger | Product | Container | Newspaper | Ing
 
 // Kontorrekvisita hos Klas Olsen.
 export const TOOLS: Tool[] = [
-  { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.png', price: 29, size: { w: 1, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
-  { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.png', price: 49, size: { w: 1, h: 1 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
+  { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.png', price: 29, size: { w: 2, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
+  { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.png', price: 49, size: { w: 2, h: 2 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
   { kind: 'tool', id: 'skrutrekker', name: 'Skrutrekker', emoji: '🪛', image: '/art/elektro/skrutrekker.png', price: 89, size: { w: 2, h: 1 }, blurb: 'Stjerne og flat. Passer til det meste med skruer i.' },
-  { kind: 'tool', id: 'telefon', name: 'Smarttelefon', emoji: '📱', image: '/art/telefon/telefon.png', price: 499, size: { w: 1, h: 2 }, blurb: 'Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden.' },
-  { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', image: '/art/verktoy/lupe.png', price: 129, size: { w: 1, h: 1 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
-  { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 1, h: 1 }, blurb: 'Skarp. Pass på fingrene.' },
-  { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', image: '/art/verktoy/sapestykke.png', price: 19, size: { w: 1, h: 1 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
+  { kind: 'tool', id: 'telefon', name: 'Smarttelefon', emoji: '📱', image: '/art/telefon/telefon.png', price: 499, size: { w: 2, h: 3 }, blurb: 'Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden.' },
+  { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', image: '/art/verktoy/lupe.png', price: 129, size: { w: 2, h: 2 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
+  { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 2, h: 2 }, blurb: 'Skarp. Pass på fingrene.' },
+  { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', image: '/art/verktoy/sapestykke.png', price: 19, size: { w: 2, h: 2 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
   // Fra Fyren bak containeren (selges ikke hos Klas Olsen):
-  { kind: 'tool', id: 'nokkelmaskin', name: 'Nøkkelmaskin', emoji: '🛠️', image: '/art/verktoy/nokkelmaskin.png', price: 900, size: { w: 2, h: 2 }, blurb: 'Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk.', dealerOnly: true },
-  { kind: 'tool', id: 'blank_nokkel', name: 'Blank nøkkel', emoji: '🗝️', image: '/art/verktoy/blank-nokkel.png', price: 30, size: { w: 1, h: 1 }, blurb: 'Et nøkkelemne uten tagger.', dealerOnly: true },
+  { kind: 'tool', id: 'nokkelmaskin', name: 'Nøkkelmaskin', emoji: '🛠️', image: '/art/verktoy/nokkelmaskin.png', price: 900, size: { w: 3, h: 3 }, blurb: 'Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk.', dealerOnly: true },
+  { kind: 'tool', id: 'blank_nokkel', name: 'Blank nøkkel', emoji: '🗝️', image: '/art/verktoy/blank-nokkel.png', price: 30, size: { w: 2, h: 2 }, blurb: 'Et nøkkelemne uten tagger.', dealerOnly: true },
 ];
 export const PEN = 'penn';
 export const PAD = 'papirblokk';
@@ -261,20 +261,20 @@ export const SCREWDRIVER = 'skrutrekker';
 export const PHONE = 'telefon';
 
 export const DOCS: Doc[] = [
-  { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'skjenkebevilling', name: 'Skjenkebevilling', emoji: '📜', image: '/art/verktoy/skjenkebevilling.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'kodelapp', name: 'Kodelapp', emoji: '🔢', image: '/art/verktoy/kodelapp.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'notat', name: 'Notat', emoji: '🗒️', image: '/art/verktoy/notat.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'sapeavtrykk', name: 'Såpeavtrykk', emoji: '🧼', image: '/art/verktoy/sapeavtrykk.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'kopinokkel', name: 'Kopinøkkel', emoji: '🔑', image: '/art/verktoy/kopinokkel.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'oppskrift', name: 'Avskrevet oppskrift', emoji: '📝', image: '/art/verktoy/oppskrift.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'skjenkebevilling', name: 'Skjenkebevilling', emoji: '📜', image: '/art/verktoy/skjenkebevilling.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'kodelapp', name: 'Kodelapp', emoji: '🔢', image: '/art/verktoy/kodelapp.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'notat', name: 'Notat', emoji: '🗒️', image: '/art/verktoy/notat.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'sapeavtrykk', name: 'Såpeavtrykk', emoji: '🧼', image: '/art/verktoy/sapeavtrykk.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'kopinokkel', name: 'Kopinøkkel', emoji: '🔑', image: '/art/verktoy/kopinokkel.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'etterlysning', name: 'Etterlysning', emoji: '🧾', image: '/art/verktoy/etterlysning.png', size: { w: 2, h: 2 } },
 ];
 // Rabattkupong (klippet ut av avisa) og gavekort fra butikkenes selgere.
 DOCS.push(
-  { kind: 'doc', id: 'kupong', name: 'Rabattkupong', emoji: '🎟️', image: '/art/verktoy/kupong.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'gavekort_kiwi', name: 'KIWI-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-kiwi.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'gavekort_rema', name: 'REMA 1000-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-rema.png', size: { w: 1, h: 1 } },
-  { kind: 'doc', id: 'gavekort_extra', name: 'Extra-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-extra.png', size: { w: 1, h: 1 } },
+  { kind: 'doc', id: 'kupong', name: 'Rabattkupong', emoji: '🎟️', image: '/art/verktoy/kupong.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'gavekort_kiwi', name: 'KIWI-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-kiwi.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'gavekort_rema', name: 'REMA 1000-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-rema.png', size: { w: 2, h: 2 } },
+  { kind: 'doc', id: 'gavekort_extra', name: 'Extra-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-extra.png', size: { w: 2, h: 2 } },
 );
 export const COUPON = 'kupong';
 export const RECIPE_NOTE = 'oppskrift';
@@ -282,31 +282,31 @@ export const WANTED = 'etterlysning';
 
 // Plassholdere med emoji til de får tegning.
 export const INGREDIENTS: Ingredient[] = [
-  { kind: 'ingredient', id: 'baer', name: 'Tyttebær', emoji: '🍒', image: '/art/ravarer/baer.png', price: 10, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'sukker', name: 'Sukker', emoji: '🧊', image: '/art/ravarer/sukker.png', price: 5, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'flote', name: 'Fløte', emoji: '🥛', image: '/art/ravarer/flote.png', price: 12, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'mandler', name: 'Mandler', emoji: '🌰', image: '/art/ravarer/mandler.png', price: 18, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'mel', name: 'Hvetemel', emoji: '🌾', image: '/art/ravarer/mel.png', price: 6, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'smor', name: 'Smør', emoji: '🧈', image: '/art/ravarer/smor.png', price: 15, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'garn', name: 'Garnnøste', emoji: '🧶', image: '/art/ravarer/garn.png', price: 25, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'glassemne', name: 'Glassemne', emoji: '🔮', image: '/art/ravarer/glassemne.png', price: 8, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'maling', name: 'Glassmaling', emoji: '🎨', image: '/art/ravarer/maling.png', price: 6, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'treemne', name: 'Treemne', emoji: '🪵', image: '/art/ravarer/treemne.png', price: 7, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'sirup', name: 'Sirup', emoji: '🍯', image: '/art/ravarer/sirup.png', price: 8, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'kakaopulver', name: 'Kakaopulver', emoji: '🟤', image: '/art/ravarer/kakaopulver.png', price: 10, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'epler', name: 'Epler', emoji: '🍏', image: '/art/ravarer/epler.png', price: 4, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'eplemost', name: 'Eplemost', emoji: '🧃', image: '/art/ravarer/eplemost.png', price: 15, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'polser', name: 'Pølser (pakke)', emoji: '🌭', image: '/art/ravarer/polser.png', price: 35, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'lomper', name: 'Lomper (pakke)', emoji: '🫓', image: '/art/ravarer/lomper.png', price: 12, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'fyll', name: 'Fyllvatt', emoji: '☁️', image: '/art/ravarer/fyll.png', price: 5, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'bladgull', name: 'Bladgull', emoji: '✨', image: '/art/ravarer/bladgull.png', price: 40, size: { w: 1, h: 1 }, rare: 0.15 },
-  { kind: 'ingredient', id: 'safran', name: 'Safran', emoji: '🌼', image: '/art/ravarer/safran.png', price: 35, size: { w: 1, h: 1 }, rare: 0.2 },
-  { kind: 'ingredient', id: 'alpakkagarn', name: 'Alpakkagarn', emoji: '🦙', image: '/art/ravarer/alpakkagarn.png', price: 60, size: { w: 1, h: 1 }, rare: 0.15 },
-  { kind: 'ingredient', id: 'gjaer', name: 'Gjær', emoji: '🧫', image: '/art/ravarer/gjaer.png', price: 6, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'falsk_logo', name: 'Falsk logo', emoji: '🏷️', image: '/art/ravarer/falsk-logo.png', price: 45, size: { w: 1, h: 1 }, dealerOnly: true },
-  { kind: 'ingredient', id: 'mikroplast', name: 'Mikroplast', emoji: '🫧', image: '/art/ravarer/mikroplast.png', price: 0, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'feilbatch', name: 'Mislykket batch', emoji: '🫠', image: '/art/ravarer/feilbatch.png', price: 0, size: { w: 1, h: 1 } },
-  { kind: 'ingredient', id: 'svidd', name: 'Svidd klump', emoji: '🪨', image: '/art/ravarer/svidd.png', price: 0, size: { w: 1, h: 1 } },
+  { kind: 'ingredient', id: 'baer', name: 'Tyttebær', emoji: '🍒', image: '/art/ravarer/baer.png', price: 10, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'sukker', name: 'Sukker', emoji: '🧊', image: '/art/ravarer/sukker.png', price: 5, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'flote', name: 'Fløte', emoji: '🥛', image: '/art/ravarer/flote.png', price: 12, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'mandler', name: 'Mandler', emoji: '🌰', image: '/art/ravarer/mandler.png', price: 18, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'mel', name: 'Hvetemel', emoji: '🌾', image: '/art/ravarer/mel.png', price: 6, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'smor', name: 'Smør', emoji: '🧈', image: '/art/ravarer/smor.png', price: 15, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'garn', name: 'Garnnøste', emoji: '🧶', image: '/art/ravarer/garn.png', price: 25, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'glassemne', name: 'Glassemne', emoji: '🔮', image: '/art/ravarer/glassemne.png', price: 8, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'maling', name: 'Glassmaling', emoji: '🎨', image: '/art/ravarer/maling.png', price: 6, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'treemne', name: 'Treemne', emoji: '🪵', image: '/art/ravarer/treemne.png', price: 7, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'sirup', name: 'Sirup', emoji: '🍯', image: '/art/ravarer/sirup.png', price: 8, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'kakaopulver', name: 'Kakaopulver', emoji: '🟤', image: '/art/ravarer/kakaopulver.png', price: 10, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'epler', name: 'Epler', emoji: '🍏', image: '/art/ravarer/epler.png', price: 4, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'eplemost', name: 'Eplemost', emoji: '🧃', image: '/art/ravarer/eplemost.png', price: 15, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'polser', name: 'Pølser (pakke)', emoji: '🌭', image: '/art/ravarer/polser.png', price: 35, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'lomper', name: 'Lomper (pakke)', emoji: '🫓', image: '/art/ravarer/lomper.png', price: 12, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'fyll', name: 'Fyllvatt', emoji: '☁️', image: '/art/ravarer/fyll.png', price: 5, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'bladgull', name: 'Bladgull', emoji: '✨', image: '/art/ravarer/bladgull.png', price: 40, size: { w: 2, h: 2 }, rare: 0.15 },
+  { kind: 'ingredient', id: 'safran', name: 'Safran', emoji: '🌼', image: '/art/ravarer/safran.png', price: 35, size: { w: 2, h: 2 }, rare: 0.2 },
+  { kind: 'ingredient', id: 'alpakkagarn', name: 'Alpakkagarn', emoji: '🦙', image: '/art/ravarer/alpakkagarn.png', price: 60, size: { w: 2, h: 2 }, rare: 0.15 },
+  { kind: 'ingredient', id: 'gjaer', name: 'Gjær', emoji: '🧫', image: '/art/ravarer/gjaer.png', price: 6, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'falsk_logo', name: 'Falsk logo', emoji: '🏷️', image: '/art/ravarer/falsk-logo.png', price: 45, size: { w: 2, h: 2 }, dealerOnly: true },
+  { kind: 'ingredient', id: 'mikroplast', name: 'Mikroplast', emoji: '🫧', image: '/art/ravarer/mikroplast.png', price: 0, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'feilbatch', name: 'Mislykket batch', emoji: '🫠', image: '/art/ravarer/feilbatch.png', price: 0, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'svidd', name: 'Svidd klump', emoji: '🪨', image: '/art/ravarer/svidd.png', price: 0, size: { w: 2, h: 2 } },
 ];
 
 export const KETTLE: Kettle = {
@@ -316,9 +316,9 @@ export const KETTLE: Kettle = {
   emoji: '🍲',
   image: '/art/kjele/off.png',
   images: [1, 2, 3, 4].map((n) => `/art/kjele/on${n}.png`),
-  size: { w: 3, h: 3 },
-  input: { cols: 4, rows: 4 },
-  output: { cols: 4, rows: 4 },
+  size: { w: 4, h: 4 },
+  input: { cols: 8, rows: 8 },
+  output: { cols: 6, rows: 6 },
   sprite: 3.4,
 };
 export const KETTLE_KW_PER_LEVEL = 0.5;
@@ -333,8 +333,8 @@ export const POSEBRETTER: Folder = {
   image: '/art/posebretter/off.png',
   imageOn: '/art/posebretter/on.png',
   size: { w: 3, h: 2 },
-  input: { cols: 4, rows: 4 }, // tomme poser (2×2) inn
-  output: { cols: 4, rows: 4 }, // sammenbretta poser (1×1) ut
+  input: { cols: 6, rows: 6 }, // tomme poser (2×2) inn
+  output: { cols: 6, rows: 6 }, // sammenbretta poser (1×1) ut
   sprite: 3,
   kw: 0.3,
   mode: 'fold',
@@ -351,9 +351,9 @@ export const SHREDDER: Folder = {
   emoji: '🧻',
   image: '/art/maskiner/makulator.png',
   imageOn: '/art/maskiner/makulator-pa.png',
-  size: { w: 2, h: 2 },
-  input: { cols: 4, rows: 4 },
-  output: { cols: 4, rows: 2 }, // bare mikroplast kommer ut
+  size: { w: 3, h: 3 },
+  input: { cols: 8, rows: 8 },
+  output: { cols: 8, rows: 4 }, // bare mikroplast kommer ut
   sprite: 2,
   kw: 0.2,
   mode: 'shred',
@@ -375,9 +375,9 @@ export const MAKERS: Maker[] = [
     image: '/art/maskiner/bakemaskin.png',
     imageOn: '/art/maskiner/bakemaskin-pa.png',
     size: { w: 4, h: 3 },
-    input: { cols: 4, rows: 4 },
-    output: { cols: 4, rows: 4 },
-    sprite: 3,
+    input: { cols: 8, rows: 8 },
+    output: { cols: 6, rows: 6 },
+    sprite: 4, // størrelse på bordet (× 2,3cqw bredde)
     kw: 1.5,
     verb: 'Baker',
     programs: [
@@ -399,9 +399,9 @@ export const MAKERS: Maker[] = [
     image: '/art/maskiner/strikkemaskin.png',
     imageOn: '/art/maskiner/strikkemaskin-pa.png',
     size: { w: 5, h: 3 },
-    input: { cols: 4, rows: 4 },
-    output: { cols: 4, rows: 4 },
-    sprite: 4,
+    input: { cols: 8, rows: 8 },
+    output: { cols: 6, rows: 6 },
+    sprite: 5.4, // størrelse på bordet (× 2,3cqw bredde)
     kw: 0.4,
     verb: 'Strikker',
     programs: [
@@ -423,9 +423,9 @@ export const MAKERS: Maker[] = [
     image: '/art/maskiner/dekormaskin.png',
     imageOn: '/art/maskiner/dekormaskin-pa.png',
     size: { w: 3, h: 4 },
-    input: { cols: 4, rows: 4 },
-    output: { cols: 4, rows: 4 },
-    sprite: 3,
+    input: { cols: 8, rows: 8 },
+    output: { cols: 6, rows: 6 },
+    sprite: 3.8, // størrelse på bordet (× 2,3cqw bredde)
     kw: 0.8,
     verb: 'Maler',
     programs: [
@@ -475,7 +475,7 @@ export const STRIP: Electric = {
   emoji: '🔌',
   image: '/art/elektro/grenuttak.png',
   price: 99,
-  size: { w: 2, h: 1 },
+  size: { w: 3, h: 2 },
   blurb: 'Fire kontakter til. Plugges i grenuttaket på stolpen.',
 };
 export const FUSEBOX: Electric = {
@@ -485,7 +485,7 @@ export const FUSEBOX: Electric = {
   emoji: '🎛️',
   image: '/art/elektro/sikringsboks.png',
   price: 449,
-  size: { w: 2, h: 2 },
+  size: { w: 3, h: 3 },
   blurb: 'En skrusikring for hvert apparat, og en måler som viser hvor mye strøm boden har brukt.',
   imageOff: '/art/elektro/sikringsboks-av.png',
   max: 1,
@@ -498,7 +498,7 @@ export const FUSEBOX_AUTO: Electric = {
   emoji: '🎛️',
   image: '/art/elektro/sikringsboks-automat.png',
   price: 1499,
-  size: { w: 2, h: 2 },
+  size: { w: 3, h: 3 },
   blurb: 'Går en sikring, vipper du den bare opp igjen. Ingen skrusikringer å kjøpe.',
   max: 1,
   fusebox: 'auto',
@@ -511,7 +511,7 @@ export const FUSEBOX_SMART: Electric = {
   image: '/art/elektro/sikringsboks-smart.png',
   imageOff: '/art/elektro/sikringsboks-smart-av.png',
   price: 2499,
-  size: { w: 2, h: 2 },
+  size: { w: 3, h: 3 },
   blurb: 'Automatsikringer som slår seg på igjen av seg selv når strømmen er tilbake.',
   max: 1,
   fusebox: 'smart',
@@ -524,7 +524,7 @@ export const FUSEBOX_BYPASS: Electric = {
   emoji: '🎛️',
   image: '/art/elektro/sikringsboks-bypass.png',
   price: 700,
-  size: { w: 2, h: 2 },
+  size: { w: 3, h: 3 },
   blurb: 'Koblet forbi både sikringene og måleren. Gratis strøm, ingenting ryker – helt til Tilsynsmannen ser den.',
   max: 1,
   fusebox: 'bypass',
@@ -540,7 +540,7 @@ export const TERMINAL: Electric = {
   emoji: '💳',
   image: '/art/elektro/bippsterminal.png',
   price: 199,
-  size: { w: 1, h: 1 },
+  size: { w: 2, h: 2 },
   blurb: 'Kundene betaler selv med kort når du ikke er der. Gir «Selvbetjent» på skiltet. 25 kr/dag i avtale.',
   max: 1,
 };
@@ -568,9 +568,12 @@ export const BLOWN_FUSE: Electric = {
 };
 /** Sikringsplasser i sikringsboksen (én per apparat). */
 export const FUSE_SLOTS = 8;
+/** Automat- og smartsikringsboksen: 16 automatsikringer (fire skinner à fire, to kolonner). */
+export const BREAKER_SLOTS = 16;
+export const fuseSlotCount = (typeId: string) => (fuseboxKind(typeId) === 'screw' ? FUSE_SLOTS : BREAKER_SLOTS);
 export const FUSE_GRID: GridSize = { cols: 1, rows: FUSE_SLOTS };
 /** Postkassa: plass til aviser (2×1 hver). Regningene ligger som konvolutter ved siden av. */
-export const MAIL_GRID: GridSize = { cols: 4, rows: 2 };
+export const MAIL_GRID: GridSize = { cols: 8, rows: 4 };
 /** Ved strømbrudd: sjanse for at sikringen til hvert apparat som går, ryker (bare da). */
 export const FUSE_OUTAGE_CHANCE = 0.5;
 export const STRIP_SOCKETS = 4;
@@ -600,7 +603,7 @@ export const POLICIES: Policy[] = INSURANCES.map((d) => ({
   name: `Forsikringsbevis: ${d.label}`,
   emoji: '📄',
   image: `/art/forsikring/${d.kind}.svg`,
-  size: { w: 1, h: 1 },
+  size: { w: 2, h: 2 },
   insurance: d.kind,
 }));
 
@@ -686,8 +689,8 @@ export const PRODUCTS: Product[] = [
   good('karamell', 'Fløtekaramell', '🍬', 'karamell', 1, 1, 3, 12, 2.4, 'Søtt & Co', 'godteri'),
   good('julekule', 'Håndmalt julekule', '🔴', 'julekule', 1, 1, 25, 79, 0.8, 'Pynt Import AS', 'dekor'),
   good('sjokolade', 'Julesjokolade', '🍫', 'sjokolade', 1, 2, 15, 49, 1.3, 'Kakaokompaniet', 'godteri'),
-  good('konfekt', 'Konfekteske', '🍫', 'konfekt', 1, 2, 45, 149, 0.7, 'Kakaokompaniet', 'godteri'),
-  good('gloggflaske', 'Gløgg (flaske)', '🍷', 'glogg-flaske', 1, 2, 50, 169, 0.6, 'Glødeverket', 'drikke'),
+  { ...good('konfekt', 'Konfekteske', '🍫', 'konfekt', 2, 2, 45, 149, 0.7, 'Kakaokompaniet', 'godteri'), sprite: 1.15 }, // bildet på bordet som før
+  { ...good('gloggflaske', 'Gløgg (flaske)', '🍷', 'glogg-flaske', 2, 3, 50, 169, 0.6, 'Glødeverket', 'drikke'), sprite: 1.15 }, // bildet på bordet som før
   good('brente_mandler', 'Brente mandler', '🥜', 'brente-mandler', 2, 2, 30, 89, 1.5, 'Mills', 'godteri'),
   good('pepperkakepose', 'Pepperkaker (pose)', '🍪', 'pepperkaker-pose', 2, 2, 35, 99, 0.9, 'Kakefabrikken', 'kaker'),
   good('syltetoy', 'Syltetøy', '🍓', 'syltetoy', 2, 2, 35, 119, 0.7, 'Mills', 'mat'),
@@ -733,11 +736,11 @@ export const PRODUCTS: Product[] = [
   vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
   // Drikke
   vare('kakao', 'Varm kakao', '☕', 1, 1, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
-  vare('julebrus', 'Julebrus', '🥤', 1, 2, 12, 35, 1.6, 'Bryggeriet', 'drikke'),
+  vare('julebrus', 'Julebrus', '🥤', 2, 3, 12, 35, 1.6, 'Bryggeriet', 'drikke', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   // Alkohol (krever skjenkebevilling, se shared/liquor.ts). Vodka og rødvin er også råvarer i kjelen.
-  vare('vodka', 'Vodka', '🍸', 1, 2, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol'),
-  vare('rodvin', 'Rødvin', '🍷', 1, 2, 90, 229, 0.45, 'Vinkjelleren', 'alkohol'),
-  vare('eplecider', 'Eplecider', '🍏', 1, 2, 25, 69, 1.0, 'Fjordsideriet', 'alkohol'),
+  vare('vodka', 'Vodka', '🍸', 2, 3, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
+  vare('rodvin', 'Rødvin', '🍷', 2, 3, 90, 229, 0.45, 'Vinkjelleren', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
+  vare('eplecider', 'Eplecider', '🍏', 2, 3, 25, 69, 1.0, 'Fjordsideriet', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', crafted),
   vare('koseglogg', 'Kosegløgg', '🍷', 1, 1, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', crafted),
   vare('styrkeglogg', 'Styrkegløgg', '🔥', 1, 1, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', crafted),
@@ -754,7 +757,8 @@ export const PRODUCTS: Product[] = [
   vare('juletre_tyv', 'Juletre uten kvittering', '🎄', 2, 3, 120, 599, 0.25, 'Torget', 'lugubert', {
     ...shady(['Det mangler et tre på torget. Et påfallende likt tre står hos {stall}.'], 0.08, 5),
   }),
-  vare('hjemmebrent', 'Hjemmebrent', '🫙', 1, 2, 20, 299, 0.5, 'Hjemmelaget', 'lugubert', {
+  vare('hjemmebrent', 'Hjemmebrent', '🫙', 2, 3, 20, 299, 0.5, 'Hjemmelaget', 'lugubert', {
+    sprite: 1.15, // bildet på bordet som før
     ...crafted,
     ...shady(['En kunde ble dårlig av «eplesaften» fra {stall}.', 'Det lukter destilleri bak {stall}.'], 0.04, 4),
   }),
@@ -769,23 +773,23 @@ export const PRODUCTS: Product[] = [
 // Fjernede varetyper ryddes automatisk bort fra databasen ved oppstart (migrate() i server/game.ts).
 
 export const CONTAINERS: Container[] = [
-  { kind: 'container', id: 'kiwipose', name: 'KIWI-pose', emoji: '🛍️', image: '/art/kiwi-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
-  { kind: 'container', id: 'extrapose', name: 'Extra-pose', emoji: '🛍️', image: '/art/extra-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
-  { kind: 'container', id: 'remapose', name: 'REMA-pose', emoji: '🛍️', image: '/art/rema-pose.png', price: 1, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, shopBag: true },
-  { kind: 'container', id: 'kartong', name: 'Pappkartong', emoji: '📦', image: '/art/kartong.png', price: 49, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 } },
+  { kind: 'container', id: 'kiwipose', name: 'KIWI-pose', emoji: '🛍️', image: '/art/kiwi-pose.png', price: 1, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 6 }, shopBag: true },
+  { kind: 'container', id: 'extrapose', name: 'Extra-pose', emoji: '🛍️', image: '/art/extra-pose.png', price: 1, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 6 }, shopBag: true },
+  { kind: 'container', id: 'remapose', name: 'REMA-pose', emoji: '🛍️', image: '/art/rema-pose.png', price: 1, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 6 }, shopBag: true },
+  { kind: 'container', id: 'kartong', name: 'Pappkartong', emoji: '📦', image: '/art/kartong.png', price: 49, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 9 } },
   // Safer: låst med en firesifret kode (kodelappen følger med). Id-en «safe» er den lille.
-  { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', image: '/art/safe-liten.png', imageOpen: '/art/safe-liten-apen.png', price: 599, size: { w: 2, h: 2 }, inner: { cols: 4, rows: 4 }, safe: true },
-  { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 6, rows: 6 }, safe: true },
-  { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 8 } },
+  { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', image: '/art/safe-liten.png', imageOpen: '/art/safe-liten-apen.png', price: 599, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 6 }, safe: true },
+  { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 9, rows: 9 }, safe: true },
+  { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 9, rows: 12 } },
   // Dokumentmappa: bare papirer. Fire faner du kan gi navn, 5×5 i hver (inner er fanene stablet: 5×20).
-  { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', image: '/art/verktoy/dokumentmappe.png', price: 129, size: { w: 2, h: 3 }, inner: { cols: 5, rows: 20 }, docFolder: { tabs: 4, tabGrid: { cols: 5, rows: 5 } } },
+  { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', image: '/art/verktoy/dokumentmappe.png', price: 129, size: { w: 2, h: 3 }, inner: { cols: 10, rows: 40 }, docFolder: { tabs: 4, tabGrid: { cols: 10, rows: 10 } } },
   // Ryggsekken bæres på ryggen og rommer like mye som en pappkartong.
-  { kind: 'container', id: 'ryggsekk', name: 'Ryggsekk', emoji: '🎒', image: '/art/ryggsekk.png', price: 249, size: { w: 3, h: 3 }, inner: { cols: 4, rows: 6 }, backpack: true },
+  { kind: 'container', id: 'ryggsekk', name: 'Ryggsekk', emoji: '🎒', image: '/art/ryggsekk.png', price: 249, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 9 }, backpack: true },
   // Bilene (shared/car.ts): bagasjerommet er rutenettet inni. Kjøpes i Bilbutikken, ikke hos Klas Olsen.
-  { kind: 'container', id: 'bil_tennis', image: '/art/biler/bil-tennis.png', imageOpen: '/art/biler/bil-tennis-apen.png', name: 'WV Tennis 1995', emoji: '🚗', price: 0, size: { w: 4, h: 4 }, inner: { cols: 4, rows: 4 }, car: true },
-  { kind: 'container', id: 'bil_toforr', image: '/art/biler/bil-toforr.png', imageOpen: '/art/biler/bil-toforr-apen.png', name: 'Volvo Toførr 2004', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 3 }, car: true },
-  { kind: 'container', id: 'bil_highass', image: '/art/biler/bil-highass.png', imageOpen: '/art/biler/bil-highass-apen.png', name: 'Toyota HighAss 2014', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 8, rows: 4 }, car: true },
-  { kind: 'container', id: 'bil_fuzz', image: '/art/biler/bil-fuzz.png', imageOpen: '/art/biler/bil-fuzz-apen.png', name: 'ID Fuzz', emoji: '🚘', price: 0, size: { w: 4, h: 4 }, inner: { cols: 8, rows: 4 }, car: true },
+  { kind: 'container', id: 'bil_tennis', image: '/art/biler/bil-tennis.png', imageOpen: '/art/biler/bil-tennis-apen.png', name: 'WV Tennis 1995', emoji: '🚗', price: 0, size: { w: 4, h: 4 }, inner: { cols: 6, rows: 6 }, car: true },
+  { kind: 'container', id: 'bil_toforr', image: '/art/biler/bil-toforr.png', imageOpen: '/art/biler/bil-toforr-apen.png', name: 'Volvo Toførr 2004', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 9, rows: 5 }, car: true },
+  { kind: 'container', id: 'bil_highass', image: '/art/biler/bil-highass.png', imageOpen: '/art/biler/bil-highass-apen.png', name: 'Toyota HighAss 2014', emoji: '🚙', price: 0, size: { w: 4, h: 4 }, inner: { cols: 12, rows: 6 }, car: true },
+  { kind: 'container', id: 'bil_fuzz', image: '/art/biler/bil-fuzz.png', imageOpen: '/art/biler/bil-fuzz-apen.png', name: 'ID Fuzz', emoji: '🚘', price: 0, size: { w: 4, h: 4 }, inner: { cols: 12, rows: 6 }, car: true },
 ];
 
 /**
@@ -920,17 +924,25 @@ export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
   [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER].map((t) => [t.id, t]),
 );
 
-/** Bordet: 24 kolonner × 4 rader (rad 0 = bakerst). */
-export const COUNTER_GRID: GridSize = { cols: 20, rows: 4 };
+/**
+ * Bildeskala per vare (id → faktor). Endrer bare hvor stort bildet tegnes – ikke hvor mange ruter
+ * varen tar. 1 = som nå; 1,5 = 50 % større (kan stikke litt utenfor ruta); 0,8 = mindre.
+ * Gjelder under disken, i esker/maskiner og på bordet. Eksempel: `votter: 1.2`.
+ */
+export const ART_SCALE: Record<string, number> = {};
+export const artScale = (typeId: string) => ART_SCALE[typeId] ?? 1;
+
+/** Bordet: 31 kolonner × 6 rader (rad 0 = bakerst). Kolonnene er like brede som rutene under disken. */
+export const COUNTER_GRID: GridSize = { cols: 31, rows: 6 };
 /** Lageret under disken. */
-export const STORAGE_GRID: GridSize = { cols: 27, rows: 7 };
+export const STORAGE_GRID: GridSize = { cols: 34, rows: 9 };
 
 /** Søppelkassa er et eget rutenett. Alt i den forsvinner når søppelbilen kommer om natta. */
-export const TRASH_GRID: GridSize = { cols: 4, rows: 4 };
+export const TRASH_GRID: GridSize = { cols: 6, rows: 6 };
 export const TRASH_EMPTY_HOUR = 3;
 
 /** Spikeren under grenuttaket: plass til én etterlysning. */
-export const NAIL_GRID: GridSize = { cols: 1, rows: 1 };
+export const NAIL_GRID: GridSize = { cols: 2, rows: 2 };
 
 /** Nattetyver: varer som står ute på bordet mellom kl. 23 og 06 kan bli stjålet. */
 export const THEFT_FROM = 23;

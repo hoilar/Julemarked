@@ -23,8 +23,12 @@ import {
   placementError,
   type Spot,
   findCarrySpot,
+  inHands,
   isCarried,
+  isTwoHanded,
   carOf,
+  sizeOf,
+  gridOf,
 } from '../shared/items.ts';
 import { DUMP, tripPlaceName, CAR_BATTERY, CAR_BATTERY_FULL, CAR_BY_ID, START_CAR, TRADE_IN, fuelExpensive, fuelPrice, isCar, tripFuelCost } from '../shared/car.ts';
 import {
@@ -47,6 +51,7 @@ import {
   NEWSPAPER,
   SOCKETS,
   STORAGE_GRID,
+  TRASH_GRID,
   COUNTER_GRID,
   itemSocket,
   socketEntry,
@@ -70,6 +75,7 @@ import {
   FUSE,
   BLOWN_FUSE,
   FUSE_SLOTS,
+  fuseSlotCount,
   MAIL_GRID,
   FUSE_OUTAGE_CHANCE,
   METER_ROLLBACK_KWH,
@@ -194,10 +200,10 @@ import {
   type BillKind,
 } from '../shared/bills.ts';
 import { START_REPUTATION, expectedPrice, priceAppeal, reputationCrowd } from '../shared/mood.ts';
-import { DEALER, DEALER_HOUR, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, NIGHT_CURVE, dealerOffer, isLuguber } from '../shared/dealer.ts';
+import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, NIGHT_CURVE, dealerOffer, isLuguber } from '../shared/dealer.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
 import { BURNT, cookPlan } from '../shared/recipes.ts';
-import { findFree } from '../shared/grid.ts';
+import { findFree, fits, type GridSize } from '../shared/grid.ts';
 import { hash01 } from '../shared/hash.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
 import {
@@ -404,6 +410,160 @@ function event(m: MarketRow, playerId: number | null, gameTime: number, text: st
 
 // ---------- Gjenstander ----------
 
+/** Rutenettene før «finere ruter» (12.11.2026), for å flytte det som lå der til tilsvarende plass. */
+const OLD_GRID: Record<string, GridSize> = {
+  storage: { cols: 27, rows: 7 },
+  trash: { cols: 4, rows: 4 },
+  nail: { cols: 1, rows: 1 },
+  mail: { cols: 4, rows: 2 },
+  'box:kiwipose': { cols: 4, rows: 4 },
+  'box:extrapose': { cols: 4, rows: 4 },
+  'box:remapose': { cols: 4, rows: 4 },
+  'box:kartong': { cols: 4, rows: 6 },
+  'box:safe': { cols: 4, rows: 4 },
+  'box:safe_stor': { cols: 6, rows: 6 },
+  'box:plastkasse': { cols: 6, rows: 8 },
+  'box:ryggsekk': { cols: 4, rows: 6 },
+  'box:bil_tennis': { cols: 4, rows: 4 },
+  'box:bil_toforr': { cols: 6, rows: 3 },
+  'box:bil_highass': { cols: 8, rows: 4 },
+  'box:bil_fuzz': { cols: 8, rows: 4 },
+  'box:dokumentmappe': { cols: 5, rows: 20 }, // fire faner à 5×5
+  'pot_in:kjele': { cols: 4, rows: 4 },
+  'pot_out:kjele': { cols: 4, rows: 4 },
+  'pot_in:posebretter': { cols: 4, rows: 4 },
+  'pot_out:posebretter': { cols: 4, rows: 4 },
+  'pot_in:makulator': { cols: 4, rows: 4 },
+  'pot_out:makulator': { cols: 4, rows: 2 },
+  'pot_in:bakemaskin': { cols: 4, rows: 4 },
+  'pot_out:bakemaskin': { cols: 4, rows: 4 },
+  'pot_in:strikkemaskin': { cols: 4, rows: 4 },
+  'pot_out:strikkemaskin': { cols: 4, rows: 4 },
+  'pot_in:dekormaskin': { cols: 4, rows: 4 },
+  'pot_out:dekormaskin': { cols: 4, rows: 4 },
+};
+
+/**
+ * Flytter alt i bodens rutenett til de nye, finere rutene: hver ting får omtrent samme sted (skalert),
+ * eller første ledige plass i samme rutenett, ellers under disken. Ting som ikke får plass noe sted,
+ * blir liggende der de var (kan overlappe) – spilleren kan rydde selv.
+ */
+function regridStall(stallId: number) {
+  const items = itemsOf(stallId); // størrelsene er allerede de nye
+  const groups = new Map<string, Item[]>();
+  for (const i of items) {
+    if (!['storage', 'trash', 'nail', 'mail', 'box', 'pot_in', 'pot_out'].includes(i.place)) continue;
+    const k = `${i.place}|${i.boxId ?? ''}`;
+    groups.set(k, [...(groups.get(k) ?? []), i]);
+  }
+  const homeless: Item[] = [];
+  // Lageret sist, så det som ikke får plass i esker, kan legges der.
+  const keys = [...groups.keys()].sort((a, b) => (a.startsWith('storage') ? 1 : 0) - (b.startsWith('storage') ? 1 : 0));
+  for (const k of keys) {
+    const list = groups.get(k)!;
+    const { place, boxId } = list[0];
+    const grid = gridOf(items, place, boxId);
+    if (!grid) continue;
+    const parent = boxId != null ? items.find((b) => b.id === boxId) : undefined;
+    const old = OLD_GRID[parent ? `${place}:${parent.typeId}` : place] ?? grid;
+    const placed: Item[] = [];
+    for (const i of [...list].sort((a, b) => b.w * b.h - a.w * a.h)) {
+      let x = Math.round((i.x * grid.cols) / old.cols);
+      let y = Math.round((i.y * grid.rows) / old.rows);
+      if (parent?.typeId === 'dokumentmappe') {
+        // Fanene står over hverandre: behold fanen, dobbel plass inni den.
+        const tab = Math.floor(i.y / 5);
+        x = i.x * 2;
+        y = tab * 10 + (i.y % 5) * 2;
+      }
+      x = Math.max(0, Math.min(grid.cols - i.w, x));
+      y = Math.max(0, Math.min(grid.rows - i.h, y));
+      let spot: { x: number; y: number } | null = fits({ x, y, w: i.w, h: i.h }, placed, grid) ? { x, y } : findFree(i.w, i.h, placed, grid);
+      if (!spot) {
+        homeless.push(i);
+        continue;
+      }
+      i.x = spot.x;
+      i.y = spot.y;
+      placed.push(i);
+      q.moveItem.run(i.place, i.boxId, i.x, i.y, i.id);
+    }
+    if (place === 'storage') {
+      for (const i of homeless.splice(0)) {
+        const spot = findFree(i.w, i.h, placed, grid);
+        if (!spot) continue; // får ikke plass: blir liggende
+        i.place = 'storage';
+        i.boxId = null;
+        i.x = spot.x;
+        i.y = spot.y;
+        placed.push(i);
+        q.moveItem.run('storage', null, i.x, i.y, i.id);
+      }
+    }
+  }
+  db.prepare('UPDATE stalls SET grid_v2 = 1 WHERE id = ?').run(stallId);
+}
+
+/**
+ * Ting som overlapper andre eller stikker utenfor rutenettet sitt (etter at en størrelse er endret),
+ * flyttes til første ledige plass i samme rutenett, ellers under disken. Resten står urørt.
+ */
+/** Poser bæres ikke lenger i hånda: de som ligger der, settes under disken (med innholdet), ellers i søpla. */
+function bagsOutOfHands(stallId: number) {
+  const items = itemsOf(stallId);
+  for (const bag of items.filter((i) => i.place === 'carry' && i.x < 2 && ITEM_TYPES[i.typeId]?.kind === 'container')) {
+    for (const place of ['storage', 'trash'] as const) {
+      const spot = findFree(bag.w, bag.h, itemsIn(items, place, null), place === 'storage' ? STORAGE_GRID : TRASH_GRID);
+      if (!spot) continue;
+      Object.assign(bag, { place, boxId: null, ...spot });
+      q.moveItem.run(place, null, spot.x, spot.y, bag.id);
+      break;
+    }
+  }
+}
+
+function repairGrids(stallId: number) {
+  const items = itemsOf(stallId);
+  const groups = new Map<string, Item[]>();
+  for (const i of items) {
+    if (!['storage', 'counter', 'trash', 'nail', 'mail', 'box', 'pot_in', 'pot_out'].includes(i.place)) continue;
+    const k = `${i.place}|${i.boxId ?? ''}`;
+    groups.set(k, [...(groups.get(k) ?? []), i]);
+  }
+  const homeless: Item[] = [];
+  const keys = [...groups.keys()].sort((a, b) => (a.startsWith('storage') ? 1 : 0) - (b.startsWith('storage') ? 1 : 0));
+  for (const k of keys) {
+    const list = groups.get(k)!;
+    const grid = gridOf(items, list[0].place, list[0].boxId);
+    if (!grid) continue;
+    const placed: Item[] = [];
+    const moved: Item[] = [];
+    // De som står riktig, beholder plassen; de største først, så små ting viker.
+    for (const i of [...list].sort((a, b) => b.w * b.h - a.w * a.h)) {
+      if (fits(i, placed, grid)) placed.push(i);
+      else moved.push(i);
+    }
+    for (const i of moved) {
+      const spot = findFree(i.w, i.h, placed, grid);
+      if (!spot) {
+        homeless.push(i);
+        continue;
+      }
+      Object.assign(i, spot);
+      placed.push(i);
+      q.moveItem.run(i.place, i.boxId, i.x, i.y, i.id);
+    }
+    if (list[0].place === 'storage')
+      for (const i of homeless.splice(0)) {
+        const spot = findFree(i.w, i.h, placed, grid);
+        if (!spot) continue; // ingen plass noe sted: blir liggende
+        Object.assign(i, { place: 'storage', boxId: null, ...spot });
+        placed.push(i);
+        q.moveItem.run('storage', null, i.x, i.y, i.id);
+      }
+  }
+}
+
 function itemsOf(stallId: number): Item[] {
   return all<ItemRow>(q.items, stallId).map((r) => {
     const { w, h } = ITEM_TYPES[r.type_id].size;
@@ -447,7 +607,7 @@ function itemsOf(stallId: number): Item[] {
     if (isBattery(r.type_id)) item.charge = typeof st.charge === 'number' ? st.charge : capacityOf(r.type_id); // nye batterier er fulladet
     if (isFusebox(r.type_id))
       item.fuse = {
-        slots: Array.from({ length: FUSE_SLOTS }, (_, n) => (Array.isArray(st.slots) ? ((st.slots as (string | null)[])[n] ?? null) : null)),
+        slots: Array.from({ length: fuseSlotCount(r.type_id) }, (_, n) => (Array.isArray(st.slots) ? ((st.slots as (string | null)[])[n] ?? null) : null)),
         ...(Array.isArray(st.tripped) ? { tripped: st.tripped as string[] } : {}),
         ...(Array.isArray(st.off) ? { off: st.off as string[] } : {}),
       };
@@ -644,6 +804,23 @@ export function migrate() {
       }
       db.prepare('UPDATE stalls SET counter_20 = 1 WHERE id = ?').run(s.id);
     }
+    // Finere ruter (12.11.2026): lageret 27×7 → 34×9, esker/poser/bagasjerom/søppel ×1,5, maskininnmat for
+    // råvarer, postkassa, spikeren og dokumentmappa ×2; råvarer, små verktøy og lapper ble 2×2.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE grid_v2 = 0'))) regridStall(s.id);
+    // Bordet ble 31×6 (fra 20×4): samme sted skalert; overlapp ryddes rett under.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE counter_31 = 0'))) {
+      for (const i of itemsOf(s.id).filter((x) => x.place === 'counter')) {
+        const x = Math.max(0, Math.min(COUNTER_GRID.cols - i.w, Math.round((i.x * COUNTER_GRID.cols) / 20)));
+        const y = Math.max(0, Math.min(COUNTER_GRID.rows - i.h, Math.round((i.y * COUNTER_GRID.rows) / 4)));
+        q.moveItem.run('counter', null, x, y, i.id);
+      }
+      db.prepare('UPDATE stalls SET counter_31 = 1 WHERE id = ?').run(s.id);
+    }
+    // Har en vare fått ny størrelse, kan den overlappe eller stikke utenfor: rydd ved hver oppstart.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) {
+      bagsOutOfHands(s.id);
+      repairGrids(s.id);
+    }
     // Skjenkebevillingen er nå et dokument: de som hadde den, får dokumentet under disken.
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE liquor_license = 1'))) {
       const items = itemsOf(s.id);
@@ -711,11 +888,26 @@ function giveStarterPhone(stallId: number) {
 
 // ---------- Spillerhandlinger ----------
 
+/** Ledige plasser en ny spiller har råd til å starte på (bakgata, med startkassa). */
+export function freeStartSlots(marketId: number): number {
+  const taken = new Set(all<{ slot_index: number }>(db.prepare('SELECT slot_index FROM stalls WHERE market_id = ?'), marketId).map((r) => r.slot_index));
+  return LAYOUT.filter((s) => s.price <= START_CASH && !taken.has(s.index)).length;
+}
+
 export function join(name: string, code: string): string {
   name = name.trim().slice(0, 24);
   if (name.length < 2) throw new GameError('Navnet må ha minst to tegn.');
   const market = one<MarketRow>(q.marketByCode, code.trim().toUpperCase());
   if (!market) throw new GameError('Fant ikke noe marked med den koden.');
+  if (freeStartSlots(market.id) === 0) {
+    // Fullt: vis til et annet marked med ledig startplass, hvis det finnes.
+    const other = all<MarketRow>(db.prepare('SELECT * FROM markets WHERE id != ? ORDER BY id'), market.id).find((m) => freeStartSlots(m.id) > 0);
+    throw new GameError(
+      other
+        ? `«${market.name}» er fullt. Prøv koden ${other.invite_code} («${other.name}»).`
+        : `«${market.name}» er fullt. Spør arrangøren om en kode til et nytt marked.`,
+    );
+  }
   const token = randomBytes(24).toString('base64url');
   db.prepare('INSERT INTO players (market_id, name, token, created_at) VALUES (?, ?, ?, ?)').run(
     market.id,
@@ -900,7 +1092,7 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
       throw new GameError('Plassen er allerede tatt.');
     }
     if (def.price > 0) q.insertTx.run(market.id, nowFor(market), 'plass', id, null, null, null, def.price);
-    db.prepare('UPDATE stalls SET storage_26 = 1, counter_20 = 1 WHERE id = ?').run(id);
+    db.prepare('UPDATE stalls SET storage_26 = 1, counter_20 = 1, grid_v2 = 1, counter_31 = 1 WHERE id = ?').run(id);
     giveStarterPhone(id);
     giveStarterCar(id);
     giveStarterFusebox(id);
@@ -1052,12 +1244,18 @@ export function writeNote(player: PlayerRow, kind: 'code' | 'text', text: string
 }
 
 /** Tar noe fra en annens søppelkasse og legger det under din egen disk. Søppelkassene er åpne for alle. */
-const NO_CARRY = 'Du har ingenting å bære det i. Ta en pose i hånda eller en ryggsekk på ryggen (dra den fra under disken til «Du bærer»).';
+/** Hvorfor du ikke får tatt den med deg. */
+function noCarry(items: Item[], typeId: string): string {
+  if (isTwoHanded(typeId)) return inHands(items).length ? `Du trenger begge hendene til ${ITEM_TYPES[typeId].name.toLowerCase()}. Legg fra deg det du holder først.` : 'Den får du ikke med deg.';
+  if (ITEM_TYPES[typeId].kind === 'container') return 'Den får du ikke med deg.';
+  return 'Hendene er fulle, og ryggsekken har ikke plass. Legg fra deg noe først, eller ta på deg en ryggsekk.';
+}
 
 /** «Den ligger i posen i venstre hånd.» */
-function carriedWhere(spot: Spot): string {
-  if (spot.place === 'carry') return spot.x === 2 ? 'Du har den på ryggen.' : `Du bærer den i ${spot.x === 0 ? 'venstre' : 'høyre'} hånd.`;
-  return 'Den ligger i det du bærer.';
+function carriedWhere(spot: Spot, typeId: string): string {
+  if (spot.place === 'carry')
+    return spot.x === 2 ? 'Du har den på ryggen.' : isTwoHanded(typeId) ? 'Du bærer den med begge hendene.' : `Du bærer den i ${spot.x === 0 ? 'venstre' : 'høyre'} hånd.`;
+  return 'Den ligger i ryggsekken.';
 }
 
 export function takeFromTrash(player: PlayerRow, stallId: number, itemId: number) {
@@ -1074,10 +1272,11 @@ export function takeFromTrash(player: PlayerRow, stallId: number, itemId: number
     if (t.kind === 'policy') throw new GameError('Forsikringsbeviset står på et annet navn.');
     if (t.id === LICENSE_DOC) throw new GameError('Skjenkebevillingen står på et annet navn.');
     if (theirs.some((i) => i.boxId === item.id)) throw new GameError('Det ligger noe oppi den. Det får du ikke med deg.');
-    const spot = findCarrySpot(itemsOf(mine.id), item.typeId);
-    if (!spot) throw new GameError(NO_CARRY);
+    const myItems = itemsOf(mine.id);
+    const spot = findCarrySpot(myItems, item.typeId);
+    if (!spot) throw new GameError(noCarry(myItems, item.typeId));
     db.prepare('UPDATE items SET stall_id = ?, place = ?, box_id = ?, x = ?, y = ? WHERE id = ?').run(mine.id, spot.place, spot.boxId, spot.x, spot.y, item.id);
-    event(market, player.id, nowFor(market), `🗑️ Du tok ${t.name.toLowerCase()} fra søpla til «${other.name}». ${carriedWhere(spot)}`);
+    event(market, player.id, nowFor(market), `🗑️ Du tok ${t.name.toLowerCase()} fra søpla til «${other.name}». ${carriedWhere(spot, item.typeId)}`);
   });
 }
 
@@ -1311,6 +1510,7 @@ function snoopTakeError(it: Item): string | null {
   if (t.kind === 'policy' || t.id === LICENSE_DOC) return 'Det står på et annet navn.';
   if (t.id === PHONE) return 'Telefonen er låst med kode. Den lar du ligge.';
   if (t.kind === 'container' && t.car) return 'Bilen står der den står.';
+  if (isFusebox(t.id)) return 'Sikringsboksen er skrudd fast i veggen.';
   return null;
 }
 
@@ -1426,8 +1626,9 @@ export function snoopTake(player: PlayerRow, stallId: number, itemId: number): S
     if (!it) throw new GameError('Den ligger ikke der lenger.');
     const err = snoopTakeError(it);
     if (err) throw new GameError(err);
-    const spot = findCarrySpot(itemsOf(mine.id), it.typeId);
-    if (!spot) throw new GameError('Det får ikke plass i det du bærer. Ta en pose i hånda eller en ryggsekk på ryggen, med plass til det.');
+    const myItems = itemsOf(mine.id);
+    const spot = findCarrySpot(myItems, it.typeId);
+    if (!spot) throw new GameError(noCarry(myItems, it.typeId));
     const tm = it.tamper ? tamperOf(it.id) : null;
     const name = ITEM_TYPES[it.typeId].name.toLowerCase();
     moveToStall(items, it, mine.id, spot);
@@ -1446,7 +1647,7 @@ export function snoopTake(player: PlayerRow, stallId: number, itemId: number): S
         db.prepare('UPDATE snoop_traces SET taken = ? WHERE id = ?').run(JSON.stringify(taken), trace.id);
       }
     }
-    event(market, player.id, t, `🕵️ Du tok ${name} fra under disken hos «${other.name}». ${carriedWhere(spot)}`);
+    event(market, player.id, t, `🕵️ Du tok ${name} fra under disken hos «${other.name}». ${carriedWhere(spot, it.typeId)}`);
     return { view: snoopView(market, mine, other, sess, t) };
   });
 }
@@ -1467,6 +1668,7 @@ export function snoopMove(player: PlayerRow, stallId: number, itemId: number, pl
     const items = itemsOf(other.id);
     const it = snoopable(items, sess).find((i) => i.id === itemId);
     if (!it) throw new GameError('Den ligger ikke der lenger.');
+    if (isFusebox(it.typeId)) throw new GameError('Sikringsboksen er skrudd fast i veggen.');
     const spot = snoopSpot(items, sess, place, boxId, x, y);
     if (spot.boxId === it.id) throw new GameError('Den kan ikke ligge oppi seg selv.');
     const err = placementError(items, it, spot);
@@ -1481,7 +1683,7 @@ export function snoopPlant(player: PlayerRow, stallId: number, itemId: number, p
   return snooping(player, stallId, ({ market, mine, other, sess, t }) => {
     const myItems = itemsOf(mine.id);
     const it = myItems.find((i) => i.id === itemId);
-    if (!it || !isCarried(myItems, it) || it.place === 'carry') throw new GameError('Du kan bare legge inn ting du bærer i en pose eller i ryggsekken.');
+    if (!it || !isCarried(myItems, it) || (it.place === 'carry' && it.x === 2)) throw new GameError('Du kan bare legge inn ting du har i hendene eller i ryggsekken.');
     const items = itemsOf(other.id);
     const spot = snoopSpot(items, sess, place, boxId, x, y);
     const err = placementError(items, it, spot);
@@ -1656,7 +1858,7 @@ function finishKeyJobs(market: MarketRow, s: StallRow, t: number) {
     const res = q.insertItem.run(s.id, COPY_KEY, spot.place, spot.boxId, spot.x, spot.y, null);
     q.setState.run(JSON.stringify({ stallId: st.job.stallId, stallName: st.job.stallName }), Number(res.lastInsertRowid));
     saveState(m.id, {});
-    items.push({ id: Number(res.lastInsertRowid), typeId: COPY_KEY, ...spot, w: 1, h: 1 });
+    items.push({ id: Number(res.lastInsertRowid), typeId: COPY_KEY, ...spot, ...sizeOf(COPY_KEY) });
     event(market, s.owner_id, m.keyJob!.until, `🔑 Nøkkelmaskinen er ferdig: kopinøkkelen til «${st.job.stallName}» ligger under disken.`);
   }
 }
@@ -1759,6 +1961,7 @@ export function moveItem(player: PlayerRow, itemId: number, place: Place, boxId:
   if (carOf(items, item) || (place === 'box' && target && (isCar(target.typeId) || carOf(items, target)))) notAway(stall, nowFor(marketOf(player)));
   if (isUndelivered(items, item)) throw new GameError('Posen står ved boden. Trykk på den for å ta den inn.');
   const spot: Spot = { place, boxId: NESTED.has(place) ? boxId : null, x: int(x, 'plass'), y: int(y, 'plass') };
+  if (spot.place === 'carry' && spot.x < 2 && isTwoHanded(item.typeId)) spot.x = 0; // begge hendene
   const err = placementError(items, item, spot);
   if (err) throw new GameError(err);
   const installing = isFusebox(item.typeId) && isTrashed(items, item) && spot.place !== 'trash';
@@ -1961,7 +2164,7 @@ export function getState(player: PlayerRow): GameState {
       crowd: mine && mine.tip_day === dateKey(t) ? tipPenalty(mine.tip_wrong) : 1,
       gift: mine ? giftFor(market, mine, t) : null,
       autogiro: !!mine?.autogiro,
-      dealer: mine ? dealerView(market, mine, t) : { offer: [], orders: [] },
+      dealer: mine ? dealerView(market, mine, t) : { offer: [], orders: [], buys: [], sales: [] },
       license: { has: hasLicense(items), pending: !!mine?.liquor_order, bannedUntil: mine && mine.liquor_ban > t ? mine.liquor_ban : null },
       mailPaper: items.some((i) => i.place === 'mail'),
       car: {
@@ -2228,7 +2431,7 @@ function syncFuseSlots(stallId: number, fill = false) {
   const plugged = pluggedEntries(powerOf(s), items)
     .map((p) => p.entry)
     .filter((e): boolean => !isStripEntry(e));
-  const before = box.fuse?.slots ?? Array<string | null>(FUSE_SLOTS).fill(null);
+  const before = box.fuse?.slots ?? Array<string | null>(fuseSlotCount(box.typeId)).fill(null);
   const slots = before.map((e) => (e && plugged.includes(e) ? e : null));
   for (const e of plugged) {
     if (slots.includes(e)) continue;
@@ -2851,13 +3054,14 @@ function shredOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: I
     const isPlastic = (type.kind === 'container' && type.shopBag) || type.kind === 'folded';
     if (type.kind === 'container' && contentsOf(items, it.id).length > 0) continue; // ikke tomme poser
     if (isPlastic && Math.random() < MICROPLASTIC_CHANCE) {
-      const free = findFree(1, 1, out, def.output);
+      const mp = sizeOf(MICROPLASTIC);
+      const free = findFree(mp.w, mp.h, out, def.output);
       if (!free) {
         event(market, s.owner_id, t, `${def.emoji} Makuleringsmaskinen stoppet – ut-feltet er fullt av mikroplast.`);
         break;
       }
       q.insertItem.run(s.id, MICROPLASTIC, 'pot_out', m.id, free.x, free.y, null);
-      out.push({ id: -1, typeId: MICROPLASTIC, place: 'pot_out', boxId: m.id, x: free.x, y: free.y, w: 1, h: 1 });
+      out.push({ id: -1, typeId: MICROPLASTIC, place: 'pot_out', boxId: m.id, x: free.x, y: free.y, ...mp });
       plastic++;
     }
     q.deleteItem.run(it.id);
@@ -2995,7 +3199,8 @@ function deliverLicenses(market: MarketRow, t: number) {
   const key = currentEdition(t).key;
   for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ? AND liquor_order > 0 AND liquor_order < ?'), market.id, key)) {
     const items = itemsOf(s.id);
-    const mailSpot = findFree(1, 1, items.filter((i) => i.place === 'mail'), MAIL_GRID);
+    const lic = sizeOf(LICENSE_DOC);
+    const mailSpot = findFree(lic.w, lic.h, items.filter((i) => i.place === 'mail'), MAIL_GRID);
     const spot = mailSpot ? { place: 'mail' as const, boxId: null, ...mailSpot } : findStorageSpot(items, LICENSE_DOC);
     if (!spot) continue; // ingen plass verken i postkassa eller under disken: prøver igjen neste morgen
     q.insertItem.run(s.id, LICENSE_DOC, spot.place, spot.boxId, spot.x, spot.y, null);
@@ -3439,7 +3644,90 @@ function dealerView(market: MarketRow, s: StallRow, t: number): GameState['me'][
     deliverAt: o.deliver_at,
     lines: JSON.parse(o.lines) as Lines,
   }));
-  return { offer, orders };
+  const items = itemsOf(s.id);
+  const buys = DEALER_BUYS.map((b) => ({ ...b, have: items.filter((i) => i.typeId === b.typeId).length }));
+  const sales = all<DealerSaleRow>(db.prepare('SELECT * FROM dealer_sales WHERE stall_id = ? AND done = 0 ORDER BY pickup_at'), s.id).map((r) => ({
+    typeId: r.type_id,
+    qty: r.qty,
+    price: r.price,
+    pickupAt: r.pickup_at,
+  }));
+  return { offer, orders, buys, sales };
+}
+
+interface DealerSaleRow {
+  id: number;
+  stall_id: number;
+  type_id: string;
+  qty: number;
+  price: number;
+  pickup_at: number;
+  done: number;
+}
+
+/** Neste gang klokka er `hour` (strengt etter t). */
+function nextHourAt(t: number, hour: number): number {
+  let x = (Math.floor(t / HOUR) + 1) * HOUR;
+  for (let i = 0; i < 26 && osloParts(x).hour !== hour; i++) x += HOUR;
+  return x;
+}
+
+/** SMS til Fyren: «Jeg har en ... til deg.» Han henter den i søppelkassa kl. 02 og legger igjen kontanter. */
+export function dealerSell(player: PlayerRow, typeId: string) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  tx(() => {
+    const stall = myStall(player);
+    const buy = DEALER_BUYS.find((b) => b.typeId === typeId);
+    if (!buy) throw new GameError('Det vil han ikke ha.');
+    const items = itemsOf(stall.id);
+    const have = items.filter((i) => i.typeId === typeId).length;
+    const open = one<DealerSaleRow>(db.prepare('SELECT * FROM dealer_sales WHERE stall_id = ? AND type_id = ? AND done = 0'), stall.id, typeId);
+    const qty = (open?.qty ?? 0) + 1;
+    const name = ITEM_TYPES[typeId].name.toLowerCase();
+    if (qty > have) throw new GameError(`Du har ikke ${qty > 1 ? `${qty} ` : ''}${name}${qty > 1 ? 'er' : ''} å selge.`);
+    if (qty > DEALER_SELL_MAX) throw new GameError(`Han tar ikke mer enn ${DEALER_SELL_MAX} om gangen.`);
+    const at = open?.pickup_at ?? nextHourAt(t, DEALER_PICKUP_HOUR);
+    if (open) db.prepare('UPDATE dealer_sales SET qty = ? WHERE id = ?').run(qty, open.id);
+    else db.prepare('INSERT INTO dealer_sales (stall_id, type_id, qty, price, pickup_at) VALUES (?, ?, ?, ?, ?)').run(stall.id, typeId, qty, buy.price, at);
+    event(
+      market,
+      player.id,
+      t,
+      `📱 Du sendte SMS til ${DEALER.short}: ${qty} ${name}. Svar: «${buy.price * qty} kr. Legg det i søppelkassa, jeg henter kl. 0${DEALER_PICKUP_HOUR}.»`,
+    );
+  });
+}
+
+/** Kl. 02: Fyren henter det han har avtalt å kjøpe fra søppelkassene og betaler kontant. */
+function pickupDealer(market: MarketRow, t: number) {
+  const due = all<DealerSaleRow & { owner_id: number }>(
+    db.prepare('SELECT d.*, s.owner_id FROM dealer_sales d JOIN stalls s ON s.id = d.stall_id WHERE s.market_id = ? AND d.done = 0 AND d.pickup_at <= ?'),
+    market.id,
+    t,
+  );
+  for (const d of due) {
+    const items = itemsOf(d.stall_id);
+    // Bare det som ligger løst i søppelkassa (ikke oppi en pose der).
+    const found = items.filter((i) => i.typeId === d.type_id && i.place === 'trash').slice(0, d.qty);
+    for (const i of found) q.deleteItem.run(i.id);
+    db.prepare('UPDATE dealer_sales SET done = 1 WHERE id = ?').run(d.id);
+    const name = ITEM_TYPES[d.type_id].name.toLowerCase();
+    if (found.length === 0) {
+      event(market, d.owner_id, t, `🕶️ ${DEALER.short} kikket i søppelkassa di i natt, men fant ingen ${name}. Avtalen er av.`);
+      continue;
+    }
+    const pay = found.length * d.price;
+    q.addCash.run(pay, d.stall_id);
+    q.insertTx.run(market.id, t, 'dealer_sale', d.stall_id, null, null, null, pay);
+    if (found.some((i) => ITEM_TYPES[i.typeId].kind === 'electric')) cleanPower(one<StallRow>(q.stallById, d.stall_id)!);
+    event(
+      market,
+      d.owner_id,
+      t,
+      `🕶️ ${DEALER.short} hentet ${found.length} ${name} i søppelkassa di i natt og la igjen ${pay} kr.${found.length < d.qty ? ` Han fant bare ${found.length} av ${d.qty}.` : ''}`,
+    );
+  }
 }
 
 /** Neste gang klokka er DEALER_HOUR (strengt etter t). */
@@ -3904,6 +4192,7 @@ function processHour(market: MarketRow, hour: number) {
     const price = powerPrice(market.id, currentEdition(t).key);
     event(market, null, t, `📰 Verdens Undergang ligger i postkassa. Strømpris i dag: ${price.toFixed(2).replace('.', ',')} kr/kWh.`);
   }
+  pickupDealer(market, t);
   deliverDealer(market, t);
   db.prepare('DELETE FROM snoop_traces WHERE market_id = ? AND created_at < ?').run(market.id, t - TRACE_HOURS * HOUR); // sporene blir borte etter et døgn
   if (parts.hour === TRASH_EMPTY_HOUR) {

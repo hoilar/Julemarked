@@ -222,7 +222,13 @@ export interface GameState {
     /** Skjenkebevillingen. bannedUntil = spilltid da du kan kjøpe ny etter at den ble inndratt. */
     license: { has: boolean; pending: boolean; bannedUntil: number | null };
     /** Fyren bak containeren: dagens tilbud (left = hvor mange han har igjen til deg) og bestillinger på vei. */
-    dealer: { offer: { typeId: string; price: number; left: number }[]; orders: { deliverAt: number; lines: { typeId: string; qty: number }[] }[] };
+    dealer: {
+      offer: { typeId: string; price: number; left: number }[];
+      orders: { deliverAt: number; lines: { typeId: string; qty: number }[] }[];
+      /** Det Fyren kjøper, hvor mange du har (utenom søpla), og avtalene om henting i søppelkassa. */
+      buys: { typeId: string; price: number; have: number }[];
+      sales: { typeId: string; qty: number; price: number; pickupAt: number }[];
+    };
     /** Det ligger en avis i postkassa (flagget er oppe). */
     mailPaper: boolean;
     /** Gavekortselgeren ved disken (null når ingen står der). offer = null: du har ingenting hen vil ha. */

@@ -45,6 +45,15 @@ export function itemsIn(items: Item[], place: Place, boxId: number | null): Item
 /** Det du bærer: tre plasser (venstre hånd, høyre hånd, ryggen). */
 export const CARRY_GRID: GridSize = { cols: 3, rows: 1 };
 
+/** Maskiner: bæres med begge hender (ligger på x = 0 og tar begge håndplassene), og får ikke plass i ryggsekken. */
+export function isTwoHanded(typeId: string): boolean {
+  const t = ITEM_TYPES[typeId];
+  return !!t && (t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger' || t.id === 'nokkelmaskin');
+}
+
+/** Hva du har i hendene (place = 'carry', x = 0 eller 1). */
+export const inHands = (items: Item[], exceptId?: number) => items.filter((i) => i.place === 'carry' && i.x < 2 && i.id !== exceptId);
+
 /** Bilen gjenstanden står i (direkte i bagasjerommet, eller i en eske/pose der), eller undefined. */
 export function carOf(items: Item[], item: Item): Item | undefined {
   let cur: Item | undefined = item;
@@ -63,22 +72,26 @@ export function isCarried(items: Item[], item: Item): boolean {
   return items.find((b) => b.id === item.boxId)?.place === 'carry';
 }
 
-/** Hvor det du tar med deg havner: en ledig hånd (poser) eller ryggen (sekken), ellers oppi det du bærer. */
+/**
+ * Hvor det du tar med deg havner: oppi ryggsekken hvis det får plass, ellers i en ledig hånd (én ting per hånd).
+ * Maskiner tar begge hendene. Poser bæres ikke i hånda, og esker bæres ikke i det hele tatt.
+ */
 export function findCarrySpot(items: Item[], typeId: string): Spot | null {
   const t = ITEM_TYPES[typeId];
-  const free = (x: number) => !items.some((i) => i.place === 'carry' && i.x === x);
+  const hands = inHands(items);
   if (t.kind === 'container') {
-    if (t.shopBag) for (const x of [0, 1]) if (free(x)) return { place: 'carry', boxId: null, x, y: 0 };
-    if (t.id === BACKPACK && free(2)) return { place: 'carry', boxId: null, x: 2, y: 0 };
-    return null; // esker kan ikke ligge oppi poser
+    if (t.id === BACKPACK && !items.some((i) => i.place === 'carry' && i.x === 2)) return { place: 'carry', boxId: null, x: 2, y: 0 };
+    return null;
   }
-  const { w, h } = t.size;
-  for (const c of items.filter((i) => i.place === 'carry').sort((a, b) => a.x - b.x)) {
-    const ct = ITEM_TYPES[c.typeId];
-    if (ct.kind !== 'container') continue;
-    const s = findFree(w, h, itemsIn(items, 'box', c.id), ct.inner);
-    if (s) return { place: 'box', boxId: c.id, ...s };
+  if (isTwoHanded(typeId)) return hands.length === 0 ? { place: 'carry', boxId: null, x: 0, y: 0 } : null;
+  const sack = items.find((i) => i.place === 'carry' && i.x === 2);
+  const st = sack && ITEM_TYPES[sack.typeId];
+  if (sack && st?.kind === 'container') {
+    const s = findFree(t.size.w, t.size.h, itemsIn(items, 'box', sack.id), st.inner);
+    if (s) return { place: 'box', boxId: sack.id, ...s };
   }
+  if (hands.some((i) => isTwoHanded(i.typeId))) return null;
+  for (const x of [0, 1]) if (!hands.some((i) => i.x === x)) return { place: 'carry', boxId: null, x, y: 0 };
   return null;
 }
 
@@ -117,10 +130,16 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   const intoTrunk = spot.place === 'box' && !!parent && ITEM_TYPES[parent.typeId]?.kind === 'container' && !!(ITEM_TYPES[parent.typeId] as { car?: boolean }).car;
   if (spot.place === 'carry') {
     if (spot.y !== 0 || spot.x < 0 || spot.x > 2) return 'Ugyldig plass.';
-    if (t.kind !== 'container') return 'Du bærer ting i en pose eller en ryggsekk. Legg den i hånda eller på ryggen først.';
-    if (spot.x === 2 && t.id !== BACKPACK) return 'På ryggen bærer du bare en ryggsekk.';
-    if (spot.x < 2 && !t.shopBag) return t.id === BACKPACK ? 'Ryggsekken bærer du på ryggen.' : `${t.name} er for stor å bære rundt på. Bruk en pose.`;
-    if (items.some((i) => i.place === 'carry' && i.x === spot.x && i.id !== item.id)) return spot.x === 2 ? 'Du har allerede en ryggsekk på.' : 'Den hånden er opptatt.';
+    if (spot.x === 2) {
+      if (t.id !== BACKPACK) return 'På ryggen bærer du bare en ryggsekk.';
+      return items.some((i) => i.place === 'carry' && i.x === 2 && i.id !== item.id) ? 'Du har allerede en ryggsekk på.' : null;
+    }
+    if (t.kind === 'container')
+      return t.id === BACKPACK ? 'Ryggsekken bærer du på ryggen.' : t.shopBag ? 'Poser bærer du ikke i hånda. Bruk ryggsekken, eller ta én ting i hver hånd.' : `${t.name} er for stor å bære rundt på.`;
+    const hands = inHands(items, item.id);
+    if (isTwoHanded(t.id)) return hands.length ? `Du trenger begge hendene til ${t.name.toLowerCase()}.` : null;
+    if (hands.some((i) => isTwoHanded(i.typeId))) return 'Du bærer noe med begge hendene.';
+    if (hands.some((i) => i.x === spot.x)) return 'Den hånden er opptatt.';
     return null;
   }
   // Dokumentmappa: bare papirer, og ingenting som går over to faner.
@@ -176,6 +195,7 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
     return spot.place === 'counter' ? 'Batteriet er ikke til salgs.' : 'Batteriet går i batteriplassen eller i ladestasjonen.';
   if (t.kind === 'charger' && spot.place !== 'storage' && spot.place !== 'trash') return 'Ladestasjonen skal stå under disken.';
   if (t.kind === 'folded' && spot.place === 'counter') return 'Sammenbretta poser er ikke til salgs.';
+  if (isTwoHanded(t.id) && spot.place === 'box' && parent?.typeId === BACKPACK) return 'Maskiner får ikke plass i ryggsekken.';
   if ((t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger') && NESTED.has(spot.place))
     return spot.place === 'box' ? 'En utpakket maskin går ikke inn i esken igjen.' : 'Maskinen får ikke plass der.';
   if (t.kind === 'paper' && spot.place === 'counter') return 'Avisa er ikke til salgs.';

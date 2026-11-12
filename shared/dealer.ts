@@ -7,6 +7,7 @@ import { PRODUCT_BY_ID } from './products.ts';
 
 export const DEALER = { name: 'Fyren bak containeren', short: 'Fyren' };
 export const DEALER_HOUR = 4; // leverer i søppelkassa kl. 04 (søppelbilen kommer kl. 03)
+export const DEALER_PICKUP_HOUR = 2; // henter det du selger til ham fra søppelkassa kl. 02 (før søppelbilen)
 export const NIGHT_CURVE = 0.8; // kundestrøm for luguberte varer om natta (dagvarer bruker timekurven)
 
 export const LUGUBER_FINE_FACTOR = 2; // bot = 2 × det kundene forventer å betale
@@ -32,6 +33,10 @@ export const DEALER_GOODS: DealerGood[] = [
   { typeId: 'nokkelmaskin', price: 900, stock: [1, 1], rare: 0.4 },
   { typeId: 'sikringsboks_bypass', price: 700, stock: [1, 1], rare: 0.5 },
 ];
+
+/** Det Fyren kjøper av deg (f.eks. en stjålet terminal): si fra på SMS og legg det i søppelkassa. Kr per stk, kontant. */
+export const DEALER_BUYS: { typeId: string; price: number }[] = [{ typeId: 'bippsterminal', price: 100 }];
+export const DEALER_SELL_MAX = 5; // så mange av hver han tar om gangen
 
 export interface DealerOffer {
   typeId: string;

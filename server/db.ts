@@ -161,6 +161,8 @@ if (!hasColumn('stalls', 'tip_day')) {
 }
 // Kunder du har solgt til selv (eller som sa nei), så samme kunde ikke kan brukes to ganger.
 // Bestillinger hos Fyren bak containeren: leveres i søppelkassa kl. 04. lines = JSON [{typeId, qty}] som ikke er levert ennå.
+// Det du selger til Fyren: han henter qty stk av type_id i søppelkassa ved pickup_at og betaler price per stk.
+db.exec('CREATE TABLE IF NOT EXISTS dealer_sales (id INTEGER PRIMARY KEY, stall_id INTEGER NOT NULL, type_id TEXT NOT NULL, qty INTEGER NOT NULL, price INTEGER NOT NULL, pickup_at INTEGER NOT NULL, done INTEGER NOT NULL DEFAULT 0)');
 db.exec('CREATE TABLE IF NOT EXISTS dealer_orders (id INTEGER PRIMARY KEY, stall_id INTEGER NOT NULL, day INTEGER NOT NULL, lines TEXT NOT NULL, ordered TEXT NOT NULL, deliver_at INTEGER NOT NULL, delivered INTEGER NOT NULL DEFAULT 0)');
 // Spor etter snoking under disken (steg 5). taken = gjenstandene som ble tatt [{id, typeId}].
 db.exec('CREATE TABLE IF NOT EXISTS snoop_traces (id INTEGER PRIMARY KEY, market_id INTEGER NOT NULL, stall_id INTEGER NOT NULL, snooper_stall_id INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, created_at INTEGER NOT NULL, taken TEXT NOT NULL DEFAULT \'[]\', resolved INTEGER NOT NULL DEFAULT 0)');
@@ -189,6 +191,10 @@ if (!hasColumn('stalls', 'main_blown')) db.exec('ALTER TABLE stalls ADD COLUMN m
 if (!hasColumn('stalls', 'storage_26')) db.exec('ALTER TABLE stalls ADD COLUMN storage_26 INTEGER NOT NULL DEFAULT 0');
 // Bordet ble 20 ruter (to kolonner mindre på hver side): 0 = varene på disken er ikke flyttet ennå.
 if (!hasColumn('stalls', 'counter_20')) db.exec('ALTER TABLE stalls ADD COLUMN counter_20 INTEGER NOT NULL DEFAULT 0');
+// Finere ruter (lager 34×9, større esker, småting 2×2): 0 = tingene er ikke flyttet til de nye rutene ennå.
+// Bordet ble 31×6 (fra 20×4): 0 = varene på disken er ikke flyttet ennå.
+if (!hasColumn('stalls', 'counter_31')) db.exec('ALTER TABLE stalls ADD COLUMN counter_31 INTEGER NOT NULL DEFAULT 0');
+if (!hasColumn('stalls', 'grid_v2')) db.exec('ALTER TABLE stalls ADD COLUMN grid_v2 INTEGER NOT NULL DEFAULT 0');
 // Skiltet på boden: 'open' (Åpent), 'self' (Selvbetjent) eller 'closed' (Stengt).
 if (!hasColumn('stalls', 'sign')) db.exec("ALTER TABLE stalls ADD COLUMN sign TEXT NOT NULL DEFAULT 'open'");
 // Strømmåleren: målerstand (kWh totalt), dagen den sist ble skrudd tilbake, og kWh skrudd tilbake

@@ -80,6 +80,13 @@ Tabellen over er størrelsen på **spillfilene**.
 > **Bruk helst `tools/pixelify.py` i stedet for ren nearest-neighbor-skalering** (se neste
 > seksjon). Den gir et mer «ekte» pixel art-uttrykk og binder alle assets til samme palett.
 
+## Spillstørrelse: `tools/spillbilder.py` (kjør etter nye bilder)
+
+Rutenettene og bordet viser ikke originalene, men ferdig nedskalerte kopier i `art/spill/…`
+(64 px per rute av tingens fotavtrykk, laget med pikselsnitt). Da blir alle like skarpe med
+`image-rendering: pixelated`. **Etter at et bilde er lagt inn eller en størrelse er endret:**
+`py tools/spillbilder.py` (oppdaterer også `client/spillbilder.json`). Bilder uten kopi vises som før.
+
 ## Ekte pixel art fra AI (`tools/pixelify.py`)
 
 AI lager et *bilde av* pixel art, ikke ekte pixel art: tusenvis av farger, myke/anti-aliasede

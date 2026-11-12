@@ -250,6 +250,101 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 - Turistbesøk eller handel mellom markeder.
 - Avatarer som fysisk beveger seg rundt.
 - Sesongrapport og nasjonale kåringer.
+- Flere boder per spiller og bodsalg mellom spillere (se 12.1).
+- Julelotteri med jackpot (se 12.2).
+
+### 12.1 Flere boder per spiller (planlagt for sesongen 2027)
+
+**Bestemt (12.11.2026):** Man skal ikke måtte flytte når man vil ha en bedre bod. Man kan i stedet *kjøpe flere boder* og bygge opp en liten markedsbedrift.
+
+**Kart og kapasitet per server:**
+
+| Gate | Plasser | Maks per spiller |
+|---|---|---|
+| Hovedgate | 24 | 1 |
+| Sidegate | 48 | 2 |
+| Bakgate | 48 | 3 |
+
+- En server har plass til 24 spillere. Alle kan få én hovedgatebod og to sidegateboder, men bakgata blir knapp: 24 × 3 = 72 ønskede plasser mot 48 ledige. Den knappheten er bevisst.
+- **Grensen gjelder alltid**, både for ledige (tomme) plasser som kjøpes av julemarkedet og for boder som kjøpes av en annen spiller. Ingen kan bli større ved å kjøpe opp andre. Når en plass er tatt, må man kjøpe den av spilleren som har den, men bare hvis man er under grensen for den gata.
+- Flytting finnes fortsatt som eget valg, for eksempel til en bedre plass i samme gate.
+
+**Bodsalg mellom spillere:**
+
+- En spiller kan selge en bod til en annen spiller.
+- Kjøperen betaler **videresalgsskatt + selgerens prisønske**:
+  - *Videresalgsskatten* går til julemarkedet (til lotteripotten, se 12.2). Den betales hver gang en bod skifter eier.
+  - *Prisønsket* går til selgeren og kan være 0.
+- **Videresalgsskatt (bestemt 12.11.2026):**
+
+| Gate | Videresalgsskatt | Eksempel: selgeren vil ha 20 000 kr |
+|---|---|---|
+| Hovedgate | bodpris (50 000) + 10 % av prisønsket | 50 000 + 2 000 = 52 000 kr skatt, 72 000 kr totalt |
+| Sidegate | bodpris (10 000) + 10 % av prisønsket | 10 000 + 2 000 = 12 000 kr skatt, 32 000 kr totalt |
+| Bakgate | fast 7 500 kr | 7 500 kr skatt, 27 500 kr totalt |
+
+  Skatten for hovedgata og sidegata er original bodpris + 10 % av det selgeren ber om (bekreftet 12.11.2026).
+
+**Ubemannet bod og ansatte (begge skal med):**
+
+- **Ubemannet:** Boden selger bare det som ligger på disken, med lavere salgsrate. Den er lettere å snoke i og stjele fra, fordi ingen står bak disken.
+- **Ansatt:** Spilleren ansetter en selger med dagslønn. Da selger boden nesten som når eieren står der selv, og det er vanskeligere å snoke. Idé: Ansatte kan ha egenskaper (flink, lat, uærlig) og selv bli en kilde til intriger.
+- Spilleren står i én bod om gangen og bytter mellom sine boder.
+
+**Økonomi:**
+
+- Forslag: Én felles lommebok per spiller, men omsetning og regnskap per bod, slik at man ser hvilken bod som lønner seg.
+- Hver bod har egen leie. Varer flyttes mellom egne boder (med bil eller bæring, som i dag).
+
+**Åpne spørsmål:**
+
+- Hva følger med når en bod selges: tom bod, eller lager, disk, lås og safe slik de står?
+- Kan man selge boden mens det er gjeld eller ubetalte regninger på den?
+- Kan man legge ut en bod for salg til alle, eller bare tilby den til én bestemt spiller?
+
+### 12.2 Julelotteri (planlagt for sesongen 2027)
+
+**Bestemt (12.11.2026):** Spillere kan kjøpe lodd. Jackpotten er summen av:
+
+- alt folk har kjøpt lodd for,
+- bøter i markedet (bøter fra Tyttebærpolitiet, avslørt falsk merking, snoking og lignende),
+- skatt (blant annet original bodpris ved bodsalg mellom spillere, se 12.1).
+
+Julemarkedet tar ikke noe av potten.
+
+**Regler (bestemt 12.11.2026):**
+
+- **Loddpris:** 35 kr.
+- **Maks 20 lodd per spiller per dag** (per trekning).
+- **Kjøp:** på telefonen, fra kl. 20:00 til kl. 17:00 neste dag. Loddsalget er stengt fra 17:00 til 20:00.
+- **Trekning:** hver dag kl. 18:00.
+- **Loddet:** Spilleren velger 3 ulike tall fra 1 til 20. Det trekkes 3 ulike tall.
+  - 3 riktige gir **jackpot**.
+  - 2 riktige gir **andrepremie**.
+  - 1 riktig gir **tredjepremie**.
+
+**Sannsynlighet per lodd** (3 av 20, rekkefølgen spiller ingen rolle, 1 140 mulige trekninger):
+
+| Treff | Sjanse | Omtrent |
+|---|---|---|
+| 3 riktige (jackpot) | 1 av 1 140 | 0,09 % |
+| 2 riktige | 51 av 1 140 | 4,5 % (1 av 22) |
+| 1 riktig | 408 av 1 140 | 36 % (1 av 3) |
+| 0 riktige | 680 av 1 140 | 60 % |
+
+Med 24 spillere som kjøper rundt 5 lodd hver om dagen (120 lodd) blir det omtrent én jackpot per 10 dager. Potten vokser altså over flere dager, og det gir spenning.
+
+**Premier (bestemt 12.11.2026):**
+
+- **Tredjepremie:** et gratis lodd til neste trekning (verdi 35 kr). Over en tredjedel vinner noe, men ingen penger går ut av potten.
+- **Andrepremie:** fast beløp på 250 kr, betalt fra potten. Det koster i snitt rundt 11 kr per solgte lodd, så resten (rundt 24 kr) blir i jackpotten.
+- **Jackpot:** hele potten når andrepremiene er betalt. Har flere spillere jackpot samme dag, deles den likt.
+- **Ingen jackpotvinner:** potten overføres til neste dag.
+- **Ingen jackpotvinner på julaften (bestemt):** hele potten går til «Foreningen for de foreningsløse». Det kunngjøres i hendelsesloggen og i årsrapporten.
+
+**Åpne spørsmål:**
+
+- Mulighet for juks: falske lodd, kjøpt trekning eller en loddselger som stikker av med kassa?
 
 ## 13. Teknisk retning (foreløpig forslag)
 
@@ -269,7 +364,7 @@ Eksempel på sentrale objekter: `Player`, `Market`, `Stall`, `StallSlot`, `Inven
 
 - Endelig spillnavn og grafisk stil: pixel art, håndtegnet 2D eller 2.5D?
 - Klikkbart kart eller fysisk bevegelse med figur?
-- Hvor mange boder per instans (20, 30, 40, 60)?
+- ~~Hvor mange boder per instans (20, 30, 40, 60)?~~ Avklart: 120 plasser (24 i hovedgata, 48 i sidegata og 48 i bakgata) for 24 spillere, se 12.1.
 - Skal kjøpere hovedsakelig være NPC-er, eller skal andre spillere kunne utgjøre en stor andel av salget?
 - Hvor direkte skal livehandel være – chat, dialogvalg eller begge deler?
 - Hvor realistisk skal økonomien være, og hvor mye skal være komisk forenklet?
