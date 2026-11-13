@@ -217,6 +217,41 @@ Prisene justeres etter hvert som vi tester.
 | Julebrus | Nettbutikk |
 | Varm eplemost | Kjele: eplemost, styrke 1 |
 
+## 💡 Idéer til nye varer (13.11.2026, ikke bestemt)
+
+Varer som gir ny mekanikk, ikke bare flere rader i tabellen. Favorittene er merket ⭐.
+
+| Vare | Str. | Slik får man den | Hva den tilfører |
+|---|---|---|---|
+| ⭐ Julekalender (24 luker) | 2×2 | Nettbutikk | Etterspørselen faller hver dag i desember og er nesten null etter 1. desember. Først ute vinner. |
+| Julestjerne (potteplante) | 2×2 | Nettbutikk | Visner etter noen dager. Første vare med holdbarhet. |
+| ⭐ Risengrynsgrøt med mandel | 2×2 (kopp) | Kjele: ris + melk | Én kopp per omgang har mandelen. Kunden som får den, gir omdømme og et avisoppslag. |
+| ⭐ Smultringer | 1×1 | Ny frityrgryte: mel + sukker + olje | Kan ta fyr. Gir brannforsikringen noe å gjøre. |
+| Pepperkakehus | 3×3 | Bakemaskin, lang tid | Dyreste hjemmelagde varen. Tar mye plass, og tyver kan knuse det. |
+| Julekrans | 2×2 | Dekormaskin: granbar + kongler | Granbar hentes med bilen i skogen eller «lånes» fra torget, som juletreet. |
+| Lutefisk | 1×2 | ★ Nettbutikk | Deler kundene: noen betaler godt, andre klager og gir dårligere omdømme. |
+| Vafler med brunost | 1×1 | Nytt vaffeljern: mel + egg + brunost | Billig storselger, men vaffeljernet trekker mye strøm (se bodtyper og strømgrense i konseptet, 12.3). |
+| «Billetter til julekonserten» | 1×1 | Penn + papirblokk | Luguber vare man lager selv. Tilsynsmannen kan avsløre dem. |
+| Mysteriepakke | 2×2 | Fyren | Innholdet er tilfeldig, alt fra kull til lusekofte. Kunden får vite det først når pakken åpnes. |
+| Anisdrops | 1×1 | Nettbutikk, eller kjele: sukker + anis | Billig småsalg som polkadrops. Noen kunder hater anis (lav etterspørsel, men trofaste kjøpere). |
+
+Nye råvarer disse trenger: ris, melk, olje, egg, brunost, granbar, kongler, anis. Nye maskiner: frityrgryte og vaffeljern.
+
+### Syv slag (trengs for kundebestillinger, se konseptet 12.4)
+
+En ekte kakeboks med «syv slag» krever sju ulike småkaker. I dag finnes pepperkaker (stjerne og hjerte), krumkaker og sirupssnipper. Det mangler minst fire:
+
+| Kake | Str. | Slik får man den | Merknad |
+|---|---|---|---|
+| Sandkaker | 1×1 | Bakemaskin: mel + smør + sukker + mandler | Trenger egen form (kan kjøpes hos Klas Olsen?) |
+| Berlinerkranser | 1×1 | Bakemaskin: mel + smør + sukker + egg | |
+| Serinakaker | 1×1 | Bakemaskin: mel + smør + sukker | Billigst å lage |
+| Fattigmann | 1×1 | Frityrgryte: mel + egg + fløte | Samme gryte som smultringene (kan ta fyr) |
+| Goro | 1×1 | Bakemaskin: mel + smør + fløte | Trenger gorojern. Gir en åttende sort å velge mellom |
+| Smultringer | 1×1 | Frityrgryte (se over) | Teller også som en sort |
+
+**Kakeboks** (2×2, Klas Olsen): en eske med 7 rom. Fylles med én kake av hver sort og selges eller leveres som én vare. Kunder betaler mer for en full boks enn for kakene hver for seg.
+
 ## Nye råvarer
 
 - **Vanlige:** treemne, sirup, gjær, kakaopulver, epler, eplemost, pølse, lompe, fyll

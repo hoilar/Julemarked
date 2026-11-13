@@ -9,7 +9,8 @@
     "build": "vite build",
     "start": "node server/main.ts",
     "typecheck": "tsc --noEmit",
-    "admin": "node --disable-warning=ExperimentalWarning tools/admin.ts"
+    "admin": "node --disable-warning=ExperimentalWarning tools/admin.ts",
+    "vareliste": "node --disable-warning=ExperimentalWarning tools/vareliste.ts"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

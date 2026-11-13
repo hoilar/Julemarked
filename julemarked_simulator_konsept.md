@@ -252,6 +252,8 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 - Sesongrapport og nasjonale kåringer.
 - Flere boder per spiller og bodsalg mellom spillere (se 12.1).
 - Julelotteri med jackpot (se 12.2).
+- Bodtyper med ulik plass og strømgrense, der sikringene ryker ved overbelastning (se 12.3).
+- Kundebestillinger som hentes om noen dager, for eksempel syv slag (se 12.4).
 
 ### 12.1 Flere boder per spiller (planlagt for sesongen 2027)
 
@@ -345,6 +347,69 @@ Med 24 spillere som kjøper rundt 5 lodd hver om dagen (120 lodd) blir det omtre
 **Åpne spørsmål:**
 
 - Mulighet for juks: falske lodd, kjøpt trekning eller en loddselger som stikker av med kassa?
+
+### 12.3 Bodtyper: plass og strøm (planlagt for sesongen 2027)
+
+**Bestemt (13.11.2026):** De tre bodtypene (hovedgate, sidegate og bakgate) skal være forskjellige, ikke bare ha ulik trafikk og leie:
+
+- **Rutenett:** ulik kapasitet på bordet og under disken. En dyrere bod har plass til mer.
+- **Strøm:** ulik maks strøm (ampere / kW) per bod. **Trekker apparatene mer enn boden tåler, ryker sikringene.**
+
+**Forslag til tall** (ikke bestemt, må balanseres):
+
+| Bod | Bordet | Under disken | Maks strøm | Omtrent |
+|---|---|---|---|---|
+| Hovedgate | 31×6 (som i dag) | 34×9 (som i dag) | 16 A | 3,7 kW |
+| Sidegate | 25×5 | 28×8 | 10 A | 2,3 kW |
+| Bakgate | 20×4 | 22×7 | 6 A | 1,4 kW |
+
+Til sammenligning: kjelen trekker opptil 2 kW (0,5 kW per styrke), strikkemaskinen 0,4 kW, lyslenka 0,4 kW og ladestasjonen 0,5 kW. I bakgata kan man altså ikke koke på full styrke med lyslenka på. Man må velge, eller ta sjansen.
+
+**Når sikringene ryker:**
+
+- Summen av alt som trekker strøm akkurat nå (apparater i kontaktene med bryteren på) sammenlignes med grensen for boden.
+- Over grensen: **hovedsikringen ryker** (den finnes allerede i spillet, `main_blown`), og alt i boden blir mørkt til den er byttet eller slått på igjen.
+  - Skrusikringsboks: sikringen må byttes (en reservesikring under disken, eller kjøpe ny).
+  - Automatsikringsboks: vippes opp igjen.
+- I dag ryker sikringer bare tilfeldig ved strømbrudd (`FUSE_OUTAGE_CHANCE`). Overbelastning blir en ny, forutsigbar grunn.
+- Strømmen bør vises tydelig, for eksempel med en måler ved grenuttaket (brukt / maks), så det er spillerens valg å gå over.
+
+**Grafikk:** Mindre rutenett krever egne bodbilder (eller tilpasset plassering av rutene) for sidegate og bakgate. Se også ventende arbeid med ny bod og bakgrunn.
+
+**Åpne spørsmål:**
+
+- Hva skjer med tingene når man flytter til en mindre bod: det som ikke får plass, legges ved boden, i søpla eller blir liggende til man rydder?
+- Kan man kjøpe en større hovedsikring (mer strøm mot høyere fastpris eller nettleie)?
+- Forbikoblet sikringsboks fra Fyren: ingen grense i det hele tatt, eller brannfare når den overbelastes?
+- Skal ryker-sikringen gi et kort strømbrudd også hos naboene (samme kurs)? Det gir naboskapet noe å krangle om.
+
+### 12.4 Kundebestillinger (idé, 13.11.2026)
+
+Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dager** for å hente det. Det gir planlegging over flere dager og en grunn til å logge inn igjen.
+
+**Eksempel:** «Fru Kvist kommer tilbake om 3 dager. Hun skal ha syv slag kakeboks.» Da må boden ha sju ulike småkaker i en kakeboks når hun kommer (krever flere kakesorter, se VAREPLAN.md, «Syv slag»).
+
+**Slik kan det virke:**
+
+- En bestillingskunde dukker opp ved disken som de andre kundene (en tredje type ved siden av «!» og «?» i `shared/leads.ts`), med en kort ønskeliste og en hentedato.
+- Spilleren kan si **ja** eller **nei**. Et ja blir en avtale i telefonen (Meldinger eller en egen liste) med nedtelling.
+- **Levert i tide:** god pris (for eksempel 30–50 % over vanlig pris), mer omdømme og kanskje et pent avisoppslag.
+- **Ikke klar:** kunden går skuffet, omdømmet faller, og hen kan nevne det for andre («Kommer aldri tilbake til …»).
+- Bestillingen kan bare hentes når du står i boden. Står du ikke der, går kunden etter en stund (som de andre kundene).
+
+**Andre bestillinger enn kaker:**
+
+- «10 kopper gløgg til firmafesten i morgen kl. 18» (tidspunkt, varm vare, kjelen må være klar).
+- «En lusekofte til svigermor før lørdag» (sjelden vare: følg med i nettbutikkene).
+- «Pepperkakehus med navnet vårt på» (med penn: personlig vare, kan ikke selges til andre).
+- «Hjemmelaget syltetøy, ikke butikkjøpt!» (fristelse til å skrive om etiketten, med risiko hvis kunden har forstørrelsesglass).
+- Fyren kan også ha bestillinger om natta («trenger 5 kinaputter til nyttårsaften»).
+
+**Åpne spørsmål:**
+
+- Hvor mange bestillinger kan man ha på en gang?
+- Skal kunden betale forskudd (og kreve det tilbake hvis du ikke leverer)?
+- Kan en annen spiller «stjele» bestillingen ved å levere først, eller snoke og ødelegge kakeboksen?
 
 ## 13. Teknisk retning (foreløpig forslag)
 

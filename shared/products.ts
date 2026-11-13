@@ -682,7 +682,7 @@ const rare = (chance: number) => ({ rare: chance });
 export const PRODUCTS: Product[] = [
   // --- Med egne tegninger ---
   //   id                  navn                      emoji fil                  w  h  inn  pris  etterspørsel  produsent  kategori
-  { ...good('glogg', 'Gløgg (kopp)', '🍷', 'glogg-kopp', 1, 1, 12, 45, 2.2, 'Glødeverket', 'drikke'), craftedOnly: true }, // varmes av flaske i kjelen
+  { ...good('glogg', 'Gløgg (kopp)', '🍷', 'glogg-kopp', 2, 2, 12, 45, 2.2, 'Glødeverket', 'drikke'), craftedOnly: true }, // varmes av flaske i kjelen
   good('pepperkake_stjerne', 'Pepperkakestjerne', '⭐', 'pepperkake-stjerne', 1, 1, 6, 25, 2.0, 'Kakefabrikken', 'kaker'),
   good('pepperkake_hjerte', 'Pepperkakehjerte', '❤️', 'pepperkake-hjerte', 1, 1, 8, 35, 1.6, 'Kakefabrikken', 'kaker'),
   good('drops', 'Polkadrops', '🍬', 'drops', 1, 1, 4, 15, 2.2, 'Søtt & Co', 'godteri'),
@@ -701,7 +701,7 @@ export const PRODUCTS: Product[] = [
   //   id                 navn                       emoji w  h  inn  pris  ettersp.  produsent           kategori
   // Dekor
   vare('antikk_julekule', 'Antikk julekule', '🏺', 1, 1, 90, 249, 0.25, 'Loppemarkedet', 'dekor', rare(0.12)),
-  vare('snokule', 'Snøkule med landsby', '❄️', 1, 1, 60, 179, 0.35, 'Pynt Import AS', 'dekor', rare(0.2)),
+  vare('snokule', 'Snøkule med landsby', '❄️', 2, 2, 60, 179, 0.35, 'Pynt Import AS', 'dekor', rare(0.2)),
   vare('musikkboks', 'Musikkboks med nisse', '🎶', 2, 2, 220, 599, 0.15, 'Spilledåsen', 'dekor', rare(0.08)),
   vare('glasshjerte', 'Glasshjerte', '💖', 1, 1, 5, 49, 0.9, 'Hjemmelaget', 'dekor', crafted),
   vare('trenisse', 'Malt trenisse', '🎅', 1, 2, 8, 69, 0.7, 'Hjemmelaget', 'dekor', crafted),
@@ -735,15 +735,15 @@ export const PRODUCTS: Product[] = [
   vare('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
   vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
   // Drikke
-  vare('kakao', 'Varm kakao', '☕', 1, 1, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
+  vare('kakao', 'Varm kakao', '☕', 2, 2, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
   vare('julebrus', 'Julebrus', '🥤', 2, 3, 12, 35, 1.6, 'Bryggeriet', 'drikke', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   // Alkohol (krever skjenkebevilling, se shared/liquor.ts). Vodka og rødvin er også råvarer i kjelen.
   vare('vodka', 'Vodka', '🍸', 2, 3, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   vare('rodvin', 'Rødvin', '🍷', 2, 3, 90, 229, 0.45, 'Vinkjelleren', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   vare('eplecider', 'Eplecider', '🍏', 2, 3, 25, 69, 1.0, 'Fjordsideriet', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', crafted),
-  vare('koseglogg', 'Kosegløgg', '🍷', 1, 1, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', crafted),
-  vare('styrkeglogg', 'Styrkegløgg', '🔥', 1, 1, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', crafted),
+  vare('koseglogg', 'Kosegløgg', '🍷', 2, 2, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', crafted),
+  vare('styrkeglogg', 'Styrkegløgg', '🔥', 2, 2, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', crafted),
   // Lugubert: selges bare om natta, skaffes av Fyren bak containeren (se shared/dealer.ts).
   vare('smuglersigaretter', 'Smuglersigaretter', '🚬', 1, 1, 40, 129, 1.2, 'Uten avgiftsmerke', 'lugubert', {
     ...shady(['Noen la merke til at sigarettene hos {stall} mangler avgiftsmerke.', 'Det går rykter om billige sigaretter fra {stall}.']),
