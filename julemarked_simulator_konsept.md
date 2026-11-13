@@ -254,6 +254,8 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 - Julelotteri med jackpot (se 12.2).
 - Bodtyper med ulik plass og strømgrense, der sikringene ryker ved overbelastning (se 12.3).
 - Kundebestillinger som hentes om noen dager, for eksempel syv slag (se 12.4).
+- Kundevindu med pruting, mersalg og bestillinger når man trykker på kunden (se 12.5).
+- Vær og temperatur, med værmelding i avisa (se 12.6).
 
 ### 12.1 Flere boder per spiller (planlagt for sesongen 2027)
 
@@ -410,6 +412,66 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 - Hvor mange bestillinger kan man ha på en gang?
 - Skal kunden betale forskudd (og kreve det tilbake hvis du ikke leverer)?
 - Kan en annen spiller «stjele» bestillingen ved å levere først, eller snoke og ødelegge kakeboksen?
+
+### 12.5 Kundedialog: pruting, mersalg og bestillinger (idé, 13.11.2026)
+
+**Slik er det i dag:** Snakkeboblen over kunden («!» ivrig, «?» nølende) selger med én gang du trykker på den: «!» betaler 25 % over prisen, «?» vil ha 15 % avslag og sier ja i 65 % av tilfellene. Trykker du på selve kunden, kommer bare politivinduet (tipse om den etterlyste).
+
+**Ønsket:** Snakkeboblene beholdes som et *signal* (hvem vil noe), men **man trykker på kunden** for å åpne et kundevindu. Der skjer handelen, og politiet er bare én av flere ting i vinduet.
+
+**Kundevinduet** (inspirasjon: handelsvindu med kundekort til venstre og forhandling til høyre):
+
+- **Kundekort:** hvem det er (type, for eksempel «Turist», «Pensjonist», «Småbarnsfamilie», «Kjenning av Fyren»), **budsjett**, hva hen **liker** (kategorier, «hjemmelaget») og hva hen **ikke vil ha** (alkohol, luguberte varer, butikkjøpt).
+- **Handlekurv:** varene kunden vil kjøpe fra bordet ditt, med pris per vare og total mot budsjettet.
+- **Forhandling:**
+  - *Gi avslag* (−10 / −25 / −50 %): nesten sikkert ja, mer omdømme.
+  - *Legg på* (+10 / +25 / +50 %): mer penger, men større sjanse for nei, og kunden kan gå. Sjansen avhenger av omdømmet ditt og kundetypen.
+  - *Mersalg:* foreslå én vare til fra bordet («Vil du ha en kopp gløgg til?»). Kunden sier ja hvis den passer det hen liker og budsjettet holder.
+  - *Lure* (for de frekke): selge butikkjøpt som «hjemmelaget» med et blunk, eller kreve «kontantrabatt» uten Bipps. Kan gi sladder og avisoppslag.
+- **Bestilling** (se 12.4): kunden kan be om noe som ikke finnes på bordet, og du kan si ja med hentedato.
+- **Politi:** «Tipse politiet» blir en knapp i vinduet når kunden ligner den etterlyste, ikke hele vinduet.
+- **Omdømmeeffekt** vises tydelig: hvor mye ja eller nei påvirker omdømmet, og hvordan omdømmet påvirker sjansene.
+
+**Grensesnittet generelt:** Kundevinduet (og vinduene ved disken generelt) trenger en opprydding: tydelige seksjoner, faste knapper nederst, mindre tekst og mer ikoner, og samme stil som telefonen og avisa. Det bør tegnes som en skisse først.
+
+**Bestemt (13.11.2026):**
+
+- **Alle kunder kan åpnes**, også de uten snakkeboble.
+- **Kunden venter 5 spillminutter** i kundevinduet. Har du ikke gjort handelen ferdig da, går hen.
+- **Maks én slik kunde om gangen:** du forhandler med én kunde av gangen. De andre står i kø eller går forbi.
+- **Ansatte og ubemannede boder (12.1) får ikke slike kunder.** Der selges det etter enkle, faste regler uten forhandling.
+- **Kundetypene henger sammen med tid på døgnet**, for eksempel turister og barnefamilier på dagtid, folk på vei hjem fra jobb på ettermiddagen og nattkunder (Fyrens kjenninger) om natta.
+- **Kunder foretrekker kategorier:** hver kunde har én eller flere kategorier hen liker (for eksempel «godteri» eller «klær») og betaler mer for dem.
+- **Dagens kategorier:** noen kategorier er mer populære på bestemte dager (for eksempel kaker i helgene, dekor tidlig i desember, mat på kalde dager). **Det står i avisa**, så det lønner seg å lese den og fylle bordet deretter.
+
+### 12.6 Vær og temperatur (idé, 13.11.2026)
+
+**Bestemt:** Spillet skal ha vær og temperatur. I dag finnes det ikke (bare slaps i torgbildet og en avis som kan være «for våt»).
+
+**Værmelding i avisa:** dagens vær og temperatur, og et varsel for i morgen, så man kan planlegge innkjøp og produksjon. Varselet kan av og til ta feil.
+
+**Hva været kan påvirke:**
+
+| Vær | Kunder | Etterspørsel | Annet |
+|---|---|---|---|
+| Kaldt og klart (under −10) | Litt færre, men blir lenger | Gløgg, kakao, varm cider, votter, skjerf og luer går godt | Bilen kan streike om morgenen (særlig WV Tennis). Batterier lades dårligere. |
+| Snøvær | Færre | Varme drikker og julestemning: dekor | Snø legger seg på torget og bodtaket. Leveringer kan bli forsinket. |
+| Mildvær og sludd | Færre og sure | Mindre av alt, minst klær | Slaps på torget. Papirvarer og esker på bordet kan bli våte og ødelagte. |
+| Pent vintervær (−2 til −8) | Flest | Normalt, litt mer av alt | Den beste markedsdagen. |
+| Storm | Svært få | Nesten ingenting | Lyslenka og skiltet kan blåse ned. Søppelkassa velter. Strømbrudd oftere. |
+
+**Koblinger til andre systemer:**
+
+- **Dagens kategorier (12.5):** været blir en av grunnene til at noen kategorier er populære en bestemt dag.
+- **Strøm (12.3):** en varmeovn eller terrassevarmer i boden gir flere kunder når det er kaldt, men trekker mye strøm og kan få sikringene til å ryke.
+- **Strømprisen** kan stige på kalde dager (står allerede i avisa).
+- **Grafikk:** torget i snøvær, sludd og storm, i tillegg til morgen, dag, kveld og natt.
+- **Forsikring:** stormskader og vannskader på varer kan dekkes, eller ikke.
+
+**Åpne spørsmål:**
+
+- Skal været være likt for alle markedene, eller eget for hver server?
+- Hvor stor skal effekten på salget være, slik at det merkes, men ikke ødelegger en hel dag for noen?
 
 ## 13. Teknisk retning (foreløpig forslag)
 
