@@ -1,0 +1,7 @@
+{
+  "mode": "Built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Edit target image 1: replace this tall handled red mug of rice porridge with a low wide ROUND BOWL, no handle. Keep the same fine crisp pixel-art style, warm palette, thin dark brown outlines, upper-left lighting and simple cream Nordic pattern on red ceramic. Supporting reference image 2 shows the intended bowl shape and butter topping; match its game sprite appearance while keeping fine pixel clusters. Contents: creamy ivory Norwegian RICE PORRIDGE with small rice grain clusters, a clear golden yellow square pat of BUTTER partly melting in the center and a sprinkle of brown CINNAMON around it. Remove the almond entirely: NO almond, nuts, seeds or oval brown garnish. One complete bowl only, isolated and bottom-centered with comfortable transparent margins on a square canvas. Bowl visible slightly from above. Genuine transparent background. No spoon, cup handle, text, scenery, shadows outside the bowl, soft airbrush, blur or smooth vector gradients.",
+  "original": "GFX_assets/planlagte/originaler/risengrynsgrot-bolle-v2.png",
+  "path": "client/public/art/planlagt/risengrynsgrot.png",
+  "size": "2x2"
+}

@@ -23,6 +23,16 @@ spillets assetregister (`spillbilder.json`), siden disse gjenstandene ikke finne
 Uavklarte størrelser (råvarer og flere apparater) er bare skisser; priser er ikke bestemt.
 Etter endringer i varelisten eller idémanifestet: `py tools/oppdater-varekatalog.py`.
 
+### Risengrynsgrøt – bolle uten mandel (14.11.2026)
+
+Koppvarianten er erstattet med en lav, rød bolle med risengrynsgrøt, smørøye og kanel.
+Ingen mandel eller hank. Samme fine pikselstil og varmt kremhvitt mønster på keramikken.
+Fortsatt idévare, **2×2 ruter / 256×256 px**, transparent bakgrunn.
+Katalogbilde: `client/public/art/planlagt/risengrynsgrot.png`; liten kopi: `miniatyrer/risengrynsgrot.png`.
+Ny original: `GFX_assets/planlagte/originaler/risengrynsgrot-bolle-v2.png`; den gamle koppen er bevart som historikk.
+Prompter fra innebygd image_gen: `tools/risengrynsgrot-bolle.json`.
+Navn og beskrivelse er oppdatert i VAREPLAN.md og HTML-katalogen; mandelmekanikken er fjernet fra vareforslaget.
+
 ### Tilstandsvarianter til idéutstyret (13.11.2026)
 
 23 tilstandsbilder fordelt på seks serier, fortsatt **grafikkforslag til ideer**:

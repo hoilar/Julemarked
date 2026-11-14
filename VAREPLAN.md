@@ -337,7 +337,7 @@ Varer som gir ny mekanikk, ikke bare flere rader i tabellen. Favorittene er merk
 |---|---|---|---|
 | ⭐ Julekalender (24 luker) | 2×2 | Nettbutikk | Etterspørselen faller hver dag i desember og er nesten null etter 1. desember. Først ute vinner. |
 | Julestjerne (potteplante) | 2×2 | Nettbutikk | Visner etter noen dager. Første vare med holdbarhet. |
-| ⭐ Risengrynsgrøt med mandel | 2×2 (kopp) | Kjele: ris + melk | Én kopp per omgang har mandelen. Kunden som får den, gir omdømme og et avisoppslag. |
+| ⭐ Risengrynsgrøt | 2×2 (bolle) | Kjele: ris + melk | Serveres i bolle med smør og kanel, uten mandel (bekreftet 14.11.2026). |
 | ⭐ Smultringer | 1×1 | Ny frityrgryte: mel + sukker + olje | Kan ta fyr. Gir brannforsikringen noe å gjøre. |
 | Pepperkakehus | 3×3 | Bakemaskin, lang tid | Dyreste hjemmelagde varen. Tar mye plass, og tyver kan knuse det. |
 | Julekrans | 2×2 | Dekormaskin: granbar + kongler | Granbar hentes med bilen i skogen eller «lånes» fra torget, som juletreet. |

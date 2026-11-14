@@ -24,13 +24,14 @@
     },
     {
       "id": "risengrynsgrot",
-      "name": "Risengrynsgrøt med mandel",
+      "name": "Risengrynsgrøt",
       "size": "2x2",
       "category": "Salgsvarer",
       "source": "Kjele: ris + melk",
-      "note": "Én kopp per omgang har mandelen.",
-      "subject": "Red handled cup containing creamy Norwegian rice porridge, cinnamon sprinkle and a single almond.",
-      "status": "Idé – ikke bestemt"
+      "note": "Bolle med risengrynsgrøt, smørøye og kanel. Uten mandel.",
+      "subject": "Low round red ceramic bowl with creamy Norwegian rice porridge, a golden pat of butter and a sprinkle of cinnamon. No handle, no almond or nuts.",
+      "status": "Idé – ikke bestemt",
+      "original": "GFX_assets/planlagte/originaler/risengrynsgrot-bolle-v2.png"
     },
     {
       "id": "smultringer",

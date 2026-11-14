@@ -24,7 +24,7 @@ def main():
     draw = ImageDraw.Draw(sheet)
     font = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 13)
     for n, item in enumerate(items):
-        src = SOURCE / 'originaler' / (item['id']+'.png')
+        src = ROOT/item['original'] if item.get('original') else SOURCE / 'originaler' / (item['id']+'.png')
         group = next((g for g in groups if g['item']==item['id']),None)
         if group and item['id'] in ('kakeboks','gorojern'):
             src = ROOT/group['anchor']
