@@ -256,6 +256,7 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 - Kundebestillinger som hentes om noen dager, for eksempel syv slag (se 12.4).
 - Kundevindu med pruting, mersalg og bestillinger når man trykker på kunden (se 12.5).
 - Vær og temperatur, med værmelding i avisa (se 12.6).
+- Raskere spilltid (4× dag, 16× natt), ukesleie, Lemu.no og Fantdet.no (se 12.7).
 
 ### 12.1 Flere boder per spiller (planlagt for sesongen 2027)
 
@@ -298,7 +299,7 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 **Økonomi:**
 
 - Forslag: Én felles lommebok per spiller, men omsetning og regnskap per bod, slik at man ser hvilken bod som lønner seg.
-- Hver bod har egen leie. Varer flyttes mellom egne boder (med bil eller bæring, som i dag).
+- Hver bod har egen **ukesleie** (se 12.7). Varer flyttes mellom egne boder (med bil eller bæring, som i dag).
 
 **Åpne spørsmål:**
 
@@ -319,9 +320,9 @@ Julemarkedet tar ikke noe av potten.
 **Regler (bestemt 12.11.2026):**
 
 - **Loddpris:** 35 kr.
-- **Maks 20 lodd per spiller per dag** (per trekning).
-- **Kjøp:** på telefonen, fra kl. 20:00 til kl. 17:00 neste dag. Loddsalget er stengt fra 17:00 til 20:00.
-- **Trekning:** hver dag kl. 18:00.
+- **Maks 20 lodd per spiller per trekning.**
+- **Kjøp:** på telefonen, når som helst mellom trekningene, men loddsalget er stengt fra kl. 17:00 til 20:00 på trekningsdagene.
+- **Trekning:** **hver tirsdag og lørdag kl. 18:00** i spillet (endret 14.11.2026 fra hver dag, fordi et spilldøgn bare varer 4,5 ekte timer, se 12.7).
 - **Loddet:** Spilleren velger 3 ulike tall fra 1 til 20. Det trekkes 3 ulike tall.
   - 3 riktige gir **jackpot**.
   - 2 riktige gir **andrepremie**.
@@ -336,7 +337,7 @@ Julemarkedet tar ikke noe av potten.
 | 1 riktig | 408 av 1 140 | 36 % (1 av 3) |
 | 0 riktige | 680 av 1 140 | 60 % |
 
-Med 24 spillere som kjøper rundt 5 lodd hver om dagen (120 lodd) blir det omtrent én jackpot per 10 dager. Potten vokser altså over flere dager, og det gir spenning.
+Med 24 spillere som kjøper rundt 5 lodd hver per trekning (120 lodd) blir det omtrent én jackpot per 10 trekninger, altså rundt 5 spilluker. Med fulle 20 lodd hver (480 lodd) blir det omtrent én jackpot per 2–3 trekninger. Potten vokser altså over flere trekninger, og det gir spenning. (Tallene må sjekkes på nytt med 12.7: sesongen har bare rundt 15 trekninger.)
 
 **Premier (bestemt 12.11.2026):**
 
@@ -437,7 +438,7 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 **Bestemt (13.11.2026):**
 
 - **Alle kunder kan åpnes**, også de uten snakkeboble.
-- **Kunden venter 5 spillminutter** i kundevinduet. Har du ikke gjort handelen ferdig da, går hen.
+- **Kunden venter omtrent 5 ekte minutter** i kundevinduet (20 spillminutter på dagtid med 4× fart, se 12.7). Har du ikke gjort handelen ferdig da, går hen. (Endret 14.11.2026 fra 5 spillminutter, som bare ville vært 75 ekte sekunder.)
 - **Maks én slik kunde om gangen:** du forhandler med én kunde av gangen. De andre står i kø eller går forbi.
 - **Ansatte og ubemannede boder (12.1) får ikke slike kunder.** Der selges det etter enkle, faste regler uten forhandling.
 - **Kundetypene henger sammen med tid på døgnet**, for eksempel turister og barnefamilier på dagtid, folk på vei hjem fra jobb på ettermiddagen og nattkunder (Fyrens kjenninger) om natta.
@@ -472,6 +473,64 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 
 - Skal været være likt for alle markedene, eller eget for hver server?
 - Hvor stor skal effekten på salget være, slik at det merkes, men ikke ødelegger en hel dag for noen?
+
+### 12.7 Tidsmodell, fravær, Lemu.no og Fantdet.no (forslag, 14.11.2026)
+
+**Tidsforhold:** spilltida går raskere enn ekte tid, og ekstra raskt om natta, så ingen trenger å være våken for nattinnholdet.
+
+| Tid i spillet | Fart | Varighet i virkeligheten |
+|---|---|---|
+| 06–10 | 4× | 60 minutter |
+| 10–15 | 4× | 75 minutter |
+| 15–22 | 4× | 105 minutter |
+| 22–06 | 16× | 30 minutter |
+| **Ett spilldøgn** | | **4,5 timer** |
+
+- Hele sesongen på **54 spilldøgn** varer **243 ekte timer** (10 døgn og 3 timer). Ett ekte døgn er omtrent 5⅓ spilldøgn.
+- Teknisk: i dag er farten et fast tall per marked (`shared/clock.ts`). Den må bli ulik per tidsrom (4× dag, 16× natt). All tid går gjennom `gameNow`, så det er ett sted å endre.
+- Vennetesten i desember er i dag planlagt i ekte tid (`TESTPLAN.md`). Den må oppdateres hvis denne modellen brukes.
+
+**Bestemt (14.11.2026) som følge av den raske tida:**
+
+- **Ukesleie** i stedet for dagsleie (leie, Bipps-terminal og andre faste avgifter regnes per spilluke).
+- **Lotteri hver tirsdag og lørdag** kl. 18 i spillet (12.2).
+- **Kunden i kundevinduet venter omtrent 5 ekte minutter** (12.5).
+- Alt annet som skjer «per dag» (avisa og levering kl. 07, strømpris, regninger) skjer over 5 ganger per ekte døgn og må balanseres på nytt.
+
+**Fravær: lavere fortjeneste, ikke full stans.** Spilleren skal kunne komme tilbake til salg og opptjente penger, og så fylle på lageret og bygge videre.
+
+- Selvbetjening og Bipps lar kundene handle når spilleren er logget ut (dette finnes allerede: skiltet «Selvbetjent» med Bipps-terminal).
+- Egne varer selges så lenge boden har dem. NB: i dag selges bare det som står **på bordet**, ikke det som ligger under disken. Automatisk påfylling fra under disken kan være jobben til en ansatt (12.1).
+
+**Lemu.no – direktesalg med provisjon** (parodi på en billig nettbutikk):
+
+- Billige, masseproduserte importvarer. Spilleren velger et sortiment som kundene kan bestille gjennom boden.
+- Varene kommer aldri til boden: Lemu sender rett til kunden, og spilleren får en liten provisjon uten lager eller påfylling.
+- Gir et gulv for inntekten mens man er borte. Egne varer og handel på Fantdet skal gi klart bedre fortjeneste.
+- Forslag: provisjonen må være liten og ha et tak (ellers blir «velg sortiment og logg av» beste strategi). Lemu-varer kan gi litt lavere omdømme («masseprodusert juleskrot») og konkurrere med egne varer i samme kategori.
+
+**Fantdet.no – markedsplassen mellom spillerne** (parodi på en kjent annonseside), en nettside som åpnes fra spilltelefonen:
+
+- Spillerne handler med hverandre: varer, råvarer, utstyr og restpartier.
+- Gir rom for spesialisering: noen produserer, andre kjøper inn og driver bod.
+
+**Fantdet: regler (bestemt 14.11.2026):**
+
+- **Annonse:** det koster **2 kr per rute** varen tar (en 2×2-vare koster 8 kr å legge ut). Gebyret betales når annonsen legges ut.
+- **Låst vare:** en vare som ligger ute på Fantdet, er **låst**: den kan ikke selges fra bordet, brukes eller kastes, men den **kan flyttes rundt under disken**.
+- **Maks antall annonser** per spiller (tall ikke bestemt), men grensen **kan oppgraderes**.
+- **Handelen skjer samtidig:** når noen kjøper, bytter Fantdet penger og vare i samme øyeblikk. Ingen kan stikke av med pengene eller varen.
+- **Levering:** varen sendes i en **pappkartong med posten**, på samme måte som nettbutikkene: standard kl. 07, ekspress innen en time, eller hent selv med bilen.
+
+**Kalenderen (bestemt 14.11.2026):** sesongen starter **1. november** i spillet. 1. november til 24. desember er nøyaktig 54 spilldøgn. (Starter den 31. oktober, blir det 55 døgn til og med julaften.)
+
+- Sesongrytmen i avsnitt 10 (1.–24. desember) må skrives om til november og desember: for eksempel etablering i november og julerush de siste dagene før jul.
+- Ekte tid: 243 timer (rundt 10 døgn). Skal julaften i spillet falle på en bestemt ekte dag, må sesongen startes rundt 10 døgn før.
+
+**Åpne spørsmål:**
+
+- **Fantdet:** hvor mange annonser fra start, og hva koster en oppgradering? Skal det være NPC-annonser så markedet ikke er tomt med bare 24 spillere? Skal en del av gebyret gå til lotteripotten?
+- **Lemu:** hvor stor provisjon, og hvor høyt tak? (Vi kommer tilbake til dette senere.)
 
 ## 13. Teknisk retning (foreløpig forslag)
 
