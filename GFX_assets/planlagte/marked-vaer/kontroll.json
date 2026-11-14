@@ -1,0 +1,182 @@
+[
+  {
+    "weather": "sno",
+    "time": "morgen",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sno-morgen.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sno-morgen.jpg"
+  },
+  {
+    "weather": "sludd",
+    "time": "morgen",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sludd-morgen.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sludd-morgen.jpg"
+  },
+  {
+    "weather": "storm",
+    "time": "morgen",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-storm-morgen.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-storm-morgen.jpg"
+  },
+  {
+    "weather": "sno",
+    "time": "dag",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sno-dag.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sno-dag.jpg"
+  },
+  {
+    "weather": "sludd",
+    "time": "dag",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sludd-dag.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sludd-dag.jpg"
+  },
+  {
+    "weather": "storm",
+    "time": "dag",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-storm-dag.png",
+    "sourceSize": [
+      1671,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-storm-dag.jpg"
+  },
+  {
+    "weather": "sno",
+    "time": "kveld",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sno-kveld.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sno-kveld.jpg"
+  },
+  {
+    "weather": "sludd",
+    "time": "kveld",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sludd-kveld.png",
+    "sourceSize": [
+      1671,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sludd-kveld.jpg"
+  },
+  {
+    "weather": "storm",
+    "time": "kveld",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-storm-kveld.png",
+    "sourceSize": [
+      1671,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-storm-kveld.jpg"
+  },
+  {
+    "weather": "sno",
+    "time": "natt",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sno-natt.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sno-natt.jpg"
+  },
+  {
+    "weather": "sludd",
+    "time": "natt",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-sludd-natt.png",
+    "sourceSize": [
+      1671,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-sludd-natt.jpg"
+  },
+  {
+    "weather": "storm",
+    "time": "natt",
+    "source": "GFX_assets\\planlagte\\marked-vaer\\originaler\\marked-storm-natt.png",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "opaque": true,
+    "target": "client\\public\\art\\bg\\marked-storm-natt.jpg"
+  }
+]

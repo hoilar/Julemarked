@@ -190,6 +190,10 @@ def main():
     if moduleitemsfile.exists():
         manifest+=json.loads(moduleitemsfile.read_text(encoding='utf-8')).get('items',[])
     html = html[:html.index('<script id="snapshot"')]
+    html=re.sub(r'<!-- MARKEDVAER-START -->[\s\S]*?<!-- MARKEDVAER-SLUTT -->','',html)
+    weatherpanel=ROOT/'tools/marked-vaer-panel.html'
+    if weatherpanel.exists():
+        html=html.replace('<div class="table-wrap">','<!-- MARKEDVAER-START -->'+weatherpanel.read_text(encoding='utf-8')+'<!-- MARKEDVAER-SLUTT --><div class="table-wrap">')
     html=re.sub(r'Se grafikkoversikten: \d+ nye ideer',f'Se grafikkoversikten: {len(manifest)} nye ideer',html)
     if cratefile.exists():
         html=html.replace('Ny grafikk til kuponger, flatpakket papp og grenuttak:', 'Ny grafikk til kuponger, flatpakket papp, grenuttak og plastkasse:')
@@ -237,6 +241,8 @@ def main():
     html += '<script id="planned-data" type="application/json">'+embed(manifest)+'</script>\n<script>'+SCRIPT+'</script>\n'
     if modular:
         html += '<script>'+(ROOT/'tools/kokeplate-panel.js').read_text(encoding='utf-8')+'</script>\n'
+    if weatherpanel.exists():
+        html += '<script>'+(ROOT/'tools/marked-vaer-panel.js').read_text(encoding='utf-8')+'</script>\n'
     html += '</html>\n'
     PAGE.write_text(html,encoding='utf-8')
     print(f'HTML oppdatert med {len(manifest)} ideer')

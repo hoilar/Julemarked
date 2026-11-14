@@ -247,6 +247,28 @@ gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scen
 
 ## Gjenstående grafikk-ønsker
 
+### ✅ Grafikk klar: torget i snøvær, sludd og storm (14.11.2026)
+
+**12 nye værbakgrunner:** snøvær, sludd og storm for hver av de fire døgnvariantene
+morgen (07–10), dag (10–15), kveld (15–21) og natt (21–07).
+Hvert bilde er redigert fra den tilsvarende eksisterende døgnbakgrunnen.
+Samme utsnitt, perspektiv og motiv: hus, stabbur, kirke, juletre, lykter og boder beholder plasseringen.
+Nattvariantene har fortsatt lukkede markedsboder. Ingen ny bod, bil eller bøtte i forgrunnen.
+
+- **Snøvær:** fallende snø, frisk snø og overskyet vinterlys.
+- **Sludd:** våt snø, regn/sludd, slaps og grunne vannpytter med lysreflekser.
+- **Storm:** mørke skybånd og kraftig skrått snøfokk; bygningene står intakte.
+- **Spillklare filer:** `client/public/art/bg/marked-{sno,sludd,storm}-{morgen,dag,kveld,natt}.jpg`.
+- **Format:** ugjennomsiktig, 1672×941 px; fin pikselstil, uten grov varepalett eller `pixelify.py`.
+- **Originaler:** `GFX_assets/planlagte/marked-vaer/originaler/`.
+- **Sammenligning:** `GFX_assets/planlagte/marked-vaer/oversikt.jpg`, fire originaler + tolv værbilder.
+- **Prompter:** `tools/marked-vaer.json` (innebygd image_gen). Klargjøring: `tools/marked-vaer.py`.
+- **Kontroll:** `GFX_assets/planlagte/marked-vaer/kontroll.json`.
+
+HTML-katalogen har en egen værforhåndsvisning med valg av vær og døgnvariant, ved siden av originalen.
+**Grafikken er klar, men værsystemet er ikke implementert.** Dagens fire bakgrunner og spillets
+valg av døgnbakgrunn er beholdt. Vær på bodtak, stormskader og våte varer er egne senere oppgaver.
+
 ### ✅ I bruk (12.11.2026): torget om morgenen, kvelden og natta
 
 **I spillet:** `art/bg/marked-{morgen,dag,kveld,natt}.jpg`; fargelaget over kveld/natt er fjernet.

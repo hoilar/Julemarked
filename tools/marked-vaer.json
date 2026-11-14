@@ -1,0 +1,118 @@
+{
+  "description": "Tre værtyper × fire tider på døgnet. Grafikk klar; værmekanikk ikke implementert.",
+  "mode": "Built-in image_gen",
+  "size": [
+    1672,
+    941
+  ],
+  "jobs": [
+    {
+      "id": "sno",
+      "time": "morgen",
+      "label": "Snøvær",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing morgen game market background. Make the SAME EXACT IMAGE in Snøvær weather. Steady gently falling SNOW: many small crisp white pixel-cluster flakes at several depths, soft overcast snow clouds, fresh clean powder on the existing roofs and ground. Calm winter snowfall, no rain and no muddy puddles. Keep architecture clearly readable and the open lower foreground quiet enough for game layers. Early MORNING, preserve the source's muted peach dawn undertone under weather clouds and existing lamp/window light state. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-morgen.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sno-morgen.png",
+      "target": "client/public/art/bg/marked-sno-morgen.jpg"
+    },
+    {
+      "id": "sludd",
+      "time": "morgen",
+      "label": "Sludd",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing morgen game market background. Make the SAME EXACT IMAGE in Sludd weather. Cold wet SLEET and thaw: short thin diagonal grey-white pixel streaks of mixed wet snow and rain, low grey overcast clouds, existing snow becomes damp grey slush with irregular shallow puddles and subtly reflective wet patches in the existing open plaza. Retain patches of snow on roofs and ground. Wet subdued mood, distinctly less white snow than snowfall, no flood, no heavy snow blizzard. Early MORNING, preserve the source's muted peach dawn undertone under weather clouds and existing lamp/window light state. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-morgen.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sludd-morgen.png",
+      "target": "client/public/art/bg/marked-sludd-morgen.jpg"
+    },
+    {
+      "id": "storm",
+      "time": "morgen",
+      "label": "Storm",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing morgen game market background. Make the SAME EXACT IMAGE in Storm weather. Strong winter STORM: dark heavy wind-driven cloud bands, dense fine diagonal snow/sleet blowing consistently from upper left to lower right, some low drifting snow and visibly gusty atmosphere. Dramatic but still readable pixel-art storm. Keep every building, lamp, tree trunk and market stall fixed, intact, upright and recognizable; no destruction, lightning bolt, fallen tree, new debris, or foreground objects. Preserve the source time of day: daytime storm remains readable dim daylight; night remains dark night. Early MORNING, preserve the source's muted peach dawn undertone under weather clouds and existing lamp/window light state. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-morgen.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-storm-morgen.png",
+      "target": "client/public/art/bg/marked-storm-morgen.jpg"
+    },
+    {
+      "id": "sno",
+      "time": "dag",
+      "label": "Snøvær",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing dag game market background. Make the SAME EXACT IMAGE in Snøvær weather. Steady gently falling SNOW: many small crisp white pixel-cluster flakes at several depths, soft overcast snow clouds, fresh clean powder on the existing roofs and ground. Calm winter snowfall, no rain and no muddy puddles. Keep architecture clearly readable and the open lower foreground quiet enough for game layers. DAYTIME, use cool diffuse daylight, do not turn this into night or sunset. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-dag.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sno-dag.png",
+      "target": "client/public/art/bg/marked-sno-dag.jpg"
+    },
+    {
+      "id": "sludd",
+      "time": "dag",
+      "label": "Sludd",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing dag game market background. Make the SAME EXACT IMAGE in Sludd weather. Cold wet SLEET and thaw: short thin diagonal grey-white pixel streaks of mixed wet snow and rain, low grey overcast clouds, existing snow becomes damp grey slush with irregular shallow puddles and subtly reflective wet patches in the existing open plaza. Retain patches of snow on roofs and ground. Wet subdued mood, distinctly less white snow than snowfall, no flood, no heavy snow blizzard. DAYTIME, use cool diffuse daylight, do not turn this into night or sunset. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-dag.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sludd-dag.png",
+      "target": "client/public/art/bg/marked-sludd-dag.jpg"
+    },
+    {
+      "id": "storm",
+      "time": "dag",
+      "label": "Storm",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing dag game market background. Make the SAME EXACT IMAGE in Storm weather. Strong winter STORM: dark heavy wind-driven cloud bands, dense fine diagonal snow/sleet blowing consistently from upper left to lower right, some low drifting snow and visibly gusty atmosphere. Dramatic but still readable pixel-art storm. Keep every building, lamp, tree trunk and market stall fixed, intact, upright and recognizable; no destruction, lightning bolt, fallen tree, new debris, or foreground objects. Preserve the source time of day: daytime storm remains readable dim daylight; night remains dark night. DAYTIME, use cool diffuse daylight, do not turn this into night or sunset. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-dag.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-storm-dag.png",
+      "target": "client/public/art/bg/marked-storm-dag.jpg"
+    },
+    {
+      "id": "sno",
+      "time": "kveld",
+      "label": "Snøvær",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing kveld game market background. Make the SAME EXACT IMAGE in Snøvær weather. Steady gently falling SNOW: many small crisp white pixel-cluster flakes at several depths, soft overcast snow clouds, fresh clean powder on the existing roofs and ground. Calm winter snowfall, no rain and no muddy puddles. Keep architecture clearly readable and the open lower foreground quiet enough for game layers. EVENING twilight, preserve blue-purple dusk and prominent warm lantern/window pools of light. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-kveld.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sno-kveld.png",
+      "target": "client/public/art/bg/marked-sno-kveld.jpg"
+    },
+    {
+      "id": "sludd",
+      "time": "kveld",
+      "label": "Sludd",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing kveld game market background. Make the SAME EXACT IMAGE in Sludd weather. Cold wet SLEET and thaw: short thin diagonal grey-white pixel streaks of mixed wet snow and rain, low grey overcast clouds, existing snow becomes damp grey slush with irregular shallow puddles and subtly reflective wet patches in the existing open plaza. Retain patches of snow on roofs and ground. Wet subdued mood, distinctly less white snow than snowfall, no flood, no heavy snow blizzard. EVENING twilight, preserve blue-purple dusk and prominent warm lantern/window pools of light. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-kveld.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sludd-kveld.png",
+      "target": "client/public/art/bg/marked-sludd-kveld.jpg"
+    },
+    {
+      "id": "storm",
+      "time": "kveld",
+      "label": "Storm",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing kveld game market background. Make the SAME EXACT IMAGE in Storm weather. Strong winter STORM: dark heavy wind-driven cloud bands, dense fine diagonal snow/sleet blowing consistently from upper left to lower right, some low drifting snow and visibly gusty atmosphere. Dramatic but still readable pixel-art storm. Keep every building, lamp, tree trunk and market stall fixed, intact, upright and recognizable; no destruction, lightning bolt, fallen tree, new debris, or foreground objects. Preserve the source time of day: daytime storm remains readable dim daylight; night remains dark night. EVENING twilight, preserve blue-purple dusk and prominent warm lantern/window pools of light. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-kveld.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-storm-kveld.png",
+      "target": "client/public/art/bg/marked-storm-kveld.jpg"
+    },
+    {
+      "id": "sno",
+      "time": "natt",
+      "label": "Snøvær",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing natt game market background. Make the SAME EXACT IMAGE in Snøvær weather. Steady gently falling SNOW: many small crisp white pixel-cluster flakes at several depths, soft overcast snow clouds, fresh clean powder on the existing roofs and ground. Calm winter snowfall, no rain and no muddy puddles. Keep architecture clearly readable and the open lower foreground quiet enough for game layers. NIGHT, preserve deep navy darkness and existing warm lamps, and keep the market stall shutters CLOSED exactly as in the reference; overcast weather obscures moon and stars. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-natt.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sno-natt.png",
+      "target": "client/public/art/bg/marked-sno-natt.jpg"
+    },
+    {
+      "id": "sludd",
+      "time": "natt",
+      "label": "Sludd",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing natt game market background. Make the SAME EXACT IMAGE in Sludd weather. Cold wet SLEET and thaw: short thin diagonal grey-white pixel streaks of mixed wet snow and rain, low grey overcast clouds, existing snow becomes damp grey slush with irregular shallow puddles and subtly reflective wet patches in the existing open plaza. Retain patches of snow on roofs and ground. Wet subdued mood, distinctly less white snow than snowfall, no flood, no heavy snow blizzard. NIGHT, preserve deep navy darkness and existing warm lamps, and keep the market stall shutters CLOSED exactly as in the reference; overcast weather obscures moon and stars. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-natt.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-sludd-natt.png",
+      "target": "client/public/art/bg/marked-sludd-natt.jpg"
+    },
+    {
+      "id": "storm",
+      "time": "natt",
+      "label": "Storm",
+      "prompt": "Use case: lighting-weather. Edit target: supplied existing natt game market background. Make the SAME EXACT IMAGE in Storm weather. Strong winter STORM: dark heavy wind-driven cloud bands, dense fine diagonal snow/sleet blowing consistently from upper left to lower right, some low drifting snow and visibly gusty atmosphere. Dramatic but still readable pixel-art storm. Keep every building, lamp, tree trunk and market stall fixed, intact, upright and recognizable; no destruction, lightning bolt, fallen tree, new debris, or foreground objects. Preserve the source time of day: daytime storm remains readable dim daylight; night remains dark night. NIGHT, preserve deep navy darkness and existing warm lamps, and keep the market stall shutters CLOSED exactly as in the reference; overcast weather obscures moon and stars. Strict composition lock: same 1672x941 pixel canvas, aspect ratio, camera, crop, horizon and exact x/y registration. All building silhouettes, rooftops, church tower/cross, two raised timber storehouses, large Christmas tree, lamp posts, stone walls, steps, market stalls, people, footpaths and their positions stay unchanged. Do not pan, zoom, crop, redraw layout or add/remove people, props or buildings. No player stall, car, bin, labels or UI in foreground. ONLY alter sky/weather, lighting and snow/wetness on existing surfaces. Match the supplied image's FINE crisp pixel-art clusters, thin dark outlines, detailed warm timber and small discrete shading patches, not large coarse pixelation, smooth painting, photographic noise or vector. Full-bleed opaque background, no transparency, border, text, comparison panel or collage. Output one complete scene only.",
+      "reference": "client/public/art/bg/marked-natt.jpg",
+      "original": "GFX_assets/planlagte/marked-vaer/originaler/marked-storm-natt.png",
+      "target": "client/public/art/bg/marked-storm-natt.jpg"
+    }
+  ]
+}

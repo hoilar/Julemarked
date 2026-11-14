@@ -14,7 +14,24 @@
 <main><div class="stats"><div><strong id="total">–</strong><span>oppføringer i spillet</span></div><div><strong id="groups">–</strong><span>kategorier</span></div><div><strong id="sale">–</strong><span>salgsvarer i spillet</span></div><div><strong id="ideas">–</strong><span>ideer – ikke bestemt</span></div></div>
 <p class="idea-notice">Gul merking = idé, ikke bestemt eller implementert. Nye bilder er grafikkforslag. Ukjente størrelser er skisser; ID-er er arbeidsnavn.</p><div class="toolbar"><input id="search" type="search" placeholder="Søk etter navn, ID, produsent eller bildesti …" aria-label="Søk i varelisten"><select id="scope" aria-label="Utviklingsstatus"><option value="">I spillet og ideer</option><option value="live">Kun i spillet</option><option value="graphics">Ny grafikk klar</option><option value="idea">Kun ideer – ikke bestemt</option></select><select id="category" aria-label="Kategori"><option value="">Alle kategorier</option></select><select id="status" aria-label="Egenskap"><option value="">Alle egenskaper</option><option>kan bare lages</option><option>sjelden</option><option>kan avsløres</option><option value="⚠️">Mangler bildefil (i kilden)</option><option value="↓">Har nedskalert bilde</option></select><select id="sort" aria-label="Sortering"><option value="source">Rekkefølge i kilden</option><option value="name">Navn A–Å</option><option value="price">Pris: høyest først</option></select><button id="reset">Nullstill</button></div>
 <div class="meta"><span id="count" role="status" aria-live="polite"></span><span id="source">Spilldata: VARELISTE.md · ideer: VAREPLAN.md og konseptet</span></div>
-<p class="notice">Ny grafikk til kuponger, flatpakket papp, grenuttak og plastkasse: velg «Ny grafikk klar» i statusfilteret. <a href="GFX_assets/planlagte/kuponger-papp/oversikt.jpg">Se bildeoversikten</a> · <a href="GFX_assets/planlagte/grenuttak/oversikt.jpg">Se grenuttaksvariantene</a> · <a href="GFX_assets/planlagte/plastboks-faner/oversikt.jpg">Se plastkassa med faner</a>.</p><!-- KOKEPLATE-START --><section id="kokeplate-panel" aria-labelledby="kokeplate-heading">
+<p class="notice">Ny grafikk til kuponger, flatpakket papp, grenuttak og plastkasse: velg «Ny grafikk klar» i statusfilteret. <a href="GFX_assets/planlagte/kuponger-papp/oversikt.jpg">Se bildeoversikten</a> · <a href="GFX_assets/planlagte/grenuttak/oversikt.jpg">Se grenuttaksvariantene</a> · <a href="GFX_assets/planlagte/plastboks-faner/oversikt.jpg">Se plastkassa med faner</a>.</p><!-- MARKEDVAER-START --><section id="marked-vaer-panel" aria-labelledby="marked-vaer-heading">
+  <p class="eyebrow">NY GRAFIKK KLAR / PLANLAGT VÆRSYSTEM</p>
+  <h2 id="marked-vaer-heading">Torget i all slags vær</h2>
+  <p>Tre værtyper × fire tider på døgnet. Værbildene er klare; været er foreløpig ikke koblet inn i spillet.</p>
+  <div class="weather-controls">
+    <label>Tid på døgnet <select id="weather-time"><option value="morgen">Morgen · 07–10</option><option value="dag" selected>Dag · 10–15</option><option value="kveld">Kveld · 15–21</option><option value="natt">Natt · 21–07</option></select></label>
+    <label>Vær <select id="weather-kind"><option value="sno">Snøvær</option><option value="sludd">Sludd</option><option value="storm">Storm</option></select></label>
+  </div>
+  <div class="weather-comparison">
+    <figure><img id="weather-original" src="client/public/art/bg/marked-dag.jpg" width="1672" height="941" alt="Dagens torgbakgrunn i dagslys"><figcaption>Eksisterende bakgrunn · i spillet</figcaption></figure>
+    <figure><a id="weather-link" href="client/public/art/bg/marked-sno-dag.jpg"><img id="weather-preview" src="client/public/art/bg/marked-sno-dag.jpg" width="1672" height="941" alt="Torget i snøvær på dagtid"></a><figcaption id="weather-caption">Snøvær · dag · grafikk klar</figcaption></figure>
+  </div>
+  <p><a href="GFX_assets/planlagte/marked-vaer/oversikt.jpg">Se alle tolv værbildene sammen med originalene</a> · <a href="GRAFIKK.md">Grafikkføringen</a></p>
+</section>
+<style>
+#marked-vaer-panel{margin:24px 0;padding:24px;border:1px solid #475448;border-radius:12px;background:#1a2720}.weather-controls{display:flex;gap:18px;flex-wrap:wrap;margin:20px 0}.weather-controls label{display:grid;gap:6px;color:var(--muted);font-size:13px}.weather-comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px}.weather-comparison figure{margin:0;min-width:0}.weather-comparison img{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}.weather-comparison figcaption{margin-top:8px;color:var(--muted);font-size:13px}@media(max-width:720px){.weather-comparison{grid-template-columns:1fr}#marked-vaer-panel{padding:16px}}
+</style>
+<!-- MARKEDVAER-SLUTT --><!-- KOKEPLATE-START --><section id="kokeplate-panel" aria-labelledby="kokeplate-heading">
   <div class="eyebrow">GRAFIKKFORSLAG / SEPARATE LAG</div>
   <h2 id="kokeplate-heading">Én kokeplate. Flere påbygg.</h2>
   <p>Kokeplata har egen glød og egne knapper. Kjele eller gorojern legges oppå som et separat bilde.</p>
@@ -208,6 +225,27 @@ install(JSON.parse($('snapshot').textContent));
   attachment.value=String(initial<0?0:initial);
   level.addEventListener('change',update);attachment.addEventListener('change',update);
   update();
+})();
+</script>
+<script>(() => {
+  const get = id => document.getElementById(id);
+  if (!get('marked-vaer-panel')) return;
+  const times = {morgen:'morgen',dag:'dag',kveld:'kveld',natt:'natt'};
+  const kinds = {sno:'Snøvær',sludd:'Sludd',storm:'Storm'};
+  function updateWeather() {
+    const time = get('weather-time').value;
+    const kind = get('weather-kind').value;
+    const path = 'client/public/art/bg/marked-'+kind+'-'+time+'.jpg';
+    get('weather-original').src = 'client/public/art/bg/marked-'+time+'.jpg';
+    get('weather-original').alt = 'Eksisterende torgbakgrunn · '+times[time];
+    get('weather-preview').src = path;
+    get('weather-preview').alt = kinds[kind]+' · '+times[time];
+    get('weather-link').href = path;
+    get('weather-caption').textContent = kinds[kind]+' · '+times[time]+' · grafikk klar, ikke koblet inn i spillet';
+  }
+  get('weather-time').addEventListener('change',updateWeather);
+  get('weather-kind').addEventListener('change',updateWeather);
+  updateWeather();
 })();
 </script>
 </html>

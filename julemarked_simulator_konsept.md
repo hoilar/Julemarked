@@ -465,7 +465,7 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 - **Dagens kategorier (12.5):** været blir en av grunnene til at noen kategorier er populære en bestemt dag.
 - **Strøm (12.3):** en varmeovn eller terrassevarmer i boden gir flere kunder når det er kaldt, men trekker mye strøm og kan få sikringene til å ryke.
 - **Strømprisen** kan stige på kalde dager (står allerede i avisa).
-- **Grafikk:** torget i snøvær, sludd og storm, i tillegg til morgen, dag, kveld og natt.
+- **Grafikk klar (14.11.2026):** torget i snøvær, sludd og storm for alle fire tider: morgen, dag, kveld og natt (12 bilder, samme utsnitt). Se GRAFIKK.md og værforhåndsvisningen i HTML-katalogen. Værsystemet er ikke implementert.
 - **Forsikring:** stormskader og vannskader på varer kan dekkes, eller ikke.
 
 **Åpne spørsmål:**
