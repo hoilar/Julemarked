@@ -1,0 +1,329 @@
+{
+  "description": "Grafikkforslag fra VAREPLAN.md og konseptet. Ikke implementerte spillvarer. ID-er er arbeidsnavn; ukjente størrelser er skisser.",
+  "generation": "Built-in image_gen; one transparent PNG per item. See prompter.json.",
+  "items": [
+    {
+      "id": "julekalender",
+      "name": "Julekalender (24 luker)",
+      "size": "2x2",
+      "category": "Salgsvarer",
+      "source": "Nettbutikk",
+      "note": "Etterspørselen faller gjennom desember.",
+      "subject": "Square upright cardboard advent calendar with 24 numbered doors, green and red, cream stars.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "julestjerne_potte",
+      "name": "Julestjerne (potteplante)",
+      "size": "2x2",
+      "category": "Salgsvarer",
+      "source": "Nettbutikk",
+      "note": "Visner etter noen dager.",
+      "subject": "Red poinsettia plant with rich green leaves in a simple cream ceramic flowerpot.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "risengrynsgrot",
+      "name": "Risengrynsgrøt med mandel",
+      "size": "2x2",
+      "category": "Salgsvarer",
+      "source": "Kjele: ris + melk",
+      "note": "Én kopp per omgang har mandelen.",
+      "subject": "Red handled cup containing creamy Norwegian rice porridge, cinnamon sprinkle and a single almond.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "smultringer",
+      "name": "Smultringer",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Frityrgryte: mel + sukker + olje",
+      "note": "Brannfare. Teller også som ett av syv slag.",
+      "subject": "One golden brown traditional Norwegian ring doughnut, without icing.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "pepperkakehus",
+      "name": "Pepperkakehus",
+      "size": "3x3",
+      "category": "Salgsvarer",
+      "source": "Bakemaskin, lang tid",
+      "note": "Plasskrevende; kan knuses av tyver.",
+      "subject": "Gingerbread house with snowy white icing roof edges and small red and green candy details.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "julekrans",
+      "name": "Julekrans",
+      "size": "2x2",
+      "category": "Salgsvarer",
+      "source": "Dekormaskin: granbar + kongler",
+      "note": "Granbar hentes med bilen eller lånes fra torget.",
+      "subject": "Upright circular evergreen Christmas wreath, pinecones and a modest red ribbon.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "lutefisk",
+      "name": "Lutefisk",
+      "size": "1x2",
+      "category": "Salgsvarer",
+      "source": "Nettbutikk, sjelden",
+      "note": "Noen kunder liker varen, andre klager.",
+      "subject": "Tall narrow sealed clear food tray containing ivory translucent lutefisk cod fillet, simple blue paper band, no text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "vafler_brunost",
+      "name": "Vafler med brunost",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Vaffeljern: mel + egg + brunost",
+      "note": "Billig storselger; jernet trekker mye strøm.",
+      "subject": "One heart shaped golden Norwegian waffle topped with two thin caramel brown cheese slices.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "falske_konsertbilletter",
+      "name": "«Billetter til julekonserten»",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Penn + papirblokk",
+      "note": "Luguber vare; kan avsløres.",
+      "subject": "A small cream counterfeit Christmas concert ticket with red border and handwritten musical notes, no readable text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "mysteriepakke",
+      "name": "Mysteriepakke",
+      "size": "2x2",
+      "category": "Salgsvarer",
+      "source": "Fyren bak containeren",
+      "note": "Tilfeldig innhold, fra kull til lusekofte.",
+      "subject": "Closed dark green mystery gift box tied with red ribbon and a cream question mark tag.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "anisdrops",
+      "name": "Anisdrops",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Nettbutikk eller kjele: sukker + anis",
+      "note": "Lav etterspørsel, men trofaste kjøpere.",
+      "subject": "A small clear candy pouch holding deep brown shiny anise sweets, cream paper fold closure, small star anise symbol, no text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "sandkaker",
+      "name": "Sandkaker",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Bakemaskin: mel + smør + sukker + mandler",
+      "note": "Syv slag. Egen form er foreslått.",
+      "subject": "One Norwegian sandkake: golden fluted small shortbread tart shell with hollow center.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "berlinerkranser",
+      "name": "Berlinerkranser",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Bakemaskin: mel + smør + sukker + egg",
+      "note": "Syv slag.",
+      "subject": "One Norwegian Berlinerkrans butter cookie: small golden wreath with crossed ends, pearl sugar.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "serinakaker",
+      "name": "Serinakaker",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Bakemaskin: mel + smør + sukker",
+      "note": "Syv slag; billigst å lage.",
+      "subject": "One Norwegian serinakake: round golden butter cookie with fork impression and chopped almond topping.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "fattigmann",
+      "name": "Fattigmann",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Frityrgryte: mel + egg + fløte",
+      "note": "Syv slag; brannfare.",
+      "subject": "One traditional Norwegian fattigmann fried pastry, twisted diamond knot, golden brown, no icing.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "goro",
+      "name": "Goro",
+      "size": "1x1",
+      "category": "Salgsvarer",
+      "source": "Bakemaskin: mel + smør + fløte",
+      "note": "Syv slag; trenger gorojern.",
+      "subject": "One rectangular Norwegian goro wafer cookie with embossed floral geometric pattern, pale golden brown.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "ris",
+      "name": "Ris",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til risengrynsgrøt.",
+      "subject": "Upright cream paper bag of white rice with a small bowl-of-rice pictogram, no text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "melk",
+      "name": "Melk",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til risengrynsgrøt.",
+      "subject": "Upright cream and muted blue milk carton with folded gable top, no text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "olje",
+      "name": "Olje",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til frityrgryten.",
+      "subject": "Upright clear bottle of golden cooking oil with a dark green cap, small cream label, no text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "egg",
+      "name": "Egg",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til vafler og småkaker.",
+      "subject": "Open small recycled cardboard egg carton holding six cream and brown eggs.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "brunost",
+      "name": "Brunost",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til vafler.",
+      "subject": "Block of Norwegian caramel brown cheese partly unwrapped in red and cream paper, one shaved slice on top, no text.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "granbar",
+      "name": "Granbar",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Skogen eller torget (forslag)",
+      "note": "Til julekrans.",
+      "subject": "One compact bundle of dark pine-green spruce branches tied with natural twine.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "kongler",
+      "name": "Kongler",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til julekrans.",
+      "subject": "Small cluster of three warm brown spruce pinecones with clearly layered scales.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "anis",
+      "name": "Anis",
+      "size": "2x2",
+      "category": "Råvarer",
+      "source": "Ikke avklart",
+      "note": "Til anisdrops.",
+      "subject": "Small open cream paper spice pouch containing dark brown star anise, one star anise visible at its mouth.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "frityrgryte",
+      "name": "Frityrgryte",
+      "size": "3x3",
+      "category": "Maskiner og utstyr",
+      "source": "Ikke avklart",
+      "note": "Til smultringer og fattigmann. Størrelse er skisse.",
+      "subject": "Practical countertop electric deep fryer, brushed warm grey metal rectangular vat, graphite handles, wire basket, off-white temperature dial, OFF state. No holiday motifs.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "vaffeljern",
+      "name": "Vaffeljern",
+      "size": "2x2",
+      "category": "Maskiner og utstyr",
+      "source": "Ikke avklart",
+      "note": "Til vafler; høyt strømforbruk. Størrelse er skisse.",
+      "subject": "Practical open electric Norwegian heart-waffle iron, graphite casing, warm grey metal five-heart cooking plates, horizontal base, OFF state. No holiday motifs.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "kakeboks",
+      "name": "Kakeboks (syv slag)",
+      "size": "2x2",
+      "category": "Maskiner og utstyr",
+      "source": "Klas Olsen (forslag)",
+      "note": "Sju rom, ett slag per rom.",
+      "subject": "Open round Christmas cookie tin, red exterior cream interior, seven clearly visible empty compartments (center plus six wedges), lid behind tin.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "sandkakeform",
+      "name": "Sandkakeform",
+      "size": "1x1",
+      "category": "Maskiner og utstyr",
+      "source": "Klas Olsen? Ikke avklart",
+      "note": "Mulig krav for sandkaker. Størrelse er skisse.",
+      "subject": "One empty small silver fluted metal tart mold for Norwegian sandkaker, practical neutral warm grey, seen slightly from above.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "gorojern",
+      "name": "Gorojern",
+      "size": "2x2",
+      "category": "Maskiner og utstyr",
+      "source": "Ikke avklart",
+      "note": "Nevnt som krav for goro. Størrelse er skisse.",
+      "subject": "Practical open rectangular cast iron goro wafer press, long horizontal graphite handles and engraved floral cooking plates, warm grey neutral metal, no decoration outside plates.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "varmeovn",
+      "name": "Varmeovn",
+      "size": "2x2",
+      "category": "Maskiner og utstyr",
+      "source": "Ikke avklart",
+      "note": "Væridé i konseptet 12.6. Størrelse er skisse.",
+      "subject": "Practical small portable electric convector heater, off-white rectangular casing, graphite horizontal grille and two small feet, OFF state. No Christmas motifs.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "terrassevarmer",
+      "name": "Terrassevarmer",
+      "size": "1x3",
+      "category": "Maskiner og utstyr",
+      "source": "Ikke avklart",
+      "note": "Alternativ til varmeovn i konseptet 12.6. Størrelse er skisse.",
+      "subject": "Practical tall freestanding electric patio heater with slender vertical graphite pole, round weighted base and small warm grey hood reflector at top, OFF state, no Christmas motifs.",
+      "status": "Idé – ikke bestemt"
+    },
+    {
+      "id": "boksinndeler",
+      "name": "Boksinndeler",
+      "size": "2x1",
+      "sizeStatus": "Skisse – ikke bestemt",
+      "category": "Maskiner og utstyr",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "note": "Planlagt tilbehør til plastkassa. Brukes opp og gir én ny fane; maks to inndelere per kasse, tre faner totalt. Faner kan merkes med penn og ett ark per navn. Foreslått størrelse ca. 2×1; ikke implementert.",
+      "subject": "Rigid slate-blue plastic crate divider wall with reinforcing ribs and a blank label holder.",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Varemeny, plastbokser og boksinndeler",
+      "artPath": "boksinndeler.png"
+    }
+  ]
+}

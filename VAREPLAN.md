@@ -217,7 +217,119 @@ Prisene justeres etter hvert som vi tester.
 | Julebrus | Nettbutikk |
 | Varm eplemost | Kjele: eplemost, styrke 1 |
 
-## 💡 Idéer til nye varer (13.11.2026, ikke bestemt)
+## Kuponger og grenuttak (13.11.2026)
+
+Grafikken er bestilt i `GRAFIKK.md` («Nye ønsker (13.11.2026)»).
+
+- **Kupongen får butikkens farge** (KIWI grønn, REMA blå, Extra rød), så man ser med en gang hvor den gjelder.
+- **Noen kuponger går aldri ut på dato.** De er sjeldne i avisa og har gullkant langs den stiplede linja.
+- **Utgåtte kuponger** beholdes under disken (til man kaster dem), men får egen grafikk så de ikke forveksles med gyldige.
+- **Ekstra grenuttak under disken** viser hvor mange støpsler som står i (0–4) med eget bilde for hvert antall.
+
+## 🎵 Musikk: kassettspiller, høyttaleranlegg og kassetter (13.11.2026)
+
+Musikk ved boden trekker kunder, men koster strøm og kan irritere naboene.
+
+| Gjenstand | Str. | Slik får man den | Hva den gjør |
+|---|---|---|---|
+| Kassettspiller | 2×1 | Klas Olsen | Spiller én kassett. Lav lyd: litt flere kunder ved din bod. Trekker lite strøm. Kan av og til «spise» båndet. |
+| Høyttaleranlegg | 2×2 | Klas Olsen, dyrt | Kobles til kassettspilleren. Høy lyd: flere kunder, men naboene hører det også, og trekker mer strøm (se strømgrensen i konseptet, 12.3). |
+| Kassett | 1×1 | Klas Olsen eller nettbutikkene (sjeldne kassetter hos Loppemarkedet) | Én sang (eller et lite album). Settes i kassettspilleren. |
+| Piratkassett | 1×1 | Fyren | Billig, men dårlig lyd og kan bli avslørt (luguber). |
+
+**Mekanikk (idé):**
+
+- Kassettspilleren plugges i grenuttaket og har en kassettplass (som batteriplassen på maskinene).
+- **Riktig sang til riktig tid:** noen kundetyper liker bestemte sanger, og julesanger virker bedre jo nærmere jul det er.
+- **Samme sang hele dagen** irriterer naboene (og etter hvert kundene). Bytt kassett av og til.
+- **Høyttaleranlegget** kan gi naboskap: naboene kan klage, skru ned (snoke) eller sette på sin egen musikk og gjøre det til en «lydkrig».
+- Kassetter slites: etter mange avspillinger blir lyden dårligere.
+
+**Sanger med melodi og tekst i public domain:**
+
+- Silent Night / Stille natt, helige natt (1818)
+- Jingle Bells (1857)
+- Joy to the World (1836)
+- Angels We Have Heard on High (1700-tallet)
+- Away in a Manger (1887)
+- Deck the Halls
+- The Twelve Days of Christmas
+- We Wish You a Merry Christmas
+- Auld Lang Syne (1711)
+
+Mulige norske tillegg (sjekk at både tekst og melodi er fri før bruk): «Jeg er så glad hver julekveld» (1859),
+«Det kimer nå til julefest» (tekst 1817, melodi 1850), «Deilig er jorden» (1850, folketone), «Nå er det jul igjen» (tradisjonell).
+
+**Viktig om opptak:** at sangen er i public domain betyr bare at *melodien og teksten* er fri. **Innspillinger er
+beskyttet hver for seg.** Bruk egne arrangementer (for eksempel enkle chiptune- eller MIDI-versjoner som passer
+pixelstilen), eller opptak som er tydelig merket CC0/public domain.
+
+## 🕰️ Digitalklokke på boden (idé, 14.11.2026)
+
+- Et apparat fra Klas Olsen som **henger på bodkanten til venstre for alarmen**, festet på samme måte som alarmen
+  (et eget lag over boden, ikke en gjenstand under disken).
+- Viser spilltida med store røde (eller grønne) LED-tall. Plugges i grenuttaket og trekker nesten ingen strøm.
+- **Strømbrudd:** når grenuttaket er av eller hovedsikringen har gått, blinker den «00:00» til man stiller den
+  (et trykk på klokka), akkurat som en ekte radioklokke.
+- Mulig tillegg: vekking/påminnelse på et klokkeslett (for eksempel kl. 07 når leveransene kommer).
+- Grafikk: bestilt i `GRAFIKK.md` (av, på og butikkikon, i full bodstørrelse som alarmen). Sifrene, også det blinkende «00:00», skriver spillet selv i displayet.
+
+## 🔧 Maskinmoduler (idé, 14.11.2026)
+
+Små tilleggsmoduler som settes i en **modulplass** på maskinene (som batteriplassen). Kjøpes hos Klas Olsen,
+**2×2 ruter hver** (bekreftet 14.11.2026), i alle tre grader: Enkel (grønt kort), Utvidet (blått kort) og Fullutstyrt (lilla kort). Flere komponenter fra lav til høy grad. Tallene under er forslag og må balanseres.
+
+**Brettemaskinen:**
+
+| Modul | Hva den gjør | Ulempe |
+|---|---|---|
+| Automatisk posebretting | Henter tomme poser fra under disken selv og bretter dem | Maskinen må alltid stå på (trekker strøm hele tiden) |
+| Strømsparemodul | Bruker mindre strøm (for eksempel −40 %) | Bretter litt saktere |
+| Turbomodul («ekstra strøm, kortere tid») | Bretter mye raskere | Trekker mye mer strøm, kan få sikringene til å ryke (konseptet, 12.3) |
+
+**Strikkemaskin, bakemaskin, kjele, dekormaskin og frityrgryte:**
+
+| Modul | Hva den gjør | Ulempe |
+|---|---|---|
+| Turbomodul | Kortere tid per omgang (for eksempel −30 %) | Mer strøm (for eksempel +60 %) |
+| Langtidsmodul («lengre tid, sjanse for ett ekstra») | Sjanse for **ett ekstra ferdig produkt** per omgang, hvis det er plass i ferdig-feltet | Omgangen tar lengre tid |
+| Strømsparemodul | Mindre strøm | Litt lengre tid |
+
+**Andre modulidéer:**
+
+- **Termostat** (kjele og frityrgryte): mindre sjanse for svidd batch eller brann.
+- **Tidsur:** maskinen starter selv på et klokkeslett, for eksempel om natta når strømmen er billig eller før du kommer om morgenen.
+- **Varsling:** SMS på telefonen når omgangen er ferdig eller ferdig-feltet er fullt.
+- **Utmating:** ferdige varer legges rett under disken (eller på bordet) i stedet for å bli liggende i maskinen.
+
+**Regler (forslag):**
+
+- Én modulplass per maskin (kanskje to på de dyreste maskinene).
+- Turbo og strømsparing kan ikke stå i samme maskin.
+- Modulene kan flyttes mellom maskiner, og de kan stjeles når man snoker.
+
+## Varemeny, plastbokser og boksinndeler (13.11.2026)
+
+**Varemenyen** (når man trykker på en vare eller råvare):
+
+- Knapper med ikon for **Legg under disken** og **Legg på bordet** (ikoner bestilt i `GRAFIKK.md`).
+- En nedtrekksmeny **Legg i …** med eskene man har: «Eske 1», «Eske 2», «Plastkasse 1», «Plastkasse 2» osv.
+  (eller navnet man har gitt dem). Den viser **bare antallet som får plass** i hver eske eller fane.
+- Gjelder både varer og råvarer.
+
+**Merke plastkasser:**
+
+- Har man **penn og papirblokk**, kan man gi en plastkasse et navn. Det bruker **ett ark** fra blokka.
+- Uten navn heter de «Plastkasse 1», «Plastkasse 2» osv.
+
+**Boksinndeler** (ny gjenstand):
+
+- Kjøpes hos **Klas Olsen** og **koster mye** (pris ikke bestemt).
+- Brukes opp på en plastkasse. Da får plastkassa **en ny fane** (som dokumentmappa).
+- **Én boksinndeler gir én fane. Maks 3 faner** per plastkasse: kassa har én fane fra før, så det får plass **maks 2 inndelere** (bekreftet 13.11.2026).
+- Fanene kan merkes med penn og papir (ett ark per navn). Ellers heter de «Tab 1», «Tab 2» og «Tab 3».
+- Navn lengre enn **6 tegn** kortes av med «…» på fanen (hele navnet vises når man holder over).
+- Fanene vises i «Legg i …»-menyen («Plastkasse 1 · Tab 2»).
 
 Varer som gir ny mekanikk, ikke bare flere rader i tabellen. Favorittene er merket ⭐.
 

@@ -1,0 +1,250 @@
+{
+  "description": "Nye grafikkvarianter til eksisterende kupong og flatpakket papp. Katalogforslag; spilldata endres ikke.",
+  "mode": "Built-in image_gen",
+  "assets": [
+    {
+      "id": "kupong-kiwi",
+      "label": "KIWI · vanlig",
+      "size": "2x2",
+      "target": "verktoy/kupong-kiwi.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-kiwi.png"
+    },
+    {
+      "id": "kupong-rema",
+      "label": "REMA 1000 · vanlig",
+      "size": "2x2",
+      "target": "verktoy/kupong-rema.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-rema.png"
+    },
+    {
+      "id": "kupong-extra",
+      "label": "Extra · vanlig",
+      "size": "2x2",
+      "target": "verktoy/kupong-extra.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-extra.png"
+    },
+    {
+      "id": "kupong-kiwi-gull",
+      "label": "KIWI · gullkant",
+      "size": "2x2",
+      "target": "verktoy/kupong-kiwi-gull.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-kiwi-gull.png"
+    },
+    {
+      "id": "kupong-rema-gull",
+      "label": "REMA 1000 · gullkant",
+      "size": "2x2",
+      "target": "verktoy/kupong-rema-gull.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-rema-gull.png"
+    },
+    {
+      "id": "kupong-extra-gull",
+      "label": "Extra · gullkant",
+      "size": "2x2",
+      "target": "verktoy/kupong-extra-gull.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-extra-gull.png"
+    },
+    {
+      "id": "kupong-kiwi-utgatt",
+      "label": "KIWI · utgått",
+      "size": "2x2",
+      "target": "verktoy/kupong-kiwi-utgatt.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-kiwi-utgatt.png"
+    },
+    {
+      "id": "kupong-rema-utgatt",
+      "label": "REMA 1000 · utgått",
+      "size": "2x2",
+      "target": "verktoy/kupong-rema-utgatt.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-rema-utgatt.png"
+    },
+    {
+      "id": "kupong-extra-utgatt",
+      "label": "Extra · utgått",
+      "size": "2x2",
+      "target": "verktoy/kupong-extra-utgatt.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/kupong-extra-utgatt.png"
+    },
+    {
+      "id": "flatpakket-papp",
+      "label": "Flatpakket papp",
+      "size": "2x1",
+      "target": "goods/flatpakket-papp.png",
+      "original": "GFX_assets/planlagte/kuponger-papp/originaler/flatpakket-papp.png"
+    }
+  ],
+  "catalog": [
+    {
+      "item": "kupong",
+      "note": "Ni nye kupongbilder: KIWI, REMA 1000 og Extra, hver som vanlig, gullkant (hele sesongen) og utgått. Rabatt og dato skrives av spillet.",
+      "variants": [
+        {
+          "path": "verktoy/kupong-kiwi.png",
+          "label": "KIWI · vanlig"
+        },
+        {
+          "path": "verktoy/kupong-rema.png",
+          "label": "REMA 1000 · vanlig"
+        },
+        {
+          "path": "verktoy/kupong-extra.png",
+          "label": "Extra · vanlig"
+        },
+        {
+          "path": "verktoy/kupong-kiwi-gull.png",
+          "label": "KIWI · gullkant · hele sesongen"
+        },
+        {
+          "path": "verktoy/kupong-rema-gull.png",
+          "label": "REMA 1000 · gullkant · hele sesongen"
+        },
+        {
+          "path": "verktoy/kupong-extra-gull.png",
+          "label": "Extra · gullkant · hele sesongen"
+        },
+        {
+          "path": "verktoy/kupong-kiwi-utgatt.png",
+          "label": "KIWI · utgått"
+        },
+        {
+          "path": "verktoy/kupong-rema-utgatt.png",
+          "label": "REMA 1000 · utgått"
+        },
+        {
+          "path": "verktoy/kupong-extra-utgatt.png",
+          "label": "Extra · utgått"
+        }
+      ]
+    },
+    {
+      "item": "flatpakket_papp",
+      "note": "Nytt grafikkforslag: flat, sammenbrettet papp med brettekanter og tape. 2×1 ruter.",
+      "variants": [
+        {
+          "path": "goods/flatpakket-papp.png",
+          "label": "Flatpakket papp · 2×1"
+        }
+      ]
+    }
+  ],
+  "generationJobs": [
+    {
+      "id": "kupong-kiwi-gull",
+      "label": "KIWI · gullkant",
+      "store": "KIWI",
+      "state": "gull",
+      "size": "2x2",
+      "target": "verktoy/kupong-kiwi-gull.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kuponger-papp/originaler/kupong-kiwi.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit the attached blank game coupon. EXACT same square canvas 1254x1254, object size, position, paper outline, scissors, dashed cutting line, store header color identity, straight grid alignment. Fine pixel art matching the reference, thin dark brown outline, small clean pixel clusters with 3-4 tones per material; no coarse simplification, blur, dithering or realistic gradients. Keep transparent outside, no ground or shadow. No text, letters, digits, percentages, dates or logos. The middle stays blank for game UI except the cancellation mark when asked. Add a clearly visible narrow GOLD BORDER along all four sides just outside/behind the dashed cut line, inside the existing paper edge. Keep dashed cut line and scissors dark and readable. Gold uses dark ochre edge, warm gold body, a few restrained pale gold corner highlights. No glitter noise or sparkles. Do not add a bow, ribbon, seal or text. Keep store colored header unchanged. Paper body remains blank cream."
+    },
+    {
+      "id": "kupong-kiwi-utgatt",
+      "label": "KIWI · utgått",
+      "store": "KIWI",
+      "state": "utgatt",
+      "size": "2x2",
+      "target": "verktoy/kupong-kiwi-utgatt.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kuponger-papp/originaler/kupong-kiwi.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit the attached blank game coupon. EXACT same square canvas 1254x1254, object size, position, paper outline, scissors, dashed cutting line, store header color identity, straight grid alignment. Fine pixel art matching the reference, thin dark brown outline, small clean pixel clusters with 3-4 tones per material; no coarse simplification, blur, dithering or realistic gradients. Keep transparent outside, no ground or shadow. No text, letters, digits, percentages, dates or logos. The middle stays blank for game UI except the cancellation mark when asked. Make an EXPIRED INVALID coupon: visibly faded, slightly yellowed grey paper, store-colored header faded but still recognizable. Add a large diagonal dark muted-red cancellation cross across the blank central paper, two simple thick stepped pixel-art strokes, NO word or lettering. The cross must read as stamped cancellation, not a text character. Keep the underlying paper silhouette, cut line and scissors unchanged. No gold border."
+    },
+    {
+      "id": "kupong-rema-gull",
+      "label": "REMA 1000 · gullkant",
+      "store": "REMA 1000",
+      "state": "gull",
+      "size": "2x2",
+      "target": "verktoy/kupong-rema-gull.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kuponger-papp/originaler/kupong-rema.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit the attached blank game coupon. EXACT same square canvas 1254x1254, object size, position, paper outline, scissors, dashed cutting line, store header color identity, straight grid alignment. Fine pixel art matching the reference, thin dark brown outline, small clean pixel clusters with 3-4 tones per material; no coarse simplification, blur, dithering or realistic gradients. Keep transparent outside, no ground or shadow. No text, letters, digits, percentages, dates or logos. The middle stays blank for game UI except the cancellation mark when asked. Add a clearly visible narrow GOLD BORDER along all four sides just outside/behind the dashed cut line, inside the existing paper edge. Keep dashed cut line and scissors dark and readable. Gold uses dark ochre edge, warm gold body, a few restrained pale gold corner highlights. No glitter noise or sparkles. Do not add a bow, ribbon, seal or text. Keep store colored header unchanged. Paper body remains blank cream."
+    },
+    {
+      "id": "kupong-rema-utgatt",
+      "label": "REMA 1000 · utgått",
+      "store": "REMA 1000",
+      "state": "utgatt",
+      "size": "2x2",
+      "target": "verktoy/kupong-rema-utgatt.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kuponger-papp/originaler/kupong-rema.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit the attached blank game coupon. EXACT same square canvas 1254x1254, object size, position, paper outline, scissors, dashed cutting line, store header color identity, straight grid alignment. Fine pixel art matching the reference, thin dark brown outline, small clean pixel clusters with 3-4 tones per material; no coarse simplification, blur, dithering or realistic gradients. Keep transparent outside, no ground or shadow. No text, letters, digits, percentages, dates or logos. The middle stays blank for game UI except the cancellation mark when asked. Make an EXPIRED INVALID coupon: visibly faded, slightly yellowed grey paper, store-colored header faded but still recognizable. Add a large diagonal dark muted-red cancellation cross across the blank central paper, two simple thick stepped pixel-art strokes, NO word or lettering. The cross must read as stamped cancellation, not a text character. Keep the underlying paper silhouette, cut line and scissors unchanged. No gold border."
+    },
+    {
+      "id": "kupong-extra-gull",
+      "label": "Extra · gullkant",
+      "store": "Extra",
+      "state": "gull",
+      "size": "2x2",
+      "target": "verktoy/kupong-extra-gull.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kuponger-papp/originaler/kupong-extra.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit the attached blank game coupon. EXACT same square canvas 1254x1254, object size, position, paper outline, scissors, dashed cutting line, store header color identity, straight grid alignment. Fine pixel art matching the reference, thin dark brown outline, small clean pixel clusters with 3-4 tones per material; no coarse simplification, blur, dithering or realistic gradients. Keep transparent outside, no ground or shadow. No text, letters, digits, percentages, dates or logos. The middle stays blank for game UI except the cancellation mark when asked. Add a clearly visible narrow GOLD BORDER along all four sides just outside/behind the dashed cut line, inside the existing paper edge. Keep dashed cut line and scissors dark and readable. Gold uses dark ochre edge, warm gold body, a few restrained pale gold corner highlights. No glitter noise or sparkles. Do not add a bow, ribbon, seal or text. Keep store colored header unchanged. Paper body remains blank cream."
+    },
+    {
+      "id": "kupong-extra-utgatt",
+      "label": "Extra · utgått",
+      "store": "Extra",
+      "state": "utgatt",
+      "size": "2x2",
+      "target": "verktoy/kupong-extra-utgatt.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kuponger-papp/originaler/kupong-extra.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit the attached blank game coupon. EXACT same square canvas 1254x1254, object size, position, paper outline, scissors, dashed cutting line, store header color identity, straight grid alignment. Fine pixel art matching the reference, thin dark brown outline, small clean pixel clusters with 3-4 tones per material; no coarse simplification, blur, dithering or realistic gradients. Keep transparent outside, no ground or shadow. No text, letters, digits, percentages, dates or logos. The middle stays blank for game UI except the cancellation mark when asked. Make an EXPIRED INVALID coupon: visibly faded, slightly yellowed grey paper, store-colored header faded but still recognizable. Add a large diagonal dark muted-red cancellation cross across the blank central paper, two simple thick stepped pixel-art strokes, NO word or lettering. The cross must read as stamped cancellation, not a text character. Keep the underlying paper silhouette, cut line and scissors unchanged. No gold border."
+    },
+    {
+      "id": "kupong-kiwi",
+      "label": "KIWI · vanlig",
+      "store": "KIWI",
+      "state": "vanlig",
+      "size": "2x2",
+      "target": "verktoy/kupong-kiwi.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/kupong.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First image is edit target, the existing blank newspaper coupon. Keep its EXACT square 1254x1254 canvas, paper silhouette, size, location, straight grid alignment, scissors symbol, dashed cutting line, paper shading, and fully transparent outside. Fine detailed pixel art matching original: small clean coherent pixel clusters and thin dark brown outline, restrained 3-4-tone shading. Do NOT make it coarser, smooth, vector-like or photorealistic. No floor or shadow. No text, letters, digits, percentage, logo or expiry date: middle stays completely blank for game UI. Change ONLY color of header band and its subtle paper tint. Header band KIWI GREEN #1f8f3a, muted dark green and lighter green pixel highlights. Cream blank paper with barely green tint. Scissors and dashed line remain dark brown."
+    },
+    {
+      "id": "kupong-rema",
+      "label": "REMA 1000 · vanlig",
+      "store": "REMA 1000",
+      "state": "vanlig",
+      "size": "2x2",
+      "target": "verktoy/kupong-rema.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/kupong.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First image is edit target, the existing blank newspaper coupon. Keep its EXACT square 1254x1254 canvas, paper silhouette, size, location, straight grid alignment, scissors symbol, dashed cutting line, paper shading, and fully transparent outside. Fine detailed pixel art matching original: small clean coherent pixel clusters and thin dark brown outline, restrained 3-4-tone shading. Do NOT make it coarser, smooth, vector-like or photorealistic. No floor or shadow. No text, letters, digits, percentage, logo or expiry date: middle stays completely blank for game UI. Change ONLY color of header band and its subtle paper tint. Header band REMA DEEP BLUE #1d3f8f, muted blue highlights. Cream blank paper with barely cool-blue tint. Scissors and dashed line remain dark brown."
+    },
+    {
+      "id": "kupong-extra",
+      "label": "Extra · vanlig",
+      "store": "Extra",
+      "state": "vanlig",
+      "size": "2x2",
+      "target": "verktoy/kupong-extra.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/kupong.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First image is edit target, the existing blank newspaper coupon. Keep its EXACT square 1254x1254 canvas, paper silhouette, size, location, straight grid alignment, scissors symbol, dashed cutting line, paper shading, and fully transparent outside. Fine detailed pixel art matching original: small clean coherent pixel clusters and thin dark brown outline, restrained 3-4-tone shading. Do NOT make it coarser, smooth, vector-like or photorealistic. No floor or shadow. No text, letters, digits, percentage, logo or expiry date: middle stays completely blank for game UI. Change ONLY color of header band and its subtle paper tint. Header band EXTRA RED #e30613 with a very thin yellow #ffe600 accent edge. Cream blank paper with barely warm tint. Scissors and dashed line remain dark brown."
+    },
+    {
+      "id": "flatpakket-papp",
+      "label": "Flatpakket papp",
+      "size": "2x1",
+      "target": "goods/flatpakket-papp.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/client/public/art/kartong.png"
+      ],
+      "prompt": "Use case: stylized-concept. Create ONE inventory sprite of a cardboard box fully COLLAPSED and folded FLAT. Use reference ONLY for fine pixel-art style, materials, colors and outline, NOT its shape: it must not be an upright closed box. A low wide horizontal stack of flattened warm-brown corrugated cardboard panels, visible fold creases, overlapping flaps, a little used beige tape, slightly worn cut edges. Main axes horizontal, straight grid-aligned, seen from front slightly above about 15 degrees. Fits a 2x1 grid footprint, width twice height, object centered with 8 percent margins and bottom aligned; transparent PNG. Fine small pixel clusters, thin dark brown #1d1a16 outline, warm upper-left light, 3-4 tones per material matching reference. Natural practical brown kraft, neutral non-festive packaging, no Christmas motifs, logos, text, ribbons, extra props, floor or cast shadow. Clearly flat packed, not an open 3D box, not a thin shapeless plank."
+    }
+  ]
+}

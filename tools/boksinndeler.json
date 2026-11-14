@@ -1,0 +1,14 @@
+{
+  "mode": "Built-in image_gen",
+  "prompt": "Use case: stylized-concept. Create ONE inventory sprite of a removable rigid PLASTIC DIVIDER PANEL for the storage crate in reference image 1. Reference 1 is MATERIAL, PALETTE, OUTLINE and fine pixel-art STYLE only; do not draw the crate, lid or handles. Reference 2 is STYLE and small LABEL TAB reference only; do not draw a folder or paper object. Subject: a single wide horizontal, upright rectangular hard-plastic separator wall, slightly taller than half its width. Muted slate-blue/grey molded polypropylene matching the crate body, clearly rigid not fabric or cardboard, two subtle molded reinforcing ribs, a thin raised rim and short side mounting clips. A small built-in protruding label-holder tab along the upper edge, slightly right of center, containing a BLANK warm off-white label with NO text. Entire divider seen from straight front with a very slight above view about 15 degrees and visible narrow top/side thickness, main axes horizontal and vertical. Fine cozy pixel art with small crisp pixel clusters, thin stepped dark brown #1d1a16 outline, 3-4 shades per material, restrained upper-left warm highlights and cool grey-blue shadows. Practical neutral non-festive tool, no snow, Christmas decorations, symbols, text, numerals, screws, scene, hands, floor, cast shadow, stand or extra divider. Transparent PNG, 2:1 landscape canvas, object centered horizontally, about 8 percent outer margins and bottom aligned. Readable at 256x128px; detailed but no noisy dithering, no smooth vector or 3D gloss. This must look like a thin separator wall to insert INSIDE a box, not an entire box, tray, book, lid or screen.",
+  "references": [
+    "client/public/art/plastboks.png",
+    "client/public/art/verktoy/dokumentmappe.png"
+  ],
+  "original": "GFX_assets/planlagte/originaler/boksinndeler.png",
+  "target": "client/public/art/boksinndeler.png",
+  "size": [
+    256,
+    128
+  ]
+}

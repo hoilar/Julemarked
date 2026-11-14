@@ -1,5 +1,99 @@
 # Grafikk – stilguide og prompter (ChatGPT)
 
+## Nye idévarer – grafikkforslag (13.11.2026)
+
+31 separate transparente PNG-er er laget til ideene i `VAREPLAN.md` (Idéer / Syv slag)
+og varmeovn/terrassevarmer i konseptets 12.6. **Dette er ideer, ikke implementerte spillvarer.**
+16 salgsvarer, 8 råvarer og 7 maskiner/utstyr. Maskiner har nøytral palett; varer har varm palett.
+Eksisterende votter og gløggkopp er brukt som stilreferanser. Generert med innebygd bildegenerator.
+
+- Originaler: `GFX_assets/planlagte/originaler/` (én PNG per motiv).
+- Palettilpassede katalogbilder: `client/public/art/planlagt/` (128 px per rute).
+- Små kopier: `client/public/art/planlagt/miniatyrer/` (64 px per rute).
+- Samleoversikt: `GFX_assets/planlagte/oversikt.jpg`.
+- Prompter og kilder: `GFX_assets/planlagte/prompter.json`; oppføringer: `tools/planlagte-varer.json`.
+- Kontroll av størrelse, alfa og farger: `GFX_assets/planlagte/kontroll.json`.
+
+Alle 31 er kontrollert for transparent bakgrunn og visuelt gjennomgått i samleoversikten.
+`tools/planlagt-grafikk.py` bruker prosjektets `pixelify.py`, bevarer proporsjoner,
+legger inn luft og lager begge katalogstørrelsene. Kopiene er foreløpig holdt utenfor
+spillets assetregister (`spillbilder.json`), siden disse gjenstandene ikke finnes i spilldataene.
+
+`vareliste.html` viser forslagene med «Idé – ikke bestemt». ID-er er arbeidsnavn.
+Uavklarte størrelser (råvarer og flere apparater) er bare skisser; priser er ikke bestemt.
+Etter endringer i varelisten eller idémanifestet: `py tools/oppdater-varekatalog.py`.
+
+### Tilstandsvarianter til idéutstyret (13.11.2026)
+
+23 tilstandsbilder fordelt på seks serier, fortsatt **grafikkforslag til ideer**:
+
+| Gjenstand | Varianter |
+|---|---|
+| Frityrgryte | Tom/av, olje/på, olje med smultringer/på |
+| Kakeboks | Tom + sju kumulative fyllingstrinn. Ett sentralt rom og seks ytre rom |
+| Vaffeljern | Åpent/tomt/av, lukket med lys og røresøl, åpent med ferdig vaffel, åpent med brent vaffel |
+| Gorojern | På koketopp som kjelens: åpent/tomt/av, lukket/steker, åpent med goro, åpent med brent goro |
+| Varmeovn | Av og på, samme kremhvite ovn som før, glød bak risten og indikator |
+| Terrassevarmer | Av og på, glød inne i varmerens bur |
+
+Kakeboksens rekkefølge: pepperkake, krumkake, sirupssnipp, sandkake,
+berlinerkrans, serinakake, fattigmann. Hvert trinn beholder de tidligere sortene.
+Dette er en grafisk valgt rekkefølge, ikke en låst spillregel.
+
+Tilstandsserier bruker ett felles lerret og samme transform fra original til katalogstørrelse;
+de skal ikke beskjæres individuelt. Lukkede lokk gir derfor mer transparent luft øverst.
+Maskinenes metall og matens varme farger remappes til en kombinasjon av prosjektets to
+kanoniske paletter; kakeboksen bruker den varme paletten. Originalene er bevart.
+
+- Oppsett, navn og eksakte prompter: `tools/planlagte-tilstander.json` (innebygd bildegenerator).
+- Store originaler: `GFX_assets/planlagte/tilstander-originaler/`.
+- Katalogbilder: `client/public/art/planlagt/tilstander/`, med små kopier i `miniatyrer/`.
+- Samleoversikt: `GFX_assets/planlagte/tilstander-oversikt.jpg`, også en oversikt per gjenstand.
+- Kontroll: `GFX_assets/planlagte/tilstander-kontroll.json`.
+- Klargjør: `py tools/planlagt-tilstandsgrafikk.py`, deretter `py tools/oppdater-varekatalog.py`.
+
+Katalogen viser tilstandene under hver gjenstand. De telles ikke som nye varer.
+
+### Modulær kokeplate og løse påbygg (13.11.2026)
+
+**Ny løsning:** Kokeplata tegnes for seg. Redskapet er et eget transparent lag oppå.
+Gorojernets tidligere sammensatte bilder er bevart som historikk; katalogen bruker nå
+de separate gorojernslagene og har en interaktiv lagdemonstrasjon.
+
+- Kokeplate: av + nivå 1–4. Selve varmeflaten og kanten gløder, ikke bare knappene.
+  Gløden øker fra mørkerødt via rødoransje til lyst guloransje. På-knappen er grønn,
+  valgt styrke er guloransje.
+- Gorojern: åpent/tomt, lukket med røresøl, ferdig goro, brent goro – uten kokeplate.
+- Kjele med lokk: et separat påbygg som viser at samme plate kan gjenbrukes.
+- Kjele uten lokk: seks separate påbygg med samme kropp og plassering – tom kjele,
+  gløgg, grøt, karameller, drops og svidd innhold. De fem fylte variantene er avledet
+  fra det samme tomme kjelebildet. Bare innholdet skifter; svidd har litt røyk.
+
+**Avklart stil for kjeleinnhold:** Brukeren foretrekker den opprinnelige, fine
+pikselstilen i «Før»-raden i sammenligningen. Den har små, tydelige pikselgrupper og
+kan beholde detaljer i mat og væske. Ikke gjør innholdet til store, grove blokker.
+De grove `kjele-*-lag-v2.png`-variantene er forkastet; katalogen bruker igjen de
+opprinnelige `kjele-*-lag.png`-bildene. Behold metallkropp, håndtak og plassering.
+
+Alle 16 lag bruker samme normaliserte kildekoordinater på **1254×1254 px** og samme
+ferdige lerret på **384×384 px** (små kopier: 192×192). Tegn først kokeplata og deretter
+påbygget med vanlig alfa-komposisjon, begge ved **x=0, y=0** og samme visningsstørrelse.
+Ikke beskjær eller sentrer lagene hver for seg. Tomrommet er nødvendig for lagdelingen.
+384×384 er grafikkformatet; størrelse, pris og effekt for en separat spillgjenstand er ikke bestemt.
+
+- Oppsett, prompter og lagrekkefølge: `tools/kokeplate-lag.json` (innebygd bildegenerator).
+- Originaler: `GFX_assets/planlagte/kokeplate-lag/originaler/`.
+- Separate PNG-er: `client/public/art/planlagt/moduler/`.
+- Samleoversikt: `GFX_assets/planlagte/kokeplate-lag/oversikt.jpg`.
+- Åpne kjelevarianter, alene og på plate: `GFX_assets/planlagte/kokeplate-lag/kjele-oversikt.jpg`.
+- Kontroll: `GFX_assets/planlagte/kokeplate-lag/kontroll.json`.
+- Synlig glød med alle påbygg og alle fire varmenivåer: `samspill-kontroll.json` i samme mappe.
+- Klargjør: `py tools/kokeplate-lag.py`; oppdater katalog: `py tools/oppdater-varekatalog.py`.
+
+HTML-katalogen lar utvikleren velge varme og påbygg uavhengig. Visningen bruker to
+faktiske PNG-lag, ikke ferdig sammensatte bilder. Dette er grafikkforslag; spillets
+produksjonssystem og eksisterende kjeleimplementasjon er ikke endret.
+
 Målet: alt nytt ser ut som det som allerede er i spillet. Det viktigste er **samme referansebilder
 hver gang** og **én fast grunnprompt**.
 
@@ -237,13 +331,226 @@ Prompter: `soppelkasse-sno-julevarer-prompter-v2.json`.
 Kontroll: `soppelkasse-sno-julevarer-kontroll-v2.json`.
 Klar til `art/soppelkasse-{tom,full}.png`; spillfilene er ikke endret i denne leveransen.
 
+### Nye ønsker (13.11.2026): kuponger, grenuttak og ikoner i varemenyen
+
+Kuponger, grenuttaksvarianter, varemenyikoner og boksinndeleren er nå laget.
+Planen for spillet står i `VAREPLAN.md` («Varemeny, plastbokser og boksinndeler»).
+
+**Rabattkupongen** (`art/verktoy/kupong.png`, 2×2 i spillet). I dag er det én felles kupong for alle butikkene.
+Ingen tall eller tekst i bildet, som før (se «Spesifikasjon: rabattkupong og gavekort»).
+
+- **Butikkfarge:** én kupong per butikk, i butikkens farge på toppbåndet (og gjerne en svak tone i papiret):
+  KIWI `#1f8f3a`, REMA 1000 `#1d3f8f`, Extra `#e30613` (med gul `#ffe600`). Filnavn: `kupong-kiwi.png`,
+  `kupong-rema.png`, `kupong-extra.png`.
+- **Går ikke ut på dato:** noen kuponger varer hele sesongen. De får **gullkant langs den stiplede klippelinja**
+  (gull, litt glans), ellers lik kupongen for butikken. Filnavn: `kupong-kiwi-gull.png` osv.
+- **Utgått på dato:** en egen variant som tydelig er ugyldig: falmet, gulnet papir og et skjevt stempel eller en
+  strek over (uten tekst). Én felles eller én per butikk. Filnavn: `kupong-utgatt.png` (eller `kupong-kiwi-utgatt.png` osv.).
+
+**✅ Grafikk klar:** ni kuponger i `client/public/art/verktoy/`, én vanlig, én med gullkant og én utgått
+per butikk. Samme kvadratiske lerret, 256×256 px, transparent bakgrunn og blank midte til rabatt/dato.
+Utgåtte kuponger har falmet butikkfarge og et rødt kryss uten tekst. Den opprinnelige felleskupongen er bevart.
+Bildene vises i `vareliste.html` under «Ny grafikk klar»; de er ikke koblet til spilldata ennå.
+Originaler og bildeoversikt: `GFX_assets/planlagte/kuponger-papp/`. Prompter og filoversikt:
+`tools/kuponger-papp.json`. Klargjøring med prosjektets pikselpalett: `tools/kuponger-papp.py`.
+
+**Ekstra grenuttak** (`art/elektro/grenuttak.png`, 3×2). Når det ligger under disken, viser det ikke hva som er
+plugget i. Lag **fire varianter til** med 1, 2, 3 og 4 støpsler i kontaktene (fra venstre), med ledningen bøyd
+ut av bildet. Samme lerret og vinkel som originalen. Filnavn: `grenuttak-1.png` … `grenuttak-4.png`.
+
+**✅ Grafikk klar:** `client/public/art/elektro/grenuttak-1.png` til `grenuttak-4.png`.
+Støpslene fyller uttakene fra venstre, med separate mørke kabler bøyd opp og ut av bildet.
+Kremfarget kropp, bryter og tilførselsledning følger originalen. Samme **256×128 px** transparente
+lerret som originalbildet (grafikkformat 2:1; gjenstandens footprint i spillet er fortsatt 3×2).
+Originalen og fire varianter vises samlet i `vareliste.html` under «Ny grafikk klar».
+Spilldata og det opprinnelige bildet er bevart. Store originaler og oversikt:
+`GFX_assets/planlagte/grenuttak/`. Prompter: `tools/grenuttak-varianter.json`.
+Klargjøring på felles lerret: `tools/grenuttak-varianter.py`.
+
+**Ikoner i varemenyen** (små, ca. 1×1, for knapper): «Legg under disken» (en vare på vei ned under bordplata),
+«Legg på bordet» (en vare på vei opp på bordplata) og gjerne «Legg i eske». Enkle, tydelige ikoner i samme stil
+som app-ikonene. Filnavn: `art/ikoner/under-disken.png`, `art/ikoner/pa-bordet.png`, `art/ikoner/i-eske.png`.
+
+**✅ Grafikk klar:** alle tre ikonene ligger i `client/public/art/ikoner/`, **128×128 px**,
+med felles kremfarget, avrundet ikonplate, transparent ytterkant og tynn mørkebrun kontur.
+En rød varepakke og en gyllen retningspil viser handlingen: under bordplata med pil ned,
+på bordplata med pil opp, og ned i en åpen pappeske. Fin pikselstil etter telefonens app-ikoner.
+Vises i en egen seksjon «Ikoner til varemenyen» i `vareliste.html`, også ved 32 og 48 px.
+Merket som grafikkforslag til planlagt varemeny; spillknappene er ikke endret.
+Originaler og oversikt: `GFX_assets/planlagte/varemeny-ikoner/`. Prompter og filoversikt:
+`tools/varemeny-ikoner.json`. Klargjøring: `tools/varemeny-ikoner.py`.
+
+**Boksinndeler** (ny gjenstand fra Klas Olsen, ca. 2×1): en skillevegg i hard plast til plastkassa, gjerne med
+en liten etikettholder øverst. Filnavn: `art/boksinndeler.png`. **Plastkassa med faner:** plastkassa
+(`art/plastboks.png`) kan få 1–2 inndelere; vurder små fane-/etikettlapper på kanten, som dokumentmappa.
+
+### Åtte maskinmoduler – grafikk klar (14.11.2026)
+
+**✅ Ferdig:** åtte små kretskort etter modulidéene i `VAREPLAN.md`.
+Alle er **256×256 px**, 2×2 ruter, transparent bakgrunn. Enkel har mørkegrønt kretskort,
+gullkontakter nederst, monteringshull og nøytrale komponenter. Fin pikselstil etter
+kassettspilleren og elektroutstyret; ingen tekst, tall, logoer eller juledekor i bildene.
+Hver modul har en stor, lett gjenkjennelig komponent eller et funksjonssymbol.
+
+| Modul | PNG under `client/public/art/moduler/` | Kjennetegn |
+|---|---|---|
+| Automatisk posebretting | `modul-autobretting.png` | Relé med posesymbol og små ruller |
+| Strømsparemodul | `modul-stromsparing.png` | Kobberspole og grønt blad |
+| Turbomodul | `modul-turbo.png` | Rød kjøleribbe og lyn |
+| Langtidsmodul | `modul-langtid.png` | Gyllent timeglass |
+| Termostatmodul | `modul-termostat.png` | Termometer og justeringsknott |
+| Tidsurmodul | `modul-tidsur.png` | Klokke og kvartskrystall |
+| Varslingsmodul | `modul-varsling.png` | Kommunikasjonsbrikke med konvolutt og antenne |
+| Utmatingsmodul | `modul-utmating.png` | Eske med pil ut og oransje kontakt |
+
+Alle har egne oppføringer i `vareliste.html`, kategori «Maskinmoduler», tydelig merket
+«Planlagt – ikke implementert». Foreslått funksjon, kompatible maskiner og ulemper står
+som egne felt. Prisene er ikke bestemt; effekter og balansering er fortsatt forslag.
+Grafikkfilene er klare, men spilldata, modulplasser og mekanikk er ikke endret.
+Originaler, oversikt og kontroll: `GFX_assets/planlagte/maskinmoduler/`.
+Prompter og katalogdata: `tools/maskinmoduler.json`. Klargjøring: `tools/maskinmoduler.py`.
+
+**✅ Tre visuelle grader per modul (14.11.2026): Enkel → Utvidet → Fullutstyrt.**
+Flere små elektroniske komponenter fra lav til høy grad, med kortfarge etter grad:
+**Enkel: grønn → Utvidet: blå → Fullutstyrt: lilla.** Selve kortflaten skifter farge;
+komponenter, funksjonssymbol, gullkontakter, omriss og plassering beholdes.
+Ingen nye graderammer, merker, glød eller større hovedkomponenter.
+Alle åtte modultyper og alle tre grader opptar **2×2 ruter**, med **256×256 px** PNG.
+Totalt **24 bilder**. De opprinnelige grønne kildene er bevart; nye blå/lilla kilder
+har suffiks `-bla-v2` og `-lilla-v2`. Spillfilene heter fortsatt
+`modul-<type>.png`, `modul-<type>-utvidet.png` og `modul-<type>-fullutstyrt.png`
+i `client/public/art/moduler/`. Alle grader bruker samme utsnitt og plassering per modul.
+
+Katalogen viser tre navngitte varianter og et sammenligningsbilde under hver av de åtte
+modulene. Gradene er grafikkforslag; forskjeller i pris og effekt er ikke bestemt.
+Samlet oversikt: `GFX_assets/planlagte/maskinmoduler/grader-oversikt.jpg`.
+Sammenligning per modul: `<modul_id>-grader.jpg` i samme mappe.
+Prompter og grader: `tools/maskinmoduler.json`. Fargeendringer med innebygd image_gen:
+`tools/maskinmodul-farger.json`. Klargjøring: `tools/maskinmodul-grader.py`.
+Kontroll: `grader-kontroll.json`. `enkel-sjekksummer.json` dokumenterer de tidligere
+128×128-filene før oppskaleringen til 2×2. Spilldata og mekanikk er ikke endret.
+
+
+### Kassettspiller – grafikk klar (14.11.2026)
+
+**✅ Ferdig:** `client/public/art/maskiner/kassettspiller-av.png` og
+`kassettspiller-pa.png`, begge **256×128 px**, 2×1 ruter, transparent bakgrunn.
+Lav, bred spiller i grafitt og kremgrå plast, med lukket kassettluke, synlige spoler,
+høyttalergrill, volumknott og fire mekaniske knapper. På-versjonen har gul indikator
+og inntrykt spillknapp. Samme lerret, utsnitt og skalering fra originalene i begge tilstander.
+Nøytral, fin pikselstil uten julepynt eller tekst. Ingen ledning i inventarbildet.
+
+Lagt inn i `vareliste.html` under «Kassettspiller», tydelig merket «Planlagt – ikke implementert».
+Planlagt hos Klas Olsen; pris ikke bestemt. Spiller én kassett, bruker lite strøm og kan spise båndet.
+Spilldata og mekanikk er ikke endret. Vanlig kassett og piratkassett er også tegnet; se egen serie under.
+Originaler og oversikt: `GFX_assets/planlagte/kassettspiller/`.
+Prompter og katalogdata: `tools/kassettspiller.json`. Klargjøring: `tools/kassettspiller.py`.
+
+### Vanlig kassett og piratkassett – grafikk klar (14.11.2026)
+
+**✅ Ferdig:** `client/public/art/goods/kassett.png` og `piratkassett.png`,
+begge **128×128 px**, 1×1 rute, transparent bakgrunn. Kassettform, spoler, båndvindu,
+konturer og nøytrale plastmaterialer følger kassettspilleren. Samme lerret, utsnitt og
+skalering for begge kassettene; hovedaksen er vannrett.
+
+- Vanlig kassett: ryddig kremfarget etikett med smal rød stripe, uten tekst.
+- Piratkassett: slitt, skjev papiretikett med teip og et lite svart piratsymbol, uten tekst.
+
+Begge har egne oppføringer i `vareliste.html` under «Musikk», tydelig merket
+«Planlagt – ikke implementert». Vanlig kassett er planlagt hos Klas Olsen/nettbutikkene,
+sjeldne hos Loppemarkedet. Piratkassetten kommer fra Fyren og er luguber. Prisene er ikke bestemt.
+Spilldata og musikkavspilling er ikke endret.
+Originaler og oversikt: `GFX_assets/planlagte/kassetter/`.
+Prompter og katalogdata: `tools/kassetter.json`. Klargjøring: `tools/kassetter.py`.
+
+### Høyttaleranlegg – grafikk klar (14.11.2026)
+
+**✅ Ferdig:** `client/public/art/maskiner/hoyttaleranlegg-av.png` og
+`hoyttaleranlegg-pa.png`, begge **256×256 px** på samme lerret, 2×2 som foreslått i vareplanen.
+To små stående kabinetter i grafitt og kremgrå plast etter kassettspilleren, med diskant,
+bass og fire hjørneskruer. Revidert etter brukerens innspill: én tykkere rød/hvit tolederkabel fra midten bak
+hvert kabinett, med en liten naturlig S-bøy opp mot takbjelken. De to tynne hjørnewirene
+er erstattet; tidligere originaler er bevart.
+Opphengstråder er deretter lagt til igjen etter brukerens skisse: to tynne grå tråder
+fra øvre sider som møtes i ett festepunkt over hvert kabinett, i tillegg til rød/hvit-kabelen. Høyre høyttaler har volumknott og en liten gul indikator i
+på-versjonen. Venstre er uendret. Transparent bakgrunn, ingen tekst eller svevende lydsymboler.
+
+**Plasseringsforslag etter brukerens innspill:** under takbjelken, på hver side av
+bodnavnskiltet, nærmere midten. Stolpene skal holdes fri til postkassa og etterlysningsplakaten.
+Høyttalerne er separate fra bodbildet, og selve spillplasseringen er ikke implementert.
+Skissen bruker V12-forhåndsvisningens 2048×1152-lerret: venstre høyttaler x1080,y296,
+høyre x1482,y296, begge 60×135 px inkludert kabler og trekantoppheng. Dette er skissekoordinater, ikke nye koordinater for
+spillets eksisterende 1536×1024-bod.
+
+Lagt inn i `vareliste.html` under «Høyttaleranlegg», med begge tilstander og plasseringsskisse.
+Merket «Planlagt – ikke implementert». Kjøpes hos Klas Olsen; pris og mekanikk ikke ferdigstilt.
+Originaler, oversikt og plasseringsbilder: `GFX_assets/planlagte/hoyttaleranlegg/`.
+Prompter og plasseringsdata: `tools/hoyttaleranlegg.json`. Klargjøring: `tools/hoyttaleranlegg.py`.
+Spillkode, bod og eksisterende apparater er bevart.
+
+**✅ Fem ekstra vibrasjonsbilder:** `art/maskiner/hoyttaleranlegg-spiller-1.png` til
+`hoyttaleranlegg-spiller-5.png`, alle 256×256 px på samme lerret og med samme utsnitt
+som av/på. Membranene vises trukket inn, litt inn, i midtstilling, litt ut og skjøvet ut.
+Kabinett, trekantoppheng, rød/hvit-kabel og gul indikator beholdes; kun elementenes
+form og skygger varierer. Katalogen har nå sju bildefiler totalt og en animert forhåndsvisning.
+Forhåndsvisning: `GFX_assets/planlagte/hoyttaleranlegg/vibrasjon.gif`. Fem bilder samlet:
+`vibrasjonstrinn.jpg`. Løkka bruker rekkefølgen 3–4–5–4–3–2–1–2, 70 ms per bilde.
+Dette er et grafikkforslag; avspilling i spillet er ikke implementert.
+
+
+**Digitalklokke på boden** (14.11.2026, planen står i `VAREPLAN.md`). En liten digital LED-klokke som henger på
+bodkanten **til venstre for alarmen** (alarmen sitter øverst på venstre stolpe), festet på samme måte. Tegnes som et
+**lag i full bodstørrelse** (samme lerret og koordinater som `devices/alarm-av.png` / `alarm-pa.png`), så den legges
+rett over boden. Ingen tall i bildet: spillet skriver klokkeslettet i displayet selv, så la LED-feltet være mørkt og tomt.
+
+- `art/devices/klokke-av.png`: uten strøm, mørkt display.
+- `art/devices/klokke-pa.png`: med strøm, displayet lyser svakt rødt (bakgrunnsglød uten sifre).
+- `art/devices/ikon-klokke.png`: lite butikkikon til Klas Olsen, som `ikon-alarm.png`.
+
+**✅ Grafikk klar (14.11.2026):** alle tre bildefilene over er laget og lagt inn i
+`vareliste.html` under «Digitalklokke på boden», merket «Planlagt – ikke implementert».
+Av/på er transparente **1536×1024 px** lag i samme koordinatsystem som boden og alarmen.
+Klokka ligger til venstre for alarmen: hele laget har synlig område omtrent
+**x122–277, y326–378**, inkludert festebrakett og ledning.
+**Rettet 14.11.2026:** ledningen går fra nedre høyre side og vannrett mot høyre,
+ikke ned under klokka. Samme løsning brukes i av/på-bildene og butikkikonet. Av/på bruker ett felles
+utsnitt og samme skalering fra generert original, uten individuell flytting.
+Et konservativt tomt skrivefelt for spillets sifre er **x135, y340, bredde 74, høyde 24**.
+Av er mørk burgunder/svart; på har svak rød bakgrunnsglød inni det samme feltet.
+Ingen tall, kolon eller segmentplassholdere er tegnet. Butikkikonet er **128×128 px**.
+Originaler, plasseringsbilder med bod/alarm og oversikt:
+`GFX_assets/planlagte/digitalklokke/`. Prompter og plasseringsdata: `tools/digitalklokke.json`.
+Klargjøring: `tools/digitalklokke.py`. Bod, alarm og spillkode er bevart.
+
+
+**✅ Boksinndeler – grafikk klar:** `client/public/art/boksinndeler.png`, **256×128 px**,
+transparent bakgrunn. En løs skillevegg i gråblå hardplast etter plastkassas materiale,
+med avstivningsribber, sidefester og en liten etikettholder med blank kremfarget lapp øverst.
+Planlagt gjenstand fra Klas Olsen, pris ikke bestemt. Én inndeler gir én fane; maks to
+inndelere og tre faner per plastkasse. Ca. 2×1 er en skissestørrelse.
+Lagt inn i `vareliste.html`, tydelig merket «Planlagt – ikke implementert».
+Original: `GFX_assets/planlagte/originaler/boksinndeler.png`. Prompter: `tools/boksinndeler.json`.
+Klargjøring: `tools/boksinndeler.py`. Grafikken til plastkassa og spilldata er bevart.
+
+**✅ Plastkassa med faner – grafikk klar:** `client/public/art/plastboks-2-faner.png`
+og `plastboks-3-faner.png`, begge **512×512 px**, transparent bakgrunn på samme lerret som
+originalen. To og tre synlige faner totalt, med blanke kremfargede etikettholdere over
+lokkets bakkant. To faner tilsvarer én boksinndeler; tre tilsvarer to inndelere.
+Originalens gråblå kropp, kremfargede lokk, ribber, låseklips og bunnlinje følger med.
+Originalbildet `plastboks.png` er bevart og har ingen synlige faner. De nye tilstandene
+vises sammen med originalen i `vareliste.html` under «Ny grafikk klar», tydelig merket som
+ikke tatt i bruk i spillet. Spilldata er bevart.
+Originaler, oversikt og kontroll: `GFX_assets/planlagte/plastboks-faner/`.
+Prompter og filoversikt: `tools/plastboks-faner.json`. Klargjøring: `tools/plastboks-faner.py`.
+
 ### Øvrige ønsker
 
 Disse trenger ny/oppdatert grafikk (bruk grunnprompten og `tools/pixelify.py` som ellers):
 
-- **Flatpakket papp** (`art/goods/flatpakket-papp.png`, 2×1): en tom pappkartong brettet flat –
-  en flat, sammenbrettet brun pappeplate med synlige brettekanter, litt tape. Nøytral,
-  uten julepynt. Brukes nå i spillet med emoji 📦 til bildet er klart (id `flatpakket_papp`).
+- **✅ Flatpakket papp – grafikk klar** (`art/goods/flatpakket-papp.png`, 2×1, 256×128 px):
+  en flat, sammenbrettet brun pappkartong med synlige brettekanter og brukt tape. Nøytral, uten julepynt.
+  Vises i HTML-katalogen under «Ny grafikk klar» sammen med kupongene. Spilldata bruker fortsatt emoji 📦
+  (id `flatpakket_papp`); bildefilen er klar til senere innkobling.
 - **Brettemaskinen** (tidligere «Posebretter», `art/posebretter/off.png` + `on.png`): samme
   maskin, men den bretter nå både poser og pappkartonger. Navnet er endret i spillet; grafikken
   kan beholdes, men om den skal gjenspeile papp-bretting, tegn en litt større/kraftigere brettemaskin.

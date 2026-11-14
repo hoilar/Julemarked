@@ -1,0 +1,410 @@
+{
+  "description": "Grafiske tilstander til idéutstyr, etter brukerens avklaringer. Ikke implementert spillmekanikk. Kakeboks: sju kumulative fyllingstrinn; varmeovn er eksisterende kremhvite ovn.",
+  "mode": "Built-in image_gen",
+  "groups": [
+  {
+    "item": "frityrgryte",
+    "name": "Frityrgryte",
+    "size": "3x3",
+    "anchor": "GFX_assets/planlagte/originaler/frityrgryte.png",
+    "states": [
+      {
+        "file": "frityrgryte-av.png",
+        "label": "Tom · av",
+        "original": "GFX_assets/planlagte/originaler/frityrgryte.png"
+      },
+      {
+        "file": "frityrgryte-olje-pa.png",
+        "label": "Olje · på",
+        "original": "GFX_assets/planlagte/tilstander-originaler/frityrgryte-olje-pa.png"
+      },
+      {
+        "file": "frityrgryte-steker.png",
+        "label": "Frityrvarer · på",
+        "original": "GFX_assets/planlagte/tilstander-originaler/frityrgryte-steker.png"
+      }
+    ]
+  },
+  {
+    "item": "vaffeljern",
+    "name": "Vaffeljern",
+    "size": "2x2",
+    "anchor": "GFX_assets/planlagte/originaler/vaffeljern.png",
+    "states": [
+      {
+        "file": "vaffeljern-av.png",
+        "label": "Åpent · tomt / av",
+        "original": "GFX_assets/planlagte/originaler/vaffeljern.png"
+      },
+      {
+        "file": "vaffeljern-lukket-pa-v2.png",
+        "label": "Lukket · steker",
+        "original": "GFX_assets/planlagte/tilstander-originaler/vaffeljern-lukket-pa-v2.png"
+      },
+      {
+        "file": "vaffeljern-vaffel.png",
+        "label": "Åpent · ferdig vaffel",
+        "original": "GFX_assets/planlagte/tilstander-originaler/vaffeljern-vaffel.png"
+      },
+      {
+        "file": "vaffeljern-brent.png",
+        "label": "Åpent · brent vaffel",
+        "original": "GFX_assets/planlagte/tilstander-originaler/vaffeljern-brent.png"
+      }
+    ]
+  },
+  {
+    "item": "gorojern",
+    "name": "Gorojern på koketopp",
+    "size": "2x2",
+    "anchor": "GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png",
+    "states": [
+      {
+        "file": "gorojern-koketopp-av.png",
+        "label": "Åpent · tomt / av",
+        "original": "GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png"
+      },
+      {
+        "file": "gorojern-lukket-pa-v2.png",
+        "label": "Lukket · steker",
+        "original": "GFX_assets/planlagte/tilstander-originaler/gorojern-lukket-pa-v2.png"
+      },
+      {
+        "file": "gorojern-goro.png",
+        "label": "Åpent · ferdig goro",
+        "original": "GFX_assets/planlagte/tilstander-originaler/gorojern-goro.png"
+      },
+      {
+        "file": "gorojern-brent.png",
+        "label": "Åpent · brent goro",
+        "original": "GFX_assets/planlagte/tilstander-originaler/gorojern-brent.png"
+      }
+    ]
+  },
+  {
+    "item": "varmeovn",
+    "name": "Varmeovn",
+    "size": "2x2",
+    "anchor": "GFX_assets/planlagte/originaler/varmeovn.png",
+    "states": [
+      {
+        "file": "varmeovn-av.png",
+        "label": "Av",
+        "original": "GFX_assets/planlagte/originaler/varmeovn.png"
+      },
+      {
+        "file": "varmeovn-pa.png",
+        "label": "På · varme",
+        "original": "GFX_assets/planlagte/tilstander-originaler/varmeovn-pa.png"
+      }
+    ]
+  },
+  {
+    "item": "terrassevarmer",
+    "name": "Terrassevarmer",
+    "size": "1x3",
+    "anchor": "GFX_assets/planlagte/originaler/terrassevarmer.png",
+    "states": [
+      {
+        "file": "terrassevarmer-av.png",
+        "label": "Av",
+        "original": "GFX_assets/planlagte/originaler/terrassevarmer.png"
+      },
+      {
+        "file": "terrassevarmer-pa.png",
+        "label": "På · varme",
+        "original": "GFX_assets/planlagte/tilstander-originaler/terrassevarmer-pa.png"
+      }
+    ]
+  },
+  {
+    "item": "kakeboks",
+    "name": "Kakeboks – syv slag",
+    "size": "2x2",
+    "anchor": "GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "states": [
+      {
+        "file": "kakeboks-tom-7-rom.png",
+        "label": "0/7 · tom",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png"
+      },
+      {
+        "file": "kakeboks-trinn-1.png",
+        "label": "1/7 · + pepperkake",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-1.png"
+      },
+      {
+        "file": "kakeboks-trinn-2.png",
+        "label": "2/7 · + krumkake",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-2.png"
+      },
+      {
+        "file": "kakeboks-trinn-3.png",
+        "label": "3/7 · + sirupssnipp",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-3.png"
+      },
+      {
+        "file": "kakeboks-trinn-4.png",
+        "label": "4/7 · + sandkake",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-4.png"
+      },
+      {
+        "file": "kakeboks-trinn-5.png",
+        "label": "5/7 · + berlinerkrans",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-5.png"
+      },
+      {
+        "file": "kakeboks-trinn-6.png",
+        "label": "6/7 · + serinakake",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-6.png"
+      },
+      {
+        "file": "kakeboks-trinn-7.png",
+        "label": "7/7 · + fattigmann",
+        "original": "GFX_assets/planlagte/tilstander-originaler/kakeboks-trinn-7.png"
+      }
+    ]
+  }
+],
+  "jobs": [
+{
+  "item": "gorojern",
+  "state": "lukket-pa-v2",
+  "label": "Lukket · steker",
+  "file": "gorojern-lukket-pa-v2.png",
+  "hint": "Generated images are saved to C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640 as C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640\\exec-811fb791-ef61-4da4-a102-5ad3c358e0f2.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+  "prompt": "Use case: precise-object-edit. Edit ONLY the exterior top lid surface of this CLOSED goro iron on its hotplate. Remove raised floral cooking pattern on top: actual pattern is inside against cookie, invisible when closed. Visible outside lid should be plain smooth graphite cast iron with a simple raised metal border, slight pixel-art shading, NO floral pattern. Preserve exact existing lid silhouette, horizontal handles, hinges, cream batter leaking at seam, lower body, burner, hotplate casing, amber power and 2 buttons, feet. Everything else including canvas, scale, bottom baseline and placement MUST remain unchanged. Keep empty upper canvas transparent, no recentering. Fine cozy pixel art, thin dark-brown outline, neutral metal, transparent PNG.",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-lukket-pa.png"
+  ]
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-1",
+  "label": "1/7 · + pepperkake",
+  "file": "kakeboks-trinn-1.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 1 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-2",
+  "label": "2/7 · + krumkake",
+  "file": "kakeboks-trinn-2.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/krumkake.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 2 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing; outer UPPER RIGHT (1 o'clock): one rolled golden embossed cone krumkake. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-3",
+  "label": "3/7 · + sirupssnipp",
+  "file": "kakeboks-trinn-3.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/krumkake.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/sirupssnipp.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 3 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing; outer UPPER RIGHT (1 o'clock): one rolled golden embossed cone krumkake; outer RIGHT MIDDLE (3 o'clock): one golden diamond sirupssnipp with almond. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-4",
+  "label": "4/7 · + sandkake",
+  "file": "kakeboks-trinn-4.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/krumkake.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/sirupssnipp.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/sandkaker.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 4 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing; outer UPPER RIGHT (1 o'clock): one rolled golden embossed cone krumkake; outer RIGHT MIDDLE (3 o'clock): one golden diamond sirupssnipp with almond; outer LOWER RIGHT (5 o'clock): one fluted golden shortbread tart shell. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-5",
+  "label": "5/7 · + berlinerkrans",
+  "file": "kakeboks-trinn-5.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/krumkake.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/sirupssnipp.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/sandkaker.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/berlinerkranser.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 5 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing; outer UPPER RIGHT (1 o'clock): one rolled golden embossed cone krumkake; outer RIGHT MIDDLE (3 o'clock): one golden diamond sirupssnipp with almond; outer LOWER RIGHT (5 o'clock): one fluted golden shortbread tart shell; outer LOWER LEFT (7 o'clock): one golden wreath cookie with pearl sugar. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-6",
+  "label": "6/7 · + serinakake",
+  "file": "kakeboks-trinn-6.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/goods/sirupssnipp.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/sandkaker.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/berlinerkranser.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/serinakaker.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 6 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing; outer UPPER RIGHT (1 o'clock): one rolled golden embossed cone krumkake; outer RIGHT MIDDLE (3 o'clock): one golden diamond sirupssnipp with almond; outer LOWER RIGHT (5 o'clock): one fluted golden shortbread tart shell; outer LOWER LEFT (7 o'clock): one golden wreath cookie with pearl sugar; outer LEFT MIDDLE (9 o'clock): one round fork-marked butter cookie with almond. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "kakeboks",
+  "state": "trinn-7",
+  "label": "7/7 · + fattigmann",
+  "file": "kakeboks-trinn-7.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/kakeboks-tom-7-rom.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/sandkaker.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/berlinerkranser.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/serinakaker.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/fattigmann.png"
+  ],
+  "prompt": "Use case: precise-object-edit. First input is edit target: exact seven-compartment open red Christmas cookie tin with matching lid. Other inputs are cookie appearance references ONLY. Preserve every pixel of tin body, seven partitions, decoration, lid, silhouette, canvas, camera, baseline, placement and scale. Change ONLY contents inside the specified compartments. Exactly one cookie per filled compartment, visibly fitting inside it without hiding partitions. Cozy fine pixel art matching reference outlines and palette, warm upper left light, transparent PNG, no background/floor/shadow/text. This is filling stage 7 of 7. Contents: CENTER: one brown star-shaped gingerbread cookie with white icing; outer UPPER RIGHT (1 o'clock): one rolled golden embossed cone krumkake; outer RIGHT MIDDLE (3 o'clock): one golden diamond sirupssnipp with almond; outer LOWER RIGHT (5 o'clock): one fluted golden shortbread tart shell; outer LOWER LEFT (7 o'clock): one golden wreath cookie with pearl sugar; outer LEFT MIDDLE (9 o'clock): one round fork-marked butter cookie with almond; outer UPPER LEFT (11 o'clock): one fried diamond-shaped twisted knot pastry. ALL OTHER compartments must remain visibly empty. Do not fill them. The tray must retain exactly ONE center plus SIX outer sections, no added subdivisions."
+},
+{
+  "item": "gorojern",
+  "state": "lukket-pa",
+  "label": "Lukket · steker",
+  "file": "gorojern-lukket-pa.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/goro.png"
+  ],
+  "prompt": "Use case: precise-object-edit. Edit the FIRST reference sprite: rectangular goro iron on electric hotplate. Preserve exact square canvas, camera angle, placement, all geometry of hotplate, control panel, feet and lower iron base. Same fine pixel art, neutral metal, thin dark-brown outlines. Keep entire assembly at exact original position, transparent background, no ground, no cast shadow. Close the upper hinged goro plate down horizontally onto the unchanged lower plate. Leave upper canvas formerly occupied by upright lid empty and transparent; do not move hotplate, lower plate or feet upward. A little cream batter squeezes out along the side seam. Power button and strength 2 key glowing warm amber, other keys unlit. Preserve long handles, horizontal orientation."
+},
+{
+  "item": "gorojern",
+  "state": "goro",
+  "label": "Åpent · ferdig goro",
+  "file": "gorojern-goro.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/goro.png"
+  ],
+  "prompt": "Use case: precise-object-edit. Edit the FIRST reference sprite: rectangular goro iron on electric hotplate. Preserve exact square canvas, camera angle, placement, all geometry of hotplate, control panel, feet and lower iron base. Same fine pixel art, neutral metal, thin dark-brown outlines. Keep entire assembly at exact original position, transparent background, no ground, no cast shadow. Keep the iron open exactly as reference. Put one rectangular golden goro wafer cookie on the lower cooking plate, with the same embossed floral pattern as plate. Second reference is cookie appearance only. Hotplate power button and strength 2 key glowing amber, other keys unchanged. Upper plate remains unchanged and empty."
+},
+{
+  "item": "gorojern",
+  "state": "brent",
+  "label": "Åpent · brent goro",
+  "file": "gorojern-brent.png",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png",
+    "E:/Creative files/Projects/Julemarked/client/public/art/planlagt/goro.png"
+  ],
+  "prompt": "Use case: precise-object-edit. Edit the FIRST reference sprite: rectangular goro iron on electric hotplate. Preserve exact square canvas, camera angle, placement, all geometry of hotplate, control panel, feet and lower iron base. Same fine pixel art, neutral metal, thin dark-brown outlines. Keep entire assembly at exact original position, transparent background, no ground, no cast shadow. Keep iron open exactly as reference. Put one charred very dark brown rectangular goro wafer on lower cooking plate, embossed floral pattern still visible. Second reference cookie is appearance/shape only, make it burnt. Hotplate power button and strength 2 key glowing amber, other keys unlit. Tiny grey smoke wisps contained within canvas, no flames, upper plate unchanged."
+},
+{
+  "item": "kakeboks",
+  "state": "tom-7-rom",
+  "label": "0/7 · tom",
+  "file": "kakeboks-tom-7-rom.png",
+  "hint": "Generated images are saved to C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640 as C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640\\exec-6b43deca-862d-49b8-8d52-3a5a9ea82eb3.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+  "prompt": "Use case: precise-object-edit. Edit this transparent pixel-art Christmas cookie tin. Preserve exact canvas, silhouette, base, lid and decoration. Correct ONLY the internal tray partitions: EXACTLY SEVEN compartments in total: ONE circular central compartment and EXACTLY SIX outer equal wedge compartments around it, like six petals around a center. Remove ALL existing outer dividers and replace with SIX radial dividers at 12, 2, 4, 6, 8, 10 o'clock (in perspective on horizontal tray), making precisely six outer sections, no extra subdivisions. Empty tin, no cookies. Dark brown outline, cream interior, red festive exterior as reference. No ground, floor or shadow. Keep transparent background. Object and lid unchanged, no perspective or size change.",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/kakeboks.png"
+  ]
+},
+{
+  "item": "vaffeljern",
+  "state": "lukket-pa-v2",
+  "label": "Lukket · steker",
+  "file": "vaffeljern-lukket-pa-v2.png",
+  "hint": "Generated images are saved to C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640 as C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640\\exec-16906e16-742e-4e81-8323-ed36a032a47d.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+  "prompt": "Use case: precise-object-edit. Correct ONLY the upper exterior lid of this CLOSED waffle iron. The waffle grid currently visible on top is wrong: the cooking plates are enclosed inside. Replace the visible entire top patterned surface with a SMOOTH domed graphite-grey OUTER lid with soft pixel-art metal shading and a thin cream edge highlight, absolutely NO waffle pattern or hearts on the outside. Keep the same round elliptical lid silhouette, body, front handle, amber power light, cream batter dripping out of seam, lower casing and feet. Keep exact source canvas, object size and pixel placement at the BOTTOM of the square frame; all upper space stays transparent. Thin dark brown outlines, fine pixel clusters, neutral tool palette, no text or decoration. True transparent PNG.",
+  "references": [
+    "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/vaffeljern-lukket-pa.png"
+  ]
+},
+    {
+      "item": "frityrgryte",
+      "state": "olje-pa",
+      "label": "Olje · på",
+      "file": "frityrgryte-olje-pa.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/frityrgryte.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Fill the existing basket/vat with visibly golden cooking oil, surface visible through the basket. Turn existing small round indicator to glowing amber and rotate temperature dial to ON. No food. Preserve vat, basket, handles and exterior exactly."
+    },
+    {
+      "item": "frityrgryte",
+      "state": "steker",
+      "label": "Frityrvarer · på",
+      "file": "frityrgryte-steker.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/frityrgryte.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Fill vat/basket with golden bubbling oil and three visible golden ring doughnuts frying inside it. Small bubbles around food, do not obscure silhouette. Existing indicator glowing amber, temperature dial ON. Keep exact basket, handles, exterior."
+    },
+    {
+      "item": "vaffeljern",
+      "state": "lukket-pa",
+      "label": "Lukket · steker",
+      "file": "vaffeljern-lukket-pa.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/vaffeljern.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Close hinged upper lid down over lower plate: top lid now horizontal directly over unchanged lower base. Keep lower base in the same pixel position and size as original, preserve bottom baseline, leave the formerly occupied upper canvas empty transparent. Front rectangular indicator glows amber. A little cream waffle batter squeezes from the seam and drips down the sides of the casing, not onto a floor. No visible waffle outside."
+    },
+    {
+      "item": "vaffeljern",
+      "state": "vaffel",
+      "label": "Åpent · ferdig vaffel",
+      "file": "vaffeljern-vaffel.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/vaffeljern.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Keep iron open exactly as reference. Put ONE full golden Norwegian five-heart waffle rosette into the lower cooking plate, matching plate shape and scale. Upper plate unchanged. Front indicator glows green."
+    },
+    {
+      "item": "vaffeljern",
+      "state": "brent",
+      "label": "Åpent · brent vaffel",
+      "file": "vaffeljern-brent.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/vaffeljern.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Keep iron open exactly as reference. ONE very dark charred Norwegian five-heart waffle rosette covers the lower cooking plate, readable waffle grid in charcoal and dark brown. Upper plate unchanged. Front indicator amber, tiny wisps of grey smoke contained within existing canvas, no flames."
+    },
+    {
+      "item": "varmeovn",
+      "state": "pa",
+      "label": "På · varme",
+      "file": "varmeovn-pa.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/varmeovn.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Turn this exact convector heater ON: subdued orange-red heating elements glowing behind the same horizontal grille and a tiny warm amber power indicator beside thermostat. Keep all geometry, casing, grille, feet and knob positions unchanged. No smoke, fire, heatwave symbols or floating effects."
+    },
+    {
+      "item": "terrassevarmer",
+      "state": "pa",
+      "label": "På · varme",
+      "file": "terrassevarmer-pa.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/terrassevarmer.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Turn this exact tall patio heater ON: orange-red heating elements visibly glow inside the existing upper cage under hood, small amber power indicator near cage bottom. Same full tall canvas and unchanged pole/base/hood/cage dimensions and positions. No smoke, fire, floor or floating heat symbols."
+    },
+    {
+      "item": "gorojern",
+      "state": "koketopp-av",
+      "label": "På koketopp · åpent / av",
+      "file": "gorojern-koketopp-av.png",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/originaler/gorojern.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/kjele/off.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Create ONE transparent PNG inventory sprite as a new state of the FIRST attached image (edit target). Preserve the exact canvas, camera, object scale, bottom baseline, lower body and hardware positions. Do not recenter or enlarge the object. Keep the same fine pixel art clusters, dark brown #1d1a16 thin outline and neutral graphite/warm grey/cream metal palette. No scene, floor, cast shadow, captions or added Christmas decoration. Change only the requested state; transparent background stays transparent. Image 1 is the goro iron, Image 2 is supporting design reference for the standalone electric hotplate ONLY. Place this SAME open rectangular floral-pattern goro iron onto a compact neutral graphite single-burner electric hotplate like the pot uses in image 2, but remove pot entirely. Keep iron design, upper and lower floral plates and horizontal handles. Hotplate front has off power button and 1 2 3 4 strength keys like reference. Entire assembly centered square 2x2 grid with 8% margin, same front slightly overhead camera, transparent. This state is OPEN EMPTY and power OFF. The full assembly must have space for hinge closure without moving the bottom hotplate in subsequent states."
+    }
+  ]
+}

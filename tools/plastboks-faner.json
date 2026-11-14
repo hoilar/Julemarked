@@ -1,0 +1,54 @@
+{
+  "description": "Plastkassa med to og tre synlige faner, grafikkforslag til planlagt boksinndeling.",
+  "mode": "Built-in image_gen",
+  "jobs": [
+    {
+      "id": "plastboks-2-faner",
+      "n": 2,
+      "label": "2 faner · 1 inndeler",
+      "prompt": "Use case: precise-object-edit. Edit target: image 1, the original square slate-blue plastic storage crate with cream lid and dark side locking clips. Image 2 is ONLY a reference for small protruding folder label tabs and pixel-art style, never copy the folder body. Produce ONE complete storage-crate variant with exactly 2 small VISIBLE INDEX TABS in TOTAL (not 2 added to another tab). Place 2 separate evenly spaced rounded rectangular label tabs protruding ABOVE the rear/top horizontal edge of the closed lid, within the original upper transparent margin. Two tabs: muted red on left, muted blue on right. Each tab has a small BLANK warm-cream label inset, no lettering. Tabs visibly attach behind the lid edge like folder dividers, do not float, do not hide the side clips, do not open the lid. Only add these tabs; keep original storage crate EXACTLY the same: cream lid, three raised lid ribs (these are NOT tabs), slate-blue body, two front reinforcing ribs, four corner ribs, dark side clips, feet, silhouette, viewpoint, shading and palette. Preserve the entire original 1254x1254 transparent canvas, original object scale, x/y position and bottom baseline. Do NOT crop, recenter, resize, rotate or redesign the crate; use existing empty space ABOVE it for the tabs. Same fine pixel art with crisp small pixel clusters and thin dark brown outline; warm light upper left, restrained neutral practical material palette. No text/numbers/logos/Christmas motifs, no extra objects or tabs, no floor or cast shadows, no smooth vector or glossy 3D. This is the planned 2-compartment state, count must be exactly 2 clearly separated small visible index tabs."
+    },
+    {
+      "id": "plastboks-3-faner",
+      "n": 3,
+      "label": "3 faner · 2 inndelere",
+      "prompt": "Use case: precise-object-edit. Edit target: image 1, the original square slate-blue plastic storage crate with cream lid and dark side locking clips. Image 2 is ONLY a reference for small protruding folder label tabs and pixel-art style, never copy the folder body. Produce ONE complete storage-crate variant with exactly 3 small VISIBLE INDEX TABS in TOTAL (not 3 added to another tab). Place 3 separate evenly spaced rounded rectangular label tabs protruding ABOVE the rear/top horizontal edge of the closed lid, within the original upper transparent margin. Three tabs: muted red on left, muted blue in middle, muted sage green on right. Each tab has a small BLANK warm-cream label inset, no lettering. Tabs visibly attach behind the lid edge like folder dividers, do not float, do not hide the side clips, do not open the lid. Only add these tabs; keep original storage crate EXACTLY the same: cream lid, three raised lid ribs (these are NOT tabs), slate-blue body, two front reinforcing ribs, four corner ribs, dark side clips, feet, silhouette, viewpoint, shading and palette. Preserve the entire original 1254x1254 transparent canvas, original object scale, x/y position and bottom baseline. Do NOT crop, recenter, resize, rotate or redesign the crate; use existing empty space ABOVE it for the tabs. Same fine pixel art with crisp small pixel clusters and thin dark brown outline; warm light upper left, restrained neutral practical material palette. No text/numbers/logos/Christmas motifs, no extra objects or tabs, no floor or cast shadows, no smooth vector or glossy 3D. This is the planned 3-compartment state, count must be exactly 3 clearly separated small visible index tabs."
+    }
+  ],
+  "reference": "GFX_assets/ChatGPT/plastboks.png",
+  "assets": [
+    {
+      "id": "plastboks-2-faner",
+      "n": 2,
+      "path": "plastboks-2-faner.png",
+      "label": "2 faner · 1 inndeler"
+    },
+    {
+      "id": "plastboks-3-faner",
+      "n": 3,
+      "path": "plastboks-3-faner.png",
+      "label": "3 faner · 2 inndelere"
+    }
+  ],
+  "catalog": [
+    {
+      "item": "plastkasse",
+      "reference": "GRAFIKK.md – plastkasse med faner",
+      "note": "Originalbildet har ingen synlige faner. De to nye grafikkforslagene viser totalt to og tre faner, tilsvarende én og to boksinndelere. Maks tre faner per kasse. Samme lerret som originalen; blanke etiketter til navn fra spillet. Ikke implementert.",
+      "variants": [
+        {
+          "path": "plastboks.png",
+          "label": "Original · uten synlige faner"
+        },
+        {
+          "path": "plastboks-2-faner.png",
+          "label": "2 faner · 1 inndeler"
+        },
+        {
+          "path": "plastboks-3-faner.png",
+          "label": "3 faner · 2 inndelere"
+        }
+      ]
+    }
+  ]
+}

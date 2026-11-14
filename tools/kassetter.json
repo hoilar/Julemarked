@@ -1,0 +1,37 @@
+{
+  "description": "Vanlig kassett og piratkassett til planlagt musikksystem; ikke implementert i spillet.",
+  "mode": "Built-in image_gen",
+  "prompts": {
+    "kassett": "Use case: stylized-concept. Asset type: ONE compact audio cassette tape inventory sprite for Julemarked. Use reference ONLY for fine pixel-art style, neutral graphite/warm grey/cream materials and the cassette's basic design visible inside the player. Create a single standard compact music cassette, not a player, case, CD, radio or stack. Horizontal rectangular dark graphite plastic shell, roughly 1.6 times wider than tall, two clearly visible toothed reel hubs, a narrow central tape window with brown tape, small corner screws, lower trapezoidal head opening edge. A neat clean warm-cream paper label with a narrow deep muted red accent stripe across its upper part; leave the label otherwise BLANK with no song titles, letters, numbers, brand names or logos. Front view slightly from above about 15 degrees, main axes horizontal/vertical, fine small crisp pixel clusters, thin stepped dark brown #1d1a16 contour, 3-4 tones per material, warm upper-left light. Slightly worn practical object matching the cassette player, not festive. One complete cassette centered on square transparent canvas, about 8% side margins, bottom aligned with 8% lower margin; final inventory footprint 1x1 (128x128), retain enough detail to read at that size. No smooth vector, glossy 3D, noise, blur, scene, floor, cast shadow, extra props, case, cables or floating symbols. Genuine transparent PNG.",
+    "piratkassett": "Use case: precise-object-edit. Make a bootleg / PIRATE MUSIC CASSETTE variant of this same compact audio cassette. Preserve the full 1254x1254 transparent canvas, exact plastic cassette shell silhouette, x/y position, size, perspective, two reel hubs, central tape window, bottom openings, corner screws and fine pixel-art style. Change ONLY the paper label and a few surface scuffs: replace the neat cream/red factory label with a slightly crooked, worn off-white homemade paper label with rough peeling corners, attached by TWO small old beige tape pieces at its upper corners. No neat red factory stripe. In the upper paper area ABOVE the reels, place ONE SMALL rough black pirate-skull pictogram (simple cartoon skull with small crossed bones), as an ink stamp, no text or letters. Keep it modest and legible at 128px, not a giant emblem. Slightly more scuffed shell and worn label convey a cheap unauthorized copy; shell remains the same neutral graphite. Do not obstruct either reel hub or central tape window. No song titles, numbers, logos, blood, people, decorative props or floating symbols. No changes to framing, geometry or lighting, no extra cassette, case, shadow or background. Genuine transparent PNG; everything outside the physical cassette transparent. Same fine crisp pixel clusters and thin dark brown contours."
+  },
+  "references": [
+    "GFX_assets/planlagte/kassettspiller/originaler/kassettspiller-av.png"
+  ],
+  "items": [
+    {
+      "id": "kassett",
+      "name": "Kassett",
+      "size": "1x1",
+      "sizeStatus": "Foreslått i vareplanen",
+      "category": "Musikk",
+      "source": "Klas Olsen eller nettbutikkene; sjeldne hos Loppemarkedet",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
+      "note": "Én sang eller et lite album. Settes i kassettspilleren. Ryddig kremfarget etikett med rød stripe, uten tekst; sangnavn kan legges på av spillet. Pris ikke bestemt. Grafikk klar; spilldata og musikkmekanikk er ikke implementert.",
+      "path": "goods/kassett.png"
+    },
+    {
+      "id": "piratkassett",
+      "name": "Piratkassett",
+      "size": "1x1",
+      "sizeStatus": "Foreslått i vareplanen",
+      "category": "Musikk",
+      "source": "Fyren",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
+      "note": "Billig piratkopi med dårlig lyd; kan bli avslørt som luguber. Samme kassettform som vanlig, med slitt skjev etikett, teip og et lite piratsymbol uten tekst. Pris ikke bestemt. Grafikk klar; spilldata og musikkmekanikk er ikke implementert.",
+      "path": "goods/piratkassett.png"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "description": "Planlagt kassettspiller med av/på-bilder; spilldata endres ikke.",
+  "mode": "Built-in image_gen",
+  "backgroundCleanupPrompt": "Use case: background-extraction. Remove ONLY the white background and exterior soft shadow from this powered-on cassette player image. Make all space outside the physical player fully transparent, including the spaces under its feet. Keep the entire 1774x887 canvas and every part of the player exactly the same at the same position: grey/cream casing, cassette window, reels, speaker grille, amber power indicator and pressed play button. Do not crop, move, resize, redesign or change colors. Preserve crisp pixel-art edges and fine details; no white fringe, grey backdrop, checkerboard pixels, cast shadow or new objects. Transparent PNG cutout, same canvas.",
+  "prompts": {
+    "av": "Use case: stylized-concept. Asset type: one inventory sprite for Julemarked, a small mains-powered CASSETTE PLAYER, footprint 2x1 cells (256x128 final). References are STYLE ONLY: match fine crisp pixel clusters, thin dark brown #1d1a16 outlines and neutral practical equipment materials. Create a low, wide portable mono cassette player, horizontal axis straight across image, seen front-on slightly from above about 15 degrees. Graphite and warm grey molded casing with cream accents, gently worn edges, left half has a closed clear dark cassette door with a plain cassette and TWO tape reels clearly visible; right third has a simple horizontal speaker grille. Along lower front edge a row of four small mechanical transport keys with one triangle PLAY symbol, and a small volume knob at upper right. A tiny power indicator by the knob is DARK in this OFF state. All buttons released, cassette compartment closed. Player should look like an old practical tape player, not radio or CD player; no radio tuner, antennas, digital screens, numbers, printed words, brand logos, Christmas decorations or floating music notes. Warm upper-left light and 3-4 shades per material, small fine pixel-art details that remain legible when reduced. One isolated object, square shoulders, slightly rounded stepped corners, not shiny 3D or smooth vector, no noisy dithering or blur. Transparent PNG landscape canvas 2:1, centered with about 8% margins and bottom aligned, no background, floor, cast shadow or other props. No long cable in the inventory icon. This is the OFF state; preserve a clear power indicator for a later ON edit.",
+    "pa": "Use case: precise-object-edit. Make the POWERED ON / PLAYING state of this exact cassette player inventory sprite. Keep its entire original 1774x887 transparent canvas, exact housing outline, speaker grille, cassette window, two cassette reels, volume knob, four transport buttons, colors, shading, size, x/y position and baseline unchanged. Change ONLY: the tiny round dark indicator beside the volume knob now lights warm amber/yellow with restrained glow inside the lens, and the PLAY button (third of four buttons, single right-pointing triangle) is visibly pressed down a little within its existing button recess. Keep the other three buttons released. All objects remain in the same place, no new objects. Keep cassette door closed, the same cassette and reels visible. No floating musical notes, sound waves, text, digits, radio tuner, extra LEDs, decorations, external glow or cast shadow. Fine crisp pixel-art clusters and thin dark brown contour identical to reference. Fully transparent background. One complete ON state, not a sheet."
+  },
+  "references": [
+    "client/public/art/elektro/grenuttak.png",
+    "client/public/art/maskiner/makulator.png"
+  ],
+  "items": [
+    {
+      "id": "kassettspiller",
+      "name": "Kassettspiller",
+      "size": "2x1",
+      "sizeStatus": "Foreslått i vareplanen",
+      "category": "Maskiner og utstyr",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
+      "note": "Spiller én kassett og trekker lite strøm. Lav lyd kan trekke flere kunder; båndet kan bli spist. Planlagt kassettplass og tilkobling til grenuttak. På-bildet har gul indikator og inntrykt spillknapp. Grafikk klar; mekanikk og spilldata er ikke implementert.",
+      "path": "maskiner/kassettspiller-av.png",
+      "variants": [
+        {
+          "path": "maskiner/kassettspiller-av.png",
+          "label": "Av · mørk indikator"
+        },
+        {
+          "path": "maskiner/kassettspiller-pa.png",
+          "label": "På · gul indikator og inntrykt spillknapp"
+        }
+      ]
+    }
+  ]
+}

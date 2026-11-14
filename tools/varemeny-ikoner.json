@@ -1,0 +1,34 @@
+{
+  "description": "Tre grafikkforslag til handlinger i planlagt varemeny; ikke implementert i spillet.",
+  "mode": "Built-in image_gen",
+  "references": [
+    "client/public/art/telefon/app-minbod.png",
+    "client/public/art/telefon/app-nettbutikk.png"
+  ],
+  "icons": [
+    {
+      "id": "under-disken",
+      "label": "Legg under disken",
+      "description": "En vare under bordplata og en pil ned.",
+      "subject": "A small plain wooden counter occupies left two-thirds: horizontal tabletop at mid-height, two short legs extending down. Red parcel is BELOW the tabletop BETWEEN the legs, visible in the storage space. A large gold arrow on the right points straight DOWN, indicating moving the item beneath the counter. Keep tabletop bare. Tabletop at y60 in 128px coordinates, parcel centered around x47 y89. Arrow x96 pointing down from y29 to y100.",
+      "prompt": "Use case: stylized-concept. Asset type: one square 128px game action icon for Julemarked's item menu. References: first image is STYLE ONLY (existing app-minbod icon), second is STYLE ONLY (app-nettbutikk). Create a new pictogram, not either existing app symbol. Match these icons' warm cream rounded-square tile, thin stepped dark brown #1d1a16 border, transparent outside corners, small crisp fine pixel clusters and simple 3-4 tone material shading, warm upper-left light. Same square canvas and inset rounded cream tile for all action icons, object contents inset ~16px. Readable at 32px and 48px. No text, numbers, letters, hands, people, scenic background, smooth vector/3D rendering, blur, dithering noise, extra symbols or decorations. Main axes horizontal/vertical. Only one cream tile and one action pictogram. Use a small deep red cubical parcel with cream vertical band as the generic ITEM, warm brown wood for counter, kraft brown for carton, clear warm GOLD chunky vertical arrow on the RIGHT. Arrow must be unmistakable and not collide with parcel/counter. Primary request: A small plain wooden counter occupies left two-thirds: horizontal tabletop at mid-height, two short legs extending down. Red parcel is BELOW the tabletop BETWEEN the legs, visible in the storage space. A large gold arrow on the right points straight DOWN, indicating moving the item beneath the counter. Keep tabletop bare. Tabletop at y60 in 128px coordinates, parcel centered around x47 y89. Arrow x96 pointing down from y29 to y100.",
+      "path": "ikoner/under-disken.png"
+    },
+    {
+      "id": "pa-bordet",
+      "label": "Legg på bordet",
+      "description": "En vare oppå bordplata og en pil opp.",
+      "subject": "A small plain wooden counter occupies left two-thirds: horizontal tabletop at mid-height, two short legs extending down. Red parcel stands ON TOP of tabletop, its bottom touching tabletop, clearly ABOVE the surface. A large gold arrow on the right points straight UP, indicating moving item up onto the counter. Empty storage area below table. Tabletop at y60 in 128px coordinates, parcel centered around x47 y43. Arrow x96 pointing UP from y100 to y29.",
+      "prompt": "Use case: stylized-concept. Asset type: one square 128px game action icon for Julemarked's item menu. References: first image is STYLE ONLY (existing app-minbod icon), second is STYLE ONLY (app-nettbutikk). Create a new pictogram, not either existing app symbol. Match these icons' warm cream rounded-square tile, thin stepped dark brown #1d1a16 border, transparent outside corners, small crisp fine pixel clusters and simple 3-4 tone material shading, warm upper-left light. Same square canvas and inset rounded cream tile for all action icons, object contents inset ~16px. Readable at 32px and 48px. No text, numbers, letters, hands, people, scenic background, smooth vector/3D rendering, blur, dithering noise, extra symbols or decorations. Main axes horizontal/vertical. Only one cream tile and one action pictogram. Use a small deep red cubical parcel with cream vertical band as the generic ITEM, warm brown wood for counter, kraft brown for carton, clear warm GOLD chunky vertical arrow on the RIGHT. Arrow must be unmistakable and not collide with parcel/counter. Primary request: A small plain wooden counter occupies left two-thirds: horizontal tabletop at mid-height, two short legs extending down. Red parcel stands ON TOP of tabletop, its bottom touching tabletop, clearly ABOVE the surface. A large gold arrow on the right points straight UP, indicating moving item up onto the counter. Empty storage area below table. Tabletop at y60 in 128px coordinates, parcel centered around x47 y43. Arrow x96 pointing UP from y100 to y29.",
+      "path": "ikoner/pa-bordet.png"
+    },
+    {
+      "id": "i-eske",
+      "label": "Legg i eske",
+      "description": "En vare på vei ned i en åpen pappeske.",
+      "subject": "An OPEN kraft cardboard carton occupies lower left two-thirds, with clearly spread short flaps and dark opening. The same small red parcel is directly above the carton opening, visibly about to enter it. A large gold arrow on the RIGHT points DOWN toward the open carton. Do not use the wooden table in this icon. Carton bottom near y108, opening near y70, red parcel centered x47 y43; gold downward arrow x96 from y30 toward y81.",
+      "prompt": "Use case: stylized-concept. Asset type: one square 128px game action icon for Julemarked's item menu. References: first image is STYLE ONLY (existing app-minbod icon), second is STYLE ONLY (app-nettbutikk). Create a new pictogram, not either existing app symbol. Match these icons' warm cream rounded-square tile, thin stepped dark brown #1d1a16 border, transparent outside corners, small crisp fine pixel clusters and simple 3-4 tone material shading, warm upper-left light. Same square canvas and inset rounded cream tile for all action icons, object contents inset ~16px. Readable at 32px and 48px. No text, numbers, letters, hands, people, scenic background, smooth vector/3D rendering, blur, dithering noise, extra symbols or decorations. Main axes horizontal/vertical. Only one cream tile and one action pictogram. Use a small deep red cubical parcel with cream vertical band as the generic ITEM, warm brown wood for counter, kraft brown for carton, clear warm GOLD chunky vertical arrow on the RIGHT. Arrow must be unmistakable and not collide with parcel/counter. Primary request: An OPEN kraft cardboard carton occupies lower left two-thirds, with clearly spread short flaps and dark opening. The same small red parcel is directly above the carton opening, visibly about to enter it. A large gold arrow on the RIGHT points DOWN toward the open carton. Do not use the wooden table in this icon. Carton bottom near y108, opening near y70, red parcel centered x47 y43; gold downward arrow x96 from y30 toward y81.",
+      "path": "ikoner/i-eske.png"
+    }
+  ]
+}

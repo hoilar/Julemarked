@@ -1,0 +1,81 @@
+{
+  "description": "Digitalklokke til venstre for alarmen; separate transparente bodlag og butikkikon. Grafikkforslag, ikke implementert.",
+  "mode": "Built-in image_gen",
+  "cableRevisionJobs": [
+    {
+      "id": "klokke-av",
+      "prompt": "Use case: precise-object-edit. Correct ONLY the direction of the electrical cable on this clock. Keep the exact same 1536x1024 transparent canvas, original clock housing at x144..289 y374..444, blank dark burgundy OFF display, right mounting bracket and all pixel-art details and coordinates. REMOVE the entire long VERTICAL cable hanging below the clock, including its bottom-center connector/gland. That area becomes fully transparent. Instead, a thin neutral grey electrical cable exits the LOWER RIGHT side/corner of the clock around x284,y438 and runs HORIZONTALLY TO THE RIGHT, ending around x375,y438. A tiny natural bend at the case is fine, but there must be NO hanging vertical segment. Cable about 3 pixels thick in this source, subtle upper highlight and dark contour matching the old cord. Do not alter the clock itself or the empty display. No digits, colon, letters, logos, glow/haze or cast shadow outside the display. Everything outside clock, bracket and new short horizontal cable genuinely transparent. No grey/red guide marks, no background or other object. Preserve the fine pixel-art style."
+    },
+    {
+      "id": "klokke-pa",
+      "ref": "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/digitalklokke/originaler/klokke-av.png",
+      "prompt": "Create the powered-on state of this small digital clock game sprite. Keep the complete 1536x1024 canvas, exact housing, screws, bracket, horizontal rightward cable and their positions unchanged. Only the empty dark screen becomes softly red illuminated inside its frame. Leave the display completely blank, with no text, numbers or symbols. Transparent surroundings, no exterior light haze or shadow. Same fine pixel art. This is a neutral electrical clock graphic."
+    },
+    {
+      "id": "ikon-klokke",
+      "ref": "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/digitalklokke/originaler/ikon-klokke.png",
+      "prompt": "Edit this neutral digital clock shop icon. Replace the tiny cable connector below the casing with a short grey horizontal cable at its lower right side, pointing right. Keep the clock casing, screws, bracket, empty screen, pixel style and square canvas unchanged. Nothing protrudes down from the center. Blank screen without text or numbers, transparent surroundings, no shadow."
+    }
+  ],
+  "jobs": [
+    {
+      "id": "klokke-pa",
+      "prompt": "Use case: precise-object-edit. Edit image 1 into the POWERED ON version of exactly this clock overlay. Preserve the entire 1536x1024 transparent canvas and exact clock casing, screw tabs, right mounting bracket, cable, shape, scale and x/y position. Change ONLY the inner empty LED display: a subtle dark red illuminated backing with slightly brighter muted red inner edges, clearly powered but still EMPTY with NO digits, zeros, colon, ghost segment outlines, letters or logos. Entire display remains a blank unobstructed dark red rectangle for the game to render numbers. No glow or haze outside the display, no external shadows or background: fully transparent beyond clock and cable. Fine pixel-art edge details matching the source, neutral practical casing, upper-left light. Do not draw any stall or alarm. One complete layer, not a sheet."
+    },
+    {
+      "id": "ikon-klokke",
+      "prompt": "Use case: stylized-concept. Create ONE compact inventory/shop icon of the digital clock in image 1, same horizontal graphite grey casing, recessed blank dark burgundy LED display, corner screws and small side mounting lug. Image 2 is ONLY the shop icon style and framing reference. A clean isolated clock housing centered on a square transparent canvas, no surrounding tile or frame, fill about 80 percent width, roughly 2:1 housing aspect ratio, slight upper-left highlights, short cable stub underneath ONLY, not a long wire. Exact style: fine crisp pixel art like the alarm shop icon with thin dark brown #1d1a16 contour, small clear pixel clusters, muted graphite and warm grey neutral equipment palette, 3-4 tones per material. Output square PNG, intended 128x128. Completely blank LED display, NO digits, zeros, colon, segmented-number outlines, text, logos, hands, alarm bell, snow, Christmas ornaments, scene or cast shadow. No blur, smooth vector or glossy 3D. Transparent outside the object."
+    }
+  ],
+  "offPrompt": "Use case: compositing. Asset type: a transparent game OVERLAY LAYER, same coordinate system as input 1 stall and input 2 alarm layer. Input 1 is POSITION CONTEXT ONLY; input 2 is POSITION AND PIXEL STYLE reference only; input 3 is practical equipment style reference. Draw ONLY ONE small wall-mounted DIGITAL CLOCK with a short mounting bracket and a thin supply cord. Everything else must be fully transparent: DO NOT reproduce the stall, the alarm, icon frame or any background. Exact output canvas 1536x1024. Clock housing bounds approximately x136 to236, y328 to376; it sits immediately to the LEFT of the existing alarm (alarm housing x247..298, y326..379), aligned at the same height. A small mounting lug to the right, no overlap with alarm. Thin dark neutral cable exits lower center x186,y376 and drops to y616, like the alarm's cable. Keep clock small at this exact position; do not center or enlarge it on the full canvas. One practical horizontal wide graphite-grey rectangular clock casing, slightly rounded stepped corners, thin dark brown outline #1d1a16, subtle warm grey edge highlights and little screw tabs, viewed frontally. Wide inset dark near-black burgundy LED display, OFF state, entirely EMPTY: no digits, zeros, colon, text, logos, clock hands, ghost seven-segment marks or lit indicators. Display should leave a large unobstructed rectangular area for the game to render the time later. Fine small crisp pixel-art clusters matching the alarm sprite, upper-left warm light, muted neutral non-festive palette, no shiny 3D, blur, pixel noise, snow, decorations, ground or cast shadow. Genuine transparent PNG, not black background or checkerboard. Only clock, bracket and supply cord in the otherwise empty full-size overlay.",
+  "referenceCanvas": [
+    1536,
+    1024
+  ],
+  "sourceAnchor": [
+    143,
+    373,
+    380,
+    680
+  ],
+  "placement": {
+    "x": 122,
+    "y": 326,
+    "width": 161
+  },
+  "displayRect": [
+    135,
+    340,
+    74,
+    24
+  ],
+  "items": [
+    {
+      "id": "digitalklokke",
+      "name": "Digitalklokke på boden",
+      "size": "Scenelag",
+      "sizeStatus": "Bodlag – ingen inventarstørrelse",
+      "category": "Maskiner og utstyr",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "note": "Planlagt klokke til venstre for alarmen. Ledningen går vannrett til høyre. Av/på er transparente lag i bodens koordinater, 1536×1024 px. Displayet er uten tall; spillet skriver klokkeslett og blinkende 00:00. Butikkikon 128×128 px. Se plasseringsbildet i detaljvisningen. Ikke implementert.",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Digitalklokke på boden / GRAFIKK.md",
+      "path": "devices/ikon-klokke.png",
+      "variants": [
+        {
+          "path": "devices/ikon-klokke.png",
+          "label": "Butikkikon · 128×128"
+        },
+        {
+          "path": "devices/klokke-av.png",
+          "label": "Av · transparent bodlag · 1536×1024"
+        },
+        {
+          "path": "devices/klokke-pa.png",
+          "label": "På · tomt display med svak rød glød · 1536×1024"
+        }
+      ]
+    }
+  ],
+  "revision": "v2 – ledning vannrett til høyre; gamle originaler bevart som *-ledning-ned-v1.png"
+}

@@ -1,0 +1,341 @@
+{
+  "description": "Modulær kokeplate og separate påbygg. Grafikkforslag; ikke koblet til spillmekanikk.",
+  "mode": "Built-in image_gen",
+  "canvas": [
+    1254,
+    1254
+  ],
+  "render": {
+    "canvas": [
+      384,
+      384
+    ],
+    "layerOrder": [
+      "plate",
+      "attachment"
+    ],
+    "placement": [
+      0,
+      0
+    ],
+    "blend": "source-over",
+    "graphicsOnly": true,
+    "defaultAttachment": "kjele-glogg-lag",
+    "plates": [
+      {
+        "id": "kokeplate-av",
+        "label": "Av",
+        "file": "kokeplate-av.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-av.png"
+      },
+      {
+        "id": "kokeplate-1",
+        "label": "1 · lav varme",
+        "file": "kokeplate-1.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-1.png"
+      },
+      {
+        "id": "kokeplate-2",
+        "label": "2 · middels varme",
+        "file": "kokeplate-2.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-2.png"
+      },
+      {
+        "id": "kokeplate-3",
+        "label": "3 · høy varme",
+        "file": "kokeplate-3.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-3.png"
+      },
+      {
+        "id": "kokeplate-4",
+        "label": "4 · maksimal varme",
+        "file": "kokeplate-4.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-4.png"
+      }
+    ],
+    "attachments": [
+      {
+        "id": "kjele-tom-lag",
+        "label": "Kjele · tom / uten lokk",
+        "file": "kjele-tom-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-tom-lag.png",
+        "family": "open-pot"
+      },
+      {
+        "id": "kjele-glogg-lag",
+        "label": "Kjele · gløgg",
+        "file": "kjele-glogg-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-glogg-lag.png",
+        "family": "open-pot"
+      },
+      {
+        "id": "kjele-grot-lag",
+        "label": "Kjele · grøt",
+        "file": "kjele-grot-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-grot-lag.png",
+        "family": "open-pot"
+      },
+      {
+        "id": "kjele-karameller-lag",
+        "label": "Kjele · karameller",
+        "file": "kjele-karameller-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-karameller-lag.png",
+        "family": "open-pot"
+      },
+      {
+        "id": "kjele-drops-lag",
+        "label": "Kjele · drops",
+        "file": "kjele-drops-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-drops-lag.png",
+        "family": "open-pot"
+      },
+      {
+        "id": "kjele-svidd-lag",
+        "label": "Kjele · svidd innhold",
+        "file": "kjele-svidd-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-svidd-lag.png",
+        "family": "open-pot"
+      },
+      {
+        "id": "gorojern-apen-tom-lag",
+        "label": "Gorojern · åpent / tomt",
+        "file": "gorojern-apen-tom-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/gorojern-apen-tom-lag.png"
+      },
+      {
+        "id": "gorojern-lukket-lag-v2",
+        "label": "Gorojern · lukket",
+        "file": "gorojern-lukket-lag-v2.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/gorojern-lukket-lag-v2.png"
+      },
+      {
+        "id": "gorojern-goro-lag",
+        "label": "Gorojern · ferdig goro",
+        "file": "gorojern-goro-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/gorojern-goro-lag.png"
+      },
+      {
+        "id": "gorojern-brent-lag",
+        "label": "Gorojern · brent goro",
+        "file": "gorojern-brent-lag.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/gorojern-brent-lag.png"
+      },
+      {
+        "id": "kjele-lokk-lag-v2",
+        "label": "Kjele · med lokk",
+        "file": "kjele-lokk-lag-v2.png",
+        "original": "GFX_assets/planlagte/kokeplate-lag/originaler/kjele-lokk-lag-v2.png"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "kjele-glogg-lag-v2",
+      "stableId": "kjele-glogg-lag",
+      "label": "Gløgg",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-glogg-lag.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Correct ONLY THE FOOD CONTENTS inside the pot rim (and smoke if present) to match TRUE GAME PIXEL ART. First image is EDIT TARGET, second is STYLE REFERENCE ONLY. Keep the ENTIRE silver pot exterior, oval rim, handles, bolts, body, placement, scale and exact 1254x1254 transparent canvas unchanged. Keep all area below pot transparent; do not add stove. CONTENT ART DIRECTION: design food on a coarse logical grid approximately 48 pixels wide by 14 pixels high inside the oval, then upscale using NEAREST NEIGHBOR. Every logical pixel is a visible square cluster ~12 original-image pixels wide. Hard staircase edges; large clean contiguous flat color clusters; at most 3-4 discrete tones per material and 10 colors total for the food. No antialiasing, tiny speckles, fine texture, dithering, painterly strokes, gradients, photorealism, micro-highlights or tiny detailed food. Match the blocky, deliberately simplified cluster language of the gingerbread reference, using dark-brown outlines where needed. Pixel art must be equally clear at small inventory scale. The food can be much simpler than before. Change ONLY the content pixels; do not pixelate or redraw the already correct pot exterior. Preserve real alpha transparency. NEW CONTENT DESIGN: Burgundy drink as one flat dark-red surface with two large stepped highlight patches. A cinnamon stick built from 3 brown tones and one simple blocky orange wedge built from 3 orange/yellow tones. No tiny floating specks, shiny gradients or detailed realistic orange pulp."
+    },
+    {
+      "id": "kjele-grot-lag-v2",
+      "stableId": "kjele-grot-lag",
+      "label": "Grøt",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-grot-lag.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Correct ONLY THE FOOD CONTENTS inside the pot rim (and smoke if present) to match TRUE GAME PIXEL ART. First image is EDIT TARGET, second is STYLE REFERENCE ONLY. Keep the ENTIRE silver pot exterior, oval rim, handles, bolts, body, placement, scale and exact 1254x1254 transparent canvas unchanged. Keep all area below pot transparent; do not add stove. CONTENT ART DIRECTION: design food on a coarse logical grid approximately 48 pixels wide by 14 pixels high inside the oval, then upscale using NEAREST NEIGHBOR. Every logical pixel is a visible square cluster ~12 original-image pixels wide. Hard staircase edges; large clean contiguous flat color clusters; at most 3-4 discrete tones per material and 10 colors total for the food. No antialiasing, tiny speckles, fine texture, dithering, painterly strokes, gradients, photorealism, micro-highlights or tiny detailed food. Match the blocky, deliberately simplified cluster language of the gingerbread reference, using dark-brown outlines where needed. Pixel art must be equally clear at small inventory scale. The food can be much simpler than before. Change ONLY the content pixels; do not pixelate or redraw the already correct pot exterior. Preserve real alpha transparency. NEW CONTENT DESIGN: Cream porridge as three broad interlocking flat cream/off-white patches with stepped edges. Just 5-7 clearly separated blocky beige rice clusters, NOT dozens of grains or noisy flecks. One small square butter pat in two yellow tones; 3 simple brown cinnamon pixels. No realistic granular texture or creamy swirls."
+    },
+    {
+      "id": "kjele-karameller-lag-v2",
+      "stableId": "kjele-karameller-lag",
+      "label": "Karameller",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-karameller-lag.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Correct ONLY THE FOOD CONTENTS inside the pot rim (and smoke if present) to match TRUE GAME PIXEL ART. First image is EDIT TARGET, second is STYLE REFERENCE ONLY. Keep the ENTIRE silver pot exterior, oval rim, handles, bolts, body, placement, scale and exact 1254x1254 transparent canvas unchanged. Keep all area below pot transparent; do not add stove. CONTENT ART DIRECTION: design food on a coarse logical grid approximately 48 pixels wide by 14 pixels high inside the oval, then upscale using NEAREST NEIGHBOR. Every logical pixel is a visible square cluster ~12 original-image pixels wide. Hard staircase edges; large clean contiguous flat color clusters; at most 3-4 discrete tones per material and 10 colors total for the food. No antialiasing, tiny speckles, fine texture, dithering, painterly strokes, gradients, photorealism, micro-highlights or tiny detailed food. Match the blocky, deliberately simplified cluster language of the gingerbread reference, using dark-brown outlines where needed. Pixel art must be equally clear at small inventory scale. The food can be much simpler than before. Change ONLY the content pixels; do not pixelate or redraw the already correct pot exterior. Preserve real alpha transparency. NEW CONTENT DESIGN: Caramel as one broad flat golden-brown mass with 3 large angular amber/tan patches, three large clearly square caramel pieces and 4 simple blocky bubbles. At most four golden brown tones plus two cream highlights. No realistic glossy splatter, fine ripples, small dots or orange confetti."
+    },
+    {
+      "id": "kjele-drops-lag-v2",
+      "stableId": "kjele-drops-lag",
+      "label": "Drops",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-drops-lag.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Correct ONLY THE FOOD CONTENTS inside the pot rim (and smoke if present) to match TRUE GAME PIXEL ART. First image is EDIT TARGET, second is STYLE REFERENCE ONLY. Keep the ENTIRE silver pot exterior, oval rim, handles, bolts, body, placement, scale and exact 1254x1254 transparent canvas unchanged. Keep all area below pot transparent; do not add stove. CONTENT ART DIRECTION: design food on a coarse logical grid approximately 48 pixels wide by 14 pixels high inside the oval, then upscale using NEAREST NEIGHBOR. Every logical pixel is a visible square cluster ~12 original-image pixels wide. Hard staircase edges; large clean contiguous flat color clusters; at most 3-4 discrete tones per material and 10 colors total for the food. No antialiasing, tiny speckles, fine texture, dithering, painterly strokes, gradients, photorealism, micro-highlights or tiny detailed food. Match the blocky, deliberately simplified cluster language of the gingerbread reference, using dark-brown outlines where needed. Pixel art must be equally clear at small inventory scale. The food can be much simpler than before. Change ONLY the content pixels; do not pixelate or redraw the already correct pot exterior. Preserve real alpha transparency. NEW CONTENT DESIGN: Exactly five large simplified red-and-cream hard-candy discs. Each disc has an angular stepped silhouette, one broad cream stripe and three red tones. Put in a single flat dark-ruby surface. No realistic marbling, rosette details, swirly painterly cream, glossy reflections or tiny shards."
+    },
+    {
+      "id": "kjele-svidd-lag-v2",
+      "stableId": "kjele-svidd-lag",
+      "label": "Svidd innhold",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-svidd-lag.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/goods/pepperkake-stjerne.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Correct ONLY THE FOOD CONTENTS inside the pot rim (and smoke if present) to match TRUE GAME PIXEL ART. First image is EDIT TARGET, second is STYLE REFERENCE ONLY. Keep the ENTIRE silver pot exterior, oval rim, handles, bolts, body, placement, scale and exact 1254x1254 transparent canvas unchanged. Keep all area below pot transparent; do not add stove. CONTENT ART DIRECTION: design food on a coarse logical grid approximately 48 pixels wide by 14 pixels high inside the oval, then upscale using NEAREST NEIGHBOR. Every logical pixel is a visible square cluster ~12 original-image pixels wide. Hard staircase edges; large clean contiguous flat color clusters; at most 3-4 discrete tones per material and 10 colors total for the food. No antialiasing, tiny speckles, fine texture, dithering, painterly strokes, gradients, photorealism, micro-highlights or tiny detailed food. Match the blocky, deliberately simplified cluster language of the gingerbread reference, using dark-brown outlines where needed. Pixel art must be equally clear at small inventory scale. The food can be much simpler than before. Change ONLY the content pixels; do not pixelate or redraw the already correct pot exterior. Preserve real alpha transparency. NEW CONTENT DESIGN: Burnt contents: 5-6 chunky angular charcoal/brown lumps on one flat dark base, only 3 charcoal tones plus one warm brown. No fine cracks or realistic toasted grain. Replace smooth smoke with two short, stepped angular grey pixel-art puffs using 2 flat grey tones; no wispy soft curves or gradients."
+    },
+    {
+      "id": "kjele-tom-lag",
+      "label": "Kjele · tom / uten lokk",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-lokk-lag-v2.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Make ONE new modular game sprite layer: this exact silver stockpot WITHOUT its lid, EMPTY inside. Keep exact transparent 1254x1254 canvas, pot position and size, side handles, mounting bolts, front metal body, outlines, shading and bottom baseline (around y800). REMOVE the entire lid and its knob; do not draw the lid anywhere else. Reconstruct an open horizontal oval metal rim on top of the same body, showing the visibly empty inner metal walls and bottom. View still front slightly from above 15 degrees, enough visible interior to later fill with food. Keep all exterior pixels below rim unchanged where possible. No hotplate, burner, buttons, feet, floor or cast shadow. Do not recenter, crop or scale. All area below the pot remains transparent for the separate hotplate. Fine clean pixel-art clusters, #1d1a16 dark-brown thin outlines, practical neutral warm-grey metal and off-white highlights as original. True transparent PNG.",
+      "hint": "Generated images are saved to C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640 as C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640\\exec-d31678f7-32e0-4cab-80d7-06ce1aed526c.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "family": "open-pot"
+    },
+    {
+      "id": "kjele-glogg-lag",
+      "label": "Kjele · gløgg",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-tom-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit ONLY the contents INSIDE the open oval rim of the attached stockpot. It is a modular game sprite overlay. Preserve exact 1254x1254 transparent canvas and every exterior pixel of the pot: neutral silver body, side handles, bolts, dark outlines, lower edge around y800, position and scale. Do not move, crop, recenter or resize anything. Same fine clean pixel-art clusters and warm upper-left light. Fill to a modest level below rim so the metal rim and some inner wall remain visible. No lid, stove, burner, floor, ground shadow, text or utensils. All space below pot must remain transparent. CONTENTS: Deep burgundy red mulled Christmas drink, clearly liquid with subtle bright red reflections, one small cinnamon stick and a small orange slice floating inside. Contents stay below rim. No steam, so silhouette of pot remains identical.",
+      "family": "open-pot"
+    },
+    {
+      "id": "kjele-grot-lag",
+      "label": "Kjele · grøt",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-tom-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit ONLY the contents INSIDE the open oval rim of the attached stockpot. It is a modular game sprite overlay. Preserve exact 1254x1254 transparent canvas and every exterior pixel of the pot: neutral silver body, side handles, bolts, dark outlines, lower edge around y800, position and scale. Do not move, crop, recenter or resize anything. Same fine clean pixel-art clusters and warm upper-left light. Fill to a modest level below rim so the metal rim and some inner wall remain visible. No lid, stove, burner, floor, ground shadow, text or utensils. All space below pot must remain transparent. CONTENTS: Thick creamy off-white rice porridge with visible small rice-like texture, modest cinnamon sprinkle and a tiny golden butter pat in center. Distinct from liquids and caramel. No overflow, no steam.",
+      "family": "open-pot"
+    },
+    {
+      "id": "kjele-karameller-lag",
+      "label": "Kjele · karameller",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-tom-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit ONLY the contents INSIDE the open oval rim of the attached stockpot. It is a modular game sprite overlay. Preserve exact 1254x1254 transparent canvas and every exterior pixel of the pot: neutral silver body, side handles, bolts, dark outlines, lower edge around y800, position and scale. Do not move, crop, recenter or resize anything. Same fine clean pixel-art clusters and warm upper-left light. Fill to a modest level below rim so the metal rim and some inner wall remain visible. No lid, stove, burner, floor, ground shadow, text or utensils. All space below pot must remain transparent. CONTENTS: Glossy thick golden amber caramel mixture gently bubbling, a few soft square caramel pieces visible in the mixture. Warm tan/gold food only inside rim, distinct from red candy and white porridge. No wrappers or utensils, no steam.",
+      "family": "open-pot"
+    },
+    {
+      "id": "kjele-drops-lag",
+      "label": "Kjele · drops",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-tom-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit ONLY the contents INSIDE the open oval rim of the attached stockpot. It is a modular game sprite overlay. Preserve exact 1254x1254 transparent canvas and every exterior pixel of the pot: neutral silver body, side handles, bolts, dark outlines, lower edge around y800, position and scale. Do not move, crop, recenter or resize anything. Same fine clean pixel-art clusters and warm upper-left light. Fill to a modest level below rim so the metal rim and some inner wall remain visible. No lid, stove, burner, floor, ground shadow, text or utensils. All space below pot must remain transparent. CONTENTS: Several shiny red-and-cream striped hard-candy drops and round sweets in clear pale ruby sugar syrup. Candy pieces clearly visible inside pot and different from caramel cubes. No wrappers or utensils, no steam.",
+      "family": "open-pot"
+    },
+    {
+      "id": "kjele-svidd-lag",
+      "label": "Kjele · svidd innhold",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-tom-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit ONLY the contents INSIDE the open oval rim of the attached stockpot. It is a modular game sprite overlay. Preserve exact 1254x1254 transparent canvas and every exterior pixel of the pot: neutral silver body, side handles, bolts, dark outlines, lower edge around y800, position and scale. Do not move, crop, recenter or resize anything. Same fine clean pixel-art clusters and warm upper-left light. Fill to a modest level below rim so the metal rim and some inner wall remain visible. No lid, stove, burner, floor, ground shadow, text or utensils. All space below pot must remain transparent. CONTENTS: Black and very dark brown burnt crust with cracks and a few charred lumps stuck inside pot, clearly ruined dry burnt food. Two small thin grey smoke wisps rising from contents, contained within upper transparent area of canvas. No flames, no overflowing soot on exterior, exterior metal unchanged.",
+      "family": "open-pot"
+    },
+    {
+      "id": "kjele-lokk-lag-v2",
+      "label": "Kjele · med lokk",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kjele-lokk-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. This is a transparent game sprite OVERLAY of a stockpot. Keep exact same 1254x1254 canvas and pot appearance/size. TRANSLATE THE ENTIRE POT STRAIGHT UP by exactly 130 pixels. Its current visible bounding box is x219..1034 y267..930; target is x219..1034 y137..800. Do not change its width, height, perspective, lid, handles or shading. All pixels below y800 must become fully transparent. Empty space is intentional to match a separate hotplate's original coordinates. No hotplate, burner, feet, scene or shadow. Preserve fine pixel art and true alpha. Do not recenter or crop the resulting canvas.",
+      "hint": "Generated images are saved to C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640 as C:\\Users\\Lars\\.codex\\generated_images\\01a1d4bf-3b4c-7462-842e-85459714f640\\exec-c812c89c-177a-4f9a-a2ac-6b50d5ccfc74.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link."
+    },
+    {
+      "id": "kokeplate-1",
+      "label": "Kokeplate · nivå 1",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-av.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/kjele/on4.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First input is the exact standalone electric hotplate to edit. Keep the entire 1254x1254 canvas and exact position at bottom of canvas, silhouette, feet, front panel, buttons and metal casing unchanged. NO recentering, cropping, scaling, cookware or scene. Fine pixel art, thin dark brown outline, neutral casing. True transparent PNG. Second image is ONLY a reference for how heating glow looks, never copy its pot. Level 1: clearly visible LOW HEAT dark red glow across the circular heating plate and particularly its complete outer rim. The front rim must show a distinct red crescent even with cookware covering center. Green power button and amber 1 button, 2 3 4 remain dark."
+    },
+    {
+      "id": "kokeplate-2",
+      "label": "Kokeplate · nivå 2",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-av.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/kjele/on4.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First input is the exact standalone electric hotplate to edit. Keep the entire 1254x1254 canvas and exact position at bottom of canvas, silhouette, feet, front panel, buttons and metal casing unchanged. NO recentering, cropping, scaling, cookware or scene. Fine pixel art, thin dark brown outline, neutral casing. True transparent PNG. Second image is ONLY a reference for how heating glow looks, never copy its pot. Level 2: MEDIUM HEAT red-orange glow across circular plate and whole rim. Front crescent clearly orange/red, remains visible around cookware. Green power button and amber 2 button, 1 3 4 remain dark."
+    },
+    {
+      "id": "kokeplate-3",
+      "label": "Kokeplate · nivå 3",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-av.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/kjele/on4.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First input is the exact standalone electric hotplate to edit. Keep the entire 1254x1254 canvas and exact position at bottom of canvas, silhouette, feet, front panel, buttons and metal casing unchanged. NO recentering, cropping, scaling, cookware or scene. Fine pixel art, thin dark brown outline, neutral casing. True transparent PNG. Second image is ONLY a reference for how heating glow looks, never copy its pot. Level 3: HIGH HEAT vivid orange glow across circular plate and whole rim, bright orange front crescent. Clearly stronger than level 2, no flames. Green power button and amber 3 button, 1 2 4 remain dark."
+    },
+    {
+      "id": "kokeplate-4",
+      "label": "Kokeplate · nivå 4",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-av.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/kjele/on4.png"
+      ],
+      "prompt": "Use case: precise-object-edit. First input is the exact standalone electric hotplate to edit. Keep the entire 1254x1254 canvas and exact position at bottom of canvas, silhouette, feet, front panel, buttons and metal casing unchanged. NO recentering, cropping, scaling, cookware or scene. Fine pixel art, thin dark brown outline, neutral casing. True transparent PNG. Second image is ONLY a reference for how heating glow looks, never copy its pot. Level 4: MAX HEAT bright yellow-orange center shading into orange-red at full circular rim, very distinct bright front crescent. Strong heating glow like second reference but applied to empty standalone burner. No flames. Green power button and amber 4 button, 1 2 3 remain dark."
+    },
+    {
+      "id": "kjele-lokk-lag",
+      "label": "Kjele · med lokk",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/kokeplate-av.png",
+        "E:/Creative files/Projects/Julemarked/client/public/art/kjele/off.png"
+      ],
+      "prompt": "Use case: precise-object-edit / sprite layer. Image 1 is a PLACEMENT TEMPLATE: standalone hotplate on transparent 1254x1254 canvas, MUST NOT appear in output. Image 2 is shape/style reference for the silver lidded stockpot ONLY, NOT its hotplate. Output ONE separate transparent overlay layer of that silver stockpot, round slightly cylindrical with two side handles and matching lid/knob, no stove, no burner, no buttons, no feet. Center pot at x=627, put pot bottom at y=800, pot body width about 570px (handles may extend to x270 and x984), overall pot/lid top about y180. This places it onto the burner of image 1 when layers are stacked WITHOUT moving either. Keep whole 1254x1254 canvas, all space below pot bottom completely transparent. Pixel-art style like references, neutral warm grey metal, #1d1a16 outlines, upper-left highlights, no Christmas motifs, floor, cast shadows or steam. Keep alpha transparency."
+    },
+    {
+      "id": "gorojern-lukket-lag-v2",
+      "label": "Gorojern · lukket (rettet)",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/kokeplate-lag/originaler/gorojern-lukket-lag.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Correct this separate goro iron overlay. The large dark oval underneath the batter is part of the old stove burner and MUST be removed entirely. Retain only the rectangular closed iron, side handles, hinges and cream batter leaking from seam. Exact same canvas 1254x1254 and coordinates. Delete everything below y=820 into full transparency. The retained iron bottom should be near y=800, with small batter drips just below, no round/oval disc, pedestal, hotplate or added support. Remove the dark oval without moving or rescaling anything above. Thin dark-brown outlines and same neutral pixel art. Transparent PNG."
+    },
+    {
+      "id": "kokeplate-av",
+      "label": "Kokeplate · av",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Modular game sprite layer extraction, ONE transparent PNG. Preserve the exact 1254x1254 canvas, camera, pixel-art scale and placement of retained parts. Do not recenter, crop, rescale or move anything. Fine pixel-art, thin #1d1a16 outline, neutral metal. Removed content becomes fully transparent, not a checkerboard drawing or solid color. No ground, floor, cast shadow or added effects. Retain ONLY the standalone electric HOTPLATE at the bottom: graphite/cream rectangular base, five front buttons power 1 2 3 4, feet and the round dark cooking burner on its top. Remove the entire goro iron: both floral plates, hinges, horizontal handles, its lower rectangular body. Reconstruct the circular cooking burner where iron covered it. Keep the hotplate front controls, feet and casing exactly at their original pixels. This is power OFF, burner black, buttons unlit. Everything above the hotplate (about top 60% of canvas) must be transparent. Burner back edge may be exposed where iron removed, retain slightly overhead perspective."
+    },
+    {
+      "id": "gorojern-apen-tom-lag",
+      "label": "Åpent · tomt",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-koketopp-av.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Modular game sprite layer extraction, ONE transparent PNG. Preserve the exact 1254x1254 canvas, camera, pixel-art scale and placement of retained parts. Do not recenter, crop, rescale or move anything. Fine pixel-art, thin #1d1a16 outline, neutral metal. Removed content becomes fully transparent, not a checkerboard drawing or solid color. No ground, floor, cast shadow or added effects. Retain ONLY the GORO IRON including its cooking plates/lid, hinges, horizontal handles, lower iron body, batter or cookie and smoke if present. Remove the entire electric hotplate underneath: all front power/1/2/3/4 buttons, feet, base casing AND the round cooking burner. NO burner or stove in output. Keep the retained iron and all food/batter EXACTLY where they are in original canvas. The iron lower base rests at approximately y=800; everything below its underside becomes fully transparent. Do not move the iron down to fill the empty space. This is an attachment layer to overlay on a separately drawn hotplate at the identical original canvas position."
+    },
+    {
+      "id": "gorojern-lukket-lag",
+      "label": "Lukket · steker",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-lukket-pa-v2.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Modular game sprite layer extraction, ONE transparent PNG. Preserve the exact 1254x1254 canvas, camera, pixel-art scale and placement of retained parts. Do not recenter, crop, rescale or move anything. Fine pixel-art, thin #1d1a16 outline, neutral metal. Removed content becomes fully transparent, not a checkerboard drawing or solid color. No ground, floor, cast shadow or added effects. Retain ONLY the GORO IRON including its cooking plates/lid, hinges, horizontal handles, lower iron body, batter or cookie and smoke if present. Remove the entire electric hotplate underneath: all front power/1/2/3/4 buttons, feet, base casing AND the round cooking burner. NO burner or stove in output. Keep the retained iron and all food/batter EXACTLY where they are in original canvas. The iron lower base rests at approximately y=800; everything below its underside becomes fully transparent. Do not move the iron down to fill the empty space. This is an attachment layer to overlay on a separately drawn hotplate at the identical original canvas position."
+    },
+    {
+      "id": "gorojern-goro-lag",
+      "label": "Åpent · ferdig goro",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-goro.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Modular game sprite layer extraction, ONE transparent PNG. Preserve the exact 1254x1254 canvas, camera, pixel-art scale and placement of retained parts. Do not recenter, crop, rescale or move anything. Fine pixel-art, thin #1d1a16 outline, neutral metal. Removed content becomes fully transparent, not a checkerboard drawing or solid color. No ground, floor, cast shadow or added effects. Retain ONLY the GORO IRON including its cooking plates/lid, hinges, horizontal handles, lower iron body, batter or cookie and smoke if present. Remove the entire electric hotplate underneath: all front power/1/2/3/4 buttons, feet, base casing AND the round cooking burner. NO burner or stove in output. Keep the retained iron and all food/batter EXACTLY where they are in original canvas. The iron lower base rests at approximately y=800; everything below its underside becomes fully transparent. Do not move the iron down to fill the empty space. This is an attachment layer to overlay on a separately drawn hotplate at the identical original canvas position."
+    },
+    {
+      "id": "gorojern-brent-lag",
+      "label": "Åpent · brent goro",
+      "references": [
+        "E:/Creative files/Projects/Julemarked/GFX_assets/planlagte/tilstander-originaler/gorojern-brent.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Modular game sprite layer extraction, ONE transparent PNG. Preserve the exact 1254x1254 canvas, camera, pixel-art scale and placement of retained parts. Do not recenter, crop, rescale or move anything. Fine pixel-art, thin #1d1a16 outline, neutral metal. Removed content becomes fully transparent, not a checkerboard drawing or solid color. No ground, floor, cast shadow or added effects. Retain ONLY the GORO IRON including its cooking plates/lid, hinges, horizontal handles, lower iron body, batter or cookie and smoke if present. Remove the entire electric hotplate underneath: all front power/1/2/3/4 buttons, feet, base casing AND the round cooking burner. NO burner or stove in output. Keep the retained iron and all food/batter EXACTLY where they are in original canvas. The iron lower base rests at approximately y=800; everything below its underside becomes fully transparent. Do not move the iron down to fill the empty space. This is an attachment layer to overlay on a separately drawn hotplate at the identical original canvas position."
+    }
+  ],
+  "stylePreference": "Bruker foretrekker den fine pikselstilen i de opprinnelige kjelevariantene, vist som Før i sammenligningen. De grove v2-variantene er forkastet."
+}

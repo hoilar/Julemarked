@@ -1,0 +1,19 @@
+<section id="kokeplate-panel" aria-labelledby="kokeplate-heading">
+  <div class="eyebrow">GRAFIKKFORSLAG / SEPARATE LAG</div>
+  <h2 id="kokeplate-heading">Én kokeplate. Flere påbygg.</h2>
+  <p>Kokeplata har egen glød og egne knapper. Kjele eller gorojern legges oppå som et separat bilde.</p>
+  <div class="module-controls">
+    <label>Varmenivå <select id="plate-level" aria-label="Kokeplatens varmenivå"></select></label>
+    <label>Påbygg <select id="plate-attachment" aria-label="Påbygg på kokeplata"></select></label>
+  </div>
+  <div class="module-grid">
+    <figure><div class="layer-stage"><img id="plate-part" alt="Separat kokeplate"></div><figcaption>1 · Kokeplate <a id="plate-file">PNG</a></figcaption></figure>
+    <figure><div class="layer-stage"><img id="attachment-part" alt="Separat påbygg" hidden></div><figcaption>2 · Påbygg <a id="attachment-file" hidden>PNG</a></figcaption></figure>
+    <figure><div class="layer-stage"><img id="plate-composite" alt="Kokeplate i sammensatt visning"><img id="attachment-composite" alt="Påbygg i sammensatt visning" hidden></div><figcaption>3 · Sammensatt visning</figcaption></figure>
+  </div>
+  <p id="plate-description" class="sub" role="status" aria-live="polite"></p>
+  <p class="notice">Alle lag bruker samme transparente lerret på 384 × 384 px, og legges over hverandre uten flytting. Dette er et felles grafikklerret, ikke en bestemt størrelse i spillruter. <a href="GFX_assets/planlagte/kokeplate-lag/oversikt.jpg">Se alle lag og kombinasjoner</a> · <a href="GFX_assets/planlagte/kokeplate-lag/kjele-oversikt.jpg">Se de seks åpne kjelevariantene</a>.</p>
+</section>
+<style>
+#kokeplate-panel{margin:22px 0 30px;padding:24px;border:1px solid #6a613d;background:#1b2520;border-radius:10px}#kokeplate-panel h2{font-size:26px;letter-spacing:-.7px;margin:8px 0}#kokeplate-panel .module-controls{display:flex;flex-wrap:wrap;gap:16px;margin:22px 0 10px}.module-controls label{display:grid;gap:6px;font-size:12px;color:var(--muted)}.module-controls select{min-width:170px}.module-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.module-grid figure{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}.module-grid figcaption{padding:12px;font-size:13px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}.layer-stage{position:relative;aspect-ratio:1;background-color:#28322e;background-image:linear-gradient(45deg,#303c3540 25%,transparent 25%),linear-gradient(-45deg,#303c3540 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#303c3540 75%),linear-gradient(-45deg,transparent 75%,#303c3540 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0}.layer-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.layer-stage img[hidden]{display:none}@media(max-width:720px){.module-grid{grid-template-columns:1fr}#kokeplate-panel{padding:16px}.layer-stage{max-width:384px;margin:auto}}
+</style>

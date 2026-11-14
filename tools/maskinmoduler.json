@@ -1,0 +1,483 @@
+{
+  "description": "Åtte planlagte maskinmoduler fra VAREPLAN.md. Små kretskort; effekter og balanse er forslag.",
+  "mode": "Built-in image_gen",
+  "gradePrompts": [
+    {
+      "module": "modul_autobretting",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Automatisk posebretting",
+      "count": 5,
+      "id": "modul_autobretting-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Automatisk posebretting circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_autobretting",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Automatisk posebretting",
+      "count": 11,
+      "id": "modul_autobretting-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Automatisk posebretting circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_stromsparing",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Strømsparemodul",
+      "count": 5,
+      "id": "modul_stromsparing-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Strømsparemodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_stromsparing",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Strømsparemodul",
+      "count": 11,
+      "id": "modul_stromsparing-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Strømsparemodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_turbo",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Turbomodul",
+      "count": 5,
+      "id": "modul_turbo-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Turbomodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_turbo",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Turbomodul",
+      "count": 11,
+      "id": "modul_turbo-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Turbomodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_langtid",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Langtidsmodul",
+      "count": 5,
+      "id": "modul_langtid-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Langtidsmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_langtid",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Langtidsmodul",
+      "count": 11,
+      "id": "modul_langtid-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Langtidsmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_termostat",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Termostatmodul",
+      "count": 5,
+      "id": "modul_termostat-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Termostatmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_termostat",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Termostatmodul",
+      "count": 11,
+      "id": "modul_termostat-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Termostatmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_tidsur",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Tidsurmodul",
+      "count": 5,
+      "id": "modul_tidsur-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Tidsurmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_tidsur",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Tidsurmodul",
+      "count": 11,
+      "id": "modul_tidsur-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Tidsurmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_varsling",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Varslingsmodul",
+      "count": 5,
+      "id": "modul_varsling-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Varslingsmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_varsling",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Varslingsmodul",
+      "count": 11,
+      "id": "modul_varsling-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Varslingsmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_utmating",
+      "grade": "utvidet",
+      "label": "Utvidet",
+      "name": "Utmatingsmodul",
+      "count": 5,
+      "id": "modul_utmating-utvidet",
+      "prompt": "Use case: precise-object-edit. This is the Utvidet tier of the SAME Utmatingsmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 5 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. Keep a moderate amount of open green board visible; this is the middle component-density tier. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    },
+    {
+      "module": "modul_utmating",
+      "grade": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "name": "Utmatingsmodul",
+      "count": 11,
+      "id": "modul_utmating-fullutstyrt",
+      "prompt": "Use case: precise-object-edit. This is the Fullutstyrt tier of the SAME Utmatingsmodul circuit-board game item. ONLY ADD MORE SMALL ELECTRONIC COMPONENTS ON THE EXISTING BOARD. Add exactly 11 extra small support components in currently empty green areas: a mix of tiny charcoal rectangular ICs, small neutral cream/grey ceramic resistors and small dark cylindrical capacitors, about 45-90 source pixels each where space allows. This is the highest component-density tier: fit clearly more support components than a middle tier, making the free areas noticeably busier, but keep the main function symbol unobstructed. New components are ordinary neutral electronics with tiny solder pads, NO new symbols or colors. Preserve ALL existing components and their EXACT positions, sizes, shapes and colors. Especially preserve the existing large function component and its icon, every existing trace, PCB silhouette and dark green color, bevel, FOUR mounting holes and gold edge contacts. NO redesign, no replacement or enlarging of main chip, no new heatsink, no extra layer, board expansion, wires outside board, premium rim, glow, badge, stars, labels, letters or tier numbers. Do NOT recolor, clean, age, polish, rotate, recenter, crop or resize anything. Exact same full source square canvas and original x/y registration. Keep identical fine pixel-art style, palette, outline and lighting; everything outside the few newly populated component footprints remains unchanged. Fully transparent PNG background. One complete board only, not a comparison sheet. The ONLY distinction from the reference is MORE COMPONENTS on that same board."
+    }
+  ],
+  "jobs": [
+    {
+      "id": "modul_autobretting",
+      "file": "modul-autobretting",
+      "name": "Automatisk posebretting",
+      "subject": "a small cream relay block with a clear simple FOLDED SHOPPING BAG pictogram on its top, a tiny row of rollers/gears beside it, muted cream accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: a small cream relay block with a clear simple FOLDED SHOPPING BAG pictogram on its top, a tiny row of rollers/gears beside it, muted cream accent. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_stromsparing",
+      "file": "modul-stromsparing",
+      "name": "Strømsparemodul",
+      "subject": "one prominent copper wound INDUCTOR coil and two dark capacitors, a clear pale GREEN LEAF silkscreen pictogram on a small cream chip, green accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent copper wound INDUCTOR coil and two dark capacitors, a clear pale GREEN LEAF silkscreen pictogram on a small cream chip, green accent. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_turbo",
+      "file": "modul-turbo",
+      "name": "Turbomodul",
+      "subject": "one prominent RED FINNED HEATSINK on a dark processor, a small cream LIGHTNING BOLT pictogram on its top, muted safety red accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent RED FINNED HEATSINK on a dark processor, a small cream LIGHTNING BOLT pictogram on its top, muted safety red accent. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_langtid",
+      "file": "modul-langtid",
+      "name": "Langtidsmodul",
+      "subject": "one prominent small amber/gold HOURGLASS shaped component or inset HOURGLASS pictogram with clearly visible top and bottom chambers, two cream capacitors, amber accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent small amber/gold HOURGLASS shaped component or inset HOURGLASS pictogram with clearly visible top and bottom chambers, two cream capacitors, amber accent. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_termostat",
+      "file": "modul-termostat",
+      "name": "Termostatmodul",
+      "subject": "one prominent tiny THERMOMETER with blue lower and red upper marks, a small round grey adjustment knob and a metallic temperature sensor bead, red/blue safety accents",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent tiny THERMOMETER with blue lower and red upper marks, a small round grey adjustment knob and a metallic temperature sensor bead, red/blue safety accents. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_tidsur",
+      "file": "modul-tidsur",
+      "name": "Tidsurmodul",
+      "subject": "one prominent little round cream ANALOG CLOCK pictogram with two dark hands and no numbers on a square RTC chip, a silver quartz crystal can beside it, muted blue accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent little round cream ANALOG CLOCK pictogram with two dark hands and no numbers on a square RTC chip, a silver quartz crystal can beside it, muted blue accent. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_varsling",
+      "file": "modul-varsling",
+      "name": "Varslingsmodul",
+      "subject": "one prominent dark blue radio communication chip with a clear cream ENVELOPE pictogram on top, tiny upright short antenna at upper right within board boundaries, muted blue accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent dark blue radio communication chip with a clear cream ENVELOPE pictogram on top, tiny upright short antenna at upper right within board boundaries, muted blue accent. Produce just this one module, not a sheet or collection."
+    },
+    {
+      "id": "modul_utmating",
+      "file": "modul-utmating",
+      "name": "Utmatingsmodul",
+      "subject": "one prominent cream pictogram of a small BOX with a thick ARROW pointing out toward the RIGHT, a small orange two-pin connector/relay beside it, muted orange accent",
+      "prompt": "Use case: stylized-concept. Create ONE game inventory sprite of a small PLUG-IN MACHINE UPGRADE CIRCUIT BOARD for Julemarked. References are STYLE ONLY: same fine small crisp pixel-art clusters, thin dark brown #1d1a16 outline, warm upper-left light and practical neutral components as the cassette player and electrical equipment. Shared family design: square dark pine-green rigid PCB, horizontal/vertical edges with small chamfered corners, four small metal mounting holes, neat sparse gold/copper traces, a row of GOLD EDGE-CONNECTOR fingers centered along the BOTTOM edge, one large distinguishable central functional component and 2-3 small grey/cream support components. Viewed front-on slightly from above about 15 degrees, not diagonally rotated. One square transparent canvas, object centered with about 8% margins, bottom aligned; final footprint 1x1 cell, 128x128px. The primary component/pictogram must stay legible at that small size. 3-4 tones per material, restrained solid material surfaces, no noisy micro-detail or random chips everywhere. No lettering, text, digits, logos, floating symbols outside board, Christmas decorations, snow, ribbons, wires trailing out, scene, floor, cast shadow, glossy 3D, blur or smooth vector style. Genuine transparent PNG. Function symbols belong ON components/board, not separate floating icons. This module: one prominent cream pictogram of a small BOX with a thick ARROW pointing out toward the RIGHT, a small orange two-pin connector/relay beside it, muted orange accent. Produce just this one module, not a sheet or collection."
+    }
+  ],
+  "items": [
+    {
+      "id": "modul_autobretting",
+      "file": "modul-autobretting",
+      "name": "Automatisk posebretting",
+      "shortName": "Automatisk posebretting",
+      "compatibility": "Brettemaskinen",
+      "effect": "Henter tomme poser fra under disken og bretter dem automatisk.",
+      "drawback": "Maskinen må stå på og trekke strøm hele tiden.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-autobretting.png",
+      "variants": [
+        {
+          "path": "moduler/modul-autobretting.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-autobretting-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-autobretting-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_stromsparing",
+      "file": "modul-stromsparing",
+      "name": "Strømsparemodul",
+      "compatibility": "Brettemaskin, strikkemaskin, bakemaskin, kjele, dekormaskin og frityrgryte",
+      "effect": "Reduserer strømforbruket.",
+      "drawback": "Maskinen arbeider langsommere. Kan ikke kombineres med turbo i samme maskin.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-stromsparing.png",
+      "variants": [
+        {
+          "path": "moduler/modul-stromsparing.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-stromsparing-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-stromsparing-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_turbo",
+      "file": "modul-turbo",
+      "name": "Turbomodul",
+      "compatibility": "Brettemaskin, strikkemaskin, bakemaskin, kjele, dekormaskin og frityrgryte",
+      "effect": "Korter ned produksjonstiden.",
+      "drawback": "Bruker mer strøm og kan bidra til overbelastning. Kan ikke kombineres med strømsparing.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-turbo.png",
+      "variants": [
+        {
+          "path": "moduler/modul-turbo.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-turbo-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-turbo-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_langtid",
+      "file": "modul-langtid",
+      "name": "Langtidsmodul",
+      "compatibility": "Strikkemaskin, bakemaskin, kjele, dekormaskin og frityrgryte",
+      "effect": "Sjanse for ett ekstra ferdig produkt dersom det er plass i ferdig-feltet.",
+      "drawback": "Produksjonen tar lengre tid.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-langtid.png",
+      "variants": [
+        {
+          "path": "moduler/modul-langtid.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-langtid-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-langtid-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_termostat",
+      "file": "modul-termostat",
+      "name": "Termostatmodul",
+      "compatibility": "Kjele og frityrgryte",
+      "effect": "Reduserer sjansen for svidd batch eller brann.",
+      "drawback": "Ulempe og nøyaktig effekt er ikke bestemt.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-termostat.png",
+      "variants": [
+        {
+          "path": "moduler/modul-termostat.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-termostat-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-termostat-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_tidsur",
+      "file": "modul-tidsur",
+      "name": "Tidsurmodul",
+      "compatibility": "Maskiner med modulplass – endelig liste ikke bestemt",
+      "effect": "Starter maskinen automatisk på et valgt klokkeslett.",
+      "drawback": "Vilkår og nøyaktig effekt er ikke bestemt.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-tidsur.png",
+      "variants": [
+        {
+          "path": "moduler/modul-tidsur.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-tidsur-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-tidsur-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_varsling",
+      "file": "modul-varsling",
+      "name": "Varslingsmodul",
+      "compatibility": "Maskiner med modulplass – endelig liste ikke bestemt",
+      "effect": "Sender SMS når omgangen er ferdig eller ferdig-feltet er fullt.",
+      "drawback": "Vilkår og nøyaktig effekt er ikke bestemt.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-varsling.png",
+      "variants": [
+        {
+          "path": "moduler/modul-varsling.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-varsling-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-varsling-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    },
+    {
+      "id": "modul_utmating",
+      "file": "modul-utmating",
+      "name": "Utmatingsmodul",
+      "compatibility": "Maskiner med modulplass – endelig liste ikke bestemt",
+      "effect": "Legger ferdige varer rett under disken eller på bordet.",
+      "drawback": "Plassregler og nøyaktig effekt er ikke bestemt.",
+      "size": "2x2",
+      "sizeStatus": "Bestemt av bruker – 2×2 ruter",
+      "category": "Maskinmoduler",
+      "source": "Klas Olsen – pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Maskinmoduler (idé, 14.11.2026)",
+      "note": "Flyttbar kretskortmodul til en modulplass. Foreslått én plass per maskin, kanskje to på dyre maskiner. Kan flyttes mellom maskiner og stjeles ved snoking. Grafikk klar; mekanikk, priser og balanse er ikke implementert eller ferdigstilt.",
+      "path": "moduler/modul-utmating.png",
+      "variants": [
+        {
+          "path": "moduler/modul-utmating.png",
+          "label": "Enkel · grønt kort · færrest komponenter"
+        },
+        {
+          "path": "moduler/modul-utmating-utvidet.png",
+          "label": "Utvidet · blått kort · flere komponenter"
+        },
+        {
+          "path": "moduler/modul-utmating-fullutstyrt.png",
+          "label": "Fullutstyrt · lilla kort · flest komponenter"
+        }
+      ],
+      "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter. Pris og eventuell effektforskjell mellom gradene er ikke bestemt."
+    }
+  ],
+  "grades": [
+    {
+      "id": "enkel",
+      "label": "Enkel",
+      "rule": "Opprinnelig kort",
+      "color": "grønt",
+      "sourceSuffix": ""
+    },
+    {
+      "id": "utvidet",
+      "label": "Utvidet",
+      "rule": "Flere små støttekomponenter",
+      "color": "blått",
+      "sourceSuffix": "-bla-v2"
+    },
+    {
+      "id": "fullutstyrt",
+      "label": "Fullutstyrt",
+      "rule": "Enda flere små støttekomponenter",
+      "color": "lilla",
+      "sourceSuffix": "-lilla-v2"
+    }
+  ],
+  "gradeRule": "Flere komponenter fra lav til høy grad. Enkel har grønt kort, Utvidet blått kort og Fullutstyrt lilla kort. Samme form, slitasje, hovedkomponent og funksjonssymbol. Alle grader opptar 2×2 ruter."
+}

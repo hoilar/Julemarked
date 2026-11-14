@@ -1,0 +1,169 @@
+{
+  "description": "Høyttalerpar av/på til planlagt musikkanlegg. Plasseringsforslag under takbjelken på hver side av bodnavnskiltet.",
+  "mode": "Built-in image_gen",
+  "vibrationPrompts": [
+    {
+      "id": "hoyttaleranlegg-spiller-1",
+      "phase": "trukket-inn",
+      "prompt": "Use case: precise-object-edit. Create animation FRAME 1 of 5 for these powered-on pixel-art audio speakers. Change ONLY the moving diaphragms INSIDE the speaker cone rings: maximum inward excursion: cone membrane sits deeper, its central dust-cap is slightly smaller and its inner rim shadow broader. Apply the same phase to both large bass drivers and a smaller related change to both little tweeters. Make the change visible after reduction to a 256x256 sprite, but subtle and physically plausible. Large cone interior radius varies by up to 10 source pixels (about 1-2 final pixels), tweeter interior by up to 5. The fixed outer mounting ring of each driver stays exactly still. Everything OUTSIDE the cone interiors remains EXACTLY identical: both cabinet outlines and full surfaces, screws, knob, lit amber indicator, red/white curved cables, triangular grey suspension strings, eyelets, exact size, position and baseline. Preserve complete 1254x1254 transparent canvas with no crop, recentering, framing or perspective changes. Both speakers remain lit/playing. Do not add vibration lines, music notes, motion blur, extra rings, text, numbers, logos, lighting changes, background or shadow. Actual membranes change shape/shading, the entire speaker box does NOT move. Same fine pixel-art style. One complete frame only, no sheet."
+    },
+    {
+      "id": "hoyttaleranlegg-spiller-2",
+      "phase": "inn-mellom",
+      "prompt": "Use case: precise-object-edit. Create animation FRAME 2 of 5 for these powered-on pixel-art audio speakers. Change ONLY the moving diaphragms INSIDE the speaker cone rings: half inward excursion: cone slightly recessed, central dust-cap a little smaller, restrained deeper inner shadow. Apply the same phase to both large bass drivers and a smaller related change to both little tweeters. Make the change visible after reduction to a 256x256 sprite, but subtle and physically plausible. Large cone interior radius varies by up to 10 source pixels (about 1-2 final pixels), tweeter interior by up to 5. The fixed outer mounting ring of each driver stays exactly still. Everything OUTSIDE the cone interiors remains EXACTLY identical: both cabinet outlines and full surfaces, screws, knob, lit amber indicator, red/white curved cables, triangular grey suspension strings, eyelets, exact size, position and baseline. Preserve complete 1254x1254 transparent canvas with no crop, recentering, framing or perspective changes. Both speakers remain lit/playing. Do not add vibration lines, music notes, motion blur, extra rings, text, numbers, logos, lighting changes, background or shadow. Actual membranes change shape/shading, the entire speaker box does NOT move. Same fine pixel-art style. One complete frame only, no sheet."
+    },
+    {
+      "id": "hoyttaleranlegg-spiller-3",
+      "phase": "midtstilling",
+      "prompt": "Use case: precise-object-edit. Create animation FRAME 3 of 5 for these powered-on pixel-art audio speakers. Change ONLY the moving diaphragms INSIDE the speaker cone rings: neutral excursion: cone and dust-cap in their resting geometry, matching the reference. Apply the same phase to both large bass drivers and a smaller related change to both little tweeters. Make the change visible after reduction to a 256x256 sprite, but subtle and physically plausible. Large cone interior radius varies by up to 10 source pixels (about 1-2 final pixels), tweeter interior by up to 5. The fixed outer mounting ring of each driver stays exactly still. Everything OUTSIDE the cone interiors remains EXACTLY identical: both cabinet outlines and full surfaces, screws, knob, lit amber indicator, red/white curved cables, triangular grey suspension strings, eyelets, exact size, position and baseline. Preserve complete 1254x1254 transparent canvas with no crop, recentering, framing or perspective changes. Both speakers remain lit/playing. Do not add vibration lines, music notes, motion blur, extra rings, text, numbers, logos, lighting changes, background or shadow. Actual membranes change shape/shading, the entire speaker box does NOT move. Same fine pixel-art style. One complete frame only, no sheet."
+    },
+    {
+      "id": "hoyttaleranlegg-spiller-4",
+      "phase": "ut-mellom",
+      "prompt": "Use case: precise-object-edit. Create animation FRAME 4 of 5 for these powered-on pixel-art audio speakers. Change ONLY the moving diaphragms INSIDE the speaker cone rings: half outward excursion: cone membrane a little forward, central dust-cap slightly larger and inner highlight shifted outward. Apply the same phase to both large bass drivers and a smaller related change to both little tweeters. Make the change visible after reduction to a 256x256 sprite, but subtle and physically plausible. Large cone interior radius varies by up to 10 source pixels (about 1-2 final pixels), tweeter interior by up to 5. The fixed outer mounting ring of each driver stays exactly still. Everything OUTSIDE the cone interiors remains EXACTLY identical: both cabinet outlines and full surfaces, screws, knob, lit amber indicator, red/white curved cables, triangular grey suspension strings, eyelets, exact size, position and baseline. Preserve complete 1254x1254 transparent canvas with no crop, recentering, framing or perspective changes. Both speakers remain lit/playing. Do not add vibration lines, music notes, motion blur, extra rings, text, numbers, logos, lighting changes, background or shadow. Actual membranes change shape/shading, the entire speaker box does NOT move. Same fine pixel-art style. One complete frame only, no sheet."
+    },
+    {
+      "id": "hoyttaleranlegg-spiller-5",
+      "phase": "skjovet-ut",
+      "prompt": "Use case: precise-object-edit. Create animation FRAME 5 of 5 for these powered-on pixel-art audio speakers. Change ONLY the moving diaphragms INSIDE the speaker cone rings: maximum outward excursion: central dust-cap and inner cone visibly bulge forward slightly, radius about 10 source pixels larger, narrower surrounding inner shadow. Apply the same phase to both large bass drivers and a smaller related change to both little tweeters. Make the change visible after reduction to a 256x256 sprite, but subtle and physically plausible. Large cone interior radius varies by up to 10 source pixels (about 1-2 final pixels), tweeter interior by up to 5. The fixed outer mounting ring of each driver stays exactly still. Everything OUTSIDE the cone interiors remains EXACTLY identical: both cabinet outlines and full surfaces, screws, knob, lit amber indicator, red/white curved cables, triangular grey suspension strings, eyelets, exact size, position and baseline. Preserve complete 1254x1254 transparent canvas with no crop, recentering, framing or perspective changes. Both speakers remain lit/playing. Do not add vibration lines, music notes, motion blur, extra rings, text, numbers, logos, lighting changes, background or shadow. Actual membranes change shape/shading, the entire speaker box does NOT move. Same fine pixel-art style. One complete frame only, no sheet."
+    }
+  ],
+  "triangularSuspensionPrompts": [
+    {
+      "id": "hoyttaleranlegg-av",
+      "prompt": "Use case: precise-object-edit. Add TWO thin neutral dark grey suspension strings to EACH speaker, IN ADDITION TO keeping its existing thick curved RED/WHITE electrical cable unchanged. Each cabinet is suspended by a triangular bridle: one fine grey string attaches to the cabinet's upper LEFT SIDE shoulder, the other to its upper RIGHT SIDE shoulder; both slope diagonally upward and MEET at ONE small shared mounting eyelet ABOVE THE CENTER of that cabinet. There are two inverted-V/roof-shaped bridles total, one above each speaker. Left speaker anchors approximately (140,310) and (565,310), shared apex (365,40). Right speaker anchors approximately (665,310) and (1105,310), shared apex (875,40). String thickness about 6-8 pixels at 1254 source, dark brown contour and pale grey highlight, finer than the thick red/white cable. Strings clearly connect anchors to apex, four diagonal lengths total. Do not color suspension red: red and white belong ONLY to the already existing middle electrical cable, which stays visible inside each triangle. Keep full original 1254x1254 transparent canvas, speaker bodies, exact positions, sizes, baseline, material, cones, screws, knob and cables unchanged. Power indicator stays OFF. No roof, beam, wall, other objects, text, logos, notes, background or shadow. Same crisp fine pixel art. Only add the fine grey triangular suspension strings and tiny attachment eyelets."
+    },
+    {
+      "id": "hoyttaleranlegg-pa",
+      "prompt": "Use case: precise-object-edit. Add TWO thin neutral dark grey suspension strings to EACH speaker, IN ADDITION TO keeping its existing thick curved RED/WHITE electrical cable unchanged. Each cabinet is suspended by a triangular bridle: one fine grey string attaches to the cabinet's upper LEFT SIDE shoulder, the other to its upper RIGHT SIDE shoulder; both slope diagonally upward and MEET at ONE small shared mounting eyelet ABOVE THE CENTER of that cabinet. There are two inverted-V/roof-shaped bridles total, one above each speaker. Left speaker anchors approximately (140,310) and (565,310), shared apex (365,40). Right speaker anchors approximately (665,310) and (1105,310), shared apex (875,40). String thickness about 6-8 pixels at 1254 source, dark brown contour and pale grey highlight, finer than the thick red/white cable. Strings clearly connect anchors to apex, four diagonal lengths total. Do not color suspension red: red and white belong ONLY to the already existing middle electrical cable, which stays visible inside each triangle. Keep full original 1254x1254 transparent canvas, speaker bodies, exact positions, sizes, baseline, material, cones, screws, knob and cables unchanged. Small amber indicator on right stays ON. No roof, beam, wall, other objects, text, logos, notes, background or shadow. Same crisp fine pixel art. Only add the fine grey triangular suspension strings and tiny attachment eyelets."
+    }
+  ],
+  "redWhiteCablePrompts": [
+    {
+      "id": "hoyttaleranlegg-av",
+      "prompt": "Use case: precise-object-edit. Revise ONLY the wiring above these two pixel-art audio speaker cabinets. Remove all FOUR thin straight grey rods/wires and their circular eyelets at the cabinet corners. Instead, ONE thicker flexible RED-AND-WHITE twin speaker cable emerges from the CENTER BEHIND the top of EACH cabinet (two paired cables total). Each cable consists of adjacent red and off-white insulated strands, readable as typical two-core speaker wire, NOT a candy cane or striped rope. It rises about 110px into the existing empty top margin with a slight natural crooked S-shaped bend/kink, not ruler-straight. Approx source positions: left cable begins behind top center x365,y205 and rises toward x370,y95; right begins x885,y205 and rises toward x880,y95. Total cable thickness about 22px in the 1254px source, thin dark brown contour and small shaded highlights; gently curved and visibly thicker than the old rods. The lower attachment disappears behind the speaker top edge, no cable or connector on the front face. Preserve the entire original 1254x1254 transparent canvas, the two cabinets' exact positions, size, baseline, outlines, colors, cone shapes, screws, knob and gap. Power indicator stays dark. No other changes, no rods, loops, wall, ceiling, roof, text, logos, sound symbols, background, cast shadow or decorations. Fine crisp pixel-art style matching source. Transparent background."
+    },
+    {
+      "id": "hoyttaleranlegg-pa",
+      "prompt": "Use case: precise-object-edit. Revise ONLY the wiring above these two pixel-art audio speaker cabinets. Remove all FOUR thin straight grey rods/wires and their circular eyelets at the cabinet corners. Instead, ONE thicker flexible RED-AND-WHITE twin speaker cable emerges from the CENTER BEHIND the top of EACH cabinet (two paired cables total). Each cable consists of adjacent red and off-white insulated strands, readable as typical two-core speaker wire, NOT a candy cane or striped rope. It rises about 110px into the existing empty top margin with a slight natural crooked S-shaped bend/kink, not ruler-straight. Approx source positions: left cable begins behind top center x365,y205 and rises toward x370,y95; right begins x885,y205 and rises toward x880,y95. Total cable thickness about 22px in the 1254px source, thin dark brown contour and small shaded highlights; gently curved and visibly thicker than the old rods. The lower attachment disappears behind the speaker top edge, no cable or connector on the front face. Preserve the entire original 1254x1254 transparent canvas, the two cabinets' exact positions, size, baseline, outlines, colors, cone shapes, screws, knob and gap. Right amber power indicator stays lit. No other changes, no rods, loops, wall, ceiling, roof, text, logos, sound symbols, background, cast shadow or decorations. Fine crisp pixel-art style matching source. Transparent background."
+    }
+  ],
+  "suspensionPrompts": [
+    {
+      "id": "hoyttaleranlegg-av",
+      "prompt": "Use case: precise-object-edit. Add simple mounting hardware to these two neutral audio speaker cabinets. Each cabinet needs TWO short thin grey STEEL SUSPENSION WIRES, one attached to each upper left and upper right corner, so FOUR wires total. Each wire runs straight vertically UP about 100px into the empty space above its cabinet and ends with a tiny loop/eyelet for attaching under a wooden beam. No beam is drawn. Left cabinet wire x about170 and550 from y215 up to110; right cabinet x about685 and1080 from y215 up to110. Thin practical cable, about 6px wide in this 1254x1254 source, dark outline and narrow grey highlight, clearly visible but restrained. Wires are attached physically to top corner eyelets, not floating. Preserve the complete 1254x1254 transparent canvas, both speaker cabinets' exact size, position, baseline, materials, speaker cones, screws, knob and gap unchanged. The power indicator stays dark/OFF. Only add the four mounting wires above; nothing else changes. Same crisp fine pixel-art style, transparent background, no text, no new props, no wall, roof, ceiling, floor or cast shadow."
+    },
+    {
+      "id": "hoyttaleranlegg-pa",
+      "prompt": "Use case: precise-object-edit. Add simple mounting hardware to these two neutral audio speaker cabinets. Each cabinet needs TWO short thin grey STEEL SUSPENSION WIRES, one attached to each upper left and upper right corner, so FOUR wires total. Each wire runs straight vertically UP about 100px into the empty space above its cabinet and ends with a tiny loop/eyelet for attaching under a wooden beam. No beam is drawn. Left cabinet wire x about170 and550 from y215 up to110; right cabinet x about685 and1080 from y215 up to110. Thin practical cable, about 6px wide in this 1254x1254 source, dark outline and narrow grey highlight, clearly visible but restrained. Wires are attached physically to top corner eyelets, not floating. Preserve the complete 1254x1254 transparent canvas, both speaker cabinets' exact size, position, baseline, materials, speaker cones, screws, knob and gap unchanged. The small amber power indicator on the RIGHT cabinet stays ON. Only add the four mounting wires above; nothing else changes. Same crisp fine pixel-art style, transparent background, no text, no new props, no wall, roof, ceiling, floor or cast shadow."
+    }
+  ],
+  "prompts": {
+    "av": "Use case: stylized-concept. Create ONE transparent inventory sprite of a compact stereo SPEAKER SYSTEM for Julemarked, matching the cassette player in reference 1 exactly in fine pixel-art style and neutral graphite / warm grey / cream materials. Reference 2 is equipment style only. A matching PAIR of small vertical rectangular active speaker cabinets, facing straight forward, side by side with a clear transparent gap, bottom aligned. Each has one small round tweeter above one larger dark circular woofer with simple concentric rings, cream-grey bevelled outer frame, graphite front baffle, tiny corner fasteners. Right cabinet has a small volume knob and a tiny power indicator at its lower edge, DARK in this OFF version. Left cabinet has no controls. Cabinets practical and slightly worn, not glossy and not Christmas decorated. About two times taller than wide per cabinet, combined pair fits a square 2x2 inventory canvas. Keep speakers parallel, main axes vertical, tiny view from above about 15 degrees like cassette player. Same small crisp pixel clusters, thin stepped dark brown #1d1a16 outline and 3-4 shades per material, warm upper-left light. Speaker cones static and identical in later ON state. No sound-wave graphics or floating music notes, LEDs around cones, display, text, numbers, logos, floor, wall, cast shadow, background, cables between speakers, amplifier box or other objects. Genuine transparent PNG square canvas, 8 percent margins. Both complete speakers in one image, clear gap, no overlap. OFF state.",
+    "pa": "Use case: precise-object-edit. Make the powered-ON version of this exact stereo speaker pair. Preserve the entire original 1254x1254 transparent canvas, exact two cabinets, cone rings, screws, knob, colors, shading, size, position and bottom baseline. Change ONLY the tiny dark power indicator at the lower front of the RIGHT speaker, just left of its volume knob: illuminate that small lens warm amber/yellow, with restrained brightness only inside the indicator. Left speaker has no indicator and stays completely unchanged. Do not alter the cones, cabinet geometry or speaker gap. No floating sound waves, music notes, text, numbers, new lights, wires, background, floor or shadow. Same fine crisp pixel-art style; genuinely transparent outside both speakers. One complete ON image, not a sheet."
+  },
+  "placement": {
+    "status": "Forslag – ikke endelig bestemt",
+    "scene": "GFX_assets/ChatGPT/bod-bredere20-hoyere5-forhandsvisning-v12.png",
+    "canvas": [
+      2048,
+      1152
+    ],
+    "speakers": [
+      {
+        "x": 1080,
+        "y": 296,
+        "width": 60,
+        "height": 135
+      },
+      {
+        "x": 1482,
+        "y": 296,
+        "width": 60,
+        "height": 135
+      }
+    ],
+    "reason": "Stolpene er opptatt av postkasse og etterlysningsplakat; høyttalerne foreslås ved bodnavnskiltet.",
+    "mounting": "To tynne grå opphengstråder fra sidene møtes i ett festepunkt over hvert kabinett. Den tykkere rød/hvite kabelen fra midten bak beholdes i tillegg."
+  },
+  "items": [
+    {
+      "id": "hoyttaleranlegg",
+      "name": "Høyttaleranlegg",
+      "size": "2x2",
+      "sizeStatus": "Foreslått i vareplanen · plassering er et forslag",
+      "category": "Maskiner og utstyr",
+      "source": "Klas Olsen – dyrt, pris ikke bestemt",
+      "status": "Planlagt – ikke implementert",
+      "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
+      "note": "To små høyttalere i samme stil som kassettspilleren. Kobles til kassettspilleren, gir høyere lyd og bruker mer strøm; kan irritere naboer. På har gul indikator på høyre høyttaler. Plasseringsforslag: under takbjelken på hver side av bodnavnskiltet, med to tynne opphengstråder som møtes over hvert kabinett, i tillegg til den tykkere bøyde rød/hvite kabelen fra midten bak. Stolpene holdes fri til postkasse og etterlysningsplakat, og disken holdes fri. Grafikken er løs og plasseringen ikke endelig bestemt. Spilldata og mekanikk er ikke implementert. Fem ekstra animasjonsbilder viser elementene i ulike vibrasjonstrinn; kabinett, ledninger og oppheng skal stå stille. Animert forhåndsvisning i katalogen.",
+      "path": "maskiner/hoyttaleranlegg-av.png",
+      "variants": [
+        {
+          "path": "maskiner/hoyttaleranlegg-av.png",
+          "label": "Av · mørk indikator"
+        },
+        {
+          "path": "maskiner/hoyttaleranlegg-pa.png",
+          "label": "På · gul indikator på høyre høyttaler"
+        },
+        {
+          "path": "maskiner/hoyttaleranlegg-spiller-1.png",
+          "label": "Vibrasjon 1/5 · membran trukket inn"
+        },
+        {
+          "path": "maskiner/hoyttaleranlegg-spiller-2.png",
+          "label": "Vibrasjon 2/5 · membran litt inn"
+        },
+        {
+          "path": "maskiner/hoyttaleranlegg-spiller-3.png",
+          "label": "Vibrasjon 3/5 · midtstilling"
+        },
+        {
+          "path": "maskiner/hoyttaleranlegg-spiller-4.png",
+          "label": "Vibrasjon 4/5 · membran litt ut"
+        },
+        {
+          "path": "maskiner/hoyttaleranlegg-spiller-5.png",
+          "label": "Vibrasjon 5/5 · membran skjøvet ut"
+        }
+      ]
+    }
+  ],
+  "animation": {
+    "frames": [
+      {
+        "state": "spiller-1",
+        "label": "Membran trukket inn"
+      },
+      {
+        "state": "spiller-2",
+        "label": "Membran litt inn"
+      },
+      {
+        "state": "spiller-3",
+        "label": "Midtstilling"
+      },
+      {
+        "state": "spiller-4",
+        "label": "Membran litt ut"
+      },
+      {
+        "state": "spiller-5",
+        "label": "Membran skjøvet ut"
+      }
+    ],
+    "sequence": [
+      2,
+      3,
+      4,
+      3,
+      2,
+      1,
+      0,
+      1
+    ],
+    "durationMs": 70,
+    "preview": "GFX_assets/planlagte/hoyttaleranlegg/vibrasjon.gif"
+  }
+}

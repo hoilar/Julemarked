@@ -1,0 +1,59 @@
+{
+  "description": "Fire støpselvarianter av originalt grenuttak. Samme lerret; bare utviklerkatalogen oppdateres.",
+  "mode": "Built-in image_gen",
+  "jobs": [
+    {
+      "id": "grenuttak-1",
+      "n": 1,
+      "reference": "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/grenuttak.png",
+      "prompt": "Use case: precise-object-edit. Edit target: attached original horizontal cream four-outlet power strip pixel-art sprite. Produce ONE complete sprite variant, not a sheet. Insert exactly 1 compact dark charcoal right-angle European Schuko electrical plug, seated in the first 1 circular socket counting from the LEFT. 3 sockets on the right remain empty and exactly like the original. Each inserted plug clearly covers its own socket center and has its own short dark cable bent upward, running out through the TOP canvas boundary above that socket; keep individual cables distinct without crossing. Preserve EVERYTHING else: identical cream strip housing, all socket positions, amber rocker switch on far right, existing cream supply cable loop below left, perspective, horizontal orientation, thin dark brown outline, warm upper-left light, same fine pixel-art detail and small crisp pixel clusters. Absolutely preserve the original full 1774x887 wide transparent canvas, body scale, position, outline and lower cable loop: do not recenter, crop or enlarge the housing to accommodate added cables. Added cables use the existing empty upper transparent margin and exit frame. Transparent background, no shadows outside sprite, no new sockets, no extra plugs, no text, no logos, no smooth vector or glossy 3D style. Visible occupied count must be exactly 1."
+    },
+    {
+      "id": "grenuttak-2",
+      "n": 2,
+      "reference": "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/grenuttak.png",
+      "prompt": "Use case: precise-object-edit. Edit target: attached original horizontal cream four-outlet power strip pixel-art sprite. Produce ONE complete sprite variant, not a sheet. Insert exactly 2 compact dark charcoal right-angle European Schuko electrical plugs, seated in the first 2 circular sockets counting from the LEFT. 2 sockets on the right remain empty and exactly like the original. Each inserted plug clearly covers its own socket center and has its own short dark cable bent upward, running out through the TOP canvas boundary above that socket; keep individual cables distinct without crossing. Preserve EVERYTHING else: identical cream strip housing, all socket positions, amber rocker switch on far right, existing cream supply cable loop below left, perspective, horizontal orientation, thin dark brown outline, warm upper-left light, same fine pixel-art detail and small crisp pixel clusters. Absolutely preserve the original full 1774x887 wide transparent canvas, body scale, position, outline and lower cable loop: do not recenter, crop or enlarge the housing to accommodate added cables. Added cables use the existing empty upper transparent margin and exit frame. Transparent background, no shadows outside sprite, no new sockets, no extra plugs, no text, no logos, no smooth vector or glossy 3D style. Visible occupied count must be exactly 2."
+    },
+    {
+      "id": "grenuttak-3",
+      "n": 3,
+      "reference": "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/grenuttak.png",
+      "prompt": "Use case: precise-object-edit. Edit target: attached original horizontal cream four-outlet power strip pixel-art sprite. Produce ONE complete sprite variant, not a sheet. Insert exactly 3 compact dark charcoal right-angle European Schuko electrical plugs, seated in the first 3 circular sockets counting from the LEFT. 1 socket on the right remain empty and exactly like the original. Each inserted plug clearly covers its own socket center and has its own short dark cable bent upward, running out through the TOP canvas boundary above that socket; keep individual cables distinct without crossing. Preserve EVERYTHING else: identical cream strip housing, all socket positions, amber rocker switch on far right, existing cream supply cable loop below left, perspective, horizontal orientation, thin dark brown outline, warm upper-left light, same fine pixel-art detail and small crisp pixel clusters. Absolutely preserve the original full 1774x887 wide transparent canvas, body scale, position, outline and lower cable loop: do not recenter, crop or enlarge the housing to accommodate added cables. Added cables use the existing empty upper transparent margin and exit frame. Transparent background, no shadows outside sprite, no new sockets, no extra plugs, no text, no logos, no smooth vector or glossy 3D style. Visible occupied count must be exactly 3."
+    },
+    {
+      "id": "grenuttak-4",
+      "n": 4,
+      "reference": "E:/Creative files/Projects/Julemarked/GFX_assets/ChatGPT/grenuttak.png",
+      "prompt": "Use case: precise-object-edit. Edit target: attached original horizontal cream four-outlet power strip pixel-art sprite. Produce ONE complete sprite variant, not a sheet. Insert exactly 4 compact dark charcoal right-angle European Schuko electrical plugs, seated in the first 4 circular sockets counting from the LEFT. 0 sockets on the right remain empty and exactly like the original. Each inserted plug clearly covers its own socket center and has its own short dark cable bent upward, running out through the TOP canvas boundary above that socket; keep individual cables distinct without crossing. Preserve EVERYTHING else: identical cream strip housing, all socket positions, amber rocker switch on far right, existing cream supply cable loop below left, perspective, horizontal orientation, thin dark brown outline, warm upper-left light, same fine pixel-art detail and small crisp pixel clusters. Absolutely preserve the original full 1774x887 wide transparent canvas, body scale, position, outline and lower cable loop: do not recenter, crop or enlarge the housing to accommodate added cables. Added cables use the existing empty upper transparent margin and exit frame. Transparent background, no shadows outside sprite, no new sockets, no extra plugs, no text, no logos, no smooth vector or glossy 3D style. Visible occupied count must be exactly 4."
+    }
+  ],
+  "catalog": [
+    {
+      "item": "grenuttak",
+      "reference": "GRAFIKK.md – grenuttak med støpsler",
+      "note": "Originalen og fire nye varianter med 1–4 støpsler fra venstre. Samme lerret og plassering; korte kabler bøyes opp og ut av bildet. Spilldata bruker fortsatt originalbildet.",
+      "variants": [
+        {
+          "path": "elektro/grenuttak.png",
+          "label": "Original · ingen støpsler"
+        },
+        {
+          "path": "elektro/grenuttak-1.png",
+          "label": "1 støpsel · fra venstre"
+        },
+        {
+          "path": "elektro/grenuttak-2.png",
+          "label": "2 støpsler · fra venstre"
+        },
+        {
+          "path": "elektro/grenuttak-3.png",
+          "label": "3 støpsler · fra venstre"
+        },
+        {
+          "path": "elektro/grenuttak-4.png",
+          "label": "4 støpsler · fra venstre"
+        }
+      ]
+    }
+  ]
+}
