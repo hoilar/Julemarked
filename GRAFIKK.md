@@ -545,18 +545,18 @@ Prompter og filoversikt: `tools/plastboks-faner.json`. Klargjøring: `tools/plas
 
 ### Øvrige ønsker
 
-Disse trenger ny/oppdatert grafikk (bruk grunnprompten og `tools/pixelify.py` som ellers):
+Status for tidligere ønsker om ny/oppdatert grafikk:
 
 - **✅ Flatpakket papp – grafikk klar** (`art/goods/flatpakket-papp.png`, 2×1, 256×128 px):
   en flat, sammenbrettet brun pappkartong med synlige brettekanter og brukt tape. Nøytral, uten julepynt.
   Vises i HTML-katalogen under «Ny grafikk klar» sammen med kupongene. Spilldata bruker fortsatt emoji 📦
   (id `flatpakket_papp`); bildefilen er klar til senere innkobling.
-- **Brettemaskinen** (tidligere «Posebretter», `art/posebretter/off.png` + `on.png`): samme
+- **Brettemaskinen – dagens grafikk beholdes** (bekreftet 14.11.2026; tidligere «Posebretter», `art/posebretter/off.png` + `on.png`): samme
   maskin, men den bretter nå både poser og pappkartonger. Navnet er endret i spillet; grafikken
-  kan beholdes, men om den skal gjenspeile papp-bretting, tegn en litt større/kraftigere brettemaskin.
-- **Større maskiner:** footprinten er økt – bakemaskin 3×2 → **4×3**, dekormaskin 3×3 → **3×4**,
-  strikkemaskin 4×3 → **5×3**. Dagens bilder er beskåret tett og passer omtrent; tegn dem gjerne på nytt i de nye
-  rutemålene (`maskiner/bakemaskin{,-pa}.png`, `maskiner/dekormaskin{,-pa}.png`, `maskiner/strikkemaskin{,-pa}.png`).
+  er god nok foreløpig. Nytegning står ikke i den aktive grafikkøen.
+- **Større maskiner – dagens grafikk beholdes** (bekreftet 14.11.2026): footprinten er økt – bakemaskin 3×2 → **4×3**, dekormaskin 3×3 → **3×4**,
+  strikkemaskin 4×3 → **5×3**. Bildene er gode nok foreløpig; nytegning står ikke i den aktive grafikkøen.
+  Gjeldende filer: `maskiner/bakemaskin{,-pa}.png`, `maskiner/dekormaskin{,-pa}.png`, `maskiner/strikkemaskin{,-pa}.png`.
 
 ## Bakgrunnen (markedet bak boden)
 
