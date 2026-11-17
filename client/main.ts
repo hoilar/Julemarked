@@ -791,7 +791,7 @@ function nailView(s: GameState): string {
     ? `<div class="nail-poster" data-drag="${hung.id}" title="Etterlysning: ${esc(hung.wanted.alias)}. Trykk for å se nærmere, dra for å ta den ned.">${posterHtml(hung.wanted, false)}</div>`
     : '';
   return `<div class="nail ${hung ? 'used' : ''}" data-nail style="left:${(NAIL.x / 1536) * 100}%;top:${(NAIL.y / 1024) * 100}%"
-      title="${hung ? '' : 'En spiker.'}"><span class="nail-head"></span>${poster}</div>`;
+      title="${hung ? '' : 'En spiker.'}"><img class="nail-head" src="/art/spiker.png" alt="" draggable="false">${poster}</div>`;
 }
 
 // --- Postkassa (flagget er oppe når det ligger en ulest avis der) ---

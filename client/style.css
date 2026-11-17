@@ -612,22 +612,24 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .poster.big { width: min(240px, 70vw); margin: 0 auto 0.6rem; }
 
 /* ---------- Spikeren under grenuttaket ---------- */
-.nail { position: absolute; z-index: 2; width: 1.1cqw; aspect-ratio: 1; translate: -50% -50%; }
+/* art/spiker.png er 32×26 bodpiksler (1536 bred), tegnet i full størrelse som boltene på boden. */
+.nail { position: absolute; z-index: 2; width: calc(32 / 1536 * 100cqw); aspect-ratio: 32 / 26; translate: -50% -50%; }
 .nail-head {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #d9d9d9, #6d6d6d 60%, #3a3a3a);
-  box-shadow: 0.15cqw 0.2cqw 0.25cqw rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0.1cqw 0.15cqw 0.15cqw rgba(0, 0, 0, 0.55));
   z-index: 2;
 }
-.nail.target .nail-head { box-shadow: 0 0 0 0.35cqw #2fbf71, 0 0 1cqw #2fbf71; }
-.nail.target.bad .nail-head { box-shadow: 0 0 0 0.35cqw #d9534f; }
-body.dragging .nail:not(.used) .nail-head { box-shadow: 0 0 0 0.25cqw rgba(255, 224, 138, 0.8); }
+.nail.target .nail-head { filter: drop-shadow(0 0 0.25cqw #2fbf71) drop-shadow(0 0 0.25cqw #2fbf71); }
+.nail.target.bad .nail-head { filter: drop-shadow(0 0 0.25cqw #d9534f) drop-shadow(0 0 0.25cqw #d9534f); }
+body.dragging .nail:not(.used) .nail-head { filter: drop-shadow(0 0 0.25cqw rgba(255, 224, 138, 0.9)); }
 .nail-poster {
   position: absolute;
   left: 50%;
-  top: 30%;
+  top: 37%; /* like høyt som før spikerbildet: 0,22cqw over midten av spikerhodet */
   translate: -50% 0;
   rotate: 3deg;
   transform-origin: 50% 0;
