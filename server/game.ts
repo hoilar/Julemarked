@@ -30,6 +30,9 @@ import {
   sizeOf,
   gridOf,
   planStash,
+  planBoxToBox,
+  tabContents,
+  boxTabs,
   stashBoxes,
   stashSources,
   type StashTo,
@@ -2716,7 +2719,17 @@ export function rollbackMeter(player: PlayerRow) {
  * Pakker ut en eske/pose. `storage`: alt under disken. `counter`: salgsvarer på bordet,
  * resten (råvarer, aviser …) under disken. Det som ikke får plass, blir liggende igjen.
  */
-export function unpackBox(player: PlayerRow, boxId: number, to: 'storage' | 'counter') {
+/**
+ * Pakker ut en eske: under disken, på bordet (varer) eller over i en annen eske/fane (`target`).
+ * Har eska faner, tas bare fanen som er åpen (`tab`); null = hele eska.
+ */
+export function unpackBox(
+  player: PlayerRow,
+  boxId: number,
+  to: 'storage' | 'counter' | 'box',
+  tab: number | null = null,
+  target: { boxId: number; tab: number | null } | null = null,
+) {
   const stall = myStall(player);
   return tx(() => {
     const items = itemsOf(stall.id);
@@ -2724,7 +2737,17 @@ export function unpackBox(player: PlayerRow, boxId: number, to: 'storage' | 'cou
     if (!box) throw new GameError('Fant ikke eska.');
     if (isUndelivered(items, box)) throw new GameError('Ta posen inn under disken først.');
     if (carOf(items, box)) notAway(stall, nowFor(marketOf(player)));
-    const contents = itemsIn(items, 'box', box.id).sort((a, b) => b.w * b.h - a.w * a.h); // store først
+    if (tab !== null && (!boxTabs(box) || !Number.isInteger(tab) || tab < 0 || tab >= boxTabs(box)!.count)) throw new GameError('Ugyldig fane.');
+    const contents = tabContents(items, box, tab).sort((a, b) => b.w * b.h - a.w * a.h); // store først
+    if (to === 'box') {
+      // Over i en annen eske eller fane (pappkartonger og plastkasser under disken).
+      if (!target || !stashBoxes(items).some((b) => b.box.id === target.boxId && b.tab === target.tab)) throw new GameError('Fant ikke eska.');
+      if (target.boxId === box.id && target.tab === tab) throw new GameError('Det ligger allerede der.');
+      const moves = planBoxToBox(items, box.id, tab, target.boxId, target.tab);
+      for (const { item, spot } of moves) q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, item.id);
+      if (moves.length === 0 && contents.length > 0) throw new GameError('Det er ikke plass i eska.');
+      return { moved: moves.length, left: contents.length - moves.length };
+    }
     let moved = 0;
     for (const item of contents) {
       const sellable = !!PRODUCT_BY_ID[item.typeId];

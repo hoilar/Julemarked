@@ -143,7 +143,15 @@ const routes: Record<string, Handler> = {
   'POST /api/shop/order': action((p, b) =>
     placeOrder(p, String(b.store), Array.isArray(b.lines) ? b.lines : [], b.mode === 'car' ? 'car' : b.mode === 'express' || b.express === true ? 'express' : 'standard', b.useCards !== false),
   ),
-  'POST /api/box/unpack': action((p, b) => unpackBox(p, Number(b.boxId), b.to === 'counter' ? 'counter' : 'storage')),
+  'POST /api/box/unpack': action((p, b) =>
+    unpackBox(
+      p,
+      Number(b.boxId),
+      b.to === 'counter' ? 'counter' : b.to === 'box' ? 'box' : 'storage',
+      b.tab == null ? null : Number(b.tab),
+      b.targetBox == null ? null : { boxId: Number(b.targetBox), tab: b.targetTab == null ? null : Number(b.targetTab) },
+    ),
+  ),
   'POST /api/delivery/open': action((p, b) => openDelivery(p, Number(b.itemId))),
   'POST /api/kettle': action((p, b) =>
     setKettle(p, Number(b.itemId), b.on === undefined ? undefined : !!b.on, b.level === undefined ? undefined : Number(b.level)),

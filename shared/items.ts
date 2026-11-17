@@ -383,3 +383,30 @@ export function planStash(items: Item[], typeId: string, to: StashTo, boxId: num
   }
   return moves;
 }
+
+/** Innholdet i en eske, eller bare i én fane når eska har faner (tab = null: alt). */
+export function tabContents(items: Item[], box: Item, tab: number | null): Item[] {
+  const inside = itemsIn(items, 'box', box.id);
+  const tabs = boxTabs(box);
+  if (!tabs || tab === null) return inside;
+  const rows = tabs.tabGrid.rows;
+  return inside.filter((i) => Math.floor(i.y / rows) === tab);
+}
+
+/**
+ * Eskevinduets «Legg i eske»: flytter (i en kopi av lista) innholdet i en eske, eller fanen som er åpen,
+ * over i en annen eske eller fane, så langt det er plass. Store ting først. Serveren og klienten bruker den samme.
+ */
+export function planBoxToBox(items: Item[], boxId: number, tab: number | null, targetId: number, targetTab: number | null): { item: Item; spot: Spot }[] {
+  const copy = items.map((i) => ({ ...i }));
+  const box = copy.find((b) => b.id === boxId);
+  if (!box) return [];
+  const moves: { item: Item; spot: Spot }[] = [];
+  for (const item of tabContents(copy, box, tab).sort((a, b) => b.w * b.h - a.w * a.h)) {
+    const spot = stashSpot(copy, item, 'box', targetId, targetTab);
+    if (!spot) continue;
+    Object.assign(item, spot);
+    moves.push({ item, spot });
+  }
+  return moves;
+}

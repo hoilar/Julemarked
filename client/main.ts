@@ -1,5 +1,5 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
-import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planStash, stashBoxes, stashSources, type Spot, type StashTo } from '../shared/items.ts';
+import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, type Spot, type StashTo } from '../shared/items.ts';
 import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
@@ -1287,7 +1287,9 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
       dividerBtn = `<button class="small ghost" data-action="box-divider" data-box="${box.id}" title="Boksinndeleren brukes opp og gir kassa én fane til (høyst ${MAX_BOX_TABS})">🧱 Sett inn boksinndeler</button>`;
     if (t.car) cls = 'trunk-panel';
     grid = `data-grid="box" data-box="${box.id}"${tabBar ? ` data-yoff="${yoff}"` : ''}`;
-    const contents = itemsIn(s.me.items, 'box', box.id);
+    // Har kassa faner, gjelder knappene bare fanen som er åpen.
+    const curTab = tabs ? Math.min(folderTab.get(box.id) ?? 0, tabs.count - 1) : null;
+    const contents = tabContents(s.me.items, box, curTab);
     const dev = box.device ? DEVICE_BY_ID[box.device] : undefined;
     if (dev) {
       // Kartong fra Klas Olsen med noe som henger på boden.
@@ -1296,9 +1298,29 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
       </div>`;
     } else if (contents.length > 0) {
       const sellable = contents.some((i) => PRODUCT_BY_ID[i.typeId]);
+      const tabAttr = curTab !== null ? `data-tab="${curTab}"` : '';
+      const what = curTab !== null ? `alt i «${box.tabs![curTab]}»` : 'alt';
+      // «Legg i eske»: popup med de andre kartongene, plastkassene og fanene, og hvor mye som får plass.
+      const open = boxStashOpen === box.id;
+      const targets = stashBoxes(s.me.items).filter((b) => !(b.box.id === box.id && b.tab === curTab));
+      const popup = open
+        ? `<div class="box-stash-popup">${
+            targets.length
+              ? `<ul>${targets
+                  .map(({ box: tb, tab: tt, name }) => {
+                    const n = planBoxToBox(s.me.items, box.id, curTab, tb.id, tt).length;
+                    return `<li><button class="ghost" data-action="unpack" data-box="${box.id}" ${tabAttr} data-to="box" data-target-box="${tb.id}" ${tt !== null ? `data-target-tab="${tt}"` : ''} data-name="${esc(name)}" ${n ? '' : 'disabled'}>
+                      ${icon(ITEM_TYPES[tb.typeId])}<span>${esc(name)}</span><small>${n ? `${n} av ${contents.length}` : 'fullt'}</small></button></li>`;
+                  })
+                  .join('')}</ul>`
+              : '<p class="muted">Ingen andre pappkartonger eller plastkasser under disken.</p>'
+          }</div>`
+        : '';
       extra = `<div class="unpack">
-        <button class="small ghost unpack-icon" data-action="unpack" data-box="${box.id}" data-to="storage" title="Legg alt under disken" aria-label="Legg alt under disken"><img src="/art/ikoner/under-disken.png" alt="" draggable="false"></button>
-        ${sellable ? `<button class="small ghost unpack-icon" data-action="unpack" data-box="${box.id}" data-to="counter" title="Legg varene på bordet (råvarer og annet som ikke selges, havner under disken)" aria-label="Legg varene på bordet"><img src="/art/ikoner/pa-bordet.png" alt="" draggable="false"></button>` : ''}
+        <button class="small ghost unpack-icon" data-action="unpack" data-box="${box.id}" ${tabAttr} data-to="storage" title="Legg ${what} under disken" aria-label="Legg ${what} under disken"><img src="/art/ikoner/under-disken.png" alt="" draggable="false"></button>
+        ${sellable ? `<button class="small ghost unpack-icon" data-action="unpack" data-box="${box.id}" ${tabAttr} data-to="counter" title="Legg varene på bordet (råvarer og annet som ikke selges, havner under disken)" aria-label="Legg varene på bordet"><img src="/art/ikoner/pa-bordet.png" alt="" draggable="false"></button>` : ''}
+        <button class="small ghost unpack-icon ${open ? 'open' : ''}" data-action="box-stash-toggle" data-box="${box.id}" title="Legg ${what} i en annen eske" aria-label="Legg i eske" aria-expanded="${open}"><img src="/art/ikoner/i-eske.png" alt="" draggable="false"></button>
+        ${popup}
       </div>`;
     }
   }
@@ -1322,6 +1344,9 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     ${extra}
   </div>`;
 }
+
+/** Eska der «Legg i eske»-popupen i eskevinduet er åpen (null = ingen). */
+let boxStashOpen: number | null = null;
 
 /** Fanen som er åpen i hver dokumentmappe og plastkasse (huskes mens siden er åpen). */
 const folderTab = new Map<number, number>();
@@ -3594,6 +3619,17 @@ window.addEventListener('pointercancel', endPhoneDrag);
 // ---------- Klikk og skjema ----------
 
 app.addEventListener('click', (e) => {
+  // «Legg i eske» i eskevinduet: lukkes av et klikk utenfor popupen og knappen.
+  if (boxStashOpen !== null && !(e.target as HTMLElement).closest('.box-stash-popup, [data-action="box-stash-toggle"]')) {
+    boxStashOpen = null;
+    render();
+  }
+  if ((e.target as HTMLElement).closest('[data-action="box-stash-toggle"]')) {
+    const id = Number((e.target as HTMLElement).closest<HTMLElement>('[data-action="box-stash-toggle"]')!.dataset.box);
+    boxStashOpen = boxStashOpen === id ? null : id;
+    render();
+    return;
+  }
   // «Legg i …»-popupen lukkes av et klikk utenfor den (og utenfor knappen som åpner den).
   if (stashOpen && !(e.target as HTMLElement).closest('.stash-popup, [data-action="stash-toggle"]')) {
     stashOpen = null;
@@ -4016,9 +4052,17 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'unpack') {
     const to = el.dataset.to;
-    api<{ moved: number; left: number }>('/api/box/unpack', { boxId: Number(el.dataset.box), to })
+    const num = (v: string | undefined) => (v === undefined ? null : Number(v));
+    boxStashOpen = null;
+    api<{ moved: number; left: number }>('/api/box/unpack', {
+      boxId: Number(el.dataset.box),
+      to,
+      tab: num(el.dataset.tab), // bare fanen som er åpen
+      targetBox: num(el.dataset.targetBox),
+      targetTab: num(el.dataset.targetTab),
+    })
       .then((r) => {
-        const where = to === 'counter' ? 'Varene står på bordet' : 'Alt ligger under disken';
+        const where = to === 'counter' ? 'Varene står på bordet' : to === 'box' ? `Lagt i ${el.dataset.name ?? 'eska'}` : 'Alt ligger under disken';
         toast(r.left > 0 ? `${r.moved} flyttet – ${r.left} fikk ikke plass og ligger igjen.` : `${where}.`, r.left > 0);
       })
       .catch((err) => toast((err as Error).message, true));
