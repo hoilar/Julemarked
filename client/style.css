@@ -1024,6 +1024,10 @@ img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.
 .unpack { display: flex; gap: 0.35cqw; flex-wrap: wrap; }
 .unpack button { font-size: max(10px, 0.8cqw); padding: 0.2cqw 0.6cqw; }
 .unpack button.ghost { color: #f5d9b0; border-color: rgba(255, 230, 180, 0.35); }
+/* Pakk ut: samme ikoner som i varemenyen, uten tekst */
+.unpack { align-items: center; }
+.unpack button.unpack-icon { display: inline-grid; place-items: center; padding: 0.15cqw; line-height: 0; }
+.unpack button.unpack-icon img { width: max(28px, 2.2cqw); height: max(28px, 2.2cqw); image-rendering: pixelated; }
 
 /* Forhåndsvisning av hvor en gjenstand havner */
 .drop-preview {

@@ -1297,8 +1297,8 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     } else if (contents.length > 0) {
       const sellable = contents.some((i) => PRODUCT_BY_ID[i.typeId]);
       extra = `<div class="unpack">
-        <button class="small" data-action="unpack" data-box="${box.id}" data-to="storage">Alt under disken</button>
-        ${sellable ? `<button class="small ghost" data-action="unpack" data-box="${box.id}" data-to="counter" title="Råvarer og annet som ikke selges, havner under disken">Varer på bordet</button>` : ''}
+        <button class="small ghost unpack-icon" data-action="unpack" data-box="${box.id}" data-to="storage" title="Legg alt under disken" aria-label="Legg alt under disken"><img src="/art/ikoner/under-disken.png" alt="" draggable="false"></button>
+        ${sellable ? `<button class="small ghost unpack-icon" data-action="unpack" data-box="${box.id}" data-to="counter" title="Legg varene på bordet (råvarer og annet som ikke selges, havner under disken)" aria-label="Legg varene på bordet"><img src="/art/ikoner/pa-bordet.png" alt="" draggable="false"></button>` : ''}
       </div>`;
     }
   }
