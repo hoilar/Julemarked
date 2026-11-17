@@ -87,7 +87,7 @@ import {
   showThief,
   type Offer,
 } from './customers.ts';
-import { INSURANCES, INSURANCE_BY_KIND, INSURER, insurerHere } from '../shared/insurance.ts';
+import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
@@ -356,7 +356,8 @@ function tickClock() {
   else delete document.body.dataset.weather;
   // Forsikringsselgeren, Tilsynsmannen og tyven kommer bare til din egen bod.
   const home = !!shownStall && shownStall.id === state.me.stallId;
-  showInsurer(home && insurerHere(parts.hour));
+  const visit = insurerVisit(parts.hour);
+  showInsurer(home && visit >= 0 && !insurerSentAway(state.paper?.edition ?? 0, visit));
   const g = home ? state.me.gift : null;
   showGiftSeller(g ? { seed: g.seed, name: g.name, color: STORE_BY_ID[g.store].color } : null);
   showInspector(home && state.me.visitors.inspector);
@@ -2908,8 +2909,33 @@ function insurerView(s: GameState): string {
       <h2>${esc(INSURER.name)}</h2><div class="muted">${esc(INSURER.company)}</div></div></div>
     <p class="insurer-pitch">«Hei hei! Har du tenkt på hva som skjer hvis det verste skjer? Ikke? Det har jeg. Hele tiden.»</p>
     <ul class="policy-list">${rows}</ul>
-    <p class="muted">Premien kommer som regning i postkassa hver morgen. Du får et forsikringsbevis under disken – kaster du det i søpla, er forsikringen sagt opp. Går premien til inkasso, sier vi den opp for deg.</p>`;
+    <p class="muted">Premien kommer som regning i postkassa hver morgen. Du får et forsikringsbevis under disken – kaster du det i søpla, er forsikringen sagt opp. Går premien til inkasso, sier vi den opp for deg.</p>
+    <div class="row insurer-no"><button class="ghost" data-action="insurer-no">Nei takk</button><button class="ghost" data-action="insurer-no" data-day="1">Ikke kom tilbake i dag</button></div>`;
 }
+
+// Forsikringsselgeren kan sendes bort: for dette besøket eller resten av dagen. Huskes i nettleseren (hun finnes bare her).
+const INSURER_NO_KEY = 'jm_insurer_no';
+function insurerNoList(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(INSURER_NO_KEY) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+function insurerSentAway(day: number, visit: number): boolean {
+  const list = insurerNoList();
+  return [`${day}:${visit}`, `${day}:dag`].some((k) => list.includes(k) || insurerNoMemo.has(k));
+}
+function sendInsurerAway(day: number, visit: number, wholeDay: boolean) {
+  const list = [...insurerNoList(), wholeDay ? `${day}:dag` : `${day}:${visit}`].slice(-20);
+  try {
+    localStorage.setItem(INSURER_NO_KEY, JSON.stringify(list));
+  } catch {
+    /* privat vindu: hun går bare til neste innlasting */
+  }
+  insurerNoMemo.add(wholeDay ? `${day}:dag` : `${day}:${visit}`);
+}
+const insurerNoMemo = new Set<string>(); // gjelder også når nettleseren ikke kan lagre
 
 /** Trykk på en person ved disken: «Angi til politiet?» */
 /** Hva kunden synes om prisen (samme humør som ansiktet ved disken). */
@@ -3905,6 +3931,14 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'pick') screen = { kind: 'claim', slot: Number(el.dataset.slot) };
   if (action === 'insurer') modal = { kind: 'insurer' };
+  if (action === 'insurer-no' && state) {
+    const day = state.paper?.edition ?? 0;
+    const hour = osloParts(clockBase.game + (Date.now() - clockBase.real) * clockBase.speed).hour;
+    const whole = el.dataset.day === '1';
+    sendInsurerAway(day, insurerVisit(hour), whole);
+    modal = null;
+    toast(whole ? '🛡️ «Greit! Jeg kommer innom i morgen, da.»' : `🛡️ «Helt i orden! Jeg stikker innom igjen ${hour < INSURER_VISITS[1].from ? `ved ${INSURER_VISITS[1].from}-tida` : 'i morgen'}.»`);
+  }
   if (action === 'sign-policy') {
     const kind = el.dataset.kind!;
     void act('/api/insurance/sign', { kind }, `🛡️ ${INSURANCE_BY_KIND[kind as keyof typeof INSURANCE_BY_KIND].label} tegnet!`);

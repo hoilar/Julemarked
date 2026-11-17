@@ -670,6 +670,7 @@ body.dragging .nail:not(.used) .nail-head { filter: drop-shadow(0 0 0.25cqw rgba
 .haggle:hover { filter: none; background: var(--line); }
 .cust-hint { font-size: 0.8rem; color: var(--muted); margin: 0.4rem 0 0; }
 .cust-quote { font-style: italic; margin: 0 0 0.4rem; }
+.insurer-no { margin-top: 0.6rem; justify-content: flex-end; flex-wrap: wrap; gap: 0.4rem; }
 .customer-modal .cust-tags { margin-bottom: 0.4rem; }
 .haggle-gift { width: 100%; margin-top: 0.4rem; background: var(--green); }
 .customer.regular .want { font-size: 0.9em; }

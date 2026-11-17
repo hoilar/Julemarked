@@ -15,6 +15,8 @@ export const INSURER_VISITS = [
   { from: 15, to: 17 },
 ];
 export const insurerHere = (hour: number) => INSURER_VISITS.some((v) => hour >= v.from && hour < v.to);
+/** Hvilket av dagens besøk hun er på (indeks i INSURER_VISITS), eller -1. */
+export const insurerVisit = (hour: number) => INSURER_VISITS.findIndex((v) => hour >= v.from && hour < v.to);
 
 /** Namsmann-forsikringen betaler tilbake denne andelen av det namsmannen tar. */
 export const NAMSMANN_COVER = 0.5;
