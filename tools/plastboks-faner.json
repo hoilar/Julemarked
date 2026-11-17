@@ -34,7 +34,7 @@
     {
       "item": "plastkasse",
       "reference": "GRAFIKK.md – plastkasse med faner",
-      "note": "Originalbildet har ingen synlige faner. De to nye grafikkforslagene viser totalt to og tre faner, tilsvarende én og to boksinndelere. Maks tre faner per kasse. Samme lerret som originalen; blanke etiketter til navn fra spillet. Ikke implementert.",
+      "note": "Originalbildet har ingen synlige faner. De to nye grafikkforslagene viser totalt to og tre faner, tilsvarende én og to boksinndelere. Maks tre faner per kasse. Samme lerret som originalen; blanke etiketter til navn fra spillet. I spillet fra 17.11.2026: kassa viser fanene når den har boksinndelere.",
       "variants": [
         {
           "path": "plastboks.png",

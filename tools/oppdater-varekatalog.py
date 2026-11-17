@@ -189,6 +189,8 @@ def main():
     moduleitemsfile=ROOT/'tools/maskinmoduler.json'
     if moduleitemsfile.exists():
         manifest+=json.loads(moduleitemsfile.read_text(encoding='utf-8')).get('items',[])
+    # Ideer som er bygd, står i VARELISTE.md (i spillet) og skal ikke vises som ideer i tillegg.
+    manifest = [i for i in manifest if i.get('status') != 'I spillet']
     html = html[:html.index('<script id="snapshot"')]
     html=re.sub(r'<!-- MARKEDVAER-START -->[\s\S]*?<!-- MARKEDVAER-SLUTT -->','',html)
     weatherpanel=ROOT/'tools/marked-vaer-panel.html'
@@ -215,7 +217,7 @@ def main():
     if menuicons:
         from html import escape
         cards=''.join('<figure class="menu-icon-card"><img class="menu-icon-main" src="client/public/art/'+escape(i['path'])+'" alt="'+escape(i['label'])+'"><figcaption><h3>'+escape(i['label'])+'</h3><p>'+escape(i['description'])+'</p><div class="menu-icon-sizes"><img width="32" height="32" src="client/public/art/'+escape(i['path'])+'" alt="32 piksler"><img width="48" height="48" src="client/public/art/'+escape(i['path'])+'" alt="48 piksler"><span>32 / 48 px</span></div><a href="client/public/art/'+escape(i['path'])+'">'+escape(i['path'])+'</a></figcaption></figure>' for i in menuicons)
-        panel='''<section class="menu-icon-panel" aria-labelledby="menu-icon-heading"><p class="eyebrow">NY GRAFIKK KLAR / PLANLAGT VAREMENY</p><h2 id="menu-icon-heading">Ikoner til varemenyen</h2><p>Tre handlingsikoner i pixelart, med transparent ytterkant og felles lerret på 128 × 128 px. Grafikkforslag til den planlagte varemenyen; ikonene er ikke tatt i bruk i spillet.</p><div class="menu-icon-grid">'''+cards+'''</div><p><a href="GFX_assets/planlagte/varemeny-ikoner/oversikt.jpg">Se ikonoversikten</a> · <a href="GRAFIKK.md">Grafikkføringen</a></p></section>'''
+        panel='''<section class="menu-icon-panel" aria-labelledby="menu-icon-heading"><p class="eyebrow">I SPILLET / VAREMENYEN</p><h2 id="menu-icon-heading">Ikoner til varemenyen</h2><p>Tre handlingsikoner i pixelart, med transparent ytterkant og felles lerret på 128 × 128 px. Brukt i varemenyen i spillet fra 17.11.2026 (vist i 40 px).</p><div class="menu-icon-grid">'''+cards+'''</div><p><a href="GFX_assets/planlagte/varemeny-ikoner/oversikt.jpg">Se ikonoversikten</a> · <a href="GRAFIKK.md">Grafikkføringen</a></p></section>'''
         html=html.replace('<div class="table-wrap">','<!-- MENYIKONER-START -->'+panel+'<!-- MENYIKONER-SLUTT --><div class="table-wrap">')
         if '.menu-icon-panel{' not in html:
             html=html.replace('</style>','.menu-icon-panel{margin:24px 0;padding:24px;border:1px solid #475448;border-radius:12px;background:#1a2720}.menu-icon-panel>p{color:#c4cbb5}.menu-icon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}.menu-icon-card{margin:0;padding:20px;background:#223128;border-radius:9px}.menu-icon-card img{image-rendering:pixelated}.menu-icon-main{width:128px;height:128px}.menu-icon-card h3{font-size:17px}.menu-icon-card p{font-size:14px;color:#c4cbb5}.menu-icon-card a{font-size:12px;overflow-wrap:anywhere}.menu-icon-sizes{display:flex;align-items:center;gap:12px;min-height:64px;margin:12px 0;color:#c4cbb5;font-size:12px}\n</style>',1)

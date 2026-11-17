@@ -58,7 +58,7 @@
       "category": "Maskiner og utstyr",
       "source": "Klas Olsen – pris ikke bestemt",
       "note": "Planlagt klokke til venstre for alarmen. Ledningen går vannrett til høyre. Av/på er transparente lag i bodens koordinater, 1536×1024 px. Displayet er uten tall; spillet skriver klokkeslett og blinkende 00:00. Butikkikon 128×128 px. Se plasseringsbildet i detaljvisningen. Ikke implementert.",
-      "status": "Planlagt – ikke implementert",
+      "status": "I spillet",
       "reference": "VAREPLAN.md – Digitalklokke på boden / GRAFIKK.md",
       "path": "devices/ikon-klokke.png",
       "variants": [

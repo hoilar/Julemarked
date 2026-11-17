@@ -991,8 +991,11 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   const t = ITEM_TYPES[i.typeId];
   const style = `left:${(i.x / cols) * 100}%;top:${(i.y / rows) * 100}%;width:${(i.w / cols) * 100}%;height:${(i.h / rows) * 100}%;--min:${Math.min(i.w, i.h)};--art:${artScale(i.typeId)}`;
   if (t.kind === 'container') {
-    return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
-      ${sprite(t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t)}</div>`;
+    // Plastkasse med boksinndelere viser fanene (2 eller 3) over lokket.
+    const tabbed = t.id === PLASTIC_BOX && i.tabs && i.tabs.length > 1 ? `/art/plastboks-${i.tabs.length}-faner.png` : null;
+    const look = tabbed ? { ...t, image: tabbed } : t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t;
+    return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(i.boxName ?? t.name)} – trykk for å åpne">
+      ${sprite(look)}</div>`;
   }
   if (t.kind === 'battery') {
     const pct = batteryPct(i);
