@@ -12,6 +12,9 @@ import {
   CLOCK_DISPLAY,
   PLASTIC_BOX,
   DIVIDER,
+  COOKIE_BOX,
+  COOKIE_BOX_FULL,
+  COOKIE_SORTS,
   MAX_BOX_TABS,
   INGREDIENTS,
   KETTLE,
@@ -1329,6 +1332,15 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     .map((i) => gridItemView(tabBar ? { ...i, y: i.y - yoff } : i, cols, rows))
     .join('');
   if (dividerBtn) extra = extra ? extra.replace('<div class="unpack">', `<div class="unpack">${dividerBtn}`) : `<div class="unpack">${dividerBtn}</div>`;
+  // Kakeboksen: hvor mange slag som er på plass, og «Lukk kakeboksen» når alle sju ligger der.
+  const cbox = typeof key === 'number' ? s.me.items.find((i) => i.id === key && i.typeId === COOKIE_BOX) : undefined;
+  if (cbox) {
+    const have = new Set(itemsIn(s.me.items, 'box', cbox.id).map((i) => i.typeId));
+    const missing = COOKIE_SORTS.filter((id) => !have.has(id));
+    extra += missing.length
+      ? `<div class="cookie-note">🍪 ${COOKIE_SORTS.length - missing.length} av ${COOKIE_SORTS.length} slag. Mangler: ${missing.map((id) => esc(ITEM_TYPES[id].name.toLowerCase())).join(', ')}.</div>`
+      : `<div class="unpack"><button class="small" data-action="cookie-close" data-box="${cbox.id}" title="Kakene og boksen blir én vare: «${esc(ITEM_TYPES[COOKIE_BOX_FULL].name)}»">🎁 Lukk kakeboksen</button></div>`;
+  }
   // Standardplass første gang: i høyre marg, litt forskjøvet for hvert nytt vindu.
   if (!panelPos.has(key)) {
     const w = cols * BOX_CELL + 1.6; // % av scenebredden (cqw)
@@ -3805,6 +3817,16 @@ app.addEventListener('click', (e) => {
       return;
     }
     folderTab.set(boxId, tab);
+  }
+  if (action === 'cookie-close') {
+    const boxId = Number(el.dataset.box);
+    act('/api/cookiebox/close', { itemId: boxId }, '🎁 Kakeboksen er lukket. «Kakeboks med syv slag» ligger under disken, klar for bordet.').then((ok) => {
+      if (ok) {
+        closePanel(boxId);
+        render();
+      }
+    });
+    return;
   }
   if (action === 'box-divider') {
     void act('/api/box/divider', { itemId: Number(el.dataset.box) }, '🧱 Boksinndeleren står i kassa. Den har fått en ny fane.');

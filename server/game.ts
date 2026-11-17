@@ -73,6 +73,9 @@ import {
   PEN,
   PLASTIC_BOX,
   DIVIDER,
+  COOKIE_BOX,
+  COOKIE_BOX_FULL,
+  COOKIE_SORTS,
   MAX_BOX_TABS,
   PAD,
   SCISSORS,
@@ -686,6 +689,29 @@ function plasticBox(items: Item[], itemId: number): Item {
   const box = items.find((i) => i.id === itemId && i.typeId === PLASTIC_BOX && !isTrashed(items, i) && !isUndelivered(items, i));
   if (!box) throw new GameError('Fant ikke plastkassa.');
   return box;
+}
+
+/**
+ * Lukker en full kakeboks (én av hver av de sju småkakene): kakene og boksen blir varen «Kakeboks med syv slag»,
+ * på samme plass under disken. Etiketten: hjemmelaget bare hvis alle kakene er det («skrevet om» smitter).
+ */
+export function closeCookieBox(player: PlayerRow, itemId: number) {
+  const stall = myStall(player);
+  return tx(() => {
+    const items = itemsOf(stall.id);
+    const box = items.find((i) => i.id === itemId && i.typeId === COOKIE_BOX && !isTrashed(items, i) && !isUndelivered(items, i));
+    if (!box) throw new GameError('Fant ikke kakeboksen.');
+    if (box.place !== 'storage') throw new GameError('Sett kakeboksen under disken først.');
+    const cookies = itemsIn(items, 'box', box.id);
+    const missing = COOKIE_SORTS.filter((id) => !cookies.some((c) => c.typeId === id));
+    if (missing.length) throw new GameError(`Kakeboksen er ikke full. Det mangler ${missing.map((id) => ITEM_TYPES[id].name.toLowerCase()).join(', ')}.`);
+    const label = cookies.every((c) => isHomemade(c.label)) ? (cookies.some((c) => c.label === 'forged') ? 'forged' : 'home') : null;
+    for (const c of cookies) q.deleteItem.run(c.id);
+    q.deleteItem.run(box.id);
+    const id = Number(q.insertItem.run(stall.id, COOKIE_BOX_FULL, 'storage', null, box.x, box.y, null).lastInsertRowid);
+    if (label) q.setLabel.run(label, id);
+    return { label };
+  });
 }
 
 /** Setter en boksinndeler i plastkassa: den brukes opp, og kassa får én fane til (høyst tre). */

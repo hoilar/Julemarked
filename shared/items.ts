@@ -1,7 +1,7 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
-import { PLASTIC_BOX, CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
+import { COOKIE_BOX, COOKIE_SORTS, PLASTIC_BOX, CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 import { BACKPACK, CAR_BY_ID } from './car.ts';
 
@@ -165,6 +165,11 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
     const paperish = (t.kind === 'doc' && t.id !== 'sapeavtrykk' && t.id !== 'kopinokkel') || t.kind === 'policy' || t.kind === 'paper';
     if (!paperish) return 'I dokumentmappa er det bare plass til papirer: dokumenter, lapper, oppskrifter, utklipp og aviser.';
   }
+  // Kakeboksen: bare småkakene, én av hver sort.
+  if (spot.place === 'box' && parent?.typeId === COOKIE_BOX) {
+    if (!COOKIE_SORTS.includes(t.id)) return 'I kakeboksen er det bare plass til småkaker, én av hver sort.';
+    if (itemsIn(items, 'box', parent.id).some((o) => o.typeId === t.id && o.id !== item.id)) return `Det ligger allerede ${t.name.toLowerCase()} i kakeboksen. Ett slag per rom.`;
+  }
   const tabbed = spot.place === 'box' && parent ? boxTabs(parent) : null;
   if (tabbed) {
     const rows = tabbed.tabGrid.rows;
@@ -249,7 +254,8 @@ export function findStorageSpot(items: Item[], typeId: string): Spot | null {
   const s = findFree(w, h, itemsIn(items, 'storage', null), STORAGE_GRID);
   if (s) return { place: 'storage', boxId: null, ...s };
   if (ITEM_TYPES[typeId].kind === 'container') return null;
-  for (const box of items.filter((i) => ITEM_TYPES[i.typeId].kind === 'container' && !(ITEM_TYPES[i.typeId] as { docFolder?: unknown }).docFolder && (i.place === 'storage' || i.place === 'counter'))) {
+  // Ikke dokumentmappa (bare papirer) eller kakeboksen (bare én småkake av hver sort).
+  for (const box of items.filter((i) => ITEM_TYPES[i.typeId].kind === 'container' && !(ITEM_TYPES[i.typeId] as { docFolder?: unknown }).docFolder && i.typeId !== COOKIE_BOX && (i.place === 'storage' || i.place === 'counter'))) {
     const b = findFreeInBox(items, box, w, h);
     if (b) return { place: 'box', boxId: box.id, ...b };
   }

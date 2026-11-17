@@ -369,6 +369,8 @@ En ekte kakeboks med «syv slag» krever sju ulike småkaker. I dag finnes peppe
 
 **Kakeboks** (2×2, Klas Olsen): en eske med 7 rom. Fylles med én kake av hver sort og selges eller leveres som én vare. Kunder betaler mer for en full boks enn for kakene hver for seg.
 
+**✅ Bygd 17.11.2026:** kakeboksen koster 59 kr hos Klas Olsen. De sju slagene er krumkake, pepperkakestjerne, pepperkakehjerte, sirupssnipp, sandkake, serinakake og berlinerkrans (`COOKIE_SORTS`). Sandkaker, serinakaker og berlinerkranser bakes i bakemaskinen; berlinerkranser trenger egg (25 kr). Hvert rom tar én kake, og hver sort bare én gang. Når alle sju ligger der, gir «🎁 Lukk kakeboksen» varen «Kakeboks med syv slag» (2×2, 329 kr), med bilde fra `tools/syv-slag.py`. Den er hjemmelaget bare hvis alle kakene er det. Kundebestillinger (12.4) gjenstår.
+
 ## Nye råvarer
 
 - **Vanlige:** treemne, sirup, gjær, kakaopulver, epler, eplemost, pølse, lompe, fyll

@@ -251,6 +251,10 @@ export const PAD = 'papirblokk';
 export const PLASTIC_BOX = 'plastkasse';
 export const DIVIDER = 'boksinndeler';
 export const MAX_BOX_TABS = 3;
+/** Kakeboksen: én av hver av de sju småkakene. Den første ligger i midten på bildet (tools/syv-slag.py). */
+export const COOKIE_BOX = 'kakeboks';
+export const COOKIE_BOX_FULL = 'syv_slag';
+export const COOKIE_SORTS = ['krumkake', 'pepperkake_stjerne', 'pepperkake_hjerte', 'sirupssnipp', 'sandkake', 'serinakake', 'berlinerkrans'];
 export const SCISSORS = 'saks';
 export const LOUPE = 'lupe';
 /** Er dette en safe (liten eller stor)? */
@@ -293,6 +297,7 @@ export const INGREDIENTS: Ingredient[] = [
   { kind: 'ingredient', id: 'mandler', name: 'Mandler', emoji: '🌰', image: '/art/ravarer/mandler.png', price: 18, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'mel', name: 'Hvetemel', emoji: '🌾', image: '/art/ravarer/mel.png', price: 6, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'ris', name: 'Grøtris', emoji: '🍚', image: '/art/ravarer/ris.png', price: 15, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'egg', name: 'Egg', emoji: '🥚', image: '/art/ravarer/egg.png', price: 25, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'melk', name: 'Helmelk', emoji: '🥛', image: '/art/ravarer/melk.png', price: 10, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'smor', name: 'Smør', emoji: '🧈', image: '/art/ravarer/smor.png', price: 15, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'garn', name: 'Garnnøste', emoji: '🧶', image: '/art/ravarer/garn.png', price: 25, size: { w: 2, h: 2 } },
@@ -398,6 +403,7 @@ export const MAKERS: Maker[] = [
       { id: 'lefser', name: 'Lefser', inputs: { mel: 1, smor: 1, flote: 1 }, outputs: { lefse: 4 }, hours: 2 },
       { id: 'sandkaker', name: 'Sandkaker', inputs: { mel: 1, smor: 1, sukker: 1, mandler: 1 }, outputs: { sandkake: 5 }, hours: 2 },
       { id: 'serinakaker', name: 'Serinakaker', inputs: { mel: 1, smor: 2, sukker: 1 }, outputs: { serinakake: 6 }, hours: 2 },
+      { id: 'berlinerkranser', name: 'Berlinerkranser', inputs: { mel: 1, smor: 1, sukker: 1, egg: 1 }, outputs: { berlinerkrans: 5 }, hours: 2 },
     ],
   },
   {
@@ -736,6 +742,9 @@ export const PRODUCTS: Product[] = [
   vare('kransekake', 'Kransekake', '🎂', 2, 2, 46, 449, 0.25, 'Hjemmelaget', 'kaker', crafted),
   vare('sandkake', 'Sandkake', '🥧', 1, 1, 8, 25, 1.6, 'Hjemmelaget', 'kaker', crafted),
   vare('serinakake', 'Serinakake', '🍪', 1, 1, 6, 19, 1.8, 'Hjemmelaget', 'kaker', crafted),
+  vare('berlinerkrans', 'Berlinerkrans', '🥨', 1, 1, 9, 25, 1.6, 'Hjemmelaget', 'kaker', crafted),
+  // Full kakeboks (lukkes i eskevinduet). Kundene betaler mer enn for kakene hver for seg.
+  vare('syv_slag', 'Kakeboks med syv slag', '🎁', 2, 2, 120, 329, 0.35, 'Hjemmelaget', 'kaker', crafted),
   // Godteri
   vare('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
   vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),
@@ -797,6 +806,8 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'safe', name: 'Safe, liten', emoji: '🔐', image: '/art/safe-liten.png', imageOpen: '/art/safe-liten-apen.png', price: 599, size: { w: 3, h: 3 }, inner: { cols: 6, rows: 6 }, safe: true },
   { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 9, rows: 9 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 9, rows: 12 } },
+  // Kakeboksen: sju rom, én småkake av hver sort. Full boks lukkes og blir varen «Kakeboks med syv slag».
+  { kind: 'container', id: 'kakeboks', name: 'Kakeboks', emoji: '🍪', image: '/art/kakeboks.png', price: 59, size: { w: 2, h: 2 }, inner: { cols: 7, rows: 1 } },
   // Dokumentmappa: bare papirer. Fire faner du kan gi navn, 5×5 i hver (inner er fanene stablet: 5×20).
   { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', image: '/art/verktoy/dokumentmappe.png', price: 129, size: { w: 2, h: 3 }, inner: { cols: 10, rows: 40 }, docFolder: { tabs: 4, tabGrid: { cols: 10, rows: 10 } } },
   // Ryggsekken bæres på ryggen og rommer like mye som en pappkartong.

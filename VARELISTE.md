@@ -4,7 +4,7 @@
 
 Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/`. ⚠️ = bildefila mangler (emoji brukes). ↓ = har nedskalert kopi i `art/spill/` (`py tools/spillbilder.py`).
 
-## Salgsvarer (66)
+## Salgsvarer (68)
 
 ### 🎄 Dekor (10)
 
@@ -43,7 +43,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🧩 Julepuslespill | `puslespill` | 2×2 | 55 kr | 169 kr | 0.5 | Spillfabrikken | Nettbutikkene |  | `goods/puslespill.png` ↓ |
 | 🚗 Blikkbil fra 50-tallet | `blikkbil` | 2×1 | 180 kr | 499 kr | 0.12 | Loppemarkedet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/blikkbil.png` ↓ |
 
-### 🍪 Kaker (9)
+### 🍪 Kaker (11)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -56,6 +56,8 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🎂 Kransekake | `kransekake` | 2×2 | 46 kr | 449 kr | 0.25 | Hjemmelaget | Lages: Bakemaskin (Kransekake, 1 stk) | kan bare lages | `goods/kransekake.png` ↓ |
 | 🥧 Sandkake | `sandkake` | 1×1 | 8 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Sandkaker, 5 stk) | kan bare lages | `goods/sandkake.png` ↓ |
 | 🍪 Serinakake | `serinakake` | 1×1 | 6 kr | 19 kr | 1.8 | Hjemmelaget | Lages: Bakemaskin (Serinakaker, 6 stk) | kan bare lages | `goods/serinakake.png` ↓ |
+| 🥨 Berlinerkrans | `berlinerkrans` | 1×1 | 9 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Berlinerkranser, 5 stk) | kan bare lages | `goods/berlinerkrans.png` ↓ |
+| 🎁 Kakeboks med syv slag | `syv_slag` | 2×2 | 120 kr | 329 kr | 0.35 | Hjemmelaget | — | kan bare lages | `goods/syv-slag.png` ↓ |
 
 ### 🍬 Godteri (11)
 
@@ -80,7 +82,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🍓 Syltetøy | `syltetoy` | 2×2 | 35 kr | 119 kr | 0.7 | Mills | Lages: Kokeplate med kjele (Syltetøy, 1 stk)<br>Nettbutikkene |  | `goods/syltetoy.png` ↓ |
 | 🌭 Pølse i lompe | `polse_lompe` | 1×1 | 12 kr | 45 kr | 2 | Hjemmelaget | Lages: Kokeplate med kjele (Pølse i lompe, 4 stk) | kan bare lages | `goods/polse-lompe.png` ↓ |
 | 🥣 Rømmegrøt | `rommegrot` | 1×1 | 6 kr | 59 kr | 0.9 | Hjemmelaget | Lages: Kokeplate med kjele (Rømmegrøt, 3 stk) | kan bare lages | `goods/rommegrot.png` ↓ |
-| 🍚 Risengrynsgrøt | `risengrynsgrot` | 2×2 | 12 kr | 69 kr | 1.1 | Hjemmelaget | Lages: Kokeplate med kjele (Risengrynsgrøt, 3 stk) | kan bare lages | `goods/risengrynsgrot.png` |
+| 🍚 Risengrynsgrøt | `risengrynsgrot` | 2×2 | 12 kr | 69 kr | 1.1 | Hjemmelaget | Lages: Kokeplate med kjele (Risengrynsgrøt, 3 stk) | kan bare lages | `goods/risengrynsgrot.png` ↓ |
 | 🫓 Lefse | `lefse` | 1×1 | 10 kr | 35 kr | 1.2 | Hjemmelaget | Lages: Bakemaskin (Lefser, 4 stk) | kan bare lages | `goods/lefse.png` ↓ |
 | 🍖 Fenalår | `fenalaar` | 1×3 | 300 kr | 799 kr | 0.1 | Fjellspekeriet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/fenalaar.png` ↓ |
 | 🐟 Lutefisk | `lutefisk` | 1×2 | 70 kr | 189 kr | 0.25 | Fiskemottaket | Nettbutikkene, sjelden (15 % av dagene) | sjelden | `goods/lutefisk.png` ↓ |
@@ -117,7 +119,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🫙 Hjemmebrent | `hjemmebrent` | 2×3 | 20 kr | 299 kr | 0.5 | Hjemmelaget | Lages: Kokeplate med kjele (Hjemmebrent, 2 stk) | kan bare lages, kan avsløres | `goods/hjemmebrent.png` ↓ |
 | 🧤 «Merkevotter» | `merkevotter` | 2×2 | 80 kr | 799 kr | 0.2 | Hjemmelaget | Lages: Strikkemaskin («Merkevotter», 1 stk) | kan bare lages, kan avsløres | `goods/merkevotter.png` ↓ |
 
-## Råvarer (27)
+## Råvarer (28)
 
 | Råvare | id | Str. | Pris | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -126,8 +128,9 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🥛 Fløte | `flote` | 2×2 | 12 kr | Nettbutikkene |  | `ravarer/flote.png` |
 | 🌰 Mandler | `mandler` | 2×2 | 18 kr | Nettbutikkene |  | `ravarer/mandler.png` |
 | 🌾 Hvetemel | `mel` | 2×2 | 6 kr | Nettbutikkene |  | `ravarer/mel.png` |
-| 🍚 Grøtris | `ris` | 2×2 | 15 kr | Nettbutikkene |  | `ravarer/ris.png` |
-| 🥛 Helmelk | `melk` | 2×2 | 10 kr | Nettbutikkene |  | `ravarer/melk.png` |
+| 🍚 Grøtris | `ris` | 2×2 | 15 kr | Nettbutikkene |  | `ravarer/ris.png` ↓ |
+| 🥚 Egg | `egg` | 2×2 | 25 kr | Nettbutikkene |  | `ravarer/egg.png` ↓ |
+| 🥛 Helmelk | `melk` | 2×2 | 10 kr | Nettbutikkene |  | `ravarer/melk.png` ↓ |
 | 🧈 Smør | `smor` | 2×2 | 15 kr | Nettbutikkene |  | `ravarer/smor.png` |
 | 🧶 Garnnøste | `garn` | 2×2 | 25 kr | Nettbutikkene |  | `ravarer/garn.png` |
 | 🔮 Glassemne | `glassemne` | 2×2 | 8 kr | Nettbutikkene |  | `ravarer/glassemne.png` |
@@ -161,14 +164,14 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🍲 Kokeplate med kjele | `kjele` | 399 kr | 2 | Kok gløgg, karameller, brente mandler og syltetøy (oppskrifter i avisa). 0,5 kW per styrke | `kjele` (se Maskiner) | `kjele/off.png` ↓<br>`kjele/on1.png` ↓<br>`kjele/on2.png` ↓<br>`kjele/on3.png` ↓<br>`kjele/on4.png` ↓ |
 | 🗜️ Brettemaskin | `posebretter` | 299 kr | 0.3 | Bretter sammen tomme handleposer og pappkartonger – én per time. Flatpakket papp kan ikke brettes ut igjen. | `posebretter` (se Maskiner) | `posebretter/off.png` ↓<br>`posebretter/on.png` ↓ |
 | 🧻 Makuleringsmaskin | `makulator` | 249 kr | 0.2 | Makulerer aviser, lapper og plastposer, så de ikke havner i søpla. Plast kan bli mikroplast… | `makulator` (se Maskiner) | `maskiner/makulator.png` ↓<br>`maskiner/makulator-pa.png` ↓ |
-| 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
+| 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker, Berlinerkranser – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
 | 🧶 Strikkemaskin | `strikkemaskin` | 899 kr | 0.4 | Votter, Nisselue, Julestrømpe, Skjerf, Pulsvarmere, Alpakkaskjerf, Strikket bamse, «Merkevotter» – hjemmelaget | `strikkemaskin` (se Maskiner) | `maskiner/strikkemaskin.png` ↓<br>`maskiner/strikkemaskin-pa.png` ↓ |
 | 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
 | 🔌 Ladestasjon | `ladestasjon` | 299 kr | 2 | Lader fire batterier. Maskiner med batteri går videre når strømmen går | `ladestasjon` (se Maskiner) | `elektro/ladestasjon-0.png` ↓ |
 | 🚨 Alarmsystem | `alarm` | 349 kr | 0.1 | Skremmer bort nattetyven – men bare når det har strøm | henger på boden | `devices/ikon-alarm.png`<br>`devices/alarm-av.png`<br>`devices/alarm-pa.png` |
 | 🕰️ Digitalklokke | `klokke` | 149 kr | 0.01 | Viser spilltida på boden. Mister den strømmen, blinker den «00:00» til du stiller den | henger på boden | `devices/ikon-klokke.png`<br>`devices/klokke-av.png`<br>`devices/klokke-pa.png` |
 
-## Esker, poser og biler (13)
+## Esker, poser og biler (14)
 
 | Ting | id | Str. | Pris | Info | Skaffes | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -179,6 +182,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🔐 Safe, liten | `safe` | 3×3 | 599 kr | rommer 6×6 | Klas Olsen | `safe-liten.png` ↓<br>`safe-liten-apen.png` ↓ |
 | 🗄️ Safe, stor | `safe_stor` | 3×4 | 1 499 kr | rommer 9×9 | Klas Olsen | `safe-stor.png` ↓<br>`safe-stor-apen.png` ↓ |
 | 🗃️ Plastkasse med lokk | `plastkasse` | 4×4 | 149 kr | rommer 9×12 | Klas Olsen | `plastboks.png` ↓ |
+| 🍪 Kakeboks | `kakeboks` | 2×2 | 59 kr | rommer 7×1 | Klas Olsen | `kakeboks.png` ↓ |
 | 🗂️ Dokumentmappe | `dokumentmappe` | 2×3 | 129 kr | rommer 10×40 | Klas Olsen | `verktoy/dokumentmappe.png` ↓ |
 | 🎒 Ryggsekk | `ryggsekk` | 3×3 | 249 kr | rommer 6×9 | Klas Olsen | `ryggsekk.png` ↓ |
 | 🚗 WV Tennis 1995 | `bil_tennis` | 4×4 | 0 kr | rommer 6×6 · 60 min per tur, bensin | Bilbutikken | `biler/bil-tennis.png`<br>`biler/bil-tennis-apen.png` |

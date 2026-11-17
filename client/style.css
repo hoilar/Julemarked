@@ -1031,6 +1031,8 @@ img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.
 .unpack button.unpack-icon.open { background: rgba(255, 230, 180, 0.2); }
 /* «Legg i eske» i eskevinduet: popup som åpner seg oppover fra knappene */
 .unpack { position: relative; }
+/* Kakeboksen: hvor mange slag som mangler */
+.cookie-note { color: #f5d9b0; font-size: max(10px, 0.75cqw); max-width: 100%; }
 .box-stash-popup {
   position: absolute; left: 0; bottom: calc(100% + 0.4cqw); z-index: 5; min-width: max(220px, 16cqw);
   padding: 0.3rem; background: var(--card); color: var(--ink);
