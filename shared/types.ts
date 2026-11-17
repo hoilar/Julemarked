@@ -1,3 +1,4 @@
+import type { Weather } from './weather.ts';
 import type { Phase } from './clock.ts';
 import type { BillKind, BillStage } from './bills.ts';
 import type { Label } from './products.ts';
@@ -175,6 +176,8 @@ export interface Paper {
   coupons: { index: number; store: string; productId: string; pct: number; from: number; to: number }[]; // klipp ut med saks
   date: string; // «Fredag 4. desember»
   price: number; // strømpris i dag, kr/kWh
+  /** Dagens vær og varselet for i morgen (varselet kan ta feil). */
+  weather: { today: Weather; tomorrow: Weather };
   headline: string;
   notices: string[];
   recipe: { id: string; name: string; inputs: RecipeLine[]; outputs: RecipeLine[]; level: number; quote: string }; // «Eivblås Halvstrøms hjørne»

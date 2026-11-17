@@ -449,6 +449,8 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 
 **Bestemt:** Spillet skal ha vær og temperatur. I dag finnes det ikke (bare slaps i torgbildet og en avis som kan være «for våt»).
 
+**✅ Første versjon bygd (17.11.2026, `shared/weather.ts`):** fem værtyper (pent 35 %, snø 25 %, sludd 17 %, kaldt 15 %, storm 8 %) med temperatur, likt for hele markedet og bestemt per avisdag. Avisa har dagens vær og et varsel for i morgen som tar feil omtrent hver femte dag. Torget bruker snø-, sludd- og stormbildene. Salget ganges med en kundefaktor (storm 0,5, sludd 0,8, snø 0,85, kaldt 0,9, pent 1,1) og kategoriløft (kaldt: drikke, gløgg og klær; snø: drikke, gløgg og dekor; sludd: færre klær). Storm gir dobbelt så ofte strømbrudd. Ikke bygd ennå: bil som streiker, våte varer, ting som blåser ned, leveringer som blir forsinket og varmeovn.
+
 **Værmelding i avisa:** dagens vær og temperatur, og et varsel for i morgen, så man kan planlegge innkjøp og produksjon. Varselet kan av og til ta feil.
 
 **Hva været kan påvirke:**
@@ -466,7 +468,7 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 - **Dagens kategorier (12.5):** været blir en av grunnene til at noen kategorier er populære en bestemt dag.
 - **Strøm (12.3):** en varmeovn eller terrassevarmer i boden gir flere kunder når det er kaldt, men trekker mye strøm og kan få sikringene til å ryke.
 - **Strømprisen** kan stige på kalde dager (står allerede i avisa).
-- **Grafikk klar (14.11.2026):** torget i snøvær, sludd og storm for alle fire tider: morgen, dag, kveld og natt (12 bilder, samme utsnitt). Se GRAFIKK.md og værforhåndsvisningen i HTML-katalogen. Værsystemet er ikke implementert.
+- **Grafikk klar (14.11.2026):** torget i snøvær, sludd og storm for alle fire tider: morgen, dag, kveld og natt (12 bilder, samme utsnitt). Se GRAFIKK.md og værforhåndsvisningen i HTML-katalogen.
 - **Forsikring:** stormskader og vannskader på varer kan dekkes, eller ikke.
 
 **Åpne spørsmål:**

@@ -225,6 +225,7 @@ import {
 } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
+import { weatherDemand, weatherFor } from '../shared/weather.ts';
 
 export class GameError extends Error {}
 
@@ -4472,6 +4473,7 @@ function processHour(market: MarketRow, hour: number) {
   const season = seasonFactor(seasonDay(parts));
   const curve = HOUR_CURVE[parts.hour] ?? 1;
   const today = dateKey(t);
+  const weather = weatherFor(market.id, currentEdition(t).key); // dagens vær (avisdagen)
 
   for (const s of stalls) {
     const serving = servingOf(s);
@@ -4511,7 +4513,8 @@ function processHour(market: MarketRow, hour: number) {
         const display = Math.min(1.25, 0.85 + total * 0.04) * (count / total);
         const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
         const hourCurve = night ? NIGHT_CURVE : curve;
-        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor;
+        const wx = weatherDemand(weather, p.category);
+        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx;
         const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count), homemade);
         if (units <= 0) continue;
 

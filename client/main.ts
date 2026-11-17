@@ -91,6 +91,7 @@ import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '..
 import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
+import { WEATHER, tempText } from '../shared/weather.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
 import spillbilder from './spillbilder.json';
 import {
@@ -336,6 +337,12 @@ function tickClock() {
   for (const el of document.querySelectorAll('#phone-clock, .phone-clock-small, .clock-digits:not(.blink)')) el.textContent = hhmm;
   document.body.classList.toggle('night', phaseOf(parts.hour) === 'night');
   document.body.dataset.daypart = daypart(parts.hour);
+  // Været (fra dagens avis) velger torgbildet: snø, sludd, storm eller vanlig.
+  const wx = state.paper?.weather?.today;
+  const bg = wx ? WEATHER[wx.kind].bg : null;
+  preloadWeather(bg);
+  if (bg) document.body.dataset.weather = bg;
+  else delete document.body.dataset.weather;
   // Forsikringsselgeren, Tilsynsmannen og tyven kommer bare til din egen bod.
   const home = !!shownStall && shownStall.id === state.me.stallId;
   showInsurer(home && insurerHere(parts.hour));
@@ -376,6 +383,13 @@ function hasTool(s: GameState, typeId: string): Item | undefined {
 const daypart = (h: number) => (h >= 7 && h < 10 ? 'morgen' : h >= 10 && h < 15 ? 'dag' : h >= 15 && h < 21 ? 'kveld' : 'natt');
 // Last alle fire bakgrunnene med en gang, så byttet skjer uten blink.
 for (const p of ['morgen', 'dag', 'kveld', 'natt']) new Image().src = `/art/bg/marked-${p}.jpg`;
+/** Laster torgbildene for dagens vær på forhånd (én gang per værtype). */
+const preloadedWeather = new Set<string>();
+function preloadWeather(bg: string | null) {
+  if (!bg || preloadedWeather.has(bg)) return;
+  preloadedWeather.add(bg);
+  for (const p of ['morgen', 'dag', 'kveld', 'natt']) new Image().src = `/art/bg/marked-${bg}-${p}.jpg`;
+}
 // Én enhetspiksel i CSS-piksler (Windows-skalering 125 % → 0,8px). CSS runder torget, boden og lagerrutene
 // av til hele slike, så pikselbildene blir like skarpe i alle kolonner.
 const setDpx = () => document.documentElement.style.setProperty('--dpx', `${1 / (window.devicePixelRatio || 1)}px`);
@@ -2553,8 +2567,19 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
     (title, i) => `<button class="paper-tab ${i === n ? 'on' : ''}" data-action="paper-page" data-page="${i}" aria-pressed="${i === n}">${esc(title)}</button>`,
   ).join('')}</nav>`;
 
+  // Været: i dag og varselet for i morgen.
+  const wxToday = p.weather?.today;
+  const wxTomorrow = p.weather?.tomorrow;
+  const weatherBox = wxToday
+    ? `<div class="paper-weather">
+        <div class="paper-weather-today"><span class="wx-emoji">${WEATHER[wxToday.kind].emoji}</span><div><b>${WEATHER[wxToday.kind].name}, ${tempText(wxToday.temp)}</b><small>${esc(WEATHER[wxToday.kind].note)}</small></div></div>
+        ${wxTomorrow ? `<div class="paper-weather-tomorrow">I morgen: ${WEATHER[wxTomorrow.kind].emoji} ${WEATHER[wxTomorrow.kind].name.toLowerCase()}, ca. ${tempText(wxTomorrow.temp)} <small>(Meteorologen tar av og til feil.)</small></div>` : ''}
+      </div>`
+    : '';
+
   const front = `
     <h1 class="paper-headline">${esc(p.headline)}</h1>
+    ${weatherBox}
     <ul class="paper-teasers">
       <li><button class="paper-teaser" data-action="paper-page" data-page="1"><span>⚡ Strømmen koster ${price} kr/kWh i dag</span><small>Økonomi, s. 2</small></button></li>
       <li><button class="paper-teaser" data-action="paper-page" data-page="4"><span>🎟️ ${(p.coupons ?? []).length} rabattkuponger – klipp ut!</span><small>Kuponger, s. 5</small></button></li>

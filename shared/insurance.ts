@@ -3,6 +3,7 @@
 // gjelder forsikringen og premien kommer som regning i postkassa hver morgen.
 // Kaster du beviset i søpla, er forsikringen sagt opp. Alle tallene her er ment å være lette å justere.
 import { hash01 } from './hash.ts';
+import { weatherFor } from './weather.ts';
 
 export type InsuranceKind = 'tyveri' | 'strombrudd' | 'svidd' | 'namsmann';
 
@@ -47,7 +48,9 @@ const OUTAGE_STREETS = ['hovedgate', 'sidegate', 'bakgate'] as const;
  * i 2–3 timer en gang mellom kl. 09 og 19. Null hvis det ikke blir noe strømbrudd.
  */
 export function outageFor(marketId: number, dayKey: number): { street: (typeof OUTAGE_STREETS)[number]; from: number; to: number } | null {
-  if (hash01('strømbrudd', marketId, dayKey) >= OUTAGE_CHANCE) return null;
+  // Storm gir mye oftere strømbrudd (konseptet 12.6).
+  const chance = weatherFor(marketId, dayKey).kind === 'storm' ? Math.min(0.9, OUTAGE_CHANCE * 2) : OUTAGE_CHANCE;
+  if (hash01('strømbrudd', marketId, dayKey) >= chance) return null;
   const from = 9 + Math.floor(hash01('brudd-start', marketId, dayKey) * 10);
   const to = from + 2 + Math.floor(hash01('brudd-lengde', marketId, dayKey) * 2);
   const street = OUTAGE_STREETS[Math.floor(hash01('brudd-gate', marketId, dayKey) * OUTAGE_STREETS.length)];

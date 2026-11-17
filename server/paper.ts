@@ -7,6 +7,8 @@ import { couponsFor } from '../shared/deals.ts';
 import { MACHINE_BOOK } from '../shared/cookbook.ts';
 import { MAKER_BY_ID } from '../shared/products.ts';
 import { hash01 } from '../shared/hash.ts';
+import { forecastFor, weatherFor } from '../shared/weather.ts';
+import { addDays } from '../shared/deals.ts';
 import { ITEM_TYPES } from '../shared/products.ts';
 import { THIEF_REWARD, thiefOf } from '../shared/crime.ts';
 
@@ -159,6 +161,7 @@ export function buildPaper(
     })(),
     crime: { thefts, log: pick(POLICE_LOG, hash('politi', marketId, ed.key)) },
     edition: ed.key,
+    weather: { today: weatherFor(marketId, ed.key), tomorrow: forecastFor(marketId, ed.key, addDays(ed.key, 1)) },
     coupons: couponsFor(marketId, ed.key),
     date: date[0].toUpperCase() + date.slice(1),
     price,

@@ -1316,6 +1316,14 @@ body:has(.world) #toast.show { transform: translate(-50%, 0); opacity: 1; }
 /* Kupongen står i en tegnet ramme med stiplet klippekant og saks (art/avis/kupongramme.png). */
 .paper-coupon { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: 10% 8% 8%; background: url('/art/avis/kupongramme.png') center / 100% 100% no-repeat, #fffaf0; image-rendering: pixelated; text-align: center; }
 .paper-coupon > * { image-rendering: auto; }
+/* Været på forsiden */
+.paper-weather { margin: 0.4rem 0 0.8rem; padding: 0.5rem 0.7rem; border: 2px solid #1d1a16; background: #f4ecd8; }
+.paper-weather-today { display: flex; align-items: center; gap: 0.6rem; }
+.paper-weather-today .wx-emoji { font-size: 2rem; line-height: 1; }
+.paper-weather-today b { display: block; }
+.paper-weather-today small { display: block; opacity: 0.8; }
+.paper-weather-tomorrow { margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px dashed #1d1a16; font-size: 0.9em; }
+.paper-weather-tomorrow small { opacity: 0.7; }
 /* Gullkupong: gjelder resten av sesongen */
 .paper-coupon.season { box-shadow: inset 0 0 0 3px #d9a441, 0 0 0.6rem rgba(217, 164, 65, 0.55); }
 .paper-coupon.season .coupon-when { color: #8a5a00; font-weight: 700; }
@@ -1354,6 +1362,19 @@ body[data-daypart="morgen"] .stage { --bg: url('/art/bg/marked-morgen.jpg'); }
 body[data-daypart="dag"] .stage { --bg: url('/art/bg/marked-dag.jpg'); }
 body[data-daypart="kveld"] .stage { --bg: url('/art/bg/marked-kveld.jpg'); }
 body[data-daypart="natt"] .stage { --bg: url('/art/bg/marked-natt.jpg'); }
+/* Været (body[data-weather]): samme torg i snø, sludd og storm, for hver tid på døgnet. */
+body[data-weather="sno"][data-daypart="morgen"] .stage { --bg: url('/art/bg/marked-sno-morgen.jpg'); }
+body[data-weather="sno"][data-daypart="dag"] .stage { --bg: url('/art/bg/marked-sno-dag.jpg'); }
+body[data-weather="sno"][data-daypart="kveld"] .stage { --bg: url('/art/bg/marked-sno-kveld.jpg'); }
+body[data-weather="sno"][data-daypart="natt"] .stage { --bg: url('/art/bg/marked-sno-natt.jpg'); }
+body[data-weather="sludd"][data-daypart="morgen"] .stage { --bg: url('/art/bg/marked-sludd-morgen.jpg'); }
+body[data-weather="sludd"][data-daypart="dag"] .stage { --bg: url('/art/bg/marked-sludd-dag.jpg'); }
+body[data-weather="sludd"][data-daypart="kveld"] .stage { --bg: url('/art/bg/marked-sludd-kveld.jpg'); }
+body[data-weather="sludd"][data-daypart="natt"] .stage { --bg: url('/art/bg/marked-sludd-natt.jpg'); }
+body[data-weather="storm"][data-daypart="morgen"] .stage { --bg: url('/art/bg/marked-storm-morgen.jpg'); }
+body[data-weather="storm"][data-daypart="dag"] .stage { --bg: url('/art/bg/marked-storm-dag.jpg'); }
+body[data-weather="storm"][data-daypart="kveld"] .stage { --bg: url('/art/bg/marked-storm-kveld.jpg'); }
+body[data-weather="storm"][data-daypart="natt"] .stage { --bg: url('/art/bg/marked-storm-natt.jpg'); }
 body.night .stage > .tint { background: none; }
 
 /* Innkjøp: fast topp, bare varene scroller */
