@@ -71,6 +71,7 @@ import {
   playerFromToken,
   setPrice,
   setFolder,
+  setPlayer,
   unfoldBag,
   payBill,
   payAllBills,
@@ -205,6 +206,7 @@ const routes: Record<string, Handler> = {
   'POST /api/fuse': action((p, b) => toggleFuse(p, String(b.entry ?? ''))),
   'POST /api/meter/rollback': action((p) => rollbackMeter(p)),
   'POST /api/folder': action((p, b) => setFolder(p, Number(b.itemId), !!b.on)),
+  'POST /api/player': action((p, b) => setPlayer(p, Number(b.itemId), !!b.on)),
   'POST /api/bag/unfold': action((p, b) => unfoldBag(p, Number(b.itemId))),
   'POST /api/item/discard': action((p, b) => {
     discardItem(p, Number(b.itemId));

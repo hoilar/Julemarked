@@ -26,6 +26,7 @@ export interface DealerGood {
 export const DEALER_GOODS: DealerGood[] = [
   { typeId: 'smuglersigaretter', price: 40, stock: [4, 10] },
   { typeId: 'piratfilm', price: 15, stock: [5, 12] },
+  { typeId: 'piratkassett', price: 25, stock: [2, 5] },
   { typeId: 'kinaputter', price: 60, stock: [2, 5], rare: 0.35 },
   { typeId: 'juletre_tyv', price: 120, stock: [1, 2], rare: 0.3 },
   { typeId: 'falsk_logo', price: 45, stock: [3, 6] },

@@ -48,6 +48,7 @@ export interface Item {
   edition?: number; // bare aviser: hvilken utgave (ÅÅÅÅMMDD)
   kettle?: KettleState; // bare kjeler
   folder?: { on: boolean }; // bare posebrettere
+  player?: { on: boolean; tape?: number; hours?: number; day?: number }; // kassettspilleren: av/på, og hvor lenge samme kassett har gått i dag
   strip?: { sockets: (string | null)[] }; // bare ekstra grenuttak: hva som står i de fire kontaktene
   maker?: { on: boolean; program: string; progress: number }; // bare maskiner med programmer (timer gjort på omgangen)
   fuse?: { slots: (string | null)[]; tripped?: string[]; off?: string[] }; // sikringsboksen: hvilket apparat hver plass gir strøm til; automatsikringer som har gått / er slått av
@@ -137,6 +138,7 @@ export interface StallPublic {
   counter: Item[]; // varene på bordet
   trash: Item[]; // det som ligger i søppelkassa (den er åpen for alle)
   prices: Record<string, number>; // pris per vare
+  music: { song: string; title: string; pirate: boolean; speakers: boolean } | null; // det som spilles ved boden nå
 }
 
 export interface MarketSlot {

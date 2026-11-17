@@ -1,4 +1,4 @@
-"""Klargjør kassettspillerens av/på-bilder med identisk utsnitt og skalering."""
+"""Klargjør kassettspiller av og på med vanlig kassett eller piratkassett."""
 import json
 import sys
 from pathlib import Path
@@ -22,7 +22,9 @@ def main():
     PALETT['kassettspiller'] = PALETT['noytral'] + ['#9e5424','#d18c35','#e0b02c','#f5d776']
     images = []
     checks = []
-    for state in ('av','pa'):
+    states = ('av','pa','pa-piratkassett')
+    labels = [variant['label'] for variant in cfg['items'][0]['variants']]
+    for state in states:
         raw = Image.open(GFX/'originaler'/('kassettspiller-'+state+'.png')).convert('RGBA')
         assert raw.size == off.size
         assert raw.getchannel('A').getextrema()[0] == 0, 'Krever transparent original'
@@ -34,18 +36,18 @@ def main():
         final.save(ART/'maskiner'/('kassettspiller-'+state+'.png'),optimize=True)
         images.append(final)
         checks.append({'state':state,'sourceSize':raw.size,'crop':bounds,'place':place,'size':final.size,'bbox':final.getbbox(),'alpha':final.getchannel('A').getextrema()})
-    sheet = Image.new('RGB',(1040,380),'#233029')
+    sheet = Image.new('RGB',(1560,380),'#233029')
     draw = ImageDraw.Draw(sheet)
     font = ImageFont.truetype('C:/Windows/Fonts/arial.ttf',19)
     for n,im in enumerate(images):
         large = im.resize((512,256),Image.Resampling.NEAREST)
         sheet.paste(large,(n*520,15),large)
-        draw.text((n*520+24,290),'Av' if n==0 else 'På · gul indikator og inntrykt spillknapp',font=font,fill='#edf0dc')
+        draw.text((n*520+24,290),labels[n],font=font,fill='#edf0dc')
     draw.text((24,338),'Planlagt kassettspiller · 2×1 · samme lerret og plassering · ikke implementert',font=font,fill='#d8c89f')
     sheet.save(GFX/'oversikt.jpg',quality=95)
     (GFX/'kontroll.json').write_text(json.dumps(checks,indent=2),encoding='utf-8')
     items = json.loads((ROOT/'tools/planlagte-varer.json').read_text(encoding='utf-8'))['items']
-    for extra in ('digitalklokke','kassettspiller'):
+    for extra in ('digitalklokke','kassettspiller','hoyttaleranlegg','kassetter','maskinmoduler'):
         p=ROOT/'tools'/(extra+'.json')
         if p.exists():items+=json.loads(p.read_text(encoding='utf-8')).get('items',[])
     overview = Image.new('RGB',(1000,((len(items)+4)//5)*180),'#233029')
@@ -59,7 +61,7 @@ def main():
         draw.text((x+8,y+144),item['name'],font=small,fill='#edf0dc')
         draw.text((x+8,y+162),('PLANLAGT / ' if item['status'].startswith('Planlagt') else 'IDÉ / ')+item['size'],font=small,fill='#ddc681')
     overview.save(GFX.parent/'oversikt.jpg',quality=94)
-    print('Kassettspiller av/på klargjort; '+str(len(items))+' katalogforslag')
+    print('Kassettspiller av + på med vanlig/piratkassett klargjort; '+str(len(items))+' katalogforslag')
 
 if __name__ == '__main__':
     main()

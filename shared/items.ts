@@ -42,7 +42,7 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' || CAR_BY_ID[t?.id ?? '']?.fuel === 'batteri' ? CELL_GRID : null;
   // Modulplass: kjele, brette- og makuleringsmaskin og program-maskinene.
   if (place === 'module') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' ? MODULE_GRID : null;
-  if (t?.kind === 'charger') return place === 'pot_in' ? t.input : null;
+  if (t?.kind === 'charger' || t?.kind === 'player') return place === 'pot_in' ? t.input : null;
   if (t?.kind !== 'kettle' && t?.kind !== 'folder' && t?.kind !== 'maker') return null;
   return place === 'pot_in' ? t.input : t.output;
 }
@@ -230,9 +230,13 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (t.kind === 'battery' && (spot.place === 'counter' || ((spot.place === 'pot_in' || spot.place === 'pot_out') && boxKind(spot.boxId) !== 'charger')))
     return spot.place === 'counter' ? 'Batteriet er ikke til salgs.' : 'Batteriet går i batteriplassen eller i ladestasjonen.';
   if (t.kind === 'charger' && spot.place !== 'storage' && spot.place !== 'trash') return 'Ladestasjonen skal stå under disken.';
+  if (t.kind === 'player' && spot.place !== 'storage' && spot.place !== 'trash') return 'Kassettspilleren skal stå under disken.';
+  if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'player' && t.kind !== 'tape') return 'I kassettspilleren passer bare en kassett.';
+  if (t.kind === 'tape' && (spot.place === 'counter' || ((spot.place === 'pot_in' || spot.place === 'pot_out') && boxKind(spot.boxId) !== 'player')))
+    return spot.place === 'counter' ? 'Kassetten er ikke til salgs.' : 'Kassetten går i kassettspilleren.';
   if (t.kind === 'folded' && spot.place === 'counter') return 'Sammenbretta poser er ikke til salgs.';
   if (isTwoHanded(t.id) && spot.place === 'box' && parent?.typeId === BACKPACK) return 'Maskiner får ikke plass i ryggsekken.';
-  if ((t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger') && NESTED.has(spot.place))
+  if ((t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') && NESTED.has(spot.place))
     return spot.place === 'box' ? 'En utpakket maskin går ikke inn i esken igjen.' : 'Maskinen får ikke plass der.';
   if (t.kind === 'paper' && spot.place === 'counter') return 'Avisa er ikke til salgs.';
   if (t.kind === 'policy' && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
@@ -243,7 +247,7 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (spot.place === 'nail' && t.id !== WANTED) return 'Det er bare etterlysninger som henges på spikeren.';
   if ((t.kind === 'tool' || t.kind === 'doc') && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
     return `${t.name} er ikke til salgs – den ligger best under disken.`;
-  if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
+  if ((t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') && spot.place === 'trash' && item.id && contentsOf(items, item.id).length > 0)
     return `Tøm ${t.name} før du kaster den.`;
   if (NESTED.has(spot.place) && spot.boxId === item.id) return 'Den kan ikke ligge i seg selv.';
   if (NESTED.has(spot.place) && items.find((b) => b.id === spot.boxId)?.place === 'trash')

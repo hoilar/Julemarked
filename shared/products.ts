@@ -247,7 +247,39 @@ export interface Module {
 }
 export type ModuleEffect = 'turbo' | 'sparing' | 'langtid' | 'termostat' | 'hvile' | 'utmating' | 'autobretting';
 
-export type ItemType = Battery | Charger | Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc | Electric | Maker | Module;
+/** Kassettspilleren: står under disken, plugges i grenuttaket og har en kassettplass (inn-feltet, 1×1). */
+export interface Player {
+  kind: 'player';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string; // av
+  imageOn: string; // spiller
+  imageOnPirate: string; // spiller med piratkassett
+  size: Size;
+  input: GridSize;
+  output: GridSize; // ubrukt (samme form som de andre maskinene)
+  sprite: number;
+  kw: number;
+}
+/** En kassett (1×1). `song` = lydfila i client/public/musikk (uten .mp3). Piratkassetten er et blandebånd. */
+export interface Tape {
+  kind: 'tape';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  price: number;
+  size: Size;
+  song: string;
+  title: string;
+  blurb: string;
+  pirate?: boolean;
+  eaten?: boolean; // båndsalat: spiller ikke lenger
+  dealerOnly?: boolean;
+}
+
+export type ItemType = Battery | Charger | Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc | Electric | Maker | Module | Player | Tape;
 
 // Kontorrekvisita hos Klas Olsen.
 export const TOOLS: Tool[] = [
@@ -503,6 +535,52 @@ export const CHARGE_KW = 0.5;
 export const CHARGE_EFFICIENCY = 0.8;
 /** Batteriplassen i en maskin. */
 export const CELL_GRID: GridSize = { cols: 1, rows: 1 };
+export const CASSETTE_PLAYER: Player = {
+  kind: 'player',
+  id: 'kassettspiller',
+  name: 'Kassettspiller',
+  emoji: '📻',
+  image: '/art/maskiner/kassettspiller-av.png',
+  imageOn: '/art/maskiner/kassettspiller-pa.png',
+  imageOnPirate: '/art/maskiner/kassettspiller-pa-piratkassett.png',
+  size: { w: 2, h: 1 },
+  input: { cols: 1, rows: 1 },
+  output: { cols: 0, rows: 0 },
+  sprite: 0,
+  kw: 0.05,
+};
+/** Høyttaleranlegget henger på boden (et apparat, som alarmen) og kobles til kassettspilleren. */
+export const SPEAKERS = 'hoyttaleranlegg';
+/** Julemusikken (egne arrangementer, CC0; se musikk/lyd/LES-MEG.txt). Lydfilene ligger i client/public/musikk. */
+export const SONGS = [
+  { file: '01-glade-jul', title: 'Glade jul' },
+  { file: '02-jingle-bells', title: 'Jingle Bells' },
+  { file: '03-o-tannenbaum', title: 'O Tannenbaum' },
+  { file: '04-deck-the-halls', title: 'Deck the Halls' },
+  { file: '05-a-kom-na-med-lovsang', title: 'Å kom nå med lovsang' },
+  { file: '06-joy-to-the-world', title: 'Joy to the World' },
+  { file: '07-hark-the-herald-angels-sing', title: 'Hark! The Herald Angels Sing' },
+  { file: '08-god-rest-ye-merry-gentlemen', title: 'God Rest Ye Merry, Gentlemen' },
+];
+export const TAPES: Tape[] = [
+  ...SONGS.map((s) => ({
+    kind: 'tape' as const,
+    id: 'kassett_' + s.file.slice(3).replace(/-/g, '_'),
+    name: `Kassett: ${s.title}`,
+    emoji: '📼',
+    image: '/art/goods/kassett.png',
+    price: 79,
+    size: { w: 1, h: 1 },
+    song: s.file,
+    title: s.title,
+    blurb: `«${s.title}» på kassett. Sett den i kassettspilleren.`,
+  })),
+  { kind: 'tape', id: 'piratkassett', name: 'Piratkassett', emoji: '🏴‍☠️', image: '/art/goods/piratkassett.png', price: 25, size: { w: 1, h: 1 }, song: '', title: 'Blandebånd', blurb: 'Julemusikk tatt opp fra radioen. Skurrete, spiser båndet, og Tilsynsmannen liker den ikke.', pirate: true, dealerOnly: true },
+  { kind: 'tape', id: 'bandsalat', name: 'Kassett med båndsalat', emoji: '🍝', image: '/art/goods/kassett.png', price: 0, size: { w: 1, h: 1 }, song: '', title: '', blurb: 'Kassettspilleren spiste båndet. Den spiller ikke mer.', eaten: true },
+];
+export const TAPE_BY_ID: Record<string, Tape> = Object.fromEntries(TAPES.map((t) => [t.id, t]));
+export const TAPE_SALAD = 'bandsalat';
+
 /** Modulplassen i en maskin: plass til én modul (2×2). */
 export const MODULE_GRID: GridSize = { cols: 2, rows: 2 };
 
@@ -895,6 +973,7 @@ export interface Device {
   item?: string; // apparatet er en fysisk gjenstand (kjelen)
   image?: string; // bilde i butikken (faste apparater som lyslenkene)
   light?: boolean; // en lyslenke: flere kunder når det er mørkt. Man kan bare ha én (en ny bytter ut den gamle).
+  speakers?: boolean; // høyttaleranlegget: tegnes ved bodnavnskiltet, trekker bare strøm når kassettspilleren spiller
 }
 
 export const DEVICES: Device[] = [
@@ -968,6 +1047,15 @@ export const DEVICES: Device[] = [
     item: m.id,
   })),
   {
+    id: 'kassettspiller',
+    name: 'Kassettspiller',
+    emoji: '📻',
+    price: 199,
+    kw: 0.05,
+    effect: 'Spiller én kassett. Litt flere kunder, mest nær jul. Samme sang hele dagen blir slitsomt. Kan spise båndet',
+    item: 'kassettspiller',
+  },
+  {
     id: 'ladestasjon',
     name: 'Ladestasjon',
     emoji: '🔌',
@@ -985,6 +1073,16 @@ export const DEVICES: Device[] = [
     effect: 'Skremmer bort nattetyven – men bare når det har strøm',
     layers: { off: '/art/devices/alarm-av.png', on: '/art/devices/alarm-pa.png' }, // øverst på venstre stolpe; lyser rødt med strøm
     image: '/art/devices/ikon-alarm.png',
+  },
+  {
+    id: 'hoyttaleranlegg',
+    name: 'Høyttaleranlegg',
+    emoji: '🔊',
+    price: 899,
+    kw: 0.3,
+    effect: 'Kobles til kassettspilleren: høy lyd og flere kunder. Naboene hører det også – og liker det ikke',
+    image: '/art/maskiner/hoyttaleranlegg-av.png',
+    speakers: true,
   },
   {
     id: 'klokke',
@@ -1020,7 +1118,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES, CASSETTE_PLAYER, ...TAPES].map((t) => [t.id, t]),
 );
 
 /**

@@ -228,6 +228,18 @@ Grafikken er bestilt i `GRAFIKK.md` («Nye ønsker (13.11.2026)»).
 
 ## 🎵 Musikk: kassettspiller, høyttaleranlegg og kassetter (13.11.2026)
 
+**✅ Bygd (17.11.2026).** Tallene står i `shared/music.ts`.
+
+- **Kassettspiller** (199 kr, 0,05 kW, 2×1, Klas Olsen, i pappkartong): står under disken og plugges i grenuttaket. Kassettplass (1×1) og ▶/⏹ i vinduet. Spiller kassetten i nettleseren (mp3 i `client/public/musikk`) for den som ser på boden, også besøkende. 🎵-knappen øverst til venstre på boden skrur lyden av (huskes i nettleseren).
+- **Høyttaleranlegg** (899 kr, 0,3 kW når det spilles, ellers 0,01): henger på boden som alarmen. Paret deles i to og henger på hver side av bodnavnskiltet; membranene vibrerer mens det spilles. Høyere lyd i nettleseren.
+- **Kassetter** (79 kr, Klas Olsen): én per sang, de åtte julemelodiene i `musikk/lyd` (Glade jul, Jingle Bells, O Tannenbaum, Deck the Halls, Å kom nå med lovsang, Joy to the World, Hark! The Herald Angels Sing, God Rest Ye Merry, Gentlemen).
+- **Piratkassett** (25 kr, Fyren): blandebånd med ny sang hver time, skurrete lyd (lavpassfilter og litt for sakte bånd), halv effekt, spiser båndet oftere. Tilsynsmannen tar den hvis den spiller: bot 250 kr og omdømme −3.
+- **Kunder:** +8 % med bare kassettspilleren, +20 % med høyttalerne, ganget med jul (60 % av effekten 1. desember, full effekt 24.). Samme kassett: full effekt i 4 timer, null etter 8, og til slutt −50 % (kundene blir lei). Varsel etter 6 timer. Ingen effekt om natta.
+- **Naboer:** bodene ved siden av i samme gate får 6 % færre kunder mens høyttalerne dine spiller, med mindre de spiller høyt selv (lydkrig).
+- **Båndsalat:** 1 % sjanse per time (pirat 5 %) for at spilleren spiser båndet. Kassetten blir «Kassett med båndsalat».
+- Ikke bygd: sjeldne kassetter hos Loppemarkedet, kundetyper som liker bestemte sanger, at naboer kan skru ned.
+
+
 Musikk ved boden trekker kunder, men koster strøm og kan irritere naboene.
 
 | Gjenstand | Str. | Slik får man den | Hva den gjør |

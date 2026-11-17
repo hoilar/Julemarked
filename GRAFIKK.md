@@ -467,11 +467,16 @@ Kontroll: `grader-kontroll.json`. `enkel-sjekksummer.json` dokumenterer de tidli
 
 ### Kassettspiller – grafikk klar (14.11.2026)
 
-**✅ Ferdig:** `client/public/art/maskiner/kassettspiller-av.png` og
-`kassettspiller-pa.png`, begge **256×128 px**, 2×1 ruter, transparent bakgrunn.
+**I spillet fra 17.11.2026** (se `VAREPLAN.md`): av-bildet når den står, på-bildet når den spiller, og piratbildet når en piratkassett spiller.
+
+**✅ Ferdig:** `client/public/art/maskiner/kassettspiller-av.png`,
+`kassettspiller-pa.png` og `kassettspiller-pa-piratkassett.png`, alle
+**256×128 px**, 2×1 ruter, transparent bakgrunn.
 Lav, bred spiller i grafitt og kremgrå plast, med lukket kassettluke, synlige spoler,
 høyttalergrill, volumknott og fire mekaniske knapper. På-versjonen har gul indikator
-og inntrykt spillknapp. Samme lerret, utsnitt og skalering fra originalene i begge tilstander.
+og inntrykt spillknapp. På-bildene viser den innsatte kassetten bak glasset:
+vanlig kassett med kremetikett og rød stripe eller piratkassett med slitt etikett,
+teip og hodeskalle (oppdatert 17.11.2026). Samme lerret, utsnitt og skalering i alle tilstander.
 Nøytral, fin pikselstil uten julepynt eller tekst. Ingen ledning i inventarbildet.
 
 Lagt inn i `vareliste.html` under «Kassettspiller», tydelig merket «Planlagt – ikke implementert».
@@ -481,6 +486,8 @@ Originaler og oversikt: `GFX_assets/planlagte/kassettspiller/`.
 Prompter og katalogdata: `tools/kassettspiller.json`. Klargjøring: `tools/kassettspiller.py`.
 
 ### Vanlig kassett og piratkassett – grafikk klar (14.11.2026)
+
+**I spillet fra 17.11.2026:** den vanlige kassetten brukes til alle åtte sangene (og båndsalaten), piratkassetten til blandebåndet fra Fyren.
 
 **✅ Ferdig:** `client/public/art/goods/kassett.png` og `piratkassett.png`,
 begge **128×128 px**, 1×1 rute, transparent bakgrunn. Kassettform, spoler, båndvindu,
@@ -498,6 +505,8 @@ Originaler og oversikt: `GFX_assets/planlagte/kassetter/`.
 Prompter og katalogdata: `tools/kassetter.json`. Klargjøring: `tools/kassetter.py`.
 
 ### Høyttaleranlegg – grafikk klar (14.11.2026)
+
+**I spillet fra 17.11.2026:** paret deles i to på boden (venstre og høyre halvdel av bildet), én på hver side av bodnavnskiltet under takbjelken på dagens bod. Av, på og de fem vibrasjonsbildene (fram og tilbake) brukes. Plasseringen fra forslaget på den nye boden må flyttes når den nye scenen kommer.
 
 **✅ Ferdig:** `client/public/art/maskiner/hoyttaleranlegg-av.png` og
 `hoyttaleranlegg-pa.png`, begge **256×256 px** på samme lerret, 2×2 som foreslått i vareplanen.

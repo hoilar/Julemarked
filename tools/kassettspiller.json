@@ -1,14 +1,20 @@
 {
-  "description": "Planlagt kassettspiller med av/på-bilder; spilldata endres ikke.",
+  "description": "Planlagt kassettspiller med av-bilde og på-bilder med synlig vanlig kassett eller piratkassett; spilldata endres ikke.",
   "mode": "Built-in image_gen",
   "backgroundCleanupPrompt": "Use case: background-extraction. Remove ONLY the white background and exterior soft shadow from this powered-on cassette player image. Make all space outside the physical player fully transparent, including the spaces under its feet. Keep the entire 1774x887 canvas and every part of the player exactly the same at the same position: grey/cream casing, cassette window, reels, speaker grille, amber power indicator and pressed play button. Do not crop, move, resize, redesign or change colors. Preserve crisp pixel-art edges and fine details; no white fringe, grey backdrop, checkerboard pixels, cast shadow or new objects. Transparent PNG cutout, same canvas.",
   "prompts": {
     "av": "Use case: stylized-concept. Asset type: one inventory sprite for Julemarked, a small mains-powered CASSETTE PLAYER, footprint 2x1 cells (256x128 final). References are STYLE ONLY: match fine crisp pixel clusters, thin dark brown #1d1a16 outlines and neutral practical equipment materials. Create a low, wide portable mono cassette player, horizontal axis straight across image, seen front-on slightly from above about 15 degrees. Graphite and warm grey molded casing with cream accents, gently worn edges, left half has a closed clear dark cassette door with a plain cassette and TWO tape reels clearly visible; right third has a simple horizontal speaker grille. Along lower front edge a row of four small mechanical transport keys with one triangle PLAY symbol, and a small volume knob at upper right. A tiny power indicator by the knob is DARK in this OFF state. All buttons released, cassette compartment closed. Player should look like an old practical tape player, not radio or CD player; no radio tuner, antennas, digital screens, numbers, printed words, brand logos, Christmas decorations or floating music notes. Warm upper-left light and 3-4 shades per material, small fine pixel-art details that remain legible when reduced. One isolated object, square shoulders, slightly rounded stepped corners, not shiny 3D or smooth vector, no noisy dithering or blur. Transparent PNG landscape canvas 2:1, centered with about 8% margins and bottom aligned, no background, floor, cast shadow or other props. No long cable in the inventory icon. This is the OFF state; preserve a clear power indicator for a later ON edit.",
     "pa": "Use case: precise-object-edit. Make the POWERED ON / PLAYING state of this exact cassette player inventory sprite. Keep its entire original 1774x887 transparent canvas, exact housing outline, speaker grille, cassette window, two cassette reels, volume knob, four transport buttons, colors, shading, size, x/y position and baseline unchanged. Change ONLY: the tiny round dark indicator beside the volume knob now lights warm amber/yellow with restrained glow inside the lens, and the PLAY button (third of four buttons, single right-pointing triangle) is visibly pressed down a little within its existing button recess. Keep the other three buttons released. All objects remain in the same place, no new objects. Keep cassette door closed, the same cassette and reels visible. No floating musical notes, sound waves, text, digits, radio tuner, extra LEDs, decorations, external glow or cast shadow. Fine crisp pixel-art clusters and thin dark brown contour identical to reference. Fully transparent background. One complete ON state, not a sheet."
   },
+  "cassetteInsertPrompts": {
+    "pa": "Use case: precise-object-edit. Edit target Image 1 is the existing powered-on cassette player sprite. Supporting insert reference Image 2 is the project's NORMAL compact cassette sprite. Change ONLY the cassette visible BEHIND the closed glass door on the LEFT: it must visibly match reference 2, with a clearly readable warm cream paper label and narrow muted red horizontal stripe, dark graphite shell, two toothed reel hubs and central brown tape window. Fit the cassette to the existing cassette slot, same perspective and reel positions, behind the retained subtle diagonal glass reflections; make the cream label and red stripe clear enough to read in a 256x128 inventory sprite. Keep the EXACT player casing, outline, grille, knob, amber lit power LED, pressed third PLAY button, remaining buttons, feet, lighting and fine crisp pixel-art style unchanged. Preserve original 1774x887 transparent canvas, exact player position and scale. No text, logos, extra props, detached cassette, sheet or background. Output ONE complete powered-on player with a normal cassette inserted. Genuine alpha transparency outside the player.",
+    "pa-piratkassett": "Use case: precise-object-edit. Edit target Image 1 is the existing powered-on cassette player sprite. Supporting insert Image 2 is the project's PIRATE cassette sprite. Change ONLY the cassette visible BEHIND the closed glass door on the LEFT to match reference 2: dark graphite cassette shell, clearly visible worn off-white handmade paper label, two little beige tape pieces at its upper corners, ONE SMALL BLACK PIRATE SKULL WITH CROSSED BONES centered above the two reel hubs, central brown tape window. No red factory stripe. The skull, paper and beige tape must remain distinguishable at 256x128 player size. Fit it in the exact existing cassette slot, keeping reel positions and subtle glass reflections. Keep the EXACT original player casing, outline, grille, knob, amber lit power LED, pressed third PLAY button, remaining buttons, feet, lighting, scale, position and crisp pixel-art style unchanged. Preserve 1774x887 transparent canvas. No text, logos, detached cassette, sheet, scenery or new props. Output ONE complete powered-on player with the pirate cassette inserted. Genuine alpha transparency outside player."
+  },
   "references": [
     "client/public/art/elektro/grenuttak.png",
-    "client/public/art/maskiner/makulator.png"
+    "client/public/art/maskiner/makulator.png",
+    "client/public/art/goods/kassett.png",
+    "client/public/art/goods/piratkassett.png"
   ],
   "items": [
     {
@@ -18,9 +24,9 @@
       "sizeStatus": "Foreslått i vareplanen",
       "category": "Maskiner og utstyr",
       "source": "Klas Olsen – pris ikke bestemt",
-      "status": "Planlagt – ikke implementert",
+      "status": "I spillet",
       "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
-      "note": "Spiller én kassett og trekker lite strøm. Lav lyd kan trekke flere kunder; båndet kan bli spist. Planlagt kassettplass og tilkobling til grenuttak. På-bildet har gul indikator og inntrykt spillknapp. Grafikk klar; mekanikk og spilldata er ikke implementert.",
+      "note": "Spiller én kassett og trekker lite strøm. Lav lyd kan trekke flere kunder; båndet kan bli spist. Planlagt kassettplass og tilkobling til grenuttak. På-bildene viser innsatt kassett bak glasset: vanlig kassett med kremetikett og rød stripe eller piratkassett med teip og hodeskalle. Begge har gul indikator og inntrykt spillknapp. Grafikk klar; mekanikk og spilldata er ikke implementert.",
       "path": "maskiner/kassettspiller-av.png",
       "variants": [
         {
@@ -29,7 +35,11 @@
         },
         {
           "path": "maskiner/kassettspiller-pa.png",
-          "label": "På · gul indikator og inntrykt spillknapp"
+          "label": "På · vanlig kassett med rød stripe"
+        },
+        {
+          "path": "maskiner/kassettspiller-pa-piratkassett.png",
+          "label": "På · piratkassett med teip og hodeskalle"
         }
       ]
     }

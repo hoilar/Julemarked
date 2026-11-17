@@ -114,6 +114,8 @@ const KIND_LABEL: Record<string, string> = {
   electric: 'Elektrisk',
   battery: 'Batterier',
   module: 'Maskinmoduler',
+  player: 'Musikk',
+  tape: 'Kassetter',
   kettle: 'Kjele',
   maker: 'Maskiner',
   folder: 'Brettemaskin og makulering',

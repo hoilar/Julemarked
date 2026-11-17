@@ -180,7 +180,7 @@ import {
   totalKw,
 } from '../shared/power.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
-import type { SnoopResult, SnoopView } from '../shared/types.ts';
+import type { SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
 import {
   BLANK_KEY,
   COPY_KEY,
@@ -222,6 +222,8 @@ import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree, fits, type GridSize } from '../shared/grid.ts';
 import { LANGTID, TERMOSTAT, TURBO, machineWaiting, moduleIn, moduleSpeed, workUnits } from '../shared/modules.ts';
 import type { Module } from '../shared/products.ts';
+import { CASSETTE_PLAYER, SPEAKERS, TAPE_BY_ID, TAPE_SALAD } from '../shared/products.ts';
+import { EAT_CHANCE, NEIGHBOUR_HIT, PIRATE_FINE, PIRATE_REP_HIT, musicBoost, playerReady, songOf, tapeIn } from '../shared/music.ts';
 import { hash01 } from '../shared/hash.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
 import {
@@ -600,6 +602,7 @@ function itemsOf(stallId: number): Item[] {
     if (r.edition) item.edition = r.edition;
     if (r.type_id === KETTLE.id) item.kettle = { on: false, level: 1, ...(r.state ? JSON.parse(r.state) : {}) };
     if (FOLDER_BY_ID[r.type_id]) item.folder = { on: false, ...(r.state ? JSON.parse(r.state) : {}) };
+    if (r.type_id === CASSETTE_PLAYER.id && r.place !== 'transit') item.player = { on: false, ...(r.state ? JSON.parse(r.state) : {}) };
     if (r.place === 'transit' && r.state) item.arrives = JSON.parse(r.state).arrives;
     if (PRODUCT_BY_ID[r.type_id]) item.label = r.label ?? 'store';
     const st = r.state && r.place !== 'transit' ? (JSON.parse(r.state) as Record<string, unknown>) : {};
@@ -1305,7 +1308,8 @@ function klasUnits(stall: StallRow, lines: KlasLine[]): KlasUnit[] {
     if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
     if (t.kind === 'container' && t.car) throw new GameError('Biler kjøper du i Bilbutikken på telefonen.');
     if (t.kind === 'electric' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
-    if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery' || t.kind === 'module'))
+    if (t.kind === 'tape' && (t.dealerOnly || t.eaten)) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
+    if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery' || t.kind === 'module' || t.kind === 'tape'))
       throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
     const have = items.filter((i) => i.typeId === t.id && !isTrashed(items, i)).length; // også det som er på vei
     if (t.kind === 'electric' && isFusebox(t.id)) {
@@ -2309,6 +2313,7 @@ export function getState(player: PlayerRow): GameState {
         power: powerOf(s),
         sign: s.sign,
         serving: servingOf(s),
+        music: musicPublic(market, s, t),
       },
     };
   });
@@ -3320,6 +3325,58 @@ function makeOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: It
     .map(([id, n]) => `${n + (extra && id === extraId ? 1 : 0)} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`)
     .join(', ');
   event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig: ${made}${outputWhere(spots)}.${extra ? ' ⏳ Langtidsmodulen fikk ut én ekstra.' : ''}`);
+}
+
+// ---------- Musikk: kassettspilleren og høyttaleranlegget ----------
+
+/** Slår kassettspilleren av eller på. */
+export function setPlayer(player: PlayerRow, itemId: number, on: boolean) {
+  const stall = myStall(player);
+  const p = itemsOf(stall.id).find((i) => i.id === itemId && i.typeId === CASSETTE_PLAYER.id);
+  if (!p) throw new GameError('Fant ikke kassettspilleren.');
+  saveState(p.id, { ...p.player, on: !!on });
+}
+
+/** Det som spilles ved boden nå: kassettspilleren står på, har en hel kassett og får strøm (ikke strømbrudd i gata). */
+function musicAt(market: MarketRow, s: StallRow, t: number) {
+  const outage = outageFor(market.id, currentEdition(t).key);
+  const hour = osloParts(t).hour;
+  const gridDown = !!outage && LAYOUT[s.slot_index].street === outage.street && hour >= outage.from && hour < outage.to;
+  const items = itemsOf(s.id);
+  const power = powerOf(s);
+  const p = items.find(
+    (i) => i.typeId === CASSETTE_PLAYER.id && !isTrashed(items, i) && !isUndelivered(items, i) && playerReady(items, i) && machineSource(power, items, i, gridDown) !== null,
+  );
+  if (!p) return null;
+  const tape = tapeIn(items, p.id)!;
+  const speakers = !gridDown && power.devices.includes(SPEAKERS) && poweredEntries(power, items).has(SPEAKERS);
+  return { player: p, tape: tape.tape, tapeItem: tape.item, speakers, song: songOf(tape.tape, s.id, Math.floor(t / HOUR)) };
+}
+
+function musicPublic(market: MarketRow, s: StallRow, t: number): StallPublic['music'] {
+  const m = musicAt(market, s, t);
+  return m ? { song: m.song.file, title: m.song.title, pirate: !!m.tape.pirate, speakers: m.speakers } : null;
+}
+
+/**
+ * Musikken, én time: tell hvor lenge samme kassett har gått i dag (det blir slitsomt), og av og til spiser
+ * kassettspilleren båndet. Gir kundefaktoren for boden (1 = ingen musikk).
+ */
+function musicHour(market: MarketRow, s: StallRow, t: number): { boost: number; speakers: boolean } {
+  const m = musicAt(market, s, t - HOUR / 2);
+  if (!m) return { boost: 1, speakers: false };
+  const day = currentEdition(t - HOUR / 2).key;
+  const st = m.player.player!;
+  const hours = st.tape === m.tapeItem.id && st.day === day ? (st.hours ?? 0) + 1 : 1;
+  saveState(m.player.id, { on: st.on, tape: m.tapeItem.id, hours, day });
+  if (hours === 6) event(market, s.owner_id, t, `📼 «${m.tape.pirate ? 'Blandebåndet' : m.tape.title}» har gått i seks timer nå. Kundene begynner å nynne irritert – bytt kassett.`);
+  if (Math.random() < (m.tape.pirate ? EAT_CHANCE.pirate : EAT_CHANCE.tape)) {
+    db.prepare('UPDATE items SET type_id = ? WHERE id = ?').run(TAPE_SALAD, m.tapeItem.id);
+    event(market, s.owner_id, t, `📼 Kassettspilleren spiste båndet! «${m.tape.name}» ble til båndsalat.`);
+  }
+  const parts = osloParts(t);
+  const december = parts.month === 12 ? parts.day : 0;
+  return { boost: musicBoost({ speakers: m.speakers, pirate: !!m.tape.pirate, hours }, december), speakers: m.speakers };
 }
 
 // ---------- Posebretteren ----------
@@ -4616,7 +4673,15 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
   const bypassCaught = !!bypassBox && Math.random() < BYPASS_CATCH_CHANCE;
   if (tampered) db.prepare('UPDATE stalls SET meter_tamper = 0 WHERE id = ?').run(s.id); // sporene er borte etter besøket
   let rep = fresh.reputation;
-  if (forged.length === 0 && !meterCaught && !bypassCaught && plastic === 0 && !liquorIllegal && !liquorEarly && shadyFound.length === 0) {
+  // Piratkassett som går i kassettspilleren: han hører det med en gang.
+  const playing = musicAt(market, fresh, t);
+  if (playing?.tape.pirate) {
+    q.deleteItem.run(playing.tapeItem.id);
+    rep = Math.max(0, rep - PIRATE_REP_HIT);
+    issueBill(market, fresh, t, 'bot', currentEdition(t).key, PIRATE_FINE);
+    event(market, s.owner_id, t, `📋 ${INSPECTOR.name} kjente igjen skurringen fra en piratkassett og tok den med. Bot ${PIRATE_FINE} kr og omdømme −${PIRATE_REP_HIT}.`);
+  }
+  if (forged.length === 0 && !meterCaught && !bypassCaught && plastic === 0 && !liquorIllegal && !liquorEarly && shadyFound.length === 0 && !playing?.tape.pirate) {
     q.setReputation.run(Math.min(100, rep + INSPECTOR_REP_CLEAN), s.id);
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} nikket fornøyd og gikk. Omdømme +${INSPECTOR_REP_CLEAN}.`);
     return;
@@ -4887,9 +4952,20 @@ function processHour(market: MarketRow, hour: number) {
   const today = dateKey(t);
   const weather = weatherFor(market.id, currentEdition(t).key); // dagens vær (avisdagen)
 
+  // Musikken ved hver bod (teller timer og kan spise båndet), og hvem som spiller høyt.
+  const music = new Map(stalls.map((s) => [s.id, musicHour(market, s, t)]));
+  const loudAt = new Map(stalls.filter((s) => music.get(s.id)!.speakers).map((s) => [s.slot_index, s]));
+  const neighbourFactor = (s: StallRow) => {
+    if (music.get(s.id)!.speakers) return 1; // lydkrig: du hører ikke naboen over din egen musikk
+    const { street, x } = LAYOUT[s.slot_index];
+    const loud = LAYOUT.filter((d) => d.street === street && Math.abs(d.x - x) === 1 && loudAt.has(d.index)).length;
+    return Math.pow(1 - NEIGHBOUR_HIT, loud);
+  };
+
   for (const s of stalls) {
     const serving = servingOf(s);
     if (serving === 'closed' || serving === 'away') continue; // ingen bak disken, ingen salg
+    const sound = night ? 1 : music.get(s.id)!.boost * neighbourFactor(s);
     const traffic = LAYOUT[s.slot_index].traffic;
     const prices = pricesOf(s.id);
     let reputation = s.reputation;
@@ -4926,7 +5002,7 @@ function processHour(market: MarketRow, hour: number) {
         const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
         const hourCurve = night ? NIGHT_CURVE : curve;
         const wx = weatherDemand(weather, p.category);
-        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx;
+        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx * sound;
         const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count), homemade);
         if (units <= 0) continue;
 

@@ -9,6 +9,7 @@ import { BLOWN_FUSE, FOLDER_BY_ID, capacityOf, isBattery, CHARGER, CHARGE_KW, DE
 import { isTrashed, isUndelivered } from './items.ts';
 import type { Item, Power } from './types.ts';
 import { machineWaiting, moduleIn, moduleKwFactor } from './modules.ts';
+import { anyPlayerReady } from './music.ts';
 
 /** Gjenstanden er hos deg: ikke i søpla og ikke på vei med budet. */
 export const usable = (items: Item[], i: Item) => !isTrashed(items, i) && !isUndelivered(items, i);
@@ -85,7 +86,7 @@ export function poweredEntries(power: Power, items: Item[]): Set<string> {
 export function entryKw(entry: string, items: Item[]): number {
   const e = socketEntry(entry);
   if (!e) return 0;
-  if (e.itemId === null) return e.device.kw;
+  if (e.itemId === null) return e.device.speakers ? (anyPlayerReady(items) ? e.device.kw : 0.01) : e.device.kw; // høyttalerne står på vent til det spilles
   const m = items.find((i) => i.id === e.itemId);
   if (!m || !usable(items, m)) return 0;
   // Maskinmodulen kan endre hvor mye den trekker (turbo, strømsparing, hvilemodus).
@@ -93,6 +94,7 @@ export function entryKw(entry: string, items: Item[]): number {
   if (m.kettle) return m.kettle.on ? mod(m.kettle.level * KETTLE_KW_PER_LEVEL) : 0;
   if (m.folder) return m.folder.on ? mod(FOLDER_BY_ID[m.typeId]?.kw ?? FOLDER_KW) : 0;
   if (m.maker) return m.maker.on ? mod(MAKER_BY_ID[m.typeId]?.kw ?? 0) : 0;
+  if (m.player) return m.player.on ? (DEVICES.find((d) => d.id === m.typeId)?.kw ?? 0) : 0;
   if (m.typeId === CHARGER.id) return chargingIn(items, m.id).length * CHARGE_KW;
   return 0;
 }

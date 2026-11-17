@@ -16,7 +16,7 @@
       "sizeStatus": "Foreslått i vareplanen",
       "category": "Musikk",
       "source": "Klas Olsen eller nettbutikkene; sjeldne hos Loppemarkedet",
-      "status": "Planlagt – ikke implementert",
+      "status": "I spillet",
       "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
       "note": "Én sang eller et lite album. Settes i kassettspilleren. Ryddig kremfarget etikett med rød stripe, uten tekst; sangnavn kan legges på av spillet. Pris ikke bestemt. Grafikk klar; spilldata og musikkmekanikk er ikke implementert.",
       "path": "goods/kassett.png"
@@ -28,7 +28,7 @@
       "sizeStatus": "Foreslått i vareplanen",
       "category": "Musikk",
       "source": "Fyren",
-      "status": "Planlagt – ikke implementert",
+      "status": "I spillet",
       "reference": "VAREPLAN.md – Musikk: kassettspiller, høyttaleranlegg og kassetter",
       "note": "Billig piratkopi med dårlig lyd; kan bli avslørt som luguber. Samme kassettform som vanlig, med slitt skjev etikett, teip og et lite piratsymbol uten tekst. Pris ikke bestemt. Grafikk klar; spilldata og musikkmekanikk er ikke implementert.",
       "path": "goods/piratkassett.png"

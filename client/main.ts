@@ -1,5 +1,6 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { moduleEffectText, moduleFitsText, moduleIn } from '../shared/modules.ts';
+import { FATIGUE, fatigue, tapeIn } from '../shared/music.ts';
 import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, type Spot, type StashTo } from '../shared/items.ts';
 import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
@@ -59,6 +60,9 @@ import {
   BATTERIES,
   capacityOf,
   CHARGER,
+  CASSETTE_PLAYER,
+  SPEAKERS,
+  TAPES,
   CHARGE_KW,
   CHARGE_EFFICIENCY,
   CELL_GRID,
@@ -466,6 +470,7 @@ function render() {
     const shopScroll = app.querySelector('.shop-body')?.scrollTop ?? 0;
     const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
     app.innerHTML = body + paperWindow(s) + phoneWindow(s) + modalView(s);
+    syncMusic(shownStall?.music ?? null);
     if (phoneOpen) markPhoneSeen(s); // varslene er sett når telefonen er åpen
     const m = app.querySelector('.modal-backdrop .modal');
     if (m) m.scrollTop = scroll;
@@ -706,6 +711,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${own ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
       <div class="sign">${esc(stall.name)}</div>
       ${shopSign(s, stall, own)}
+      ${musicButton(stall.music)}
       ${own ? '' : sellerView(stall)}
       ${counterView(stall, own)}
       ${own ? storageView(s) + keyHookView(s) + trashView(s) + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
@@ -774,6 +780,7 @@ function powerView(stall: StallPublic, own: boolean): string {
     })
     .join('');
   const kwText = (n: number) => n.toString().replace('.', ',');
+  const speakers = power.devices.includes(SPEAKERS) ? speakersView(powered.has(SPEAKERS), stall.music) : '';
   const socketLabel = (i: number) => {
     const e = power.sockets[i];
     if (!e) return `Kontakt ${i + 1}: ledig – trykk for å plugge inn`;
@@ -783,7 +790,7 @@ function powerView(stall: StallPublic, own: boolean): string {
   };
   const kw = totalKw(power, items);
   return `<div class="power ${power.on ? 'on' : ''}">
-    ${devices}
+    ${devices}${speakers}
     <div class="strip-wrap" style="${frameStyle(SHIFT.strip)}">
     ${layer('/art/power/off.png')}${power.on && !power.blown ? layer('/art/power/on.png') : ''}
     ${power.sockets.map((d, i) => (d ? layer(`/art/power/s${i + 1}.png`) : '')).join('')}
@@ -791,6 +798,76 @@ function powerView(stall: StallPublic, own: boolean): string {
     ${POWER_SOCKETS.map((r, i) => hot(r, 'power-plug', socketLabel(i), `data-plug="${i}"`)).join('')}
     </div>
   </div>`;
+}
+
+// --- Musikk: høyttalerne ved skiltet og lyden i nettleseren ---
+
+/**
+ * Høyttalerparet (ett bilde med begge) deles i to og henges på hver side av bodnavnskiltet under takbjelken.
+ * Mens det spilles, vibrerer membranene (fem bilder fram og tilbake).
+ */
+function speakersView(powered: boolean, music: StallPublic['music']): string {
+  const playing = powered && !!music?.speakers;
+  const cls = playing ? 'playing' : powered ? 'on' : '';
+  const title = playing ? `🔊 Høyttaleranlegget spiller «${music!.title}»` : powered ? '🔊 Høyttaleranlegget venter på kassettspilleren' : '🔇 Høyttaleranlegget har ikke strøm';
+  return ['left', 'right'].map((side) => `<div class="speaker ${side} ${cls}" title="${esc(title)}"></div>`).join('');
+}
+
+const MUSIC_MUTED = 'jm_music_muted';
+let musicMuted = (() => {
+  try {
+    return localStorage.getItem(MUSIC_MUTED) === '1';
+  } catch {
+    return false;
+  }
+})();
+let musicAudio: HTMLAudioElement | null = null;
+let musicFilter: BiquadFilterNode | null = null;
+let musicNow = ''; // sangen som er lastet
+let musicWanted: StallPublic['music'] = null;
+
+/** Spill det som spilles ved boden du ser på (din egen eller en du besøker). Høyttalere = høyere lyd; piratkassett = skurrete. */
+function syncMusic(music: StallPublic['music']) {
+  musicWanted = music;
+  if (!music || musicMuted) {
+    if (musicAudio && !musicAudio.paused) musicAudio.pause();
+    return;
+  }
+  if (!musicAudio) {
+    musicAudio = new Audio();
+    musicAudio.loop = true;
+    musicAudio.preload = 'auto';
+    try {
+      const ctx = new AudioContext();
+      musicFilter = ctx.createBiquadFilter();
+      musicFilter.type = 'lowpass';
+      ctx.createMediaElementSource(musicAudio).connect(musicFilter).connect(ctx.destination);
+      const resume = () => void ctx.resume();
+      document.addEventListener('pointerdown', resume);
+    } catch {
+      musicFilter = null; // uten Web Audio: piratkassetten høres bare litt lavere
+    }
+  }
+  const src = `/musikk/${music.song}.mp3`;
+  if (musicNow !== src) {
+    musicNow = src;
+    musicAudio.src = src;
+  }
+  musicAudio.volume = (music.speakers ? 0.55 : 0.22) * (music.pirate && !musicFilter ? 0.8 : 1);
+  musicAudio.preservesPitch = false;
+  musicAudio.playbackRate = music.pirate ? 0.97 : 1; // båndet går litt for sakte
+  if (musicFilter) musicFilter.frequency.value = music.pirate ? 1800 : 20000;
+  if (musicAudio.paused) musicAudio.play().catch(() => undefined); // nettleseren venter på første trykk
+}
+// Nettlesere spiller ikke lyd før brukeren har trykket et sted.
+document.addEventListener('pointerdown', () => {
+  if (musicWanted && !musicMuted && musicAudio?.paused) musicAudio.play().catch(() => undefined);
+});
+
+/** Liten knapp på boden: skru musikken av og på (huskes i nettleseren). */
+function musicButton(music: StallPublic['music']): string {
+  if (!music) return '';
+  return `<button class="music-toggle ${musicMuted ? 'muted' : ''}" data-action="music-mute" title="${musicMuted ? 'Skru på lyden' : `Spiller «${esc(music.title)}» – trykk for å skru av lyden`}" aria-label="${musicMuted ? 'Skru på lyden' : 'Skru av lyden'}">${musicMuted ? '🔇' : '🎵'}</button>`;
 }
 
 // --- Varemenyen: legg på bordet, under disken eller i en eske (varer og råvarer) ---
@@ -1079,6 +1156,13 @@ function gridItemView(i: Item, cols: number, rows: number): string {
     const inside = Math.min(4, itemsIn(state!.me.items, 'pot_in', i.id).length);
     return `<div class="gitem box has-img ${busy ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne"><img class="sprite img" src="${spill(`/art/elektro/ladestasjon-${inside}.png`)}" alt="" draggable="false"></div>`;
   }
+  if (t.kind === 'player') {
+    const inserted = tapeIn(state!.me.items, i.id);
+    const on = !!i.player?.on && machineRuns(i, myStall(state!)) && !!inserted && i.place !== 'trash';
+    const image = on ? (inserted?.tape.pirate ? t.imageOnPirate : t.imageOn) : t.image;
+    return `<div class="gitem box has-img ${on ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
+      <img class="sprite img" src="${spill(image)}" alt="" draggable="false"></div>`;
+  }
   if (t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker') {
     return `<div class="gitem box has-img ${t.kind === 'maker' && machineHot(i, myStall(state!)) ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">
       <img class="sprite img" src="${spill(machineImage(i, myStall(state!)))}" alt="" draggable="false"></div>`;
@@ -1318,6 +1402,7 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     if (box && t?.kind === 'folder') return folderPanel(s, box, n);
     if (box && t?.kind === 'maker') return makerPanel(s, box, n);
     if (box && t?.kind === 'charger') return chargerPanel(s, box, n);
+    if (box && t?.kind === 'player') return playerPanel(s, box, n);
     if (box && t?.id === STRIP.id) return stripPanel(s, box, n);
     if (box && t && isFusebox(t.id)) return fusePanel(s, box, n);
     if (!box || t?.kind !== 'container') return '';
@@ -1605,6 +1690,40 @@ function chargerPanel(s: GameState, c: Item, n: number): string {
       ${itemsIn(items, 'pot_in', c.id).map((i) => gridItemView(i, cols, rows)).join('')}
     </div>
     <div class="pot-status">${plugIcon(c, stall)}<span>${status}</span></div>`, 14, 26);
+}
+
+/** Kassettspilleren: kassettplassen, av/på og hva som spilles. */
+function playerPanel(s: GameState, p: Item, n: number): string {
+  const stall = myStall(s);
+  if (!stall) return '';
+  const items = s.me.items;
+  const on = !!p.player?.on;
+  const tape = tapeIn(items, p.id);
+  const playing = stall.music && on && tape && !tape.tape.eaten && machineRuns(p, stall);
+  const hours = tape && p.player?.tape === tape.item.id ? (p.player?.hours ?? 0) : 0;
+  const tired = hours > FATIGUE.fresh ? (fatigue(hours) < 0 ? ' · 😖 kundene er lei sangen – bytt kassett' : ' · 🥱 samme sang lenge – bytt snart') : '';
+  const status = !on
+    ? tape
+      ? tape.tape.eaten
+        ? '🍝 Båndsalat – kast kassetten'
+        : `Av · «${esc(tape.tape.pirate ? 'Blandebånd' : tape.tape.title)}» står i`
+      : 'Legg en kassett i kassettplassen'
+    : (feedProblem(p, stall) ??
+      (!tape
+        ? '⏳ Ingen kassett'
+        : tape.tape.eaten
+          ? '🍝 Båndsalat – spilleren spiste båndet'
+          : playing
+            ? `▶ «${esc(stall.music!.title)}»${stall.music!.speakers ? ' på høyttalerne' : ''}${tape.tape.pirate ? ' (skurrete)' : ''}${hours ? ` · ${hours} t i dag` : ''}${tired}`
+            : '⏳ Venter'));
+  return smallPanel(p.id, n, 'player-panel', `${icon(CASSETTE_PLAYER)} ${esc(entryName(itemSocket(CASSETTE_PLAYER.id, p.id), items).name)}`, `
+    <div class="player-row">
+      <div class="grid box-grid tape-grid ${tape ? '' : 'empty'}" data-grid="pot_in" data-box="${p.id}" style="width:${BOX_CELL * 2}cqw;height:${BOX_CELL * 2}cqw;--cols:1;--rows:1">
+        ${itemsIn(items, 'pot_in', p.id).map((i) => gridItemView(i, 1, 1)).join('')}
+      </div>
+      <button class="pot-power ${on ? 'on' : ''}" data-action="player-power" data-player="${p.id}" aria-pressed="${on}" title="${on ? 'Stopp' : 'Spill'}">${on ? '⏹' : '▶'}</button>
+    </div>
+    <div class="pot-status">${plugIcon(p, stall)}<span>${status}</span></div>`, 20, 22);
 }
 
 /** Felles ramme for små vinduer (grenuttak, sikringsboks): standardplass, tittel og lukkeknapp. */
@@ -2596,6 +2715,9 @@ function klasView(s: GameState): string {
   const modules = MODULES.map((e) =>
     klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: `${esc(moduleEffectText(e))}.<br><span class="muted">Passer i ${esc(moduleFitsText(e))}.</span>`, have: has(e.id), buy: qty(e.id, 10), incart: !!cart[e.id] }),
   );
+  const tapes = TAPES.filter((e) => !e.dealerOnly && !e.eaten).map((e) =>
+    klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: esc(e.blurb), have: has(e.id), buy: qty(e.id, 5), incart: !!cart[e.id] }),
+  );
   const section = (title: string, note: string, cards: string[]) =>
     `<h3>${title}</h3>${note ? `<p class="muted">${note}</p>` : ''}<div class="shop-grid">${cards.join('')}</div>`;
 
@@ -2621,6 +2743,7 @@ function klasView(s: GameState): string {
     ${section('På boden', 'Henger på boden og plugges i grenuttaket. Kommer i en kartong: åpne den og heng den opp.', devices(false))}
     ${section('Elektrisk', '', electric)}
     ${section('Batterier', '', batteries)}
+    ${section('🎵 Kassetter', 'Julemusikk til kassettspilleren. Bytt av og til – samme sang hele dagen blir slitsomt.', tapes)}
     ${section('Maskinmoduler', 'Kretskort til modulplassen på maskinene, én per maskin. Grønt kort (Enkel), blått (Utvidet) og lilla (Fullutstyrt).', modules)}
     ${section('Oppbevaring', 'Esker tar litt plass under disken, men rommer mer inni.', boxes)}
     ${section('🧰 Verktøy', '', tools)}
@@ -3717,9 +3840,10 @@ function endDrag(cancelled = false) {
     }
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
     if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
-    else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger') togglePanel(d.item.id);
+    else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') togglePanel(d.item.id);
     else if (t.kind === 'battery')
       toast(`🔋 ${t.name}: ${batteryPct(d.item)} % (${String(Math.round((d.item.charge ?? 0) * 10) / 10).replace('.', ',')} av ${capacityOf(d.item.typeId)} kWh). Dra det til batteriplassen på en maskin, eller i ladestasjonen.`);
+    else if (t.kind === 'tape') toast(`${t.emoji} ${t.name}. ${t.blurb}`);
     else if (t.kind === 'module') toast(`${t.emoji} ${t.name}: ${moduleEffectText(t)}. Passer i ${moduleFitsText(t)}. Dra den til modulplassen på maskinen.`);
     else if (t.kind === 'folded') modal = { kind: 'folded', itemId: d.item.id };
     else if (t.kind === 'policy') modal = { kind: 'policy', typeId: t.id };
@@ -4442,6 +4566,22 @@ app.addEventListener('click', (e) => {
       m.maker.program = el.dataset.program!;
       m.maker.progress = 0;
       act('/api/maker', { itemId: m.id, program: el.dataset.program });
+    }
+  }
+  if (action === 'music-mute') {
+    musicMuted = !musicMuted;
+    try {
+      localStorage.setItem(MUSIC_MUTED, musicMuted ? '1' : '0');
+    } catch {
+      /* bare denne gangen */
+    }
+  }
+  if (action === 'player-power' && state) {
+    const p = state.me.items.find((i) => i.id === Number(el.dataset.player));
+    if (p) {
+      const st = (p.player ??= { on: false });
+      st.on = !st.on;
+      act('/api/player', { itemId: p.id, on: st.on });
     }
   }
   if (action === 'folder-power' && state) {

@@ -154,7 +154,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🫠 Mislykket batch | `feilbatch` | 2×2 |  | — |  | `ravarer/feilbatch.png` |
 | 🪨 Svidd klump | `svidd` | 2×2 |  | — |  | `ravarer/svidd.png` |
 
-## Apparater (12)
+## Apparater (14)
 
 Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 
@@ -169,8 +169,10 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker, Berlinerkranser, Pepperkakehus – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
 | 🧶 Strikkemaskin | `strikkemaskin` | 899 kr | 0.4 | Votter, Nisselue, Julestrømpe, Skjerf, Pulsvarmere, Alpakkaskjerf, Strikket bamse, «Merkevotter» – hjemmelaget | `strikkemaskin` (se Maskiner) | `maskiner/strikkemaskin.png` ↓<br>`maskiner/strikkemaskin-pa.png` ↓ |
 | 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
+| 📻 Kassettspiller | `kassettspiller` | 199 kr | 0.05 | Spiller én kassett. Litt flere kunder, mest nær jul. Samme sang hele dagen blir slitsomt. Kan spise båndet | `kassettspiller` (se Maskiner) | `maskiner/kassettspiller-av.png`<br>`maskiner/kassettspiller-pa.png` |
 | 🔌 Ladestasjon | `ladestasjon` | 299 kr | 2 | Lader fire batterier. Maskiner med batteri går videre når strømmen går | `ladestasjon` (se Maskiner) | `elektro/ladestasjon-0.png` ↓ |
 | 🚨 Alarmsystem | `alarm` | 349 kr | 0.1 | Skremmer bort nattetyven – men bare når det har strøm | henger på boden | `devices/ikon-alarm.png`<br>`devices/alarm-av.png`<br>`devices/alarm-pa.png` |
+| 🔊 Høyttaleranlegg | `hoyttaleranlegg` | 899 kr | 0.3 | Kobles til kassettspilleren: høy lyd og flere kunder. Naboene hører det også – og liker det ikke | henger på boden | `maskiner/hoyttaleranlegg-av.png` |
 | 🕰️ Digitalklokke | `klokke` | 149 kr | 0.01 | Viser spilltida på boden. Mister den strømmen, blinker den «00:00» til du stiller den | henger på boden | `devices/ikon-klokke.png`<br>`devices/klokke-av.png`<br>`devices/klokke-pa.png` |
 
 ## Esker, poser og biler (14)
@@ -253,6 +255,27 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🛍️ Automatisk posebretting | `modul_autobretting` | 2×2 | 199 kr | Henter løse tomme poser under disken. Passer i brettemaskinen · Henter tomme poser fra under disken selv og bretter dem. Bare brettemaskinen. | Klas Olsen | `moduler/modul-autobretting.png` ↓ |
 | 🛍️ Automatisk posebretting (Utvidet) | `modul_autobretting_utvidet` | 2×2 | 399 kr | Henter også fra esker og kasser under disken. Passer i brettemaskinen · Henter tomme poser fra under disken selv og bretter dem. Bare brettemaskinen. | Klas Olsen | `moduler/modul-autobretting-utvidet.png` ↓ |
 | 🛍️ Automatisk posebretting (Fullutstyrt) | `modul_autobretting_full` | 2×2 | 679 kr | Henter fra esker også, og bretter to i timen. Passer i brettemaskinen · Henter tomme poser fra under disken selv og bretter dem. Bare brettemaskinen. | Klas Olsen | `moduler/modul-autobretting-fullutstyrt.png` ↓ |
+
+## Musikk (1)
+
+| Ting | id | Str. | Pris | Info | Skaffes | Bilde |
+| --- | --- | --- | --- | --- | --- | --- |
+| 📻 Kassettspiller | `kassettspiller` | 2×1 | 199 kr | inn 1×1 · 0.05 kW | Klas Olsen | `maskiner/kassettspiller-av.png`<br>`maskiner/kassettspiller-pa.png` |
+
+## Kassetter (10)
+
+| Ting | id | Str. | Pris | Info | Skaffes | Bilde |
+| --- | --- | --- | --- | --- | --- | --- |
+| 📼 Kassett: Glade jul | `kassett_glade_jul` | 1×1 | 79 kr | «Glade jul» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: Jingle Bells | `kassett_jingle_bells` | 1×1 | 79 kr | «Jingle Bells» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: O Tannenbaum | `kassett_o_tannenbaum` | 1×1 | 79 kr | «O Tannenbaum» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: Deck the Halls | `kassett_deck_the_halls` | 1×1 | 79 kr | «Deck the Halls» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: Å kom nå med lovsang | `kassett_a_kom_na_med_lovsang` | 1×1 | 79 kr | «Å kom nå med lovsang» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: Joy to the World | `kassett_joy_to_the_world` | 1×1 | 79 kr | «Joy to the World» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: Hark! The Herald Angels Sing | `kassett_hark_the_herald_angels_sing` | 1×1 | 79 kr | «Hark! The Herald Angels Sing» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: God Rest Ye Merry, Gentlemen | `kassett_god_rest_ye_merry_gentlemen` | 1×1 | 79 kr | «God Rest Ye Merry, Gentlemen» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
+| 🏴‍☠️ Piratkassett | `piratkassett` | 1×1 | 25 kr | Julemusikk tatt opp fra radioen. Skurrete, spiser båndet, og Tilsynsmannen liker den ikke. | Fyren bak containeren | `goods/piratkassett.png` |
+| 🍝 Kassett med båndsalat | `bandsalat` | 1×1 | 0 kr | Kassettspilleren spiste båndet. Den spiller ikke mer. | Klas Olsen | `goods/kassett.png` |
 
 ## Kjele (1)
 

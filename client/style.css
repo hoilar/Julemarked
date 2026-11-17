@@ -1812,3 +1812,29 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 .module-slot { flex: 1; display: flex; align-items: center; gap: 0.6cqw; padding: 0.3cqw 0.4cqw; border-radius: 0.4cqw; background: rgba(0, 0, 0, 0.25); color: #f5d9b0; font-size: max(9px, 0.75cqw); }
 .module-grid.empty { background: repeating-linear-gradient(45deg, rgba(40, 90, 50, 0.35) 0 0.4cqw, rgba(28, 10, 6, 0.6) 0.4cqw 0.8cqw); border: 1px dashed rgba(245, 217, 176, 0.35); }
 .module-info { flex: 1; line-height: 1.25; }
+
+/* Høyttaleranlegget: ett bilde med begge høyttalerne, delt i to ved bodnavnskiltet (1536×1024-bildet). */
+.speaker { position: absolute; top: 21.8%; width: 3.65%; height: 11%; background: url('/art/maskiner/hoyttaleranlegg-av.png') 0 0 / 200% 100% no-repeat; image-rendering: pixelated; filter: drop-shadow(0 0.3cqw 0.3cqw rgba(0, 0, 0, 0.4)); }
+.speaker.left { left: 41.1%; }
+.speaker.right { left: 63.9%; background-position: 100% 0; }
+.speaker.on { background-image: url('/art/maskiner/hoyttaleranlegg-pa.png'); }
+.speaker.playing { animation: speaker-thump 0.6s steps(1) infinite; }
+body.night .speaker { filter: brightness(0.85) drop-shadow(0 0.3cqw 0.3cqw rgba(0, 0, 0, 0.4)); }
+@keyframes speaker-thump {
+  0% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-1.png'); }
+  12.5% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-2.png'); }
+  25% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-3.png'); }
+  37.5% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-4.png'); }
+  50% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-5.png'); }
+  62.5% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-4.png'); }
+  75% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-3.png'); }
+  87.5% { background-image: url('/art/maskiner/hoyttaleranlegg-spiller-2.png'); }
+}
+@media (prefers-reduced-motion: reduce) { .speaker.playing { animation: none; background-image: url('/art/maskiner/hoyttaleranlegg-pa.png'); } }
+
+/* Musikkknappen på boden og kassettspillervinduet. */
+.music-toggle { position: absolute; left: 1%; top: 1.5%; z-index: 6; width: 3.2cqw; height: 3.2cqw; min-width: 30px; min-height: 30px; border-radius: 50%; border: 0; background: rgba(28, 10, 6, 0.65); color: #f5d9b0; font-size: max(14px, 1.5cqw); cursor: pointer; }
+.music-toggle:hover { background: rgba(28, 10, 6, 0.85); }
+.music-toggle.muted { opacity: 0.75; }
+.player-row { display: flex; align-items: center; gap: 1cqw; justify-content: center; padding: 0.6cqw 0; }
+.tape-grid.empty { background: rgba(28, 10, 6, 0.6); border: 1px dashed rgba(245, 217, 176, 0.35); }
