@@ -16,7 +16,7 @@ for (const t of Object.values(ITEM_TYPES)) {
   // Bildeskalaen (ART_SCALE) gjør bildet større enn ruta: lag kopien like mye større.
   const k = artScale(t.id);
   const w = t.size.w * k, h = t.size.h * k;
-  for (const f of ['image', 'imageOn', 'imageOpen', 'imageOff']) add(r[f] as string | undefined, w, h);
+  for (const f of ['image', 'imageOn', 'imageOnPirate', 'imageOpen', 'imageOff']) add(r[f] as string | undefined, w, h);
   for (const src of (r.images as string[] | undefined) ?? []) add(src, w, h); // kjelen: på-trinnene
 }
 // Bilder som velges i koden i stedet for å stå på typen.
