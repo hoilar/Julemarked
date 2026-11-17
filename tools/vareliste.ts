@@ -1,5 +1,6 @@
 // Lager VARELISTE.md: alle gjenstander i spillet med størrelse, priser, hvor de skaffes og bildefilene.
 // Leser rett fra spilldataene (shared/), så lista er alltid i takt med spillet. Kjør: npm run vareliste
+import { moduleEffectText, moduleFitsText } from '../shared/modules.ts';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { CATEGORIES } from '../shared/categories.ts';
 import { DEALER_GOODS } from '../shared/dealer.ts';
@@ -112,6 +113,7 @@ const KIND_LABEL: Record<string, string> = {
   tool: 'Verktøy',
   electric: 'Elektrisk',
   battery: 'Batterier',
+  module: 'Maskinmoduler',
   kettle: 'Kjele',
   maker: 'Maskiner',
   folder: 'Brettemaskin og makulering',
@@ -134,6 +136,7 @@ const info = (t: ItemType): string => {
   if (r.max) bits.push(`maks ${r.max}`);
   const car = carBy.get(t.id);
   if (car) bits.push(`${car.minutes} min per tur, ${car.fuel}`);
+  if (t.kind === 'module') bits.push(`${moduleEffectText(t)}. Passer i ${moduleFitsText(t)}`);
   if (typeof r.blurb === 'string') bits.push(r.blurb);
   return bits.join(' · ');
 };

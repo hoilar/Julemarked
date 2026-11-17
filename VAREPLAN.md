@@ -279,6 +279,21 @@ pixelstilen), eller opptak som er tydelig merket CC0/public domain.
 
 ## 🔧 Maskinmoduler (idé, 14.11.2026)
 
+**✅ Bygd (17.11.2026): sju moduler i tre grader (21 gjenstander), 2×2, hos Klas Olsen.** Modulplassen står ved siden av batteriplassen i maskinvinduet (kjele, brettemaskin, makuleringsmaskin, bake-, strikke- og dekormaskin). Én modul per maskin, så turbo og strømsparing kan aldri stå sammen. Modulen kan flyttes mellom maskiner. Tallene står i `shared/modules.ts` (Enkel / Utvidet / Fullutstyrt):
+
+| Modul | Passer i | Effekt | Pris |
+|---|---|---|---|
+| ⚡ Turbomodul | alle | 30 / 50 / 70 % raskere, 60 / 50 / 40 % mer strøm, 5 / 3 / 1,5 % sjanse per time for at sikringen ryker (bare på nettstrøm) | 299 / 599 / 1019 |
+| 🍃 Strømsparemodul | alle | 35 / 45 / 55 % mindre strøm, 25 / 20 / 15 % saktere | 249 / 499 / 849 |
+| ⏳ Langtidsmodul | bake-, strikke-, dekormaskin | 40 / 55 / 70 % sjanse for én ekstra vare per omgang (hvis plass), 30 / 25 / 20 % saktere | 299 / 599 / 1019 |
+| 🌡️ Termostatmodul | kjelen | 60 / 85 / 100 % sjanse for å skru ned varmen før det svir seg | 199 / 399 / 679 |
+| 💤 Hvilemodul (tidsur-grafikken) | alle | Trekker 30 / 10 / 0 % strøm mens maskinen venter (tomt inn-felt, fullt ferdig-felt) | 149 / 299 / 509 |
+| 📤 Utmatingsmodul | kjele, brettemaskin, program-maskinene | Det ferdige legges løst under disken / også i esker der / salgsvarer rett på bordet | 249 / 499 / 849 |
+| 🛍️ Automatisk posebretting | brettemaskinen | Henter tomme poser og kartonger løst under disken / også fra esker der / og bretter to i timen. Ikke kartonger med navn | 199 / 399 / 679 |
+
+«Saktere» og «raskere» er arbeidsfart: maskinen står over en time av og til, eller får gjort to timer på én. **Varslingsmodulen er droppet** (telefonen varsler allerede). **Tidsur** som planlagt (start på klokkeslett) er byttet med hvilemodus, siden strømprisen er lik hele døgnet. Ikke bygd ennå: modulene kan stjeles ved snoking, og to modulplasser på dyre maskiner.
+
+
 Små tilleggsmoduler som settes i en **modulplass** på maskinene (som batteriplassen). Kjøpes hos Klas Olsen,
 **2×2 ruter hver** (bekreftet 14.11.2026), i alle tre grader: Enkel (grønt kort), Utvidet (blått kort) og Fullutstyrt (lilla kort). Flere komponenter fra lav til høy grad. Tallene under er forslag og må balanseres.
 

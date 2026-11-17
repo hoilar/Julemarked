@@ -220,6 +220,8 @@ import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, 
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
 import { BURNT, cookPlan } from '../shared/recipes.ts';
 import { findFree, fits, type GridSize } from '../shared/grid.ts';
+import { LANGTID, TERMOSTAT, TURBO, machineWaiting, moduleIn, moduleSpeed, workUnits } from '../shared/modules.ts';
+import type { Module } from '../shared/products.ts';
 import { hash01 } from '../shared/hash.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
 import {
@@ -1303,7 +1305,7 @@ function klasUnits(stall: StallRow, lines: KlasLine[]): KlasUnit[] {
     if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
     if (t.kind === 'container' && t.car) throw new GameError('Biler kjøper du i Bilbutikken på telefonen.');
     if (t.kind === 'electric' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
-    if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery'))
+    if (!((t.kind === 'container' && !t.shopBag) || t.kind === 'tool' || t.kind === 'electric' || t.kind === 'battery' || t.kind === 'module'))
       throw new GameError('Varer kjøper du i nettbutikkene (KIWI, REMA 1000, Extra).');
     const have = items.filter((i) => i.typeId === t.id && !isTrashed(items, i)).length; // også det som er på vei
     if (t.kind === 'electric' && isFusebox(t.id)) {
@@ -2166,7 +2168,7 @@ export function loupeCell(player: PlayerRow, x: number, y: number): { found: boo
 
 /** Flytter én gjenstand til et nytt sted (lager, bord eller eske). En eske tar med seg innholdet. */
 export function moveItem(player: PlayerRow, itemId: number, place: Place, boxId: number | null, x: number, y: number) {
-  if (!['storage', 'counter', 'box', 'trash', 'pot_in', 'pot_out', 'nail', 'cell', 'fuse', 'mail', 'carry'].includes(place)) throw new GameError('Ugyldig sted.');
+  if (!['storage', 'counter', 'box', 'trash', 'pot_in', 'pot_out', 'nail', 'cell', 'module', 'fuse', 'mail', 'carry'].includes(place)) throw new GameError('Ugyldig sted.');
   const stall = myStall(player);
   const items = itemsOf(stall.id);
   const item = items.find((i) => i.id === itemId);
@@ -3215,7 +3217,66 @@ export function setMaker(player: PlayerRow, itemId: number, on: boolean | undefi
 /** Én spilltime for maskinene: én time nærmere ferdig hvis råvarene ligger klare. */
 function makerHour(market: MarketRow, s: StallRow, t: number, gridDown = false) {
   const items = itemsOf(s.id);
-  for (const m of runningMakers(s, items, gridDown)) makeOne(market, s, t, items, m);
+  for (const m of runningMakers(s, items, gridDown)) makeOne(market, s, t, itemsOf(s.id), m);
+}
+
+/**
+ * Finner plass til det en maskin har laget: i ferdig-feltet, eller (med utmatingsmodul) under disken / på bordet.
+ * Null hvis det ikke er plass til alt. Ingenting flyttes her.
+ */
+function outputSpots(items: Item[], m: Item, out: GridSize, result: [string, number][], mod: Module | undefined) {
+  const work = [...items];
+  const spots: { typeId: string; place: Place; boxId: number | null; x: number; y: number }[] = [];
+  for (const [typeId, n] of result) {
+    const { w, h } = ITEM_TYPES[typeId].size;
+    for (let j = 0; j < n; j++) {
+      let spot: Spot | null = null;
+      if (mod?.effect === 'utmating') {
+        if (mod.grade === 3 && PRODUCT_BY_ID[typeId]) spot = findCounterSpot(work, typeId);
+        if (!spot && mod.grade >= 2) spot = findStorageSpot(work, typeId);
+        if (!spot) {
+          const f = findFree(w, h, itemsIn(work, 'storage', null), STORAGE_GRID);
+          if (f) spot = { place: 'storage', boxId: null, ...f };
+        }
+      }
+      if (!spot) {
+        const f = findFree(w, h, itemsIn(work, 'pot_out', m.id), out);
+        if (!f) return null;
+        spot = { place: 'pot_out', boxId: m.id, ...f };
+      }
+      spots.push({ typeId, ...spot });
+      work.push({ id: -1 - work.length, typeId, place: spot.place, boxId: spot.boxId, x: spot.x, y: spot.y, w, h } as Item);
+    }
+  }
+  return spots;
+}
+
+/** Legger det ferdige der `outputSpots` fant plass. Salgsvarer fra maskinene er ekte hjemmelaget. */
+function putOutputs(s: StallRow, spots: NonNullable<ReturnType<typeof outputSpots>>) {
+  for (const p of spots) {
+    const res = q.insertItem.run(s.id, p.typeId, p.place, p.boxId, p.x, p.y, null);
+    if (PRODUCT_BY_ID[p.typeId]) q.setLabel.run('home', Number(res.lastInsertRowid));
+  }
+}
+
+/** Hvor utmatingsmodulen la det ferdige (til hendelsen), eller tomt. */
+function outputWhere(spots: { place: Place }[]): string {
+  const counter = spots.some((p) => p.place === 'counter');
+  const storage = spots.some((p) => p.place === 'storage' || p.place === 'box');
+  return counter && storage ? ' (på bordet og under disken)' : counter ? ' (lagt på bordet)' : storage ? ' (lagt under disken)' : '';
+}
+
+/** Turbomodulen kan få sikringen til å ryke når maskinen går på nettstrøm. */
+function turboHour(market: MarketRow, s: StallRow, t: number, gridDown: boolean) {
+  const items = itemsOf(s.id);
+  const power = powerOf(s);
+  const machines = [...runningKettles(s, items, gridDown), ...runningFolders(s, items, gridDown), ...runningMakers(s, items, gridDown)];
+  for (const m of machines) {
+    const mod = moduleIn(items, m);
+    if (mod?.effect !== 'turbo' || machineWaiting(items, m)) continue;
+    if (machineSource(power, items, m, gridDown) !== 'grid') continue;
+    if (Math.random() < TURBO.blow[mod.grade - 1]) blowFuse(market, s, t, `${m.typeId}:${m.id}`, 'Turbomodulen trakk for mye');
+  }
 }
 
 function makeOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
@@ -3224,26 +3285,24 @@ function makeOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: It
   const prog = def.programs.find((p) => p.id === st.program) ?? def.programs[0];
   const inside = itemsIn(items, 'pot_in', m.id);
   if (inside.length === 0) return; // tom: står og venter
-  const progress = st.progress + 1;
+  const mod = moduleIn(items, m);
+  const progress = Math.max(st.progress, Math.min(prog.hours, st.progress + workUnits(moduleSpeed(mod))));
   if (progress < prog.hours) return saveState(m.id, { ...st, progress });
   // Riktige ingredienser (nok av alt, og ingenting annet)? Ellers blir det en mislykket batch.
   const have = (id: string) => inside.filter((i) => i.typeId === id).length;
   const right = Object.entries(prog.inputs).every(([id, n]) => have(id) >= n) && inside.every((i) => prog.inputs[i.typeId]);
   const result: Record<string, number> = right ? prog.outputs : { [FAILED_BATCH]: 1 };
+  // Langtidsmodulen: sjanse for én ekstra av det første den lager (bare hvis det er plass).
+  const extraId = right && mod?.effect === 'langtid' && Math.random() < LANGTID.extra[mod.grade - 1] ? Object.keys(result)[0] : null;
   // Ferdig: finn plass til alt før noe brukes opp.
-  const out = itemsIn(items, 'pot_out', m.id);
-  const spots: { typeId: string; x: number; y: number }[] = [];
-  for (const [typeId, n] of Object.entries(result)) {
-    const { w, h } = ITEM_TYPES[typeId].size;
-    for (let j = 0; j < n; j++) {
-      const free = findFree(w, h, [...out, ...spots.map((p) => ({ ...p, ...ITEM_TYPES[p.typeId].size }))], def.output);
-      if (!free) {
-        if (st.progress < prog.hours) event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig, men det er fullt i ferdig-feltet.`);
-        return saveState(m.id, { ...st, progress: prog.hours });
-      }
-      spots.push({ typeId, ...free });
-    }
+  const spots =
+    (extraId && outputSpots(items, m, def.output, Object.entries({ ...result, [extraId]: result[extraId] + 1 }), mod)) ||
+    outputSpots(items, m, def.output, Object.entries(result), mod);
+  if (!spots) {
+    if (st.progress < prog.hours) event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig, men det er fullt i ferdig-feltet.`);
+    return saveState(m.id, { ...st, progress: prog.hours });
   }
+  const extra = !!extraId && spots.length > Object.values(result).reduce((a, b) => a + b, 0);
   if (right)
     for (const [id, n] of Object.entries(prog.inputs))
       inside
@@ -3251,19 +3310,16 @@ function makeOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: It
         .slice(0, n)
         .forEach((i) => q.deleteItem.run(i.id));
   else for (const i of inside) q.deleteItem.run(i.id); // feil batch: alt går med
-  for (const p of spots) {
-    const res = q.insertItem.run(s.id, p.typeId, 'pot_out', m.id, p.x, p.y, null);
-    if (PRODUCT_BY_ID[p.typeId]) q.setLabel.run('home', Number(res.lastInsertRowid));
-  }
+  putOutputs(s, spots);
   saveState(m.id, { ...st, progress: 0 });
   if (!right) {
     event(market, s.owner_id, t, `🫠 Feil batch! ${def.name} fikk ikke riktige ingredienser til ${prog.name.toLowerCase()}. Alt ble til en mislykket klump.`);
     return;
   }
   const made = Object.entries(prog.outputs)
-    .map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`)
+    .map(([id, n]) => `${n + (extra && id === extraId ? 1 : 0)} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`)
     .join(', ');
-  event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig: ${made}.`);
+  event(market, s.owner_id, t, `${def.emoji} ${def.name} er ferdig: ${made}${outputWhere(spots)}.${extra ? ' ⏳ Langtidsmodulen fikk ut én ekstra.' : ''}`);
 }
 
 // ---------- Posebretteren ----------
@@ -3296,39 +3352,60 @@ export function unfoldBag(player: PlayerRow, itemId: number) {
 /** Én spilltime for alle posebrettere på boden som står på. */
 function foldHour(market: MarketRow, s: StallRow, t: number, gridDown = false) {
   const items = itemsOf(s.id);
-  for (const m of runningFolders(s, items, gridDown)) foldOne(market, s, t, items, m);
+  for (const m of runningFolders(s, items, gridDown)) {
+    const mod = moduleIn(items, m);
+    if (FOLDER_BY_ID[m.typeId].mode === 'shred') {
+      shredOne(market, s, t, items, m, workUnits(FOLDER_BY_ID[m.typeId].perHour * moduleSpeed(mod)));
+      continue;
+    }
+    // Autobretting (Fullutstyrt) bretter to i timen; turbo og strømsparing endrer farten.
+    const units = mod?.effect === 'autobretting' && mod.grade === 3 ? 2 : workUnits(moduleSpeed(mod));
+    for (let n = 0; n < units; n++) if (!foldOne(market, s, t, itemsOf(s.id), m)) break;
+  }
+}
+
+/** Autobretting: en tom pose eller kartong under disken som modulen kan hente (Utvidet og opp: også fra esker der). */
+function bagToFetch(items: Item[], mod: Module): Item | undefined {
+  const empty = (i: Item) => {
+    const type = ITEM_TYPES[i.typeId];
+    return type.kind === 'container' && !!FOLD_OUTPUT[i.typeId] && !i.device && !i.boxName && contentsOf(items, i.id).length === 0;
+  };
+  const loose = items.find((i) => i.place === 'storage' && empty(i));
+  if (loose || mod.grade < 2) return loose;
+  return items.find((i) => i.place === 'box' && empty(i) && items.find((b) => b.id === i.boxId)?.place === 'storage');
 }
 
 /** Én posebretter, én time: brett sammen én tom pose til en 1×1-klump i ferdig-feltet. */
-function foldOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
+function foldOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item): boolean {
   const def = FOLDER_BY_ID[m.typeId];
-  if (def.mode === 'shred') return shredOne(market, s, t, items, m);
-  const bag = itemsIn(items, 'pot_in', m.id).find((i) => {
-    const type = ITEM_TYPES[i.typeId];
-    return type.kind === 'container' && !!FOLD_OUTPUT[i.typeId] && contentsOf(items, i.id).length === 0;
-  });
-  if (!bag) return;
+  const mod = moduleIn(items, m);
+  const bag =
+    itemsIn(items, 'pot_in', m.id).find((i) => {
+      const type = ITEM_TYPES[i.typeId];
+      return type.kind === 'container' && !!FOLD_OUTPUT[i.typeId] && contentsOf(items, i.id).length === 0;
+    }) ?? (mod?.effect === 'autobretting' ? bagToFetch(items, mod) : undefined);
+  if (!bag) return false;
   const foldedId = FOLD_OUTPUT[bag.typeId];
-  if (!foldedId) return;
-  const fsize = ITEM_TYPES[foldedId].size;
-  const out = itemsIn(items, 'pot_out', m.id);
-  const free = findFree(fsize.w, fsize.h, out, def.output);
-  if (!free) {
+  if (!foldedId) return false;
+  const spots = outputSpots(items, m, def.output, [[foldedId, 1]], mod);
+  if (!spots) {
     event(market, s.owner_id, t, '🗜️ Brettemaskinen står på, men ferdig-feltet er fullt.');
-    return;
+    return false;
   }
+  const fetched = bag.place !== 'pot_in';
   q.deleteItem.run(bag.id);
-  q.insertItem.run(s.id, foldedId, 'pot_out', m.id, free.x, free.y, null);
-  event(market, s.owner_id, t, `🗜️ Brettemaskinen brettet sammen en ${ITEM_TYPES[bag.typeId].name.toLowerCase()}.`);
+  putOutputs(s, spots);
+  event(market, s.owner_id, t, `🗜️ Brettemaskinen ${fetched ? 'hentet og ' : ''}brettet sammen en ${ITEM_TYPES[bag.typeId].name.toLowerCase()}${outputWhere(spots)}.`);
+  return true;
 }
 
 /**
  * Makuleringsmaskinen, én time: makulerer opptil `perHour` ting. Papir forsvinner helt; plastposer blir
  * borte, men av og til blir de til mikroplast i ut-feltet.
  */
-function shredOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item) {
+function shredOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: Item, perHour = FOLDER_BY_ID[m.typeId].perHour) {
   const def = FOLDER_BY_ID[m.typeId];
-  const queue = itemsIn(items, 'pot_in', m.id).sort((a, b) => a.y - b.y || a.x - b.x).slice(0, def.perHour);
+  const queue = itemsIn(items, 'pot_in', m.id).sort((a, b) => a.y - b.y || a.x - b.x).slice(0, perHour);
   if (queue.length === 0) return;
   const out = itemsIn(items, 'pot_out', m.id);
   const done: string[] = [];
@@ -3363,7 +3440,11 @@ function shredOne(market: MarketRow, s: StallRow, t: number, items: Item[], m: I
 /** Én spilltime for alle kjelene på boden som står og koker. */
 function cookHour(market: MarketRow, s: StallRow, t: number, gridDown = false) {
   const items = itemsOf(s.id);
-  for (const k of runningKettles(s, items, gridDown)) cookOne(market, s, t, items, k);
+  for (const k of runningKettles(s, items, gridDown)) {
+    // Turbo: av og til to porsjoner i timen. Strømsparing: står over en time av og til.
+    const units = workUnits(moduleSpeed(moduleIn(items, k)));
+    for (let n = 0; n < units; n++) cookOne(market, s, t, itemsOf(s.id), k);
+  }
 }
 
 /** Én kjele, én time: lag en porsjon på riktig styrke, eller svi den hvis det er for varmt. */
@@ -3371,24 +3452,22 @@ function cookOne(market: MarketRow, s: StallRow, t: number, items: Item[], k: It
   const inside = itemsIn(items, 'pot_in', k.id);
   const counts = new Map<string, number>();
   for (const i of inside) counts.set(i.typeId, (counts.get(i.typeId) ?? 0) + 1);
-  const plan = cookPlan(counts, k.kettle!.level);
+  let plan = cookPlan(counts, k.kettle!.level);
   if (!plan) return;
+  const mod = moduleIn(items, k);
+  // Termostaten skrur ned varmen før det svir seg (Fullutstyrt alltid).
+  if (plan.burn && mod?.effect === 'termostat' && Math.random() < TERMOSTAT.save[mod.grade - 1]) {
+    plan = { recipe: plan.recipe, burn: false };
+    event(market, s.owner_id, t, `🌡️ Termostaten skrudde ned varmen i kjelen i tide (${plan.recipe.name.toLowerCase()} skal stå på ${plan.recipe.level}).`);
+  }
 
   // Det som kommer ut: oppskriftens varer, eller én svidd klump.
   const outputs: [string, number][] = plan.burn ? [[BURNT, 1]] : Object.entries(plan.recipe.outputs);
   // Finn plass i ferdig-rutenettet før vi bruker opp noe.
-  const out = itemsIn(items, 'pot_out', k.id);
-  const spots: { typeId: string; x: number; y: number }[] = [];
-  for (const [typeId, n] of outputs) {
-    const { w, h } = ITEM_TYPES[typeId].size;
-    for (let j = 0; j < n; j++) {
-      const free = findFree(w, h, [...out, ...spots.map((p) => ({ ...p, ...ITEM_TYPES[p.typeId].size }))], KETTLE.output);
-      if (!free) {
-        if (s.power_on) event(market, s.owner_id, t, '🍲 Kjelen står og koker, men det er fullt i ferdig-rutenettet.');
-        return;
-      }
-      spots.push({ typeId, ...free });
-    }
+  const spots = outputSpots(items, k, KETTLE.output, outputs, mod);
+  if (!spots) {
+    if (s.power_on) event(market, s.owner_id, t, '🍲 Kjelen står og koker, men det er fullt i ferdig-rutenettet.');
+    return;
   }
   // Bruk råvarene.
   for (const [id, n] of Object.entries(plan.recipe.inputs)) {
@@ -3397,11 +3476,7 @@ function cookOne(market: MarketRow, s: StallRow, t: number, items: Item[], k: It
       .slice(0, n)
       .forEach((i) => q.deleteItem.run(i.id));
   }
-  for (const p of spots) {
-    const res = q.insertItem.run(s.id, p.typeId, 'pot_out', k.id, p.x, p.y, null);
-    // Laget i kjelen: ekte hjemmelaget, med boden som produsent.
-    if (PRODUCT_BY_ID[p.typeId]) q.setLabel.run('home', Number(res.lastInsertRowid));
-  }
+  putOutputs(s, spots); // laget i kjelen: ekte hjemmelaget, med boden som produsent
   if (plan.burn) {
     event(market, s.owner_id, t, `🔥 Det lukter svidd! ${plan.recipe.name} på for høy varme ble til en svidd klump.`);
     const used = Object.entries(plan.recipe.inputs).flatMap(([id, n]) => Array<string>(n).fill(id));
@@ -3410,7 +3485,7 @@ function cookOne(market: MarketRow, s: StallRow, t: number, items: Item[], k: It
     const made = Object.entries(plan.recipe.outputs)
       .map(([id, n]) => `${n} ${ITEM_TYPES[id].emoji} ${ITEM_TYPES[id].name.toLowerCase()}`)
       .join(', ');
-    event(market, s.owner_id, t, `🍲 Kjelen er ferdig: ${made}.`);
+    event(market, s.owner_id, t, `🍲 Kjelen er ferdig: ${made}${outputWhere(spots)}.`);
   }
 }
 
@@ -4710,6 +4785,7 @@ function processHour(market: MarketRow, hour: number) {
   // Under strømbrudd går bare maskiner med ladet batteri.
   for (const s of stalls) {
     const down = dark(s);
+    turboHour(market, s, t, down);
     cookHour(market, s, t, down);
     foldHour(market, s, t, down);
     makerHour(market, s, t, down);

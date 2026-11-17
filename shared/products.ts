@@ -229,7 +229,25 @@ export interface Charger {
   sprite: number;
 }
 
-export type ItemType = Battery | Charger | Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc | Electric | Maker;
+/**
+ * Maskinmodul (2×2 kretskort) fra Klas Olsen. Settes i modulplassen på en maskin (én per maskin), kan flyttes
+ * mellom maskiner. Tre grader: Enkel (grønt kort), Utvidet (blått) og Fullutstyrt (lilla). Effektene: shared/modules.ts.
+ */
+export interface Module {
+  kind: 'module';
+  id: string;
+  name: string;
+  emoji: string;
+  image: string;
+  price: number;
+  size: Size;
+  effect: ModuleEffect;
+  grade: 1 | 2 | 3;
+  blurb: string;
+}
+export type ModuleEffect = 'turbo' | 'sparing' | 'langtid' | 'termostat' | 'hvile' | 'utmating' | 'autobretting';
+
+export type ItemType = Battery | Charger | Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc | Electric | Maker | Module;
 
 // Kontorrekvisita hos Klas Olsen.
 export const TOOLS: Tool[] = [
@@ -485,6 +503,41 @@ export const CHARGE_KW = 0.5;
 export const CHARGE_EFFICIENCY = 0.8;
 /** Batteriplassen i en maskin. */
 export const CELL_GRID: GridSize = { cols: 1, rows: 1 };
+/** Modulplassen i en maskin: plass til én modul (2×2). */
+export const MODULE_GRID: GridSize = { cols: 2, rows: 2 };
+
+/** Gradene til maskinmodulene: navn, filendelse på bildet og prisfaktor. */
+export const MODULE_GRADES = [
+  { grade: 1, label: 'Enkel', suffix: '', file: '', price: 1 },
+  { grade: 2, label: 'Utvidet', suffix: '_utvidet', file: '-utvidet', price: 2 },
+  { grade: 3, label: 'Fullutstyrt', suffix: '_full', file: '-fullutstyrt', price: 3.4 },
+] as const;
+/** De sju modulene. `art` = bildefila (Tidsur-grafikken brukes til hvilemodus). Varslingsmodulen er droppet: telefonen varsler allerede. */
+const MODULE_BASES: { id: string; art: string; name: string; emoji: string; effect: ModuleEffect; price: number; blurb: string }[] = [
+  { id: 'modul_turbo', art: 'modul-turbo', name: 'Turbomodul', emoji: '⚡', effect: 'turbo', price: 299, blurb: 'Raskere omganger, men trekker mye mer strøm og kan få sikringen til å ryke.' },
+  { id: 'modul_stromsparing', art: 'modul-stromsparing', name: 'Strømsparemodul', emoji: '🍃', effect: 'sparing', price: 249, blurb: 'Bruker mindre strøm, men arbeider litt saktere.' },
+  { id: 'modul_langtid', art: 'modul-langtid', name: 'Langtidsmodul', emoji: '⏳', effect: 'langtid', price: 299, blurb: 'Omgangen tar lengre tid, men gir sjanse for én ekstra ferdig vare. Bake-, strikke- og dekormaskin.' },
+  { id: 'modul_termostat', art: 'modul-termostat', name: 'Termostatmodul', emoji: '🌡️', effect: 'termostat', price: 199, blurb: 'Skrur ned varmen før det svir seg i kjelen. Bare kjelen.' },
+  { id: 'modul_hvile', art: 'modul-tidsur', name: 'Hvilemodul', emoji: '💤', effect: 'hvile', price: 149, blurb: 'Maskinen trekker nesten ikke strøm mens den står og venter: tomt inn-felt eller fullt ferdig-felt.' },
+  { id: 'modul_utmating', art: 'modul-utmating', name: 'Utmatingsmodul', emoji: '📤', effect: 'utmating', price: 249, blurb: 'Legger det ferdige rett under disken i stedet for i ferdig-feltet.' },
+  { id: 'modul_autobretting', art: 'modul-autobretting', name: 'Automatisk posebretting', emoji: '🛍️', effect: 'autobretting', price: 199, blurb: 'Henter tomme poser fra under disken selv og bretter dem. Bare brettemaskinen.' },
+];
+export const MODULES: Module[] = MODULE_BASES.flatMap((b) =>
+  MODULE_GRADES.map((g) => ({
+    kind: 'module' as const,
+    id: b.id + g.suffix,
+    name: g.grade === 1 ? b.name : `${b.name} (${g.label})`,
+    emoji: b.emoji,
+    image: `/art/moduler/${b.art}${g.file}.png`,
+    price: Math.round((b.price * g.price) / 10) * 10 - 1,
+    size: { w: 2, h: 2 },
+    effect: b.effect,
+    grade: g.grade,
+    blurb: b.blurb,
+  })),
+);
+export const MODULE_BY_ID: Record<string, Module> = Object.fromEntries(MODULES.map((m) => [m.id, m]));
+export const isModule = (typeId: string) => !!MODULE_BY_ID[typeId];
 
 export const MAKER_BY_ID: Record<string, Maker> = Object.fromEntries(MAKERS.map((m) => [m.id, m]));
 
@@ -967,7 +1020,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES].map((t) => [t.id, t]),
 );
 
 /**

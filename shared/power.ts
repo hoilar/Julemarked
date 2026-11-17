@@ -8,6 +8,7 @@
 import { BLOWN_FUSE, FOLDER_BY_ID, capacityOf, isBattery, CHARGER, CHARGE_KW, DEVICES, FOLDER_KW, fuseboxKind, isFusebox, MAKER_BY_ID, ITEM_TYPES, KETTLE_KW_PER_LEVEL, STRIP, STRIP_SOCKETS, socketEntry } from './products.ts';
 import { isTrashed, isUndelivered } from './items.ts';
 import type { Item, Power } from './types.ts';
+import { machineWaiting, moduleIn, moduleKwFactor } from './modules.ts';
 
 /** Gjenstanden er hos deg: ikke i søpla og ikke på vei med budet. */
 export const usable = (items: Item[], i: Item) => !isTrashed(items, i) && !isUndelivered(items, i);
@@ -87,9 +88,11 @@ export function entryKw(entry: string, items: Item[]): number {
   if (e.itemId === null) return e.device.kw;
   const m = items.find((i) => i.id === e.itemId);
   if (!m || !usable(items, m)) return 0;
-  if (m.kettle) return m.kettle.on ? m.kettle.level * KETTLE_KW_PER_LEVEL : 0;
-  if (m.folder) return m.folder.on ? (FOLDER_BY_ID[m.typeId]?.kw ?? FOLDER_KW) : 0;
-  if (m.maker) return m.maker.on ? (MAKER_BY_ID[m.typeId]?.kw ?? 0) : 0;
+  // Maskinmodulen kan endre hvor mye den trekker (turbo, strømsparing, hvilemodus).
+  const mod = (kw: number) => Math.round(kw * moduleKwFactor(moduleIn(items, m), machineWaiting(items, m)) * 100) / 100;
+  if (m.kettle) return m.kettle.on ? mod(m.kettle.level * KETTLE_KW_PER_LEVEL) : 0;
+  if (m.folder) return m.folder.on ? mod(FOLDER_BY_ID[m.typeId]?.kw ?? FOLDER_KW) : 0;
+  if (m.maker) return m.maker.on ? mod(MAKER_BY_ID[m.typeId]?.kw ?? 0) : 0;
   if (m.typeId === CHARGER.id) return chargingIn(items, m.id).length * CHARGE_KW;
   return 0;
 }

@@ -23,7 +23,7 @@ export interface BillView {
 // transit = poser på vei fra nettbutikken; ground = levert, står ved siden av boden.
 // nail = hengt opp på spikeren under grenuttaket (bare etterlysninger).
 // carry = det du bærer (x 0/1 = hendene, 2 = ryggen); car = bilen som står parkert (bagasjerommet er place 'box' i den).
-export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail' | 'cell' | 'fuse' | 'mail' | 'carry' | 'car';
+export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_out' | 'transit' | 'ground' | 'nail' | 'cell' | 'module' | 'fuse' | 'mail' | 'carry' | 'car';
 
 /** Dagens tilbud i en nettbutikk, med hvor mange du kan kjøpe til (lageret er per spiller). */
 export interface ShopView {

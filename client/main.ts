@@ -1,4 +1,5 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
+import { moduleEffectText, moduleFitsText, moduleIn } from '../shared/modules.ts';
 import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, type Spot, type StashTo } from '../shared/items.ts';
 import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
@@ -61,6 +62,8 @@ import {
   CHARGE_KW,
   CHARGE_EFFICIENCY,
   CELL_GRID,
+  MODULE_GRID,
+  MODULES,
   RECIPE_NOTE,
   WANTED,
   isHomemade,
@@ -1471,7 +1474,7 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
   const status = !st.on
     ? 'Av'
     : (feedProblem(k, stall) ??
-      `🔥 Varmer på styrke ${st.level} · ${(st.level * KETTLE_KW_PER_LEVEL).toString().replace('.', ',')} kW · én porsjon per time`);
+      `🔥 Varmer på styrke ${st.level} · ${kwStr(machineKw(k, s.me.items))} kW · én porsjon per time`);
   if (!panelPos.has(k.id)) {
     const w = (KETTLE.input.cols + KETTLE.output.cols) * BOX_CELL + 6;
     const h = (KETTLE.input.rows * BOX_CELL + 16) * 1.5;
@@ -1487,7 +1490,7 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
       <div class="pot-arrow">${hot ? '🔥' : '➜'}</div>
       ${grid('pot_out', KETTLE.output, 'Ferdig')}
     </div>
-    ${cellView(s, k)}
+    <div class="slot-row">${cellView(s, k)}${moduleView(s, k)}</div>
     <div class="pot-controls">
       <button class="pot-power ${st.on ? 'on' : ''}" data-action="kettle-power" data-kettle="${k.id}" aria-pressed="${st.on}" title="${st.on ? 'Slå av' : 'Slå på'}">⏻</button>
       ${[1, 2, 3, 4]
@@ -1495,6 +1498,19 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
         .join('')}
     </div>
     <div class="pot-status">${plugIcon(k, stall)}<span>${status}</span></div>
+  </div>`;
+}
+
+/** Modulplassen på en maskin (2×2): kretskortet som står der, og hva det gjør. */
+function moduleView(s: GameState, m: Item): string {
+  const it = itemsIn(s.me.items, 'module', m.id)[0];
+  const mod = moduleIn(s.me.items, m);
+  const text = !it ? 'Modulplass' : mod ? moduleEffectText(mod) : 'Passer ikke i denne maskinen';
+  return `<div class="module-slot" title="Dra en maskinmodul hit (Klas Olsen har dem). Én modul per maskin.">
+    <div class="grid box-grid module-grid ${it ? '' : 'empty'}" data-grid="module" data-box="${m.id}" style="width:${MODULE_GRID.cols * BOX_CELL}cqw;height:${MODULE_GRID.rows * BOX_CELL}cqw;--cols:${MODULE_GRID.cols};--rows:${MODULE_GRID.rows}">
+      ${itemsIn(s.me.items, 'module', m.id).map((i) => gridItemView(i, MODULE_GRID.cols, MODULE_GRID.rows)).join('')}
+    </div>
+    <span class="module-info">${esc(text)}</span>
   </div>`;
 }
 
@@ -1747,7 +1763,7 @@ function makerPanel(s: GameState, m: Item, n: number): string {
     : !st.on
       ? 'Av'
       : (feedProblem(m, stall) ??
-        (!ready ? '⏳ Tom' : `${def.emoji} ${def.verb} · ${kwStr(def.kw)} kW · ${st.progress}/${prog.hours} t`));
+        (!ready ? '⏳ Tom' : `${def.emoji} ${def.verb} · ${kwStr(machineKw(m, s.me.items))} kW · ${st.progress}/${prog.hours} t`));
   const pct = Math.round((Math.min(st.progress, prog.hours) / prog.hours) * 100);
   if (!panelPos.has(m.id)) {
     const w = (def.input.cols + def.output.cols) * BOX_CELL + 6;
@@ -1765,7 +1781,7 @@ function makerPanel(s: GameState, m: Item, n: number): string {
       ${grid('pot_out', def.output, 'Ferdig')}
     </div>
     <div class="maker-progs">${programs}</div>
-    ${cellView(s, m)}
+    <div class="slot-row">${cellView(s, m)}${moduleView(s, m)}</div>
     <div class="pot-controls">
       <button class="pot-power ${st.on ? 'on' : ''}" data-action="maker-power" data-maker="${m.id}" aria-pressed="${st.on}" title="${st.on ? 'Slå av' : 'Slå på'}">⏻</button>
       <div class="maker-bar"><span style="width:${pct}%"></span></div>
@@ -1788,7 +1804,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
         ${itemsIn(s.me.items, place, m.id).map((i) => gridItemView(i, size.cols, size.rows)).join('')}
       </div>
     </div>`;
-  const kw = def.kw.toString().replace('.', ',');
+  const kw = kwStr(machineKw(m, s.me.items));
   const inputEmpty = itemsIn(s.me.items, 'pot_in', m.id).length === 0;
   const status = !on
     ? shred
@@ -1810,7 +1826,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
       <div class="pot-arrow">➜</div>
       ${grid('pot_out', def.output, shred ? 'Mikroplast' : 'Ferdig')}
     </div>
-    ${cellView(s, m)}
+    <div class="slot-row">${cellView(s, m)}${moduleView(s, m)}</div>
     <div class="pot-controls">
       <button class="fold-run ${on ? 'on' : ''}" data-action="folder-power" data-folder="${m.id}" aria-pressed="${on}">${on ? 'Stopp' : shred ? 'Makuler' : 'Brett sammen'}</button>
     </div>
@@ -2577,6 +2593,9 @@ function klasView(s: GameState): string {
   const batteries = BATTERIES.map((e) =>
     klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: `${e.capacity} kWh, fulladet. Går i batteriplassen på maskiner og i ladestasjonen.`, have: has(e.id), buy: qty(e.id, 10), incart: !!cart[e.id] }),
   );
+  const modules = MODULES.map((e) =>
+    klasCard({ name: e.name, image: e.image, emoji: e.emoji, size: e.size, price: e.price, sub: `${esc(moduleEffectText(e))}.<br><span class="muted">Passer i ${esc(moduleFitsText(e))}.</span>`, have: has(e.id), buy: qty(e.id, 10), incart: !!cart[e.id] }),
+  );
   const section = (title: string, note: string, cards: string[]) =>
     `<h3>${title}</h3>${note ? `<p class="muted">${note}</p>` : ''}<div class="shop-grid">${cards.join('')}</div>`;
 
@@ -2602,6 +2621,7 @@ function klasView(s: GameState): string {
     ${section('På boden', 'Henger på boden og plugges i grenuttaket. Kommer i en kartong: åpne den og heng den opp.', devices(false))}
     ${section('Elektrisk', '', electric)}
     ${section('Batterier', '', batteries)}
+    ${section('Maskinmoduler', 'Kretskort til modulplassen på maskinene, én per maskin. Grønt kort (Enkel), blått (Utvidet) og lilla (Fullutstyrt).', modules)}
     ${section('Oppbevaring', 'Esker tar litt plass under disken, men rommer mer inni.', boxes)}
     ${section('🧰 Verktøy', '', tools)}
     <div class="cart" id="cart">
@@ -3534,7 +3554,7 @@ function showPreview(d: Drag | null) {
   } else {
     const grid = gridOf(state!.me.items, spot.place, spot.boxId);
     if (!grid) return;
-    const sel = spot.place === 'box' || spot.place === 'cell' ? `[data-grid="${spot.place}"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
+    const sel = spot.place === 'box' || spot.place === 'cell' || spot.place === 'module' ? `[data-grid="${spot.place}"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
     const target = document.querySelector<HTMLElement>(sel);
     // Dokumentmappa viser én fane (5 rader) av gangen.
     const yoff = Number(target?.dataset.yoff ?? 0);
@@ -3700,6 +3720,7 @@ function endDrag(cancelled = false) {
     else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger') togglePanel(d.item.id);
     else if (t.kind === 'battery')
       toast(`🔋 ${t.name}: ${batteryPct(d.item)} % (${String(Math.round((d.item.charge ?? 0) * 10) / 10).replace('.', ',')} av ${capacityOf(d.item.typeId)} kWh). Dra det til batteriplassen på en maskin, eller i ladestasjonen.`);
+    else if (t.kind === 'module') toast(`${t.emoji} ${t.name}: ${moduleEffectText(t)}. Passer i ${moduleFitsText(t)}. Dra den til modulplassen på maskinen.`);
     else if (t.kind === 'folded') modal = { kind: 'folded', itemId: d.item.id };
     else if (t.kind === 'policy') modal = { kind: 'policy', typeId: t.id };
     else if (t.kind === 'doc') modal = { kind: 'doc', itemId: d.item.id };

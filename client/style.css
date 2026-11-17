@@ -1805,3 +1805,10 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 /* Kundebestillinger: navn på pepperkakehuset og avsløringer i avisa. */
 .gitem .item-name { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); max-width: 92%; padding: 0 0.3em; border-radius: 3px; background: rgba(255, 250, 235, 0.92); color: #6b3a1a; font: italic 700 clamp(7px, 0.9cqw, 12px) / 1.3 Georgia, serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .paper-praise li.bad { font-style: normal; font-weight: bold; color: #8a1c1c; }
+
+/* Batteriplassen og modulplassen side om side i maskinvinduene. */
+.slot-row { display: flex; gap: 0.5cqw; align-items: stretch; }
+.slot-row .cell-slot { flex: 1; }
+.module-slot { flex: 1; display: flex; align-items: center; gap: 0.6cqw; padding: 0.3cqw 0.4cqw; border-radius: 0.4cqw; background: rgba(0, 0, 0, 0.25); color: #f5d9b0; font-size: max(9px, 0.75cqw); }
+.module-grid.empty { background: repeating-linear-gradient(45deg, rgba(40, 90, 50, 0.35) 0 0.4cqw, rgba(28, 10, 6, 0.6) 0.4cqw 0.8cqw); border: 1px dashed rgba(245, 217, 176, 0.35); }
+.module-info { flex: 1; line-height: 1.25; }

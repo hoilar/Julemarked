@@ -418,6 +418,8 @@ en liten etikettholder øverst. Filnavn: `art/boksinndeler.png`. **Plastkassa me
 
 ### Åtte maskinmoduler – grafikk klar (14.11.2026)
 
+**I spillet fra 17.11.2026:** sju av dem, alle tre grader. Tidsur-grafikken brukes til **Hvilemodul** (`modul_hvile`). Varslingsmodulen er ikke i bruk.
+
 **✅ Ferdig:** åtte små kretskort etter modulidéene i `VAREPLAN.md`.
 Alle er **256×256 px**, 2×2 ruter, transparent bakgrunn. Enkel har mørkegrønt kretskort,
 gullkontakter nederst, monteringshull og nøytrale komponenter. Fin pikselstil etter

@@ -1,6 +1,8 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
+import { MODULE_GRID } from './products.ts';
+import { moduleFits, moduleFitsText } from './modules.ts';
 import { COOKIE_BOX, COOKIE_SORTS, PLASTIC_BOX, CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 import { BACKPACK, CAR_BY_ID } from './car.ts';
@@ -17,7 +19,7 @@ export function sizeOf(typeId: string) {
 }
 
 /** Steder som ligger inni en annen gjenstand (boxId peker på den). */
-export const NESTED: ReadonlySet<Place> = new Set<Place>(['box', 'pot_in', 'pot_out', 'cell', 'fuse']);
+export const NESTED: ReadonlySet<Place> = new Set<Place>(['box', 'pot_in', 'pot_out', 'cell', 'module', 'fuse']);
 
 /** Rutenettet for et sted. Null hvis eska/kjelen ikke finnes. */
 export function gridOf(items: Item[], place: Place, boxId: number | null): GridSize | null {
@@ -38,6 +40,8 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   if (place === 'fuse') return t && fuseboxKind(t.id) === 'screw' ? FUSE_GRID : null; // bare boksen med skrusikringer
   // Batteriplass: maskinene, og elbilen (ID Fuzz).
   if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' || CAR_BY_ID[t?.id ?? '']?.fuel === 'batteri' ? CELL_GRID : null;
+  // Modulplass: kjele, brette- og makuleringsmaskin og program-maskinene.
+  if (place === 'module') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' ? MODULE_GRID : null;
   if (t?.kind === 'charger') return place === 'pot_in' ? t.input : null;
   if (t?.kind !== 'kettle' && t?.kind !== 'folder' && t?.kind !== 'maker') return null;
   return place === 'pot_in' ? t.input : t.output;
@@ -215,6 +219,13 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (t.kind === 'container' && t.safe && spot.place === 'box') return 'Safen får ikke plass i en eske.';
   if (t.id === PHONE && (spot.place === 'pot_in' || spot.place === 'pot_out')) return 'Telefonen hører ikke hjemme i en maskin.';
   if (spot.place === 'cell' && t.kind !== 'battery') return 'Her passer bare et batteri.';
+  if (spot.place === 'module') {
+    if (t.kind !== 'module') return 'Her passer bare en maskinmodul.';
+    const machine = items.find((i) => i.id === spot.boxId);
+    if (machine && !moduleFits(t.id, machine.typeId)) return `${t.name} passer bare i ${moduleFitsText(t)}.`;
+  }
+  if (t.kind === 'module' && (spot.place === 'counter' || spot.place === 'pot_in' || spot.place === 'pot_out'))
+    return spot.place === 'counter' ? 'Modulen er ikke til salgs.' : 'Modulen går i modulplassen på maskinen.';
   if (spot.place === 'pot_in' && boxKind(spot.boxId) === 'charger' && t.kind !== 'battery') return 'Ladestasjonen tar bare batterier.';
   if (t.kind === 'battery' && (spot.place === 'counter' || ((spot.place === 'pot_in' || spot.place === 'pot_out') && boxKind(spot.boxId) !== 'charger')))
     return spot.place === 'counter' ? 'Batteriet er ikke til salgs.' : 'Batteriet går i batteriplassen eller i ladestasjonen.';
