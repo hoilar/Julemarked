@@ -76,6 +76,7 @@ import {
   COOKIE_BOX,
   COOKIE_BOX_FULL,
   GINGER_HOUSE,
+  GINGER_RUBBLE,
   COOKIE_SORTS,
   MAX_BOX_TABS,
   PAD,
@@ -130,6 +131,7 @@ import {
   METER_REP_HIT,
   THIEF_REWARD,
   THIEF_STEAL_CHANCE,
+  THIEF_SMASH_CHANCE,
   inspectorHour,
   FINDER_REWARD,
   FORGED_FINE_FACTOR,
@@ -3454,11 +3456,11 @@ function praiseFor(market: MarketRow, time: number, myStallId: number | null): N
 
 /** Det som ble stjålet fra bordene natta før en utgave (tyveriene skjer 23–06, avisa kommer 07). */
 function nightThefts(market: MarketRow, editionAt: number, myStallId: number | null): Paper['crime']['thefts'] {
-  const rows = all<{ from_stall: number; product_id: string; qty: number; amount: number }>(
+  const rows = all<{ from_stall: number; product_id: string; kind: string; qty: number; amount: number }>(
     db.prepare(
-      `SELECT from_stall, product_id, SUM(qty) AS qty, SUM(amount) AS amount FROM transactions
-       WHERE market_id = ? AND kind = 'theft' AND game_time > ? AND game_time <= ?
-       GROUP BY from_stall, product_id ORDER BY from_stall, product_id`,
+      `SELECT from_stall, product_id, kind, SUM(qty) AS qty, SUM(amount) AS amount FROM transactions
+       WHERE market_id = ? AND kind IN ('theft', 'smashed') AND game_time > ? AND game_time <= ?
+       GROUP BY from_stall, product_id, kind ORDER BY from_stall, product_id`,
     ),
     market.id,
     editionAt - 12 * HOUR,
@@ -3471,7 +3473,7 @@ function nightThefts(market: MarketRow, editionAt: number, myStallId: number | n
     mine: stallId === myStallId,
     lines: list.map((r) => {
       const p = PRODUCT_BY_ID[r.product_id];
-      return `${r.qty} ${p?.emoji ?? ''} ${(p?.name ?? r.product_id).toLowerCase()}`;
+      return `${r.qty} ${p?.emoji ?? ''} ${(p?.name ?? r.product_id).toLowerCase()}${r.kind === 'smashed' ? ' (knust)' : ''}`;
     }),
     value: list.reduce((n, r) => n + r.amount, 0),
   }));
@@ -4447,10 +4449,21 @@ function stealHour(market: MarketRow, t: number, hour: number, stalls: StallRow[
     if (!thiefVisits(market.id, key, s.id).night.includes(hour)) continue;
     const prices = pricesOf(s.id);
     const stolen: string[] = [];
+    const smashed: string[] = [];
     const alarm = alarmOn(market, s, t - HOUR / 2);
     const chance = THIEF_STEAL_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1);
     for (const i of itemsOf(s.id)) {
       if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
+      // Pepperkakehuset er for stort å stikke av med: han knuser det, og bitene blir liggende (samme etikett).
+      if (i.typeId === GINGER_HOUSE) {
+        if (Math.random() >= THIEF_SMASH_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1)) continue;
+        q.deleteItem.run(i.id);
+        const id = Number(q.insertItem.run(s.id, GINGER_RUBBLE, 'counter', null, i.x, i.y, null).lastInsertRowid);
+        if (i.label) q.setLabel.run(i.label, id);
+        q.insertTx.run(market.id, t, 'smashed', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
+        smashed.push(i.typeId);
+        continue;
+      }
       if (Math.random() >= chance) continue;
       q.deleteItem.run(i.id);
       q.insertTx.run(market.id, t, 'theft', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
@@ -4458,8 +4471,17 @@ function stealHour(market: MarketRow, t: number, hour: number, stalls: StallRow[
     }
     if (alarm && hour === thiefVisits(market.id, key, s.id).night[0])
       event(market, s.owner_id, t, stolen.length ? '🚨 Alarmen hylte i natt! Tyven stakk – men fikk med seg litt.' : '🚨 Alarmen hylte i natt, og tyven stakk tomhendt.');
+    if (smashed.length > 0)
+      event(
+        market,
+        s.owner_id,
+        t,
+        `🔨 Tyven knuste ${smashed.length === 1 ? 'pepperkakehuset' : `${smashed.length} pepperkakehus`} på bordet i natt. Bitene ligger igjen. Under disken hadde det vært trygt.`,
+      );
     if (stolen.length > 0)
       insurancePayout(market, s, t, 'tyveri', insuredValue(s.id, stolen), `${stolen.length} ${stolen.length === 1 ? 'stjålet vare' : 'stjålne varer'}`);
+    if (smashed.length > 0)
+      insurancePayout(market, s, t, 'tyveri', insuredValue(s.id, smashed), `${smashed.length} knust pepperkakehus`);
   }
 }
 

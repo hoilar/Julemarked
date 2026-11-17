@@ -4,7 +4,7 @@
 
 Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/`. ⚠️ = bildefila mangler (emoji brukes). ↓ = har nedskalert kopi i `art/spill/` (`py tools/spillbilder.py`).
 
-## Salgsvarer (69)
+## Salgsvarer (70)
 
 ### 🎄 Dekor (10)
 
@@ -43,7 +43,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🧩 Julepuslespill | `puslespill` | 2×2 | 55 kr | 169 kr | 0.5 | Spillfabrikken | Nettbutikkene |  | `goods/puslespill.png` ↓ |
 | 🚗 Blikkbil fra 50-tallet | `blikkbil` | 2×1 | 180 kr | 499 kr | 0.12 | Loppemarkedet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/blikkbil.png` ↓ |
 
-### 🍪 Kaker (12)
+### 🍪 Kaker (13)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -59,6 +59,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🥨 Berlinerkrans | `berlinerkrans` | 1×1 | 9 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Berlinerkranser, 5 stk) | kan bare lages | `goods/berlinerkrans.png` ↓ |
 | 🎁 Kakeboks med syv slag | `syv_slag` | 3×3 | 120 kr | 329 kr | 0.35 | Hjemmelaget | — | kan bare lages | `goods/syv-slag.png` ↓ |
 | 🏠 Pepperkakehus | `pepperkakehus` | 3×3 | 110 kr | 449 kr | 0.25 | Hjemmelaget | Lages: Bakemaskin (Pepperkakehus, 1 stk) | kan bare lages | `goods/pepperkakehus.png` ↓ |
+| 🧱 Knust pepperkakehus | `pepperkakehus_knust` | 2×2 | 0 kr | 59 kr | 0.3 | Hjemmelaget | — | kan bare lages | `goods/pepperkakehus-knust.png` ↓ |
 
 ### 🍬 Godteri (11)
 
@@ -261,7 +262,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 📦 Sammenbretta KIWI-pose | `kiwipose_brettet` | 1×1 |  |  | — | `goods/kiwi-pose-brettet.png` ↓ |
 | 📦 Sammenbretta Extra-pose | `extrapose_brettet` | 1×1 |  |  | — | `goods/extra-pose-brettet.png` ↓ |
 | 📦 Sammenbretta REMA-pose | `remapose_brettet` | 1×1 |  |  | — | `goods/rema-pose-brettet.png` ↓ |
-| 📦 Flatpakket papp | `flatpakket_papp` | 2×1 |  |  | — | _(emoji)_ |
+| 📦 Flatpakket papp | `flatpakket_papp` | 2×1 |  |  | — | `goods/flatpakket-papp.png` ↓ |
 
 ## Dokumenter og lapper (11)
 

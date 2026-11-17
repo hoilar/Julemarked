@@ -344,7 +344,7 @@ Varer som gir ny mekanikk, ikke bare flere rader i tabellen. Favorittene er merk
 | Julestjerne (potteplante) | 2×2 | Nettbutikk | Visner etter noen dager. Første vare med holdbarhet. |
 | ⭐ Risengrynsgrøt | 2×2 (bolle) | Kjele: ris + melk | Serveres i bolle med smør og kanel, uten mandel (bekreftet 14.11.2026). |
 | ⭐ Smultringer | 1×1 | Ny frityrgryte: mel + sukker + olje | Kan ta fyr. Gir brannforsikringen noe å gjøre. |
-| Pepperkakehus | 3×3 | Bakemaskin, lang tid | ✅ I spillet (17.11.2026): 3 mel + 2 smør + 2 sukker + 1 sirup, 6 timer, 449 kr. Navn med penn til bestillinger; et hus med navn selges ikke til andre. Tyver som knuser det gjenstår. |
+| Pepperkakehus | 3×3 | Bakemaskin, lang tid | ✅ I spillet (17.11.2026): 3 mel + 2 smør + 2 sukker + 1 sirup, 6 timer, 449 kr. Navn med penn til bestillinger; et hus med navn selges ikke til andre. Tyven knuser det på bordet om natta (35 % per time han er der, alarm demper): «Knust pepperkakehus» (2×2, 59 kr) blir liggende. Under disken er det trygt. |
 | Julekrans | 2×2 | Dekormaskin: granbar + kongler | Granbar hentes med bilen i skogen eller «lånes» fra torget, som juletreet. |
 | Lutefisk | 1×2 | ★ Nettbutikk | Deler kundene: noen betaler godt, andre klager og gir dårligere omdømme. |
 | Vafler med brunost | 1×1 | Nytt vaffeljern: mel + egg + brunost | Billig storselger, men vaffeljernet trekker mye strøm (se bodtyper og strømgrense i konseptet, 12.3). |

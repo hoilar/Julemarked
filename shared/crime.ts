@@ -10,6 +10,7 @@ import { hash01 } from './hash.ts';
 export const THIEF_REWARD = 300; // dusør for riktig tips
 export const THIEF_NIGHT_CHANCE = 0.6; // sjanse for at tyven kommer til en gitt bod om natta
 export const THIEF_STEAL_CHANCE = 0.2; // per vare på bordet per time han står der
+export const THIEF_SMASH_CHANCE = 0.35; // per pepperkakehus på bordet per time: for stort å bære, så han knuser det
 export const WRONG_TIP_FACTOR = 0.6; // feil tips: 40 % færre kunder neste dag (ganges per feil tips)
 export const WRONG_TIP_FLOOR = 0.2; // aldri færre enn 20 % av kundene
 

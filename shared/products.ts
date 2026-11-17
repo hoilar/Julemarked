@@ -256,6 +256,8 @@ export const COOKIE_BOX = 'kakeboks';
 export const COOKIE_BOX_FULL = 'syv_slag';
 /** Pepperkakehuset: kan få et navn skrevet på med penn (bestillinger), og et hus med navn selges ikke til andre. */
 export const GINGER_HOUSE = 'pepperkakehus';
+/** Det tyven etterlater når han knuser et pepperkakehus på bordet: biter som kan selges billig. */
+export const GINGER_RUBBLE = 'pepperkakehus_knust';
 export const COOKIE_SORTS = ['krumkake', 'pepperkake_stjerne', 'pepperkake_hjerte', 'sirupssnipp', 'sandkake', 'serinakake', 'berlinerkrans'];
 export const SCISSORS = 'saks';
 export const LOUPE = 'lupe';
@@ -610,7 +612,7 @@ export const BAG_BY_FOLDED: Record<string, string> = Object.fromEntries(FOLDED_B
 
 // Flatpakket papp: det Brettemaskinen lager av en tom pappkartong. Kan ikke brettes ut igjen
 // (bag: '' → ikke i BAG_BY_FOLDED). Emoji til ekte grafikk er klar (se GRAFIKK.md).
-export const FLATPACK: FoldedBag = { kind: 'folded', id: 'flatpakket_papp', name: 'Flatpakket papp', emoji: '📦', size: { w: 2, h: 1 }, bag: '' };
+export const FLATPACK: FoldedBag = { kind: 'folded', id: 'flatpakket_papp', name: 'Flatpakket papp', emoji: '📦', image: '/art/goods/flatpakket-papp.png', size: { w: 2, h: 1 }, bag: '' };
 /** Hva Brettemaskinen lager av en gitt tom beholder: butikkposer → sammenbretta pose, kartong → flatpakket papp. */
 export const FOLD_OUTPUT: Record<string, string> = { ...FOLDED_BY_BAG, kartong: FLATPACK.id };
 
@@ -749,6 +751,7 @@ export const PRODUCTS: Product[] = [
   // Full kakeboks (lukkes i eskevinduet). Kundene betaler mer enn for kakene hver for seg.
   vare('syv_slag', 'Kakeboks med syv slag', '🎁', 3, 3, 120, 329, 0.35, 'Hjemmelaget', 'kaker', crafted),
   vare('pepperkakehus', 'Pepperkakehus', '🏠', 3, 3, 110, 449, 0.25, 'Hjemmelaget', 'kaker', crafted), // bakemaskinen, 6 timer
+  vare('pepperkakehus_knust', 'Knust pepperkakehus', '🧱', 2, 2, 0, 59, 0.3, 'Hjemmelaget', 'kaker', crafted), // tyven knuste det (bilde: tools/knust-pepperkakehus.py)
   // Godteri
   vare('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
   vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),

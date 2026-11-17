@@ -583,8 +583,10 @@ Status for tidligere ønsker om ny/oppdatert grafikk:
 
 - **✅ Flatpakket papp – grafikk klar** (`art/goods/flatpakket-papp.png`, 2×1, 256×128 px):
   en flat, sammenbrettet brun pappkartong med synlige brettekanter og brukt tape. Nøytral, uten julepynt.
-  Vises i HTML-katalogen under «Ny grafikk klar» sammen med kupongene. Spilldata bruker fortsatt emoji 📦
-  (id `flatpakket_papp`); bildefilen er klar til senere innkobling.
+  I spillet fra 17.11.2026 (id `flatpakket_papp`, det Brettemaskinen lager av en tom kartong).
+- **✅ Knust pepperkakehus** (`art/goods/pepperkakehus-knust.png`, 2×2, 256×256 px): laget av
+  `tools/knust-pepperkakehus.py` ved å kutte `goods/pepperkakehus.png` i biter og strø smuler rundt.
+  Tyven etterlater det på bordet. Kan tegnes på nytt senere.
 - **Brettemaskinen – dagens grafikk beholdes** (bekreftet 14.11.2026; tidligere «Posebretter», `art/posebretter/off.png` + `on.png`): samme
   maskin, men den bretter nå både poser og pappkartonger. Navnet er endret i spillet; grafikken
   er god nok foreløpig. Nytegning står ikke i den aktive grafikkøen.
