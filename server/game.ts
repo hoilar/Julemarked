@@ -233,6 +233,8 @@ import { BAG_PRICE, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, e
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 import { weatherDemand, weatherFor } from '../shared/weather.ts';
 import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
+import { regularChance, regularLikes, regularReputation, regularVisits } from '../shared/regulars.ts';
+import { CHARACTER_BY_ID } from '../shared/characters.ts';
 
 export class GameError extends Error {}
 
@@ -2364,6 +2366,7 @@ export function getState(player: PlayerRow): GameState {
       visitors: mine ? visitorsAt(market, mine, t) : { thief: null, inspector: false },
       crowd: mine && mine.tip_day === dateKey(t) ? tipPenalty(mine.tip_wrong) : 1,
       gift: mine ? giftFor(market, mine, t) : null,
+      regular: mine ? regularAt(market, mine, t) : null,
       autogiro: !!mine?.autogiro,
       dealer: mine ? dealerView(market, mine, t) : { offer: [], orders: [], buys: [], sales: [] },
       license: { has: hasLicense(items), pending: !!mine?.liquor_order, bannedUntil: mine && mine.liquor_ban > t ? mine.liquor_ban : null },
@@ -3580,6 +3583,73 @@ export function cutCoupon(player: PlayerRow, edition: number, index: number) {
       nowFor(market),
       `✂️ Du klippet ut en kupong: ${c.pct} % på ${ITEM_TYPES[c.productId].name.toLowerCase()} hos ${STORE_BY_ID[c.store].name} ${dayRange(c.from, c.to)}.`,
     );
+  });
+}
+
+// ---------- Stamkundene (konseptet 12.8) ----------
+
+/** Står en stamkunde ved disken nå (og har du ikke handlet med hen i dag)? */
+function regularAt(market: MarketRow, s: StallRow, t: number): { id: string; visitId: string } | null {
+  const hour = osloParts(t).hour;
+  const v = regularVisits(market.id, currentEdition(t).key, s.id).find((x) => x.hour === hour);
+  if (!v) return null;
+  if (one(db.prepare('SELECT 1 FROM leads_used WHERE stall_id = ? AND lead = ?'), s.id, v.visitId)) return null;
+  return { id: v.id, visitId: v.visitId };
+}
+
+/**
+ * Selger en vare fra bordet til stamkunden: til din pris justert med `pct`, eller («budget») for det hen har råd til
+ * når varen er dyrere enn budsjettet (Lille Emma og snøkula). Én sjanse per besøk.
+ */
+export function sellToRegular(player: PlayerRow, visitId: string, productId: string, offer: number | 'budget') {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    if (servingOf(stall) !== 'open') throw new GameError('Du må stå bak disken med skiltet på Åpent.');
+    // Kunden venter omtrent 5 ekte minutter mens kundevinduet er åpent.
+    const wait = Math.max(5 * 60_000, 5 * 60_000 * market.speed);
+    const here = [regularAt(market, stall, t), regularAt(market, stall, t - wait)].find((v) => v?.visitId === visitId);
+    if (!here) throw new GameError('Kunden har gått videre.');
+    const c = CHARACTER_BY_ID[here.id];
+    const p = PRODUCT_BY_ID[productId];
+    if (!c || !p) throw new GameError('Ukjent vare.');
+    const price = priceOf(pricesOf(stall.id), p.id);
+    const homemade = !!one(db.prepare("SELECT 1 FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ? AND label IN ('home', 'forged')"), stall.id, p.id);
+    const onCounter = !!one(db.prepare("SELECT 1 FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ?"), stall.id, p.id);
+    if (!onCounter) throw new GameError(`Det er ingen ${p.name.toLowerCase()} på bordet.`);
+    if (!regularLikes(c, { productId: p.id, price, homemade })) throw new GameError(`Det vil ikke ${c.name} ha.`);
+    const max = c.budget?.[1] ?? Infinity;
+    let amount: number;
+    let chance: number;
+    let pct = 0;
+    if (offer === 'budget') {
+      if (!(price > max)) throw new GameError('Hen har råd til din pris.');
+      amount = max;
+      chance = 1; // så mye har hen, og så glad blir hen
+    } else {
+      if (!HAGGLE_STEPS.includes(offer)) throw new GameError('Ugyldig avslag eller påslag.');
+      pct = offer;
+      amount = hagglePrice(price, pct);
+      chance = regularChance(c, pct, amount, stall.reputation);
+    }
+    db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, here.visitId);
+    if (Math.random() >= chance) {
+      if (c.buy?.noDiscount && pct < 0) q.setReputation.run(Math.max(0, stall.reputation - 0.5), stall.id);
+      event(market, player.id, t, `🙅 ${c.name}: ${c.lines?.no ?? '«Nei takk.»'}`);
+      return { sold: false, amount: 0, txId: 0, line: c.lines?.no ?? '' };
+    }
+    // «Bare hjemmelaget»: ta en hjemmelaget. Ellers den første som ligger der.
+    const took = c.buy?.homemadeOnly ? takeFromCounter(stall.id, p.id, 1, true) : takeFromCounter(stall.id, p.id, 1, true) || takeFromCounter(stall.id, p.id, 1, false);
+    if (!took) throw new GameError(`Det er ingen ${p.name.toLowerCase()} igjen på bordet.`);
+    const cash = Math.random() < CASH_SHARE;
+    const fee = cash ? 0 : Math.round(amount * PAYMENT_FEE);
+    q.addCash.run(amount - fee, stall.id);
+    const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, 1, amount);
+    const rep = regularReputation(price, amount) + (pct > 0 ? haggleReputation(pct, true) : 0);
+    q.setReputation.run(Math.max(0, Math.min(100, stall.reputation + rep)), stall.id);
+    event(market, player.id, t, `😊 ${c.name} kjøpte ${p.emoji} ${p.name.toLowerCase()} for ${amount} kr. ${c.lines?.yes ?? ''}`);
+    return { sold: true, amount, txId: Number(res.lastInsertRowid), line: c.lines?.yes ?? '' };
   });
 }
 

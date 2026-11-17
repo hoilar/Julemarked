@@ -82,6 +82,7 @@ import {
   showInspector,
   showInsurer,
   showGiftSeller,
+  showRegular,
   showSale,
   showThief,
   type Offer,
@@ -98,6 +99,7 @@ import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
 import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
+import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
@@ -142,6 +144,7 @@ type Modal =
   | { kind: 'look'; draft: Look }
   | { kind: 'buy'; stallId: number; productId: string }
   | { kind: 'customer'; seed: string } // kundevinduet (trykk på en kunde ved disken)
+  | { kind: 'regular'; visitId: string; charId: string } // en stamkunde (shared/characters.ts) ved disken
   | { kind: 'inspector' }
   | { kind: 'doc'; itemId: number }
   | { kind: 'tool'; itemId: number }
@@ -357,6 +360,7 @@ function tickClock() {
   const g = home ? state.me.gift : null;
   showGiftSeller(g ? { seed: g.seed, name: g.name, color: STORE_BY_ID[g.store].color } : null);
   showInspector(home && state.me.visitors.inspector);
+  showRegular(home ? state.me.regular : null);
   showThief(home ? state.me.visitors.thief : null, phaseOf(parts.hour) === 'night');
   setCrowd(state.me.crowd);
 }
@@ -1343,14 +1347,18 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
   if (cbox) {
     const have = new Set(itemsIn(s.me.items, 'box', cbox.id).map((i) => i.typeId));
     const missing = COOKIE_SORTS.filter((id) => !have.has(id));
+    // Kakene som mangler, én per linje med bilde.
     extra += missing.length
-      ? `<div class="cookie-note">🍪 ${COOKIE_SORTS.length - missing.length} av ${COOKIE_SORTS.length} slag. Mangler: ${missing.map((id) => esc(ITEM_TYPES[id].name.toLowerCase())).join(', ')}.</div>`
+      ? `<div class="cookie-note">🍪 ${COOKIE_SORTS.length - missing.length} av ${COOKIE_SORTS.length} slag. Mangler:</div>
+         <ul class="cookie-missing">${missing.map((id) => `<li>${icon(ITEM_TYPES[id] as { emoji: string; image?: string })}<span>${esc(ITEM_TYPES[id].name)}</span></li>`).join('')}</ul>`
       : `<div class="unpack"><button class="small" data-action="cookie-close" data-box="${cbox.id}" title="Kakene og boksen blir én vare: «${esc(ITEM_TYPES[COOKIE_BOX_FULL].name)}»">🎁 Lukk kakeboksen</button></div>`;
   }
+  // Kakeboksen har større rom enn vanlige esker.
+  const cell = cbox ? BOX_CELL * 1.7 : BOX_CELL;
   // Standardplass første gang: i høyre marg, litt forskjøvet for hvert nytt vindu.
   if (!panelPos.has(key)) {
-    const w = cols * BOX_CELL + 1.6; // % av scenebredden (cqw)
-    const h = (rows * BOX_CELL + 5) * 1.5; // % av scenehøyden (scenen er 3:2)
+    const w = cols * cell + 1.6; // % av scenebredden (cqw)
+    const h = (rows * cell + 5) * 1.5; // % av scenehøyden (scenen er 3:2)
     const k = openPanels.indexOf(key);
     panelPos.set(key, { x: Math.max(1, 98.5 - w - k * 2.5), y: Math.max(1, Math.min(18 + k * 6, 98 - h)) });
   }
@@ -1358,7 +1366,7 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
   return `
   <div class="box-panel ${cls}" data-panel="${key}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
     <div class="box-head" data-panel-head title="Dra for å flytte"><span>${title}</span>${headBtn}<button class="small ghost" data-action="close-box" data-panel-key="${key}" aria-label="Lukk">✕</button></div>
-    ${tabBar}<div class="grid box-grid" ${grid} style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">${items}</div>
+    ${tabBar}<div class="grid box-grid ${cbox ? 'cookie-grid' : ''}" ${grid} style="width:${cols * cell}cqw;height:${rows * cell}cqw;--cols:${cols};--rows:${rows}">${items}</div>
     ${extra}
   </div>`;
 }
@@ -2927,6 +2935,58 @@ function customerView(s: GameState, seed: string): string {
       <small>Dusør ${kr(THIEF_REWARD)} hvis det er dagens etterlyste. Feil tips gir ${factor} % færre kunder neste dag.</small></div>`;
 }
 
+/** Varene på bordet ditt slik stamkundene ser dem: pris og om det finnes en hjemmelaget. */
+function counterOffers(s: GameState): CounterOffer[] {
+  const out = new Map<string, CounterOffer>();
+  for (const i of s.me.items) {
+    if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
+    const o = out.get(i.typeId) ?? { productId: i.typeId, price: myPrice(s, i.typeId), homemade: false };
+    if (i.label === 'home' || i.label === 'forged') o.homemade = true;
+    out.set(i.typeId, o);
+  }
+  return [...out.values()];
+}
+
+/** Kundevinduet for en stamkunde: hvem hen er, hva hen vil ha fra bordet, og forhandling etter personligheten. */
+function regularView(s: GameState, visitId: string, charId: string): string {
+  const c = CHARACTER_BY_ID[charId];
+  if (!c) return '';
+  const want = regularWants(c, counterOffers(s));
+  const max = c.budget?.[1];
+  const tags =
+    (c.likes ?? []).map((k) => `<span class="cust-tag like">${categoryLabel(k)}</span>`).join('') +
+    (c.buy?.homemadeOnly ? '<span class="cust-tag like">Bare hjemmelaget</span>' : '') +
+    (c.dislikes ?? []).map((d) => `<span class="cust-tag dislike">${esc(d)}</span>`).join('');
+  let deal = '';
+  if (!want) {
+    deal = `<div class="cust-section"><div class="cust-kicker">Vil ha</div><p class="muted">Finner ikke noe på bordet ditt som frister${c.buy?.homemadeOnly ? ' (hen kjøper bare det som er hjemmelaget)' : ''}.</p></div>`;
+  } else {
+    const p = PRODUCT_BY_ID[want.productId];
+    const steps = HAGGLE_STEPS.map((pct) => {
+      const amount = hagglePrice(want.price, pct);
+      const ch = regularChance(c, pct, amount, s.me.reputation);
+      const over = max !== undefined && amount > max;
+      const label = pct === 0 ? 'Din pris' : `${pct > 0 ? '+' : '−'}${Math.abs(pct)} %`;
+      const tip = over ? 'Over budsjettet' : c.buy?.noDiscount && pct < 0 ? 'Avslag fornærmer hen' : `${chanceWord(ch)} (${Math.round(ch * 100)} %)`;
+      return `<button class="haggle ${pct < 0 ? 'down' : pct > 0 ? 'up' : 'even'}" data-action="regular-sell" data-product="${p.id}" data-pct="${pct}" ${over ? 'disabled' : ''} title="${esc(tip)}">
+        <span class="haggle-label">${label}</span><b>${kr(amount)}</b><small>${over ? 'for dyrt' : `${Math.round(ch * 100)} %`}</small></button>`;
+    }).join('');
+    const gift =
+      max !== undefined && want.price > max
+        ? `<button class="haggle-gift" data-action="regular-sell" data-product="${p.id}" data-budget="1">🎁 Gi den for ${kr(max)} (det hen har)</button>`
+        : '';
+    deal = `<div class="cust-section"><div class="cust-kicker">Vil ha</div>
+        <div class="cust-item">${icon(p)}<div><b>${esc(p.name)}</b><small>Din pris ${kr(want.price)}${max !== undefined ? ` · har opptil ${kr(max)}` : ''}</small></div></div></div>
+      <div class="cust-section"><div class="haggle-row">${steps}</div>${gift}
+      <p class="cust-hint">Prosenten er sjansen for ja. Fornøyde stamkunder gir omdømme, og mer jo rausere du er. Én sjanse per besøk.</p></div>`;
+  }
+  return `<div class="cust-head"><img src="${characterUrl(c)}" alt=""><div>
+      <h2>${esc(c.name)}</h2><div class="muted">${esc(c.title)}</div></div></div>
+    <p class="cust-quote">${esc(c.quote)}</p>
+    <div class="cust-tags">${tags}</div>
+    ${deal}`;
+}
+
 function inspectorView(): string {
   return `<div class="insurer-head"><img src="${inspectorImage()}" alt=""><div>
       <h2>${esc(INSPECTOR.name)}</h2><div class="muted">${esc(INSPECTOR.office)}</div></div></div>
@@ -3076,6 +3136,7 @@ function modalView(s: GameState): string {
   }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
   if (modal.kind === 'customer') inner = customerView(s, modal.seed);
+  if (modal.kind === 'regular') inner = regularView(s, modal.visitId, modal.charId);
   if (modal.kind === 'inspector') inner = inspectorView();
   if (modal.kind === 'plug') inner = plugView(s, modal.strip, modal.index);
   if (modal.kind === 'doc' || modal.kind === 'tool') {
@@ -3223,7 +3284,7 @@ function modalView(s: GameState): string {
     );
   }
 
-  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'customer' ? 'customer-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''} ${modal.kind === 'look' ? 'look-modal' : ''}" role="dialog">
+  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'customer' || modal.kind === 'regular' ? 'customer-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''} ${modal.kind === 'look' ? 'look-modal' : ''}" role="dialog">
     <button class="close ghost small" data-action="close" aria-label="Lukk">✕</button>${inner}</div></div>`;
 }
 
@@ -3947,6 +4008,21 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'customer' && el.dataset.seed) modal = { kind: 'customer', seed: el.dataset.seed };
+  if (action === 'regular' && el.dataset.visit && el.dataset.char) modal = { kind: 'regular', visitId: el.dataset.visit, charId: el.dataset.char };
+  if (action === 'regular-sell' && modal?.kind === 'regular') {
+    const { visitId } = modal;
+    const budget = el.dataset.budget === '1';
+    const pct = Number(el.dataset.pct ?? 0);
+    modal = null;
+    api<{ sold: boolean; amount: number; txId: number; line: string }>('/api/regular', { visitId, productId: el.dataset.product, pct, budget })
+      .then((r) => {
+        if (r.txId) ownSales.add(r.txId);
+        toast(r.sold ? `😊 Solgt for ${kr(r.amount)}. ${r.line}` : `🙅 ${r.line || 'Nei takk.'}`, !r.sold);
+      })
+      .catch((err) => toast((err as Error).message, true))
+      .finally(refresh);
+    return;
+  }
   if (action === 'haggle' && el.dataset.lead) {
     const id = el.dataset.lead;
     const pct = Number(el.dataset.pct ?? 0);

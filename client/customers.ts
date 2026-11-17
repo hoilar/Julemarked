@@ -334,7 +334,7 @@ export const insurerImage = (): string => characterUrl(CHARACTER_BY_ID['forsikri
 // ---------- Spesielle besøkende: selgeren, Tilsynsmannen og tyven ----------
 // De står på én plass bak disken så lenge serveren sier de er der. Kunder på plassen går.
 
-type SpecialKind = 'insurer' | 'inspector' | 'thief' | 'gift';
+type SpecialKind = 'insurer' | 'inspector' | 'thief' | 'gift' | 'regular';
 interface Special {
   el: HTMLDivElement;
   x: number;
@@ -377,6 +377,19 @@ export function showGiftSeller(g: { seed: string; name: string; color: string } 
   });
 }
 const INSPECTOR_X = 2; // står på plassen lengst til venstre
+
+/** Stamkunden (Fru Kvist, Lille Emma …) ved disken. Trykk åpner kundevinduet for stamkunder (data-action="regular"). */
+export function showRegular(r: { id: string; visitId: string } | null) {
+  const c = r ? CHARACTER_BY_ID[r.id] : undefined;
+  showSpecial('regular', c ? r!.visitId : null, 56, (el) => {
+    el.classList.add('regular', 'special');
+    el.dataset.action = 'regular';
+    el.dataset.visit = r!.visitId;
+    el.dataset.char = c!.id;
+    el.title = `${c!.name} – trykk for å snakke med ${c!.name.startsWith('Fru') || c!.name.startsWith('Lille') ? 'henne' : 'hen'}`;
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${characterUrl(c!)}"><div class="want">💬</div></div>`;
+  });
+}
 
 /** Viser eller sender bort forsikringsselgeren. Trykk på henne åpner tilbudet (data-action="insurer"). */
 export function showInsurer(here: boolean) {

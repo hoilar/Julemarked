@@ -744,7 +744,7 @@ export const PRODUCTS: Product[] = [
   vare('serinakake', 'Serinakake', '🍪', 1, 1, 6, 19, 1.8, 'Hjemmelaget', 'kaker', crafted),
   vare('berlinerkrans', 'Berlinerkrans', '🥨', 1, 1, 9, 25, 1.6, 'Hjemmelaget', 'kaker', crafted),
   // Full kakeboks (lukkes i eskevinduet). Kundene betaler mer enn for kakene hver for seg.
-  vare('syv_slag', 'Kakeboks med syv slag', '🎁', 2, 2, 120, 329, 0.35, 'Hjemmelaget', 'kaker', crafted),
+  vare('syv_slag', 'Kakeboks med syv slag', '🎁', 3, 3, 120, 329, 0.35, 'Hjemmelaget', 'kaker', crafted),
   // Godteri
   vare('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
   vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),
@@ -807,7 +807,7 @@ export const CONTAINERS: Container[] = [
   { kind: 'container', id: 'safe_stor', name: 'Safe, stor', emoji: '🗄️', image: '/art/safe-stor.png', imageOpen: '/art/safe-stor-apen.png', price: 1499, size: { w: 3, h: 4 }, inner: { cols: 9, rows: 9 }, safe: true },
   { kind: 'container', id: 'plastkasse', name: 'Plastkasse med lokk', emoji: '🗃️', image: '/art/plastboks.png', price: 149, size: { w: 4, h: 4 }, inner: { cols: 9, rows: 12 } },
   // Kakeboksen: sju rom, én småkake av hver sort. Full boks lukkes og blir varen «Kakeboks med syv slag».
-  { kind: 'container', id: 'kakeboks', name: 'Kakeboks', emoji: '🍪', image: '/art/kakeboks.png', price: 59, size: { w: 2, h: 2 }, inner: { cols: 7, rows: 1 } },
+  { kind: 'container', id: 'kakeboks', name: 'Kakeboks', emoji: '🍪', image: '/art/kakeboks.png', price: 59, size: { w: 3, h: 3 }, inner: { cols: 7, rows: 1 } },
   // Dokumentmappa: bare papirer. Fire faner du kan gi navn, 5×5 i hver (inner er fanene stablet: 5×20).
   { kind: 'container', id: 'dokumentmappe', name: 'Dokumentmappe', emoji: '🗂️', image: '/art/verktoy/dokumentmappe.png', price: 129, size: { w: 2, h: 3 }, inner: { cols: 10, rows: 40 }, docFolder: { tabs: 4, tabGrid: { cols: 10, rows: 10 } } },
   // Ryggsekken bæres på ryggen og rommer like mye som en pappkartong.

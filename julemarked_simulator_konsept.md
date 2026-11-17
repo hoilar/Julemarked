@@ -563,7 +563,7 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 
 **Neste steg:**
 
-- Stamkundene kommer som egne besøkende ved disken (som Tilsynsmannen), bestemt av serveren per dag og bod, med egne valg i kundevinduet.
+- ✅ Bygd 17.11.2026 (`shared/regulars.ts`): stamkundene kommer til disken i sine egne tidsrom, bestemt av serveren per dag og bod (omtrent 3–8 besøk per bod gjennom desember per figur). Trykk åpner kundevinduet: favorittvaren eller den dyreste varen de liker på bordet, forhandling etter personligheten (Fru Kvist bare hjemmelaget, direktøren tåler ikke avslag) og «Gi den for det hen har» når varen er dyrere enn budsjettet (Lille Emma og snøkula). Fornøyde stamkunder gir omdømme, mer jo rausere du er.
 - Fru Kvists bestilling av syv slag blir den første kundebestillingen (12.4).
 - Tyttebærpolitiet kommer og henter tyven når tipset er riktig.
 

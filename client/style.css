@@ -669,6 +669,10 @@ body.dragging .nail:not(.used) .nail-head { filter: drop-shadow(0 0 0.25cqw rgba
 .haggle.up { border-color: #d99a9a; }
 .haggle:hover { filter: none; background: var(--line); }
 .cust-hint { font-size: 0.8rem; color: var(--muted); margin: 0.4rem 0 0; }
+.cust-quote { font-style: italic; margin: 0 0 0.4rem; }
+.customer-modal .cust-tags { margin-bottom: 0.4rem; }
+.haggle-gift { width: 100%; margin-top: 0.4rem; background: var(--green); }
+.customer.regular .want { font-size: 0.9em; }
 .cust-police { border-top: 1px solid var(--line); padding-top: 0.6rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; }
 .cust-police button { display: inline-flex; align-items: center; gap: 0.35rem; }
 .cust-police button img { width: 26px; height: 26px; border-radius: 50%; background: #f3e6d0; }
@@ -1063,6 +1067,9 @@ img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.
 .unpack { position: relative; }
 /* Kakeboksen: hvor mange slag som mangler */
 .cookie-note { color: #f5d9b0; font-size: max(10px, 0.75cqw); max-width: 100%; }
+.cookie-missing { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2cqw; color: #f5d9b0; font-size: max(10px, 0.8cqw); }
+.cookie-missing li { display: flex; align-items: center; gap: 0.4cqw; }
+.cookie-missing img.icon, .cookie-missing .icon { width: max(18px, 1.4cqw); height: max(18px, 1.4cqw); image-rendering: pixelated; opacity: 0.75; }
 .box-stash-popup {
   position: absolute; left: 0; bottom: calc(100% + 0.4cqw); z-index: 5; min-width: max(220px, 16cqw);
   padding: 0.3rem; background: var(--card); color: var(--ink);

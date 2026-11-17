@@ -218,6 +218,8 @@ export interface GameState {
     bills: BillView[]; // ubetalte regninger i postkassa
     /** Hvem som står ved boden din nå utenom vanlige kunder. thief = ansiktet (seed), uten å si at det er tyven. */
     visitors: { thief: string | null; inspector: boolean };
+    /** Stamkunden som står ved disken nå (shared/regulars.ts), eller null. */
+    regular: { id: string; visitId: string } | null;
     /** Andelen kunder i dag etter feil tips til politiet i går (1 = som vanlig). */
     crowd: number;
     /** Strømmåleren (vises i sikringsboksen). kwh = målerstanden, sinceBill/cost = siden forrige regning. */

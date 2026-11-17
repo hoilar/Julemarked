@@ -46,6 +46,20 @@ export interface Character {
   quote: string; // typisk replikk
   /** Historien gjennom sesongen, i rekkefølge (forslag). */
   story?: string[];
+  /**
+   * Når figuren kommer til disken (shared/regulars.ts): timene [from, to) i spilltid (to kan gå over midnatt, f.eks. 26 = kl. 02),
+   * sjansen per bod per dag, og ev. ukedager (0 = søndag) med høyere sjanse eller som eneste dager.
+   */
+  visit?: { from: number; to: number; chance: number; peakDays?: number[]; peakChance?: number; onlyDays?: number[] };
+  /**
+   * Hvordan figuren handler: sjansen for ja til din pris (base) og hvor mye den faller per 100 % påslag (slope).
+   * homemadeOnly = kjøper bare hjemmelaget; noDiscount = tar avslag som en fornærmelse.
+   */
+  buy?: { base: number; slope: number; homemadeOnly?: boolean; noDiscount?: boolean };
+  /** Varen hen helst vil ha: velges først hvis den står på bordet. */
+  favorite?: string;
+  /** Replikker når handelen går bra eller dårlig. */
+  lines?: { yes: string; no: string };
 }
 
 /** Felles for alle: bare de valgte delene, ingen tilfeldige briller, skjegg eller øredobber. */
@@ -85,6 +99,10 @@ export const CHARACTERS: Character[] = [
     budget: [150, 450],
     haggle: 'aldri',
     visits: 'Formiddager, særlig tirsdag og lørdag',
+    favorite: 'syv_slag',
+    visit: { from: 9, to: 13, chance: 0.25, peakDays: [2, 6], peakChance: 0.6 },
+    buy: { base: 0.85, slope: 1.2, homemadeOnly: true },
+    lines: { yes: '«Hm. Den får duge. Mamma ville ha godkjent den.»', no: '«Nei, takk. Så mye betalte vi ikke for kaker i min tid.»' },
     quote: '«Er disse virkelig hjemmelaget? Jeg merker det, vet du.»',
     story: [
       'Første uke: kommer innom, smaker på en krumkake og sier at «den var nesten god».',
@@ -128,6 +146,10 @@ export const CHARACTERS: Character[] = [
     budget: [400, 3000],
     haggle: 'aldri',
     visits: 'Ettermiddager i helgene',
+    favorite: 'lusekofte',
+    visit: { from: 13, to: 17, chance: 0.15, peakDays: [0, 6], peakChance: 0.45 },
+    buy: { base: 0.9, slope: 0.7, noDiscount: true },
+    lines: { yes: '«Utmerket. Behold vekslepengene.»', no: '«Avslag? Ser jeg ut som en som trenger avslag?»' },
     quote: '«Er dette den eneste? Utmerket. Pakk den inn.»',
     story: [
       'Leter etter en ekte lusekofte og en antikk julekule. Den som har sjeldne varer på bordet, får ham som stamkunde.',
@@ -158,9 +180,13 @@ export const CHARACTERS: Character[] = [
     accessories: [{ id: 'oreklokker', color: 'e85d9a', color2: 'ffffff' }],
     likes: ['godteri', 'leketoy', 'dekor'],
     dislikes: ['alkohol', 'lugubert'],
-    budget: [20, 80],
+    budget: [20, 63],
     haggle: 'mye',
     visits: 'Etter skolen, kl. 14–16',
+    favorite: 'snokule',
+    visit: { from: 14, to: 16, chance: 0.35, onlyDays: [1, 2, 3, 4, 5] },
+    buy: { base: 0.9, slope: 1.0 },
+    lines: { yes: '«Tusen takk! Mamma kommer til å bli SÅ glad!»', no: '«Åh … da må jeg spare litt til.»' },
     quote: '«Hvor mye koster snøkula? … Har du en litt billigere snøkule?»',
     story: [
       'Kommer innom flere ganger og ser på snøkula med landsby (179 kr). Hun har 63 kr.',
@@ -199,6 +225,10 @@ export const CHARACTERS: Character[] = [
     budget: [40, 150],
     haggle: 'litt',
     visits: 'Hverdager kl. 15–18',
+    favorite: 'glogg',
+    visit: { from: 15, to: 18, chance: 0.4, onlyDays: [1, 2, 3, 4, 5] },
+    buy: { base: 0.92, slope: 1.2 },
+    lines: { yes: '«Perfekt, takk – må løpe!»', no: '«Glem det, bussen går!»' },
     quote: '«En kopp gløgg, takk – bussen går om fire minutter!»',
     story: [
       'Går fra boden hvis han må vente, men blir stamkunde hvis det alltid står noe varmt klart.',
@@ -236,6 +266,10 @@ export const CHARACTERS: Character[] = [
     budget: [60, 250],
     haggle: 'mye',
     visits: 'Lørdager og etter barnehagen',
+    favorite: 'pepperkakepose',
+    visit: { from: 10, to: 17, chance: 0.2, peakDays: [6], peakChance: 0.5 },
+    buy: { base: 0.6, slope: 1.8 },
+    lines: { yes: '«Så hyggelig! Jeg skal si det til de andre i barnehagen.»', no: '«Det blir for dyrt for oss i år, dessverre.»' },
     quote: '«Får jeg tre for to hvis jeg tar én til?»',
     story: [
       'Gir du henne avslag, kommer hun tilbake med flere foreldre (flere kunder neste dag).',
@@ -273,6 +307,10 @@ export const CHARACTERS: Character[] = [
     budget: [0, 120],
     haggle: 'mye',
     visits: 'Når det snør (fint lys)',
+    favorite: 'julestjerne',
+    visit: { from: 11, to: 15, chance: 0.12 },
+    buy: { base: 0.4, slope: 1.8 },
+    lines: { yes: '«Så fint! Det blir story i kveld, lov!»', no: '«Ok. Jeg tagger deg ikke, da.»' },
     quote: '«Hvis jeg får den gratis, tagger jeg boden din!»',
     story: [
       'Gratis vare: flere kunder dagen etter (storyen går viralt i markedet).',
@@ -311,6 +349,10 @@ export const CHARACTERS: Character[] = [
     budget: [30, 120],
     haggle: 'litt',
     visits: 'Tilfeldig, særlig etter et tyveri eller et tilsyn',
+    favorite: 'kakao',
+    visit: { from: 10, to: 16, chance: 0.12 },
+    buy: { base: 0.8, slope: 1.2 },
+    lines: { yes: '«Takk! Kanskje du havner i avisa en dag.»', no: '«Det får jeg skrive om …»' },
     quote: '«Har du en kommentar til Markedsposten?»',
     story: [
       'Intervjuer boden etter et tyveri: ærlig svar gir sympati (flere kunder), løgn kan avsløres.',
@@ -348,6 +390,10 @@ export const CHARACTERS: Character[] = [
     budget: [100, 600],
     haggle: 'litt',
     visits: 'Om natta (kl. 21–02)',
+    favorite: 'smuglersigaretter',
+    visit: { from: 21, to: 26, chance: 0.25 },
+    buy: { base: 0.9, slope: 0.9 },
+    lines: { yes: '«Hyggelig å handle med deg. Vi har aldri møttes.»', no: '«Fyren hadde det billigere.»' },
     quote: '«Fyren sa du hadde … varer.»',
     story: ['Kjøper luguberte varer om natta. Tipser du politiet om henne, slutter Fyren å svare på SMS.'],
   },

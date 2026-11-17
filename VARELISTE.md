@@ -57,7 +57,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🥧 Sandkake | `sandkake` | 1×1 | 8 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Sandkaker, 5 stk) | kan bare lages | `goods/sandkake.png` ↓ |
 | 🍪 Serinakake | `serinakake` | 1×1 | 6 kr | 19 kr | 1.8 | Hjemmelaget | Lages: Bakemaskin (Serinakaker, 6 stk) | kan bare lages | `goods/serinakake.png` ↓ |
 | 🥨 Berlinerkrans | `berlinerkrans` | 1×1 | 9 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Berlinerkranser, 5 stk) | kan bare lages | `goods/berlinerkrans.png` ↓ |
-| 🎁 Kakeboks med syv slag | `syv_slag` | 2×2 | 120 kr | 329 kr | 0.35 | Hjemmelaget | — | kan bare lages | `goods/syv-slag.png` ↓ |
+| 🎁 Kakeboks med syv slag | `syv_slag` | 3×3 | 120 kr | 329 kr | 0.35 | Hjemmelaget | — | kan bare lages | `goods/syv-slag.png` ↓ |
 
 ### 🍬 Godteri (11)
 
@@ -182,7 +182,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🔐 Safe, liten | `safe` | 3×3 | 599 kr | rommer 6×6 | Klas Olsen | `safe-liten.png` ↓<br>`safe-liten-apen.png` ↓ |
 | 🗄️ Safe, stor | `safe_stor` | 3×4 | 1 499 kr | rommer 9×9 | Klas Olsen | `safe-stor.png` ↓<br>`safe-stor-apen.png` ↓ |
 | 🗃️ Plastkasse med lokk | `plastkasse` | 4×4 | 149 kr | rommer 9×12 | Klas Olsen | `plastboks.png` ↓ |
-| 🍪 Kakeboks | `kakeboks` | 2×2 | 59 kr | rommer 7×1 | Klas Olsen | `kakeboks.png` ↓ |
+| 🍪 Kakeboks | `kakeboks` | 3×3 | 59 kr | rommer 7×1 | Klas Olsen | `kakeboks.png` ↓ |
 | 🗂️ Dokumentmappe | `dokumentmappe` | 2×3 | 129 kr | rommer 10×40 | Klas Olsen | `verktoy/dokumentmappe.png` ↓ |
 | 🎒 Ryggsekk | `ryggsekk` | 3×3 | 249 kr | rommer 6×9 | Klas Olsen | `ryggsekk.png` ↓ |
 | 🚗 WV Tennis 1995 | `bil_tennis` | 4×4 | 0 kr | rommer 6×6 · 60 min per tur, bensin | Bilbutikken | `biler/bil-tennis.png`<br>`biler/bil-tennis-apen.png` |
