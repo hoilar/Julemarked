@@ -1014,6 +1014,17 @@ function counterView(stall: StallPublic, own: boolean): string {
 
 // --- Under disken og i esker ---
 
+/**
+ * Hvor kake nr. k (rekkefølgen i COOKIE_SORTS) ligger på kakeboksbildet, i prosent av bildet: [midt x, midt y, størrelse].
+ * Samme rom som tools/syv-slag.py: den første i midten, de seks andre rundt (bildet er 256 × 256).
+ */
+function cookieSpot(k: number): [number, number, number] {
+  const pct = (v: number) => Math.round((v / 256) * 1000) / 10;
+  if (k === 0) return [pct(128), pct(143), pct(38)];
+  const a = ((-90 + 30 + (k - 1) * 60) * Math.PI) / 180;
+  return [pct(128 + 50 * Math.cos(a)), pct(143 + 27 * Math.sin(a)), pct(34)];
+}
+
 function gridItemView(i: Item, cols: number, rows: number): string {
   const t = ITEM_TYPES[i.typeId];
   const style = `left:${(i.x / cols) * 100}%;top:${(i.y / rows) * 100}%;width:${(i.w / cols) * 100}%;height:${(i.h / rows) * 100}%;--min:${Math.min(i.w, i.h)};--art:${artScale(i.typeId)}`;
@@ -1021,6 +1032,21 @@ function gridItemView(i: Item, cols: number, rows: number): string {
     // Plastkasse med boksinndelere viser fanene (2 eller 3) over lokket.
     const tabbed = t.id === PLASTIC_BOX && i.tabs && i.tabs.length > 1 ? `/art/plastboks-${i.tabs.length}-faner.png` : null;
     const look = tabbed ? { ...t, image: tabbed } : t.imageOpen && i.safe && !i.safe.locked ? { ...t, image: t.imageOpen } : t;
+    // Kakeboksen viser kakene som ligger i den, i samme rom som på bildet av den fulle boksen (tools/syv-slag.py).
+    if (t.id === COOKIE_BOX) {
+      const cookies = itemsIn(state!.me.items, 'box', i.id)
+        .map((c) => ({ c, k: COOKIE_SORTS.indexOf(c.typeId) }))
+        .filter(({ k }) => k >= 0)
+        .map(({ c, k }) => {
+          const [x, y, size] = cookieSpot(k);
+          const img = ITEM_TYPES[c.typeId].image;
+          return img ? `<img class="tin-cookie" src="${spill(img)}" alt="" draggable="false" style="left:${x}%;top:${y}%;width:${size}%;height:${size}%">` : '';
+        })
+        .join('');
+      const n = itemsIn(state!.me.items, 'box', i.id).length;
+      return `<div class="gitem box has-img ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – ${n} av ${COOKIE_SORTS.length} slag (trykk for å åpne)">
+        <div class="cookie-tin">${sprite(t)}${cookies}</div></div>`;
+    }
     return `<div class="gitem box ${t.image ? 'has-img' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(i.boxName ?? t.name)} – trykk for å åpne">
       ${sprite(look)}</div>`;
   }
