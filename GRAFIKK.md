@@ -382,7 +382,7 @@ Ingen tall eller tekst i bildet, som før (se «Spesifikasjon: rabattkupong og g
 **✅ Grafikk klar:** ni kuponger i `client/public/art/verktoy/`, én vanlig, én med gullkant og én utgått
 per butikk. Samme kvadratiske lerret, 256×256 px, transparent bakgrunn og blank midte til rabatt/dato.
 Utgåtte kuponger har falmet butikkfarge og et rødt kryss uten tekst. Den opprinnelige felleskupongen er bevart.
-Bildene vises i `vareliste.html` under «Ny grafikk klar»; de er ikke koblet til spilldata ennå.
+Bildene vises i `vareliste.html` under «Ny grafikk klar». **I spillet fra 17.11.2026:** kupongen under disken bruker butikkens bilde, gullkant for sesongkuponger (gyldige til julaften) og utgått-bildet når datoen er passert.
 Originaler og bildeoversikt: `GFX_assets/planlagte/kuponger-papp/`. Prompter og filoversikt:
 `tools/kuponger-papp.json`. Klargjøring med prosjektets pikselpalett: `tools/kuponger-papp.py`.
 
@@ -395,7 +395,7 @@ Støpslene fyller uttakene fra venstre, med separate mørke kabler bøyd opp og 
 Kremfarget kropp, bryter og tilførselsledning følger originalen. Samme **256×128 px** transparente
 lerret som originalbildet (grafikkformat 2:1; gjenstandens footprint i spillet er fortsatt 3×2).
 Originalen og fire varianter vises samlet i `vareliste.html` under «Ny grafikk klar».
-Spilldata og det opprinnelige bildet er bevart. Store originaler og oversikt:
+**I spillet fra 17.11.2026:** det ekstra grenuttaket under disken viser 1–4 støpsler etter hvor mange som er plugget inn. Store originaler og oversikt:
 `GFX_assets/planlagte/grenuttak/`. Prompter: `tools/grenuttak-varianter.json`.
 Klargjøring på felles lerret: `tools/grenuttak-varianter.py`.
 

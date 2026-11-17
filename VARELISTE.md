@@ -4,9 +4,9 @@
 
 Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/`. ⚠️ = bildefila mangler (emoji brukes). ↓ = har nedskalert kopi i `art/spill/` (`py tools/spillbilder.py`).
 
-## Salgsvarer (59)
+## Salgsvarer (65)
 
-### 🎄 Dekor (9)
+### 🎄 Dekor (10)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -19,6 +19,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🎅 Malt trenisse | `trenisse` | 1×2 | 8 kr | 69 kr | 0.7 | Hjemmelaget | Lages: Dekormaskin (Malte trenisser, 2 stk) | kan bare lages | `goods/trenisse.png` ↓ |
 | 🟡 Gullkule | `gullkule` | 1×1 | 25 kr | 199 kr | 0.35 | Hjemmelaget | Lages: Dekormaskin (Gullkuler, 2 stk) | kan bare lages | `goods/gullkule.png` ↓ |
 | 🌟 Toppstjerne | `toppstjerne` | 1×2 | 55 kr | 249 kr | 0.3 | Hjemmelaget | Lages: Dekormaskin (Toppstjerne, 1 stk) | kan bare lages | `goods/toppstjerne.png` ↓ |
+| 🌺 Julestjerne i potte | `julestjerne` | 2×2 | 60 kr | 179 kr | 0.45 | Gartneriet | Nettbutikkene |  | `goods/julestjerne.png` ↓ |
 
 ### 🧤 Klær (7)
 
@@ -42,7 +43,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🧩 Julepuslespill | `puslespill` | 2×2 | 55 kr | 169 kr | 0.5 | Spillfabrikken | Nettbutikkene |  | `goods/puslespill.png` ↓ |
 | 🚗 Blikkbil fra 50-tallet | `blikkbil` | 2×1 | 180 kr | 499 kr | 0.12 | Loppemarkedet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/blikkbil.png` ↓ |
 
-### 🍪 Kaker (7)
+### 🍪 Kaker (9)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -53,8 +54,10 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🍪 Sirupssnipp | `sirupssnipp` | 1×1 | 6 kr | 15 kr | 2 | Hjemmelaget | Lages: Bakemaskin (Sirupssnipper, 5 stk) | kan bare lages | `goods/sirupssnipp.png` ↓ |
 | 🥯 Lussekatt | `lussekatt` | 1×1 | 14 kr | 45 kr | 1.4 | Hjemmelaget | Lages: Bakemaskin (Lussekatter, 4 stk) | kan bare lages | `goods/lussekatt.png` ↓ |
 | 🎂 Kransekake | `kransekake` | 2×2 | 46 kr | 449 kr | 0.25 | Hjemmelaget | Lages: Bakemaskin (Kransekake, 1 stk) | kan bare lages | `goods/kransekake.png` ↓ |
+| 🥧 Sandkake | `sandkake` | 1×1 | 8 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Sandkaker, 5 stk) | kan bare lages | `goods/sandkake.png` ↓ |
+| 🍪 Serinakake | `serinakake` | 1×1 | 6 kr | 19 kr | 1.8 | Hjemmelaget | Lages: Bakemaskin (Serinakaker, 6 stk) | kan bare lages | `goods/serinakake.png` ↓ |
 
-### 🍬 Godteri (9)
+### 🍬 Godteri (11)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -67,8 +70,10 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🟫 Fudge | `fudge` | 1×1 | 6 kr | 15 kr | 2 | Hjemmelaget | Lages: Kokeplate med kjele (Fudge, 6 stk) | kan bare lages | `goods/fudge.png` ↓ |
 | 🍭 Polkagrisstang | `polkagris` | 1×2 | 9 kr | 35 kr | 1.4 | Søtt & Co | Nettbutikkene |  | `goods/polkagris.png` ↓ |
 | 🍎 Kandisert eple | `kandisert_eple` | 1×1 | 5 kr | 39 kr | 1.2 | Hjemmelaget | Lages: Kokeplate med kjele (Kandiserte epler, 2 stk) | kan bare lages | `goods/kandisert-eple.png` ↓ |
+| 🍬 Anisdrops | `anisdrops` | 1×1 | 4 kr | 15 kr | 1.8 | Søtt & Co | Nettbutikkene |  | `goods/anisdrops.png` ↓ |
+| 📅 Julekalender (24 luker) | `julekalender` | 2×2 | 45 kr | 129 kr | 0.5 | Kakaokompaniet | Nettbutikkene |  | `goods/julekalender.png` ↓ |
 
-### 🫙 Mat (5)
+### 🫙 Mat (6)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -77,6 +82,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🥣 Rømmegrøt | `rommegrot` | 1×1 | 6 kr | 59 kr | 0.9 | Hjemmelaget | Lages: Kokeplate med kjele (Rømmegrøt, 3 stk) | kan bare lages | `goods/rommegrot.png` ↓ |
 | 🫓 Lefse | `lefse` | 1×1 | 10 kr | 35 kr | 1.2 | Hjemmelaget | Lages: Bakemaskin (Lefser, 4 stk) | kan bare lages | `goods/lefse.png` ↓ |
 | 🍖 Fenalår | `fenalaar` | 1×3 | 300 kr | 799 kr | 0.1 | Fjellspekeriet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/fenalaar.png` ↓ |
+| 🐟 Lutefisk | `lutefisk` | 1×2 | 70 kr | 189 kr | 0.25 | Fiskemottaket | Nettbutikkene, sjelden (15 % av dagene) | sjelden | `goods/lutefisk.png` ↓ |
 
 ### ☕ Drikke (5)
 
@@ -152,7 +158,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🍲 Kokeplate med kjele | `kjele` | 399 kr | 2 | Kok gløgg, karameller, brente mandler og syltetøy (oppskrifter i avisa). 0,5 kW per styrke | `kjele` (se Maskiner) | `kjele/off.png` ↓<br>`kjele/on1.png` ↓<br>`kjele/on2.png` ↓<br>`kjele/on3.png` ↓<br>`kjele/on4.png` ↓ |
 | 🗜️ Brettemaskin | `posebretter` | 299 kr | 0.3 | Bretter sammen tomme handleposer og pappkartonger – én per time. Flatpakket papp kan ikke brettes ut igjen. | `posebretter` (se Maskiner) | `posebretter/off.png` ↓<br>`posebretter/on.png` ↓ |
 | 🧻 Makuleringsmaskin | `makulator` | 249 kr | 0.2 | Makulerer aviser, lapper og plastposer, så de ikke havner i søpla. Plast kan bli mikroplast… | `makulator` (se Maskiner) | `maskiner/makulator.png` ↓<br>`maskiner/makulator-pa.png` ↓ |
-| 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
+| 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
 | 🧶 Strikkemaskin | `strikkemaskin` | 899 kr | 0.4 | Votter, Nisselue, Julestrømpe, Skjerf, Pulsvarmere, Alpakkaskjerf, Strikket bamse, «Merkevotter» – hjemmelaget | `strikkemaskin` (se Maskiner) | `maskiner/strikkemaskin.png` ↓<br>`maskiner/strikkemaskin-pa.png` ↓ |
 | 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
 | 🔌 Ladestasjon | `ladestasjon` | 299 kr | 2 | Lader fire batterier. Maskiner med batteri går videre når strømmen går | `ladestasjon` (se Maskiner) | `elektro/ladestasjon-0.png` ↓ |
@@ -187,7 +193,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 📱 Smarttelefon | `telefon` | 2×3 | 499 kr | Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden. | Klas Olsen | `telefon/telefon.png` ↓ |
 | 🔍 Forstørrelsesglass | `lupe` | 2×2 | 129 kr | Gjør små ting store. Nyttig for den som vil se nøyere etter. | Klas Olsen | `verktoy/lupe.png` |
 | ✂️ Saks | `saks` | 2×2 | 79 kr | Skarp. Pass på fingrene. | Klas Olsen | `verktoy/saks.png` |
-| 🧱 Boksinndeler | `boksinndeler` | 2×1 | 249 kr | Skillevegg i hard plast med etikettholder. Passer i plastkassa med lokk. | Klas Olsen | `boksinndeler.png` |
+| 🧱 Boksinndeler | `boksinndeler` | 2×1 | 249 kr | Skillevegg i hard plast med etikettholder. Passer i plastkassa med lokk. | Klas Olsen | `boksinndeler.png` ↓ |
 | 🧼 Såpestykke | `sapestykke` | 2×2 | 19 kr | Myk, hvit såpe i en blokk. Lukter rent. | Klas Olsen | `verktoy/sapestykke.png` |
 | 🛠️ Nøkkelmaskin | `nokkelmaskin` | 3×3 | 900 kr | Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk. | Fyren bak containeren | `verktoy/nokkelmaskin.png` ↓ |
 | 🗝️ Blank nøkkel | `blank_nokkel` | 2×2 | 30 kr | Et nøkkelemne uten tagger. | Fyren bak containeren | `verktoy/blank-nokkel.png` |

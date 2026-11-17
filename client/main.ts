@@ -90,7 +90,7 @@ import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
 import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
-import { couponValid, dayRange } from '../shared/deals.ts';
+import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
 import spillbilder from './spillbilder.json';
 import {
@@ -1021,7 +1021,11 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   if (t.kind === 'electric') {
     const stall = myStall(state!);
     const live = t.id === STRIP.id ? !!stall?.power.sockets.includes(stripEntry(i.id)) && stall.power.on : !!stall?.power.on;
-    return `<div class="gitem box has-img electric ${live ? 'live' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)} – trykk for å åpne">${sprite(t)}</div>`;
+    // Ekstra grenuttak: viser støpslene som står i (1–4, fylt fra venstre).
+    const plugs = t.id === STRIP.id ? Math.min(4, (i.strip?.sockets ?? []).filter(Boolean).length) : 0;
+    const look = plugs ? { ...t, image: `/art/elektro/grenuttak-${plugs}.png` } : t;
+    const what = t.id === STRIP.id ? ` (${plugs ? `${plugs} plugget inn` : 'ingenting plugget inn'})` : '';
+    return `<div class="gitem box has-img electric ${live ? 'live' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" data-drag="${i.id}" title="${esc(t.name)}${what} – trykk for å åpne">${sprite(look)}</div>`;
   }
   if (t.id === PHONE) {
     const n = unreadCount(state!);
@@ -1040,6 +1044,13 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   if (i.coupon) title += `: ${i.coupon.pct} % på ${ITEM_TYPES[i.coupon.productId].name.toLowerCase()} (${STORE_BY_ID[i.coupon.store].name}, ${dayRange(i.coupon.from, i.coupon.to)})`;
   if (i.giftcard) title += `: ${kr(i.giftcard.value)}`;
   if (i.label && PRODUCT_BY_ID[i.typeId]) title += ` (${labelText(i.typeId, i.label, myStall(state!)?.name ?? '')})`;
+  // Kupongen: butikkens farge, gullkant hvis den gjelder hele sesongen, og falmet med kryss når den er gått ut.
+  if (i.coupon) {
+    const today = state!.paper?.edition ?? 0;
+    const kind = today > i.coupon.to ? '-utgatt' : isSeasonCoupon(i.coupon) ? '-gull' : '';
+    if (today > i.coupon.to) title += ' – gått ut på dato';
+    return `<div class="gitem has-img" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite({ emoji: t.emoji, image: `/art/verktoy/kupong-${i.coupon.store}${kind}.png` })}</div>`;
+  }
   const power = myStall(state!)?.power;
   const off = (ITEM_TYPES[i.typeId] as { imageOff?: string }).imageOff;
   const dark = !!off && (!power?.on || power.blown);
@@ -2647,11 +2658,11 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
         const st = STORE_BY_ID[c.store];
         const t = ITEM_TYPES[c.productId];
         if (held?.cutCoupons?.includes(c.index)) return '<div class="paper-coupon cut"><span>✂️ Klippet ut</span></div>';
-        return `<div class="paper-coupon" style="--brand:${st.color};--brand-ink:${st.ink}">
+        return `<div class="paper-coupon ${isSeasonCoupon(c) ? 'season' : ''}" style="--brand:${st.color};--brand-ink:${st.ink}">
           <div class="coupon-store">${esc(st.name)}</div>
           <div class="coupon-pct">${c.pct} %</div>
           <div class="coupon-what">på ${icon(t)} ${esc(t.name.toLowerCase())}</div>
-          <div class="coupon-when">Gjelder ${dayRange(c.from, c.to)}</div>
+          <div class="coupon-when">${isSeasonCoupon(c) ? `⭐ Gjelder hele sesongen (${dayRange(c.from, c.to)})` : `Gjelder ${dayRange(c.from, c.to)}`}</div>
           ${held ? `<button class="small" data-action="cut-coupon" data-edition="${p.edition}" data-index="${c.index}" ${scissors ? '' : 'disabled title="Du trenger en saks (Klas Olsen)"'}>✂️ Klipp ut</button>` : ''}
         </div>`;
       })
@@ -2839,9 +2850,9 @@ function itemView(s: GameState, it: Item): string {
     const p = ITEM_TYPES[c.productId];
     const today = s.paper?.edition ?? 0;
     const status = couponValid(c, today) ? '✅ Gjelder i dag' : today < c.from ? '⏳ Gjelder ikke ennå' : '❌ Utgått – kan kastes';
-    return `<div class="paper-coupon big" style="--brand:${st.color};--brand-ink:${st.ink}">
+    return `<div class="paper-coupon big ${isSeasonCoupon(c) ? 'season' : ''}" style="--brand:${st.color};--brand-ink:${st.ink}">
         <div class="coupon-store">${esc(st.name)}</div><div class="coupon-pct">${c.pct} %</div>
-        <div class="coupon-what">på ${icon(p)} ${esc(p.name.toLowerCase())}</div><div class="coupon-when">Gjelder ${dayRange(c.from, c.to)}</div></div>
+        <div class="coupon-what">på ${icon(p)} ${esc(p.name.toLowerCase())}</div><div class="coupon-when">${isSeasonCoupon(c) ? `⭐ Gjelder hele sesongen (${dayRange(c.from, c.to)})` : `Gjelder ${dayRange(c.from, c.to)}`}</div></div>
       <p>${status}. Rabatten trekkes automatisk når du bestiller varen fra ${esc(st.name)}.</p>`;
   }
   if (it.giftcard) {

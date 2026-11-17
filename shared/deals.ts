@@ -25,6 +25,13 @@ export const COUPON_MIN = 5; // %
 export const COUPON_MAX = 10; // %
 export const COUPON_DAYS = 3; // gyldig så mange dager …
 export const COUPON_LEAD = 2; // … og starter 0–2 dager etter at avisa kom
+export const SEASON_COUPON_CHANCE = 0.12; // sjanse per kupong for en gullkupong som gjelder resten av sesongen
+export const SEASON_COUPON_PCT = 5; // gullkupongene gir litt mindre rabatt, men varer lenge
+
+/** Siste dag i sesongen (julaften) for et år, som ÅÅÅÅMMDD. */
+export const seasonEnd = (day: number) => Math.floor(day / 10000) * 10000 + 1224;
+/** Gullkupong: gjelder til og med julaften. */
+export const isSeasonCoupon = (c: { to: number }) => c.to % 10000 === 1224;
 
 export interface Coupon {
   index: number; // plassen i avisa (0, 1, 2)
@@ -61,9 +68,12 @@ export function couponsFor(marketId: number, edition: number): Coupon[] {
     const store = STORES[Math.floor(hash01('kupong-butikk', marketId, edition, i) * STORES.length)].id;
     let productId = pool[Math.floor(hash01('kupong-vare', marketId, edition, i) * pool.length)];
     if (out.some((c) => c.productId === productId)) productId = pool[(pool.indexOf(productId) + 1 + i) % pool.length];
-    const pct = COUPON_MIN + Math.floor(hash01('kupong-pst', marketId, edition, i) * (COUPON_MAX - COUPON_MIN + 1));
     const from = addDays(edition, Math.floor(hash01('kupong-start', marketId, edition, i) * (COUPON_LEAD + 1)));
-    out.push({ index: i, store, productId, pct, from, to: addDays(from, COUPON_DAYS - 1) });
+    // Av og til en gullkupong: lavere rabatt, men gyldig til og med julaften.
+    const season = hash01('kupong-gull', marketId, edition, i) < SEASON_COUPON_CHANCE && seasonEnd(from) >= from;
+    const pct = season ? SEASON_COUPON_PCT : COUPON_MIN + Math.floor(hash01('kupong-pst', marketId, edition, i) * (COUPON_MAX - COUPON_MIN + 1));
+    const to = season ? seasonEnd(from) : addDays(from, COUPON_DAYS - 1);
+    out.push({ index: i, store, productId, pct, from, to });
   }
   return out;
 }

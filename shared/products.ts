@@ -394,6 +394,8 @@ export const MAKERS: Maker[] = [
       { id: 'lussekatter', name: 'Lussekatter', inputs: { mel: 1, smor: 1, safran: 1 }, outputs: { lussekatt: 4 }, hours: 2 },
       { id: 'kransekake', name: 'Kransekake', inputs: { mandler: 2, sukker: 2 }, outputs: { kransekake: 1 }, hours: 4 },
       { id: 'lefser', name: 'Lefser', inputs: { mel: 1, smor: 1, flote: 1 }, outputs: { lefse: 4 }, hours: 2 },
+      { id: 'sandkaker', name: 'Sandkaker', inputs: { mel: 1, smor: 1, sukker: 1, mandler: 1 }, outputs: { sandkake: 5 }, hours: 2 },
+      { id: 'serinakaker', name: 'Serinakaker', inputs: { mel: 1, smor: 2, sukker: 1 }, outputs: { serinakake: 6 }, hours: 2 },
     ],
   },
   {
@@ -712,6 +714,7 @@ export const PRODUCTS: Product[] = [
   vare('trenisse', 'Malt trenisse', '🎅', 1, 2, 8, 69, 0.7, 'Hjemmelaget', 'dekor', crafted),
   vare('gullkule', 'Gullkule', '🟡', 1, 1, 25, 199, 0.35, 'Hjemmelaget', 'dekor', crafted),
   vare('toppstjerne', 'Toppstjerne', '🌟', 1, 2, 55, 249, 0.3, 'Hjemmelaget', 'dekor', crafted),
+  vare('julestjerne', 'Julestjerne i potte', '🌺', 2, 2, 60, 179, 0.45, 'Gartneriet', 'dekor'),
   // Klær
   vare('skjerf', 'Strikket skjerf', '🧣', 2, 2, 50, 249, 0.4, 'Hjemmelaget', 'klaer', crafted),
   vare('pulsvarmere', 'Pulsvarmere', '🧶', 1, 1, 13, 99, 0.6, 'Hjemmelaget', 'klaer', crafted),
@@ -729,16 +732,21 @@ export const PRODUCTS: Product[] = [
   vare('sirupssnipp', 'Sirupssnipp', '🍪', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'kaker', crafted),
   vare('lussekatt', 'Lussekatt', '🥯', 1, 1, 14, 45, 1.4, 'Hjemmelaget', 'kaker', crafted),
   vare('kransekake', 'Kransekake', '🎂', 2, 2, 46, 449, 0.25, 'Hjemmelaget', 'kaker', crafted),
+  vare('sandkake', 'Sandkake', '🥧', 1, 1, 8, 25, 1.6, 'Hjemmelaget', 'kaker', crafted),
+  vare('serinakake', 'Serinakake', '🍪', 1, 1, 6, 19, 1.8, 'Hjemmelaget', 'kaker', crafted),
   // Godteri
   vare('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
   vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),
   vare('polkagris', 'Polkagrisstang', '🍭', 1, 2, 9, 35, 1.4, 'Søtt & Co', 'godteri'),
   vare('kandisert_eple', 'Kandisert eple', '🍎', 1, 1, 5, 39, 1.2, 'Hjemmelaget', 'godteri', crafted),
+  vare('anisdrops', 'Anisdrops', '🍬', 1, 1, 4, 15, 1.8, 'Søtt & Co', 'godteri'),
+  vare('julekalender', 'Julekalender (24 luker)', '📅', 2, 2, 45, 129, 0.5, 'Kakaokompaniet', 'godteri'),
   // Mat
   vare('polse_lompe', 'Pølse i lompe', '🌭', 1, 1, 12, 45, 2.0, 'Hjemmelaget', 'mat', crafted),
   vare('rommegrot', 'Rømmegrøt', '🥣', 1, 1, 6, 59, 0.9, 'Hjemmelaget', 'mat', crafted),
   vare('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
   vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
+  vare('lutefisk', 'Lutefisk', '🐟', 1, 2, 70, 189, 0.25, 'Fiskemottaket', 'mat', rare(0.15)),
   // Drikke
   vare('kakao', 'Varm kakao', '☕', 2, 2, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
   vare('julebrus', 'Julebrus', '🥤', 2, 3, 12, 35, 1.6, 'Bryggeriet', 'drikke', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)

@@ -1,6 +1,6 @@
 // Skriver ut (JSON) hvert bilde som vises i rutenett/på bordet, med fotavtrykket (ruter) til tingen.
 // Brukes av tools/spillbilder.py. Kjør: node tools/spillbilder-liste.ts
-import { CHARGER, FUSE, BLOWN_FUSE, ITEM_TYPES, artScale } from '../shared/products.ts';
+import { CHARGER, COUPON, FUSE, BLOWN_FUSE, ITEM_TYPES, PLASTIC_BOX, STRIP, artScale } from '../shared/products.ts';
 
 const out = new Map<string, { w: number; h: number }>();
 const add = (src: string | undefined, w: number, h: number) => {
@@ -23,5 +23,10 @@ for (const t of Object.values(ITEM_TYPES)) {
 for (let n = 0; n <= 4; n++) add(`/art/elektro/ladestasjon-${n}.png`, CHARGER.size.w, CHARGER.size.h);
 add('/art/elektro/sikring-inn.png', FUSE.size.w, FUSE.size.h);
 add('/art/elektro/sikring-roket.png', BLOWN_FUSE.size.w, BLOWN_FUSE.size.h);
+// Ekstra grenuttak med 1–4 støpsler, plastkasse med faner og kupongene per butikk.
+for (let n = 1; n <= 4; n++) add(`/art/elektro/grenuttak-${n}.png`, STRIP.size.w, STRIP.size.h);
+for (const n of [2, 3]) add(`/art/plastboks-${n}-faner.png`, ITEM_TYPES[PLASTIC_BOX].size.w, ITEM_TYPES[PLASTIC_BOX].size.h);
+for (const store of ['kiwi', 'rema', 'extra'])
+  for (const kind of ['', '-gull', '-utgatt']) add(`/art/verktoy/kupong-${store}${kind}.png`, ITEM_TYPES[COUPON].size.w, ITEM_TYPES[COUPON].size.h);
 
 console.log(JSON.stringify([...out].map(([src, s]) => ({ src, ...s }))));
