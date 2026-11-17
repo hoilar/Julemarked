@@ -65,7 +65,7 @@ def main():
         draw.text((n*540+20,450),'Av · mørkt display' if state=='av' else 'På · svak rød glød, uten tall',font=font,fill='#edf0dc')
     sheet.paste(icon,(920,410),icon)
     draw.text((20,491),'Klokka til venstre · eksisterende alarm til høyre · samme bodlerret',font=font,fill='#d8c89f')
-    draw.text((20,522),'Grafikkforslag · ikke implementert i spillet',font=font,fill='#d8c89f')
+    draw.text((20,522),'I spillet fra 17.11.2026 · sifrene skrives av spillet',font=font,fill='#d8c89f')
     sheet.save(GFX/'oversikt.jpg',quality=95)
     items = json.loads((ROOT/'tools/planlagte-varer.json').read_text(encoding='utf-8'))['items'] + config['items']
     all_sheet = Image.new('RGB',(1000,((len(items)+4)//5)*180),'#233029')
