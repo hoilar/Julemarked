@@ -232,6 +232,7 @@ import {
 import { BAG_PRICE, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 import { weatherDemand, weatherFor } from '../shared/weather.ts';
+import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
 
 export class GameError extends Error {}
 
@@ -1109,38 +1110,44 @@ function leadsFor(market: MarketRow, s: StallRow, t: number): Lead[] {
  * Du trykker på en kunde: ivrige kjøper én til 25 % over prisen din, interesserte får 15 % avslag
  * og sier som regel ja. Krever at du står bak disken.
  */
-export function sellLead(player: PlayerRow, leadId: string) {
+/**
+ * Kundevinduet: tilby en kunde («!» ivrig eller «?» nølende) varen til din pris med avslag eller påslag (`pct`).
+ * Sjansen for ja kommer fra shared/haggle.ts (kundetype, omdømme, hvor ivrig kunden er). Én sjanse per kunde.
+ */
+export function sellLead(player: PlayerRow, leadId: string, pct = 0) {
   const market = marketOf(player);
   const t = nowFor(market);
+  if (!HAGGLE_STEPS.includes(pct)) throw new GameError('Ugyldig avslag eller påslag.');
   return tx(() => {
     const stall = myStall(player);
     if (servingOf(stall) !== 'open') throw new GameError('Du må stå bak disken med skiltet på Åpent for å selge selv.');
     const lead = leadsFor(market, stall, t).find((l) => l.id === leadId);
-    if (!lead || t < lead.from - 60_000 || t > lead.until + 5 * 60_000) throw new GameError('Kunden har gått videre.');
+    // Kunden venter omtrent 5 ekte minutter mens kundevinduet er åpent (konseptet 12.5).
+    const wait = Math.max(5 * 60_000, 5 * 60_000 * market.speed);
+    if (!lead || t < lead.from - 60_000 || t > lead.until + wait) throw new GameError('Kunden har gått videre.');
     db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, lead.id);
     const p = PRODUCT_BY_ID[lead.productId];
-    if (lead.kind === 'curious' && hash01('kunde-ja', stall.id, lead.id) >= CURIOUS_YES) {
-      event(market, player.id, t, `🤷 Kunden takket nei til ${p.name.toLowerCase()}, selv med avslag.`);
+    const type = customerType(lead.id);
+    const chance = haggleChance(lead.kind, pct, stall.reputation, type.likes.includes(p.category));
+    const price = priceOf(pricesOf(stall.id), p.id);
+    const amount = hagglePrice(price, pct);
+    if (Math.random() >= chance) {
+      const rep = haggleReputation(pct, false);
+      if (rep) q.setReputation.run(Math.max(0, stall.reputation + rep), stall.id);
+      event(market, player.id, t, pct > 0 ? `😤 ${type.name}en syntes ${amount} kr for ${p.name.toLowerCase()} var for drøyt, og gikk.` : `🤷 ${type.name}en takket nei til ${p.name.toLowerCase()} likevel.`);
       return { sold: false, amount: 0, txId: 0, productId: p.id };
     }
-    const price = priceOf(pricesOf(stall.id), p.id);
-    const amount = Math.max(1, Math.round(price * (lead.kind === 'eager' ? EAGER_MARKUP : CURIOUS_DISCOUNT)));
     const took = takeFromCounter(stall.id, p.id, 1, true) || takeFromCounter(stall.id, p.id, 1, false);
     if (!took) throw new GameError(`Det er ingen ${p.name.toLowerCase()} igjen på bordet.`);
     const cash = Math.random() < CASH_SHARE;
     const fee = cash ? 0 : Math.round(amount * PAYMENT_FEE);
     q.addCash.run(amount - fee, stall.id);
     const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, 1, amount);
-    if (lead.kind === 'curious') q.setReputation.run(Math.min(100, stall.reputation + 0.3), stall.id);
+    const rep = haggleReputation(pct, true);
+    if (rep) q.setReputation.run(Math.max(0, Math.min(100, stall.reputation + rep)), stall.id);
     const how = cash ? 'kontant' : `Bipps, gebyr ${fee} kr`;
-    event(
-      market,
-      player.id,
-      t,
-      lead.kind === 'eager'
-        ? `🤩 Solgte ${p.emoji} ${p.name.toLowerCase()} til en ivrig kunde for ${amount} kr (${how}).`
-        : `🤝 Kunden lot seg overtale: ${p.emoji} ${p.name.toLowerCase()} for ${amount} kr med avslag (${how}).`,
-    );
+    const deal = pct < 0 ? ` med ${-pct} % avslag` : pct > 0 ? ` med ${pct} % påslag` : '';
+    event(market, player.id, t, `${pct > 0 ? '🤩' : '🤝'} Solgte ${p.emoji} ${p.name.toLowerCase()} til en ${type.name.toLowerCase()} for ${amount} kr${deal} (${how}).`);
     return { sold: true, amount, txId: Number(res.lastInsertRowid), productId: p.id };
   });
 }

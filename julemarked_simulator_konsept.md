@@ -418,6 +418,8 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 
 **Slik er det i dag:** Snakkeboblen over kunden («!» ivrig, «?» nølende) selger med én gang du trykker på den: «!» betaler 25 % over prisen, «?» vil ha 15 % avslag og sier ja i 65 % av tilfellene. Trykker du på selve kunden, kommer bare politivinduet (tipse om den etterlyste).
 
+**✅ Første versjon bygd (17.11.2026):** trykk på en kunde (eller snakkeboblen) åpner kundevinduet. Det viser kundetypen (turist, pensjonist, småbarnsforelder, pendler, student eller juleentusiast) med hva hen liker og ikke vil ha, varen hen ser på og hva hen synes om prisen. Kunder med «!» eller «?» kan få varen til din pris, med avslag (−25 / −10 %) eller påslag (+10 / +25 / +50 %); sjansen for ja står på knappen (`shared/haggle.ts`). Kunden venter mens vinduet er åpent. Politiet er nå bare en liten knapp nederst: «🫐 Meld til Tyttebærpolitiet». Mersalg, lure, bestillinger og dagens kategorier gjenstår.
+
 **Ønsket:** Snakkeboblene beholdes som et *signal* (hvem vil noe), men **man trykker på kunden** for å åpne et kundevindu. Der skjer handelen, og politiet er bare én av flere ting i vinduet.
 
 **Kundevinduet** (inspirasjon: handelsvindu med kundekort til venstre og forhandling til høyre):
@@ -533,6 +535,39 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 
 - **Fantdet:** hvor mange annonser fra start, og hva koster en oppgradering? Skal det være NPC-annonser så markedet ikke er tomt med bare 24 spillere? Skal en del av gebyret gå til lotteripotten?
 - **Lemu:** hvor stor provisjon, og hvor høyt tak? (Vi kommer tilbake til dette senere.)
+
+### 12.8 Karakterer og stamkunder (17.11.2026)
+
+**Mål:** markedet skal ha faste figurer man kjenner igjen og får et forhold til, ikke bare tilfeldige ansikter. Hver figur har navn, personlighet, en replikk, hva hen liker og ikke liker, budsjett, hvor mye hen pruter, når hen kommer, og en liten historie gjennom sesongen.
+
+**Utseende:** låst, ikke tilfeldig. Faste DiceBear «Micah»-valg pluss eget tilbehør tegnet oppå (hatter, luer, øreklokker, skjerf, perlekjede, slips, politilue og kokkelue) i `shared/portrait.ts`. Tilbehøret kan senere byttes ut med tegnet pikselgrafikk.
+
+**Data:** `shared/characters.ts` (16 figurer). Portrettene og karaktersiden i `vareliste.html` («Karakterer» øverst) lages med `node tools/karakterer.ts` og `py tools/oppdater-varekatalog.py`.
+
+**I spillet i dag** (samme utseende som før, nå fra rollelista): Tilsynsmannen, Frida fra Trygg & Tryggere, Kiwi-Kjell, Rema-Rita og Ekstra-Eva. Gavekortselgerne har fått caps, strikkelue og øreklokker i butikkfargene.
+
+**Nye figurer (planlagt):**
+
+| Figur | Hvem | Historie (kort) |
+|---|---|---|
+| Fru Kvist | Pensjonist og kakedommer | Bestiller kakeboks med syv slag til barnebarna og avslører butikkjøpt. Lille julaften kommer hun med barnebarnet. |
+| Direktør Haakon Hagen-Haugli | Rik og snobbete | Vil ha sjeldne varer, betaler godt og blir fornærmet av avslag. |
+| Lille Emma (8 år) | Sparer til gave til mamma | Har 63 kr og vil ha snøkula til 179 kr. Gir du den bort, får du mye omdømme og et takkebrev i avisa. |
+| Rolf Rask | Pendler | Kjøper noe varmt i farta og venter ikke. |
+| Line Berg | Småbarnsmor | Pruter på alt og tar med flere foreldre hvis du er grei. |
+| Vilde Vibe | Influenser | Vil ha ting gratis «for eksponering»: ja gir flere kunder, nei gir en sur story. |
+| Per Penn | Journalist i Markedsposten | Intervjuer boder etter tyveri og tilsyn, og skriver om den beste boden på julaften. |
+| Natt-Nora | Fyrens kjenning | Kjøper luguberte varer om natta, kontant. |
+| Betjent Tore Tyttebær | Tyttebærpolitiet | Tar imot tips om den etterlyste og sukker etter mange feil tips. |
+| Klas Olsen, Eivblå Halvstrøm | Butikk og avis | Finnes i dag bare som navn, men har nå fått ansikt. |
+
+**Neste steg:**
+
+- Stamkundene kommer som egne besøkende ved disken (som Tilsynsmannen), bestemt av serveren per dag og bod, med egne valg i kundevinduet.
+- Fru Kvists bestilling av syv slag blir den første kundebestillingen (12.4).
+- Tyttebærpolitiet kommer og henter tyven når tipset er riktig.
+
+**Åpne spørsmål:** Skal stamkundene huske hvordan du har behandlet dem (et forhold per bod)? Skal historiene følge kalenderen (samme for alle) eller hver bod for seg?
 
 ## 13. Teknisk retning (foreløpig forslag)
 

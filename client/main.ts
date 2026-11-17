@@ -70,6 +70,8 @@ import { LOOK_CHOICES, type Look } from '../shared/look.ts';
 import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS, disguisesFor, leaveRisk } from '../shared/snoop.ts';
 import {
   avatarFor,
+  customerInfo,
+  holdCustomer,
   inspectorImage,
   insurerImage,
   mountCustomers,
@@ -95,6 +97,9 @@ import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from 
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
+import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
+import { CHARACTER_BY_ID } from '../shared/characters.ts';
+import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
 import spillbilder from './spillbilder.json';
 import {
@@ -136,7 +141,7 @@ type Modal =
   | { kind: 'ingredient'; typeId: string }
   | { kind: 'look'; draft: Look }
   | { kind: 'buy'; stallId: number; productId: string }
-  | { kind: 'suspect'; seed: string }
+  | { kind: 'customer'; seed: string } // kundevinduet (trykk på en kunde ved disken)
   | { kind: 'inspector' }
   | { kind: 'doc'; itemId: number }
   | { kind: 'tool'; itemId: number }
@@ -419,6 +424,7 @@ function playNewSales(s: GameState) {
 }
 
 function render() {
+  holdCustomer(modal?.kind === 'customer' ? modal.seed : null); // kunden venter mens kundevinduet er åpent
   // Ikke tegn på nytt midt i et drag eller mens brukeren skriver i et felt.
   // Radioknapper og avkrysningsbokser (frakt, gavekort) får fokus når de trykkes, men da skriver ingen: tegn med en gang.
   const active = document.activeElement;
@@ -2872,17 +2878,53 @@ function insurerView(s: GameState): string {
 }
 
 /** Trykk på en person ved disken: «Angi til politiet?» */
-function suspectView(s: GameState, seed: string): string {
-  const hung = s.me.items.find((i) => i.place === 'nail')?.wanted;
+/** Hva kunden synes om prisen (samme humør som ansiktet ved disken). */
+const CUSTOMER_MOOD: Record<string, string> = {
+  glad: 'Synes prisen er god',
+  noytral: 'Vurderer prisen',
+  sur: 'Synes det er dyrt',
+  sjokk: 'Sjokkert over prisen',
+};
+
+/**
+ * Kundevinduet (konseptet 12.5): hvem kunden er, hva hen ser på, og forhandling for kunder med «!» eller «?».
+ * Å melde til Tyttebærpolitiet er bare en liten knapp nederst.
+ */
+function customerView(s: GameState, seed: string): string {
+  const info = customerInfo(seed);
+  const lead = info?.lead ?? null;
+  const type = customerType(lead ? lead.id : seed);
+  const p = info?.want ? PRODUCT_BY_ID[info.want] : undefined;
+  const price = p ? myPrice(s, p.id) : 0;
+  const liked = !!p && type.likes.includes(p.category);
+  const tags = type.likes.map((c) => `<span class="cust-tag like">${categoryLabel(c)}</span>`).join('') + `<span class="cust-tag dislike">${esc(type.dislikes)}</span>`;
+  const looking = p
+    ? `<div class="cust-item">${icon(p)}<div><b>${esc(p.name)}</b><small>Din pris ${kr(price)}${info?.mood ? ` · ${CUSTOMER_MOOD[info.mood] ?? ''}` : ''}${liked ? ' · liker slikt' : ''}</small></div></div>`
+    : '<p class="muted">Ser seg rundt.</p>';
+  let offer = '';
+  if (lead && p) {
+    const steps = HAGGLE_STEPS.map((pct) => {
+      const ch = haggleChance(lead.kind, pct, s.me.reputation, liked);
+      const label = pct === 0 ? 'Din pris' : `${pct > 0 ? '+' : '−'}${Math.abs(pct)} %`;
+      return `<button class="haggle ${pct < 0 ? 'down' : pct > 0 ? 'up' : 'even'}" data-action="haggle" data-lead="${esc(lead.id)}" data-pct="${pct}" title="${chanceWord(ch)} (${Math.round(ch * 100)} %)">
+        <span class="haggle-label">${label}</span><b>${kr(hagglePrice(price, pct))}</b><small>${Math.round(ch * 100)} %</small></button>`;
+    }).join('');
+    offer = `<div class="cust-section"><div class="cust-kicker">${lead.kind === 'eager' ? '! Vil gjerne kjøpe' : '? Nøler'}</div>
+      <div class="haggle-row">${steps}</div>
+      <p class="cust-hint">Prosenten er sjansen for ja. Avslag gir litt omdømme; et frekt påslag kan gjøre kunden sur. Én sjanse per kunde.</p></div>`;
+  } else if (info) {
+    offer = '<p class="cust-hint">Denne kunden handler på egen hånd. Kunder med ! eller ? kan du forhandle med.</p>';
+  } else {
+    offer = '<p class="cust-hint">Kunden har gått videre.</p>';
+  }
+  const police = CHARACTER_BY_ID['tyttebaerpolitiet'];
   const factor = Math.round((1 - WRONG_TIP_FACTOR) * 100);
-  return `<div class="suspect">
-      <div class="suspect-face"><img src="${avatarFor(seed)}" alt=""><small>Ved disken</small></div>
-      ${hung ? `<div class="suspect-face poster-mini">${posterHtml(hung, false)}<small>På spikeren</small></div>` : ''}
-    </div>
-    <h2>Angi til politiet?</h2>
-    <p>Er dette dagens etterlyste tyv? Riktig tips gir <b>${kr(THIEF_REWARD)}</b> i dusør, og tyven er tatt før natta.</p>
-    <p class="muted">Tar du feil, går ryktet: ${factor} % færre kunder neste markedsdag – og enda færre for hvert feil tips.</p>
-    <div class="row"><button data-action="tip" data-seed="${esc(seed)}">🚔 Angi til politiet</button><button class="ghost" data-action="close">La være</button></div>`;
+  return `<div class="cust-head"><img src="${info?.url ?? avatarFor(seed)}" alt=""><div>
+      <h2>${type.emoji} ${esc(type.name)}</h2><div class="cust-tags">${tags}</div></div></div>
+    <div class="cust-section"><div class="cust-kicker">Ser på</div>${looking}</div>
+    ${offer}
+    <div class="cust-police"><button class="small ghost" data-action="tip" data-seed="${esc(seed)}"><img src="${characterUrl(police)}" alt="">🫐 Meld til Tyttebærpolitiet</button>
+      <small>Dusør ${kr(THIEF_REWARD)} hvis det er dagens etterlyste. Feil tips gir ${factor} % færre kunder neste dag.</small></div>`;
 }
 
 function inspectorView(): string {
@@ -3033,7 +3075,7 @@ function modalView(s: GameState): string {
     );
   }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
-  if (modal.kind === 'suspect') inner = suspectView(s, modal.seed);
+  if (modal.kind === 'customer') inner = customerView(s, modal.seed);
   if (modal.kind === 'inspector') inner = inspectorView();
   if (modal.kind === 'plug') inner = plugView(s, modal.strip, modal.index);
   if (modal.kind === 'doc' || modal.kind === 'tool') {
@@ -3181,7 +3223,7 @@ function modalView(s: GameState): string {
     );
   }
 
-  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'suspect' ? 'suspect-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''} ${modal.kind === 'look' ? 'look-modal' : ''}" role="dialog">
+  return `<div class="modal-backdrop" data-action="close"><div class="modal card ${modal.kind === 'customer' ? 'customer-modal' : ''} ${modal.kind === 'snoop' && modal.view ? 'snoop-modal' : ''} ${modal.kind === 'look' ? 'look-modal' : ''}" role="dialog">
     <button class="close ghost small" data-action="close" aria-label="Lukk">✕</button>${inner}</div></div>`;
 }
 
@@ -3904,7 +3946,24 @@ app.addEventListener('click', (e) => {
       .finally(refresh);
     return;
   }
-  if (action === 'suspect' && el.dataset.seed) modal = { kind: 'suspect', seed: el.dataset.seed };
+  if (action === 'customer' && el.dataset.seed) modal = { kind: 'customer', seed: el.dataset.seed };
+  if (action === 'haggle' && el.dataset.lead) {
+    const id = el.dataset.lead;
+    const pct = Number(el.dataset.pct ?? 0);
+    modal = null;
+    api<{ sold: boolean; amount: number; txId: number }>('/api/lead', { leadId: id, pct })
+      .then((r) => {
+        if (r.txId) ownSales.add(r.txId);
+        leadResult(id, r.sold, r.amount);
+        toast(r.sold ? `🤝 Solgt for ${kr(r.amount)}.` : pct > 0 ? '😤 For drøyt – kunden gikk.' : '🤷 Kunden takket nei likevel.', !r.sold);
+      })
+      .catch((err) => {
+        leadResult(id, false, 0);
+        toast((err as Error).message, true);
+      })
+      .finally(refresh);
+    return;
+  }
   if (action === 'inspector') modal = { kind: 'inspector' };
   if (action === 'tip') {
     const seed = el.dataset.seed!;

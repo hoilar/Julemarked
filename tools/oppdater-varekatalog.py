@@ -145,6 +145,55 @@ $('file').onchange=async e=>{
 install(JSON.parse($('snapshot').textContent));
 '''
 
+def karakterside(html):
+    """Egen side med de faste figurene (tools/karakterer.json fra tools/karakterer.ts), valgt med «Karakterer» øverst."""
+    from html import escape
+    html = re.sub(r'<!-- SIDEVALG-START -->[\s\S]*?<!-- SIDEVALG-SLUTT -->', '', html)
+    html = re.sub(r'<!-- KARAKTERER-START -->[\s\S]*?<!-- KARAKTERER-SLUTT -->', '', html)
+    charfile = ROOT/'tools/karakterer.json'
+    if not charfile.exists():
+        return html
+    chars = json.loads(charfile.read_text(encoding='utf-8'))['characters']
+    def card(c):
+        tags = ''.join('<span class="ch-tag like">'+escape(x)+'</span>' for x in c['likes'])
+        tags += ''.join('<span class="ch-tag dislike">'+escape(x)+'</span>' for x in c['dislikes'])
+        facts = []
+        if c.get('budget'): facts.append(('Budsjett', f"{c['budget'][0]}–{c['budget'][1]} kr"))
+        if c.get('haggle'): facts.append(('Pruter', c['haggle']))
+        if c.get('visits'): facts.append(('Kommer', c['visits']))
+        if c.get('accessories'): facts.append(('Kjennetegn', ', '.join(c['accessories'])))
+        dl = ''.join('<dt>'+escape(k)+'</dt><dd>'+escape(v)+'</dd>' for k, v in facts)
+        story = ''.join('<li>'+escape(s)+'</li>' for s in c['story'])
+        status = ('<span class="ch-status live">I spillet</span><p class="ch-ingame">'+escape(c['inGame'])+'</p>') if c.get('inGame') else '<span class="ch-status idea">Planlagt</span>'
+        return ('<article class="ch-card" id="figur-'+escape(c['id'])+'"><img src="'+escape(c['path'])+'" alt="'+escape(c['name'])+'" loading="lazy">'
+                '<div class="ch-body"><div class="ch-head"><h3>'+escape(c['name'])+'</h3>'+status+'</div><p class="ch-title">'+escape(c['title'])+'</p>'
+                '<p class="ch-quote">'+escape(c['quote'])+'</p><p>'+escape(c['personality'])+'</p>'
+                +(('<div class="ch-tags">'+tags+'</div>') if tags else '')+(('<dl>'+dl+'</dl>') if dl else '')
+                +(('<details><summary>Historien gjennom sesongen</summary><ol>'+story+'</ol></details>') if story else '')+'</div></article>')
+    groups = []
+    for role in dict.fromkeys(c['role'] for c in chars):
+        groups.append('<h2>'+escape(role)+'</h2><div class="ch-grid">'+''.join(card(c) for c in chars if c['role'] == role)+'</div>')
+    nav = ('<!-- SIDEVALG-START --><nav class="page-switch"><a href="#" data-page="varer">Varer</a><a href="#karakterer" data-page="karakterer">Karakterer ('
+           + str(len(chars)) + ')</a></nav><!-- SIDEVALG-SLUTT -->')
+    page = ('<!-- KARAKTERER-START --><main id="karakterer" class="char-page" hidden><p class="eyebrow">KARAKTERER / KONSEPTET 12.8</p>'
+            '<h1>Figurene på markedet</h1><p class="ch-intro">Faste figurer med eget utseende: låste DiceBear «Micah»-valg pluss tilbehør tegnet i '
+            '<code>shared/portrait.ts</code>, så de er lette å kjenne igjen. Data: <code>shared/characters.ts</code>. Portrettene lages med '
+            '<code>node tools/karakterer.ts</code>.</p>' + ''.join(groups) +
+            '''<style>.page-switch{display:flex;gap:8px;margin:16px 5vw 0}.page-switch a{padding:8px 16px;border:1px solid #475448;border-radius:999px;color:#e4dcc6;text-decoration:none;font-size:14px}.page-switch a.on{background:#e4c77b;color:#1a2720;border-color:#e4c77b;font-weight:700}
+.char-page h2{margin:28px 0 12px;font-size:20px}.ch-intro{color:#c4cbb5;max-width:760px}.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.ch-card{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:16px;background:#223128;border:1px solid #475448;border-radius:12px}.ch-card img{width:120px;height:120px;background:#e9dcc3;border-radius:10px}
+.ch-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.ch-head h3{margin:0;font-size:17px}.ch-title{margin:2px 0 8px;color:#e4c77b;font-size:13px}.ch-quote{font-style:italic;color:#edddb9;margin:0 0 8px}
+.ch-body p{font-size:13.5px;line-height:1.45}.ch-status{font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap}.ch-status.live{background:#2f4a2f;color:#bee29b}.ch-status.idea{background:#352e21;color:#f2ce83}
+.ch-ingame{color:#bee29b;font-size:12.5px!important}.ch-tags{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}.ch-tag{font-size:11.5px;padding:2px 8px;border-radius:5px}.ch-tag.like{background:#2f4a2f;color:#cfe8b5}.ch-tag.dislike{background:#4a2626;color:#f2b8b8}.ch-tag.dislike::before{content:"✕ "}
+.ch-body dl{display:grid;grid-template-columns:90px 1fr;gap:2px 8px;font-size:12.5px;margin:6px 0}.ch-body dt{color:#9aa58f}.ch-body details{margin-top:6px;font-size:13px}.ch-body summary{cursor:pointer;color:#e4c77b}.ch-body ol{padding-left:18px;margin:6px 0}
+@media(max-width:560px){.ch-card{grid-template-columns:1fr}.ch-card img{width:100%;height:auto;max-width:220px}}</style>
+<script>(function(){const show=()=>{const ch=location.hash==='#karakterer'||location.hash.startsWith('#figur-');document.getElementById('karakterer').hidden=!ch;document.querySelector('main:not(#karakterer)').hidden=ch;document.querySelectorAll('.page-switch a').forEach(a=>a.classList.toggle('on',(a.dataset.page==='karakterer')===ch));};addEventListener('hashchange',show);show();})();</script>'''
+            '</main><!-- KARAKTERER-SLUTT -->')
+    html = html.replace('</header>', '</header>' + nav, 1)
+    i = html.index('</main>') + len('</main>')
+    return html[:i] + page + html[i:]
+
+
 def main():
     html = PAGE.read_text(encoding='utf-8')
     manifest = json.loads((ROOT/'tools/planlagte-varer.json').read_text(encoding='utf-8'))['items']
@@ -189,6 +238,7 @@ def main():
     moduleitemsfile=ROOT/'tools/maskinmoduler.json'
     if moduleitemsfile.exists():
         manifest+=json.loads(moduleitemsfile.read_text(encoding='utf-8')).get('items',[])
+    html = karakterside(html)
     # Ideer som er bygd, står i VARELISTE.md (i spillet) og skal ikke vises som ideer i tillegg.
     manifest = [i for i in manifest if i.get('status') != 'I spillet']
     html = html[:html.index('<script id="snapshot"')]

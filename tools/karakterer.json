@@ -1,0 +1,423 @@
+{
+  "characters": [
+    {
+      "id": "fru-kvist",
+      "name": "Fru Kvist",
+      "title": "Pensjonist og kakedommer",
+      "role": "Stamkunder",
+      "inGame": null,
+      "personality": "Har bakt syv slag hver jul i femti år, men i år er hendene for stive. Streng, men rettferdig: hun smaker, rynker på nesen og betaler godt for det som er ekte hjemmelaget. Merker butikkjøpt på lukta.",
+      "quote": "«Er disse virkelig hjemmelaget? Jeg merker det, vet du.»",
+      "likes": [
+        "Kaker",
+        "Mat"
+      ],
+      "dislikes": [
+        "butikkjøpt",
+        "alkohol"
+      ],
+      "budget": [
+        150,
+        450
+      ],
+      "haggle": "aldri",
+      "visits": "Formiddager, særlig tirsdag og lørdag",
+      "story": [
+        "Første uke: kommer innom, smaker på en krumkake og sier at «den var nesten god».",
+        "Andre uke: bestiller en kakeboks med syv slag til barnebarna, hentes om tre dager (kundebestilling, 12.4).",
+        "Tredje uke: forteller at barnebarnet i Bergen kanskje ikke kommer hjem til jul i år.",
+        "Lille julaften: kommer for siste kakeboks, med barnebarnet på slep. Leverer du, får boden et pent oppslag i avisa.",
+        "Skriver du om etiketten og hun avslører det, forteller hun det til alle i gata."
+      ],
+      "accessories": [
+        "Hatt med bånd",
+        "Perlekjede"
+      ],
+      "path": "client/public/art/figurer/fru-kvist.svg"
+    },
+    {
+      "id": "haakon-hagen",
+      "name": "Direktør Haakon Hagen-Haugli",
+      "title": "Pensjonert direktør med god råd",
+      "role": "Stamkunder",
+      "inGame": null,
+      "personality": "Kjøper bare det fineste og det sjeldne. Spør aldri om prisen, men blir fornærmet av masseprodusert skrap. Forteller gjerne om hytta på Geilo.",
+      "quote": "«Er dette den eneste? Utmerket. Pakk den inn.»",
+      "likes": [
+        "Dekor",
+        "Alkohol",
+        "Klær"
+      ],
+      "dislikes": [
+        "masseprodusert",
+        "avslag («Jeg er ingen gnier»)"
+      ],
+      "budget": [
+        400,
+        3000
+      ],
+      "haggle": "aldri",
+      "visits": "Ettermiddager i helgene",
+      "story": [
+        "Leter etter en ekte lusekofte og en antikk julekule. Den som har sjeldne varer på bordet, får ham som stamkunde.",
+        "Kan bestille noe sjeldent «til svigermor før lørdag» (12.4) og betaler godt over prisen.",
+        "Tilbyr du avslag, blir han fornærmet og går."
+      ],
+      "accessories": [
+        "Hatt med bånd",
+        "Slips"
+      ],
+      "path": "client/public/art/figurer/haakon-hagen.svg"
+    },
+    {
+      "id": "lille-emma",
+      "name": "Lille Emma (8 år)",
+      "title": "Sparer til julegave til mamma",
+      "role": "Stamkunder",
+      "inGame": null,
+      "personality": "Har spart på en sparegris hele høsten og teller myntene på disken. Vil ha snøkula med landsbyen til mamma, men har aldri helt nok. Sjarmerer alle.",
+      "quote": "«Hvor mye koster snøkula? … Har du en litt billigere snøkule?»",
+      "likes": [
+        "Godteri",
+        "Leketøy",
+        "Dekor"
+      ],
+      "dislikes": [
+        "alkohol",
+        "lugubert"
+      ],
+      "budget": [
+        20,
+        80
+      ],
+      "haggle": "mye",
+      "visits": "Etter skolen, kl. 14–16",
+      "story": [
+        "Kommer innom flere ganger og ser på snøkula med landsby (179 kr). Hun har 63 kr.",
+        "Gir du henne snøkula for det hun har, får du mye omdømme, og mamma hennes skriver et takkebrev i avisa.",
+        "Selger du snøkula til noen andre, kommer hun gråtende tilbake neste dag."
+      ],
+      "accessories": [
+        "Øreklokker"
+      ],
+      "path": "client/public/art/figurer/lille-emma.svg"
+    },
+    {
+      "id": "rolf-rask",
+      "name": "Rolf Rask",
+      "title": "Pendler med dårlig tid",
+      "role": "Stamkunder",
+      "inGame": null,
+      "personality": "Haster forbi på vei til bussen og kjøper noe varmt i farta. Betaler uten å se på prisen hvis det går fort, men venter ikke lenge.",
+      "quote": "«En kopp gløgg, takk – bussen går om fire minutter!»",
+      "likes": [
+        "Drikke",
+        "Mat"
+      ],
+      "dislikes": [
+        "å vente"
+      ],
+      "budget": [
+        40,
+        150
+      ],
+      "haggle": "litt",
+      "visits": "Hverdager kl. 15–18",
+      "story": [
+        "Går fra boden hvis han må vente, men blir stamkunde hvis det alltid står noe varmt klart.",
+        "Kaldt vær: kjøper to kopper, én til kollegaen."
+      ],
+      "accessories": [
+        "Strikkelue med dusk",
+        "Skjerf"
+      ],
+      "path": "client/public/art/figurer/rolf-rask.svg"
+    },
+    {
+      "id": "line-berg",
+      "name": "Line Berg",
+      "title": "Småbarnsmor med stram julebudsjett",
+      "role": "Stamkunder",
+      "inGame": null,
+      "personality": "Har tre unger, ett budsjett og en liste. Prutter på alt, men er lojal mot boder som er greie. Forteller alle i barnehagen hvor det er billigst.",
+      "quote": "«Får jeg tre for to hvis jeg tar én til?»",
+      "likes": [
+        "Leketøy",
+        "Kaker",
+        "Godteri"
+      ],
+      "dislikes": [
+        "dyrt",
+        "alkohol"
+      ],
+      "budget": [
+        60,
+        250
+      ],
+      "haggle": "mye",
+      "visits": "Lørdager og etter barnehagen",
+      "story": [
+        "Gir du henne avslag, kommer hun tilbake med flere foreldre (flere kunder neste dag).",
+        "Bestiller pepperkakehus med navnet til ungene på (12.4, med penn)."
+      ],
+      "accessories": [
+        "Strikkelue med dusk",
+        "Skjerf"
+      ],
+      "path": "client/public/art/figurer/line-berg.svg"
+    },
+    {
+      "id": "vilde-vibe",
+      "name": "Vilde Vibe",
+      "title": "Influenser (@vildevibe)",
+      "role": "Presse og media",
+      "inGame": null,
+      "personality": "Filmer alt. Vil ha noe gratis «for eksponering» og lover en story til 40 000 følgere. Sier du nei, kan storyen bli mindre hyggelig.",
+      "quote": "«Hvis jeg får den gratis, tagger jeg boden din!»",
+      "likes": [
+        "Dekor",
+        "Drikke",
+        "Klær"
+      ],
+      "dislikes": [
+        "stygg boddekor",
+        "å betale"
+      ],
+      "budget": [
+        0,
+        120
+      ],
+      "haggle": "mye",
+      "visits": "Når det snør (fint lys)",
+      "story": [
+        "Gratis vare: flere kunder dagen etter (storyen går viralt i markedet).",
+        "Nei: hun legger ut en story om «den sure boden» (litt lavere omdømme).",
+        "Pent pyntet bod med lyslenke gir bedre story."
+      ],
+      "accessories": [
+        "Øreklokker"
+      ],
+      "path": "client/public/art/figurer/vilde-vibe.svg"
+    },
+    {
+      "id": "per-penn",
+      "name": "Per Penn",
+      "title": "Journalist i Markedsposten",
+      "role": "Presse og media",
+      "inGame": null,
+      "personality": "Skriver avisa som ligger i postkassa hver morgen. Nysgjerrig, litt sladrete og alltid på jakt etter neste forside. Ærlige boder får pene ord, juksere får overskrifter.",
+      "quote": "«Har du en kommentar til Markedsposten?»",
+      "likes": [
+        "Drikke",
+        "Kaker"
+      ],
+      "dislikes": [
+        "juks"
+      ],
+      "budget": [
+        30,
+        120
+      ],
+      "haggle": "litt",
+      "visits": "Tilfeldig, særlig etter et tyveri eller et tilsyn",
+      "story": [
+        "Intervjuer boden etter et tyveri: ærlig svar gir sympati (flere kunder), løgn kan avsløres.",
+        "Skriver om den beste boden på julaften (årsrapporten)."
+      ],
+      "accessories": [
+        "Sixpence",
+        "Slips"
+      ],
+      "path": "client/public/art/figurer/per-penn.svg"
+    },
+    {
+      "id": "natt-nora",
+      "name": "Natt-Nora",
+      "title": "Kjenning av Fyren",
+      "role": "Nattens folk",
+      "inGame": null,
+      "personality": "Dukker opp etter at gatelysene er tent. Betaler kontant, stiller ingen spørsmål og forventer det samme tilbake.",
+      "quote": "«Fyren sa du hadde … varer.»",
+      "likes": [
+        "Lugubert",
+        "Alkohol"
+      ],
+      "dislikes": [
+        "Bipps",
+        "Tilsynsmannen"
+      ],
+      "budget": [
+        100,
+        600
+      ],
+      "haggle": "litt",
+      "visits": "Om natta (kl. 21–02)",
+      "story": [
+        "Kjøper luguberte varer om natta. Tipser du politiet om henne, slutter Fyren å svare på SMS."
+      ],
+      "accessories": [
+        "Caps",
+        "Skjerf"
+      ],
+      "path": "client/public/art/figurer/natt-nora.svg"
+    },
+    {
+      "id": "tyttebaerpolitiet",
+      "name": "Betjent Tore Tyttebær",
+      "title": "Tyttebærpolitiet",
+      "role": "Myndigheter",
+      "inGame": null,
+      "personality": "Markedets eget politi, med en tyttebærkvist i luemerket. Tar imot tips om dagens etterlyste og henter tyven før natta. Svært glad i tyttebærsyltetøy.",
+      "quote": "«Takk for tipset! Vi tar en titt.»",
+      "likes": [
+        "Mat"
+      ],
+      "dislikes": [
+        "falske tips"
+      ],
+      "budget": null,
+      "haggle": null,
+      "visits": "Når noen melder fra om den etterlyste",
+      "story": [
+        "Meld til Tyttebærpolitiet er en liten knapp i kundevinduet.",
+        "Riktig tips: Tore henter tyven og kommer med dusøren.",
+        "Mange feil tips: han begynner å sukke når du ringer."
+      ],
+      "accessories": [
+        "Politilue med tyttebærmerke"
+      ],
+      "path": "client/public/art/figurer/tyttebaerpolitiet.svg"
+    },
+    {
+      "id": "tilsynsmannen",
+      "name": "Tilsynsmannen",
+      "title": "Markedstilsynet",
+      "role": "Myndigheter",
+      "inGame": "Kommer på tilsyn til boden (avslører falske «hjemmelaget»-etiketter og alkohol før kl. 18).",
+      "personality": "Streng, grundig og humørløs. Skriver på en blokk og ser lenge på etikettene.",
+      "quote": "«Bare fortsett som normalt. Jeg skal bare se litt.»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [],
+      "path": "client/public/art/figurer/tilsynsmannen.svg"
+    },
+    {
+      "id": "forsikringsselgeren",
+      "name": "Frida fra Trygg & Tryggere",
+      "title": "Forsikringsselger",
+      "role": "Selgere",
+      "inGame": "Kommer innom to ganger om dagen og selger forsikringer.",
+      "personality": "Alltid blid, alltid i nisselue, og alltid med en forsikring du ikke visste du trengte.",
+      "quote": "«Hva om det begynner å regne inn i bodene? Hva da?»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [
+        "Nisselue"
+      ],
+      "path": "client/public/art/figurer/forsikringsselgeren.svg"
+    },
+    {
+      "id": "kiwi-kjell",
+      "name": "Kiwi-Kjell",
+      "title": "Gavekortselger fra KIWI",
+      "role": "Selgere",
+      "inGame": "Bytter varer mot gavekort til KIWI.",
+      "personality": "Grønn til fingerspissene. Snakker om priser som andre snakker om været.",
+      "quote": "«Grønne priser, grønne gavekort!»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [
+        "Caps"
+      ],
+      "path": "client/public/art/figurer/kiwi-kjell.svg"
+    },
+    {
+      "id": "rema-rita",
+      "name": "Rema-Rita",
+      "title": "Gavekortselger fra REMA 1000",
+      "role": "Selgere",
+      "inGame": "Bytter varer mot gavekort til REMA 1000.",
+      "personality": "Enkel og ærlig. Stort sett.",
+      "quote": "«Enkelt og ærlig: du gir meg varer, jeg gir deg et gavekort.»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [
+        "Strikkelue med dusk"
+      ],
+      "path": "client/public/art/figurer/rema-rita.svg"
+    },
+    {
+      "id": "ekstra-eva",
+      "name": "Ekstra-Eva",
+      "title": "Gavekortselger fra Extra",
+      "role": "Selgere",
+      "inGame": "Bytter varer mot gavekort til Extra.",
+      "personality": "Litt dyrere. Mye mer rødt.",
+      "quote": "«Litt dyrere gavekort. Mye mer rødt. Vil du bytte?»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [
+        "Øreklokker"
+      ],
+      "path": "client/public/art/figurer/ekstra-eva.svg"
+    },
+    {
+      "id": "klas-olsen",
+      "name": "Klas Olsen",
+      "title": "Jernvarehandler",
+      "role": "Selgere",
+      "inGame": "Nettbutikken for esker, verktøy og elektrisk (bare navnet vises i dag).",
+      "personality": "Har alt, finner alt, og har en mening om hvilken skrutrekker du egentlig trenger.",
+      "quote": "«Den skrutrekkeren? Nei, nei. Du trenger denne.»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [
+        "Caps"
+      ],
+      "path": "client/public/art/figurer/klas-olsen.svg"
+    },
+    {
+      "id": "eivbla",
+      "name": "Eivblå Halvstrøm",
+      "title": "Kokk og spaltist i Markedsposten",
+      "role": "Presse og media",
+      "inGame": "Skriver dagens oppskrift i avisa («Eivblås Halvstrøms hjørne»; bare navnet vises i dag).",
+      "personality": "Dramatisk kjøkkensjef som mener alt blir bedre med mer smør. Siterer seg selv.",
+      "quote": "«Smør er ikke en ingrediens. Smør er en holdning.»",
+      "likes": [],
+      "dislikes": [],
+      "budget": null,
+      "haggle": null,
+      "visits": null,
+      "story": [],
+      "accessories": [
+        "Kokkelue"
+      ],
+      "path": "client/public/art/figurer/eivbla.svg"
+    }
+  ]
+}

@@ -6,6 +6,8 @@ import { micah } from '@dicebear/collection';
 import { moodFor, randomTolerance, type Mood } from '../shared/mood.ts';
 import type { Look } from '../shared/look.ts';
 import { styleOfSeed, type FaceStyle } from '../shared/names.ts';
+import { CHARACTER_BY_ID } from '../shared/characters.ts';
+import { characterUrl } from '../shared/portrait.ts';
 
 /** En vare på bordet slik kundene ser den. */
 export interface Offer {
@@ -105,6 +107,7 @@ interface Customer {
   leaveAt: number;
   buying: boolean; // har betalt og er på vei bort
   lead: ClientLead | null; // en kunde du kan selge til selv (ivrig «!» eller interessert «?»)
+  held?: boolean; // kundevinduet er åpent: kunden venter og blir ikke brukt til andre salg
   mood: Mood | null;
   el: HTMLDivElement;
   img: HTMLImageElement;
@@ -139,7 +142,7 @@ function placeLeads(now: number) {
   for (const l of leads) {
     if (placed.has(l.id) || now < l.realFrom || now >= l.realUntil) continue;
     const c =
-      customers.find((x) => !x.buying && !x.lead && x.want === l.productId) ?? customers.find((x) => !x.buying && !x.lead) ?? arrive();
+      customers.find((x) => !x.buying && !x.lead && !x.held && x.want === l.productId) ?? customers.find((x) => !x.buying && !x.lead && !x.held) ?? arrive();
     if (!c) return;
     placed.add(l.id);
     c.lead = l;
@@ -194,9 +197,8 @@ function update(c: Customer, list: Offer[]) {
     setMood(c, c.lead.kind === 'eager' ? 'glad' : 'noytral');
     const eager = c.lead.kind === 'eager';
     c.bubble.className = `want lead ${c.lead.kind}`;
-    c.bubble.dataset.action = 'lead';
-    c.bubble.dataset.lead = c.lead.id;
-    c.bubble.title = eager ? 'Ivrig kunde – trykk for å selge 25 % over prisen' : 'Interessert – trykk for å tilby 15 % avslag';
+    c.bubble.removeAttribute('data-action');
+    c.bubble.title = eager ? 'Ivrig kunde – trykk for å snakke med hen' : 'Nølende kunde – trykk for å snakke med hen';
     c.bubble.innerHTML = `${c.lead.icon}<span class="lead-badge">${eager ? '!' : '?'}</span>`;
     return;
   }
@@ -225,7 +227,7 @@ function arrive(): Customer | null {
   if (free.length === 0) return null;
   const el = document.createElement('div');
   el.className = 'customer enter';
-  el.dataset.action = 'suspect'; // trykk: «Angi til politiet?»
+  el.dataset.action = 'customer'; // trykk: kundevinduet
   const x = free[Math.floor(Math.random() * free.length)] + (Math.random() * 4 - 2);
   el.style.left = `${x}%`;
   el.style.setProperty('--bob', `${1.4 + Math.random() * 1.1}s`);
@@ -273,7 +275,8 @@ function tick() {
   const night = isNight() || shut;
   for (const c of [...customers]) {
     // Om natta går kundene hjem (én og én, ikke alle på en gang).
-    if (now >= c.leaveAt || (night && !c.buying && Math.random() < 0.3)) leave(c);
+    if (c.held && !c.buying) update(c, list); // venter i kundevinduet
+    else if (now >= c.leaveAt || (night && !c.buying && Math.random() < 0.3)) leave(c);
     else update(c, list);
   }
   if (!night) placeLeads(now);
@@ -308,8 +311,8 @@ function reset() {
 export function showSale(productId: string, icon: string, units: number, amount: number) {
   if (!layer.isConnected) return;
   const c =
-    customers.find((x) => !x.buying && !x.lead && x.want === productId && x.mood !== 'sjokk') ??
-    customers.find((x) => !x.buying && !x.lead) ??
+    customers.find((x) => !x.buying && !x.lead && !x.held && x.want === productId && x.mood !== 'sjokk') ??
+    customers.find((x) => !x.buying && !x.lead && !x.held) ??
     arrive();
   if (!c) return;
   c.buying = true;
@@ -325,44 +328,8 @@ export function showSale(productId: string, icon: string, units: number, amount:
 
 // ---------- Forsikringsselgeren ----------
 
-// Fast utseende (DiceBear-oppsett fra designeren) + en nisselue tegnet oppå hodet.
-// Micah har ingen luer, så lua er en egen SVG-bit i samme koordinatsystem (360×360).
-const SANTA_HAT = `<g transform="translate(0,-30) rotate(-5 190 100)">
-  <path d="M82 98 C 92 50, 140 14, 200 12 C 262 10, 316 40, 336 100 L 306 104 C 296 78, 276 62, 258 58 L 292 94 Z" fill="#c8102e" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M70 94 C 140 74, 228 72, 300 90 L 298 118 C 228 102, 140 104, 74 124 Z" fill="#fff" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
-  <circle cx="330" cy="112" r="20" fill="#fff" stroke="#000" stroke-width="5"/></g>`;
-
-let insurerUrl = '';
-/** Forsikringsselgeren som bilde (data-URL). Brukes også i tilbudsvinduet. */
-export function insurerImage(): string {
-  if (!insurerUrl) {
-    const svg = createAvatar(micah, {
-      seed: 'Felix',
-      size: 256,
-      earringsProbability: 100,
-      glassesProbability: 0,
-      facialHairProbability: 0,
-      shirt: ['crew'],
-      earrings: ['hoop'],
-      hair: ['full'],
-      mouth: ['pucker'],
-      eyes: ['smilingShadow'],
-      eyebrows: ['eyelashesUp'],
-      earringColor: ['c31d1d'],
-      eyesColor: ['0c7297'],
-      eyeShadowColor: ['e0ddff', 'ffeba4', 'ffedef', 'ffffff'],
-      mouthColor: ['c50233'],
-      shirtColor: ['ba1717'],
-      baseColor: ['f9c9b6'],
-    } as never)
-      .toString()
-      // Større lerret oppover (og litt til sidene), så lua ikke kuttes. Bunnen står på samme sted.
-      .replace('viewBox="0 0 360 360"', 'viewBox="-25 -50 410 410"')
-      .replace(/<\/svg>\s*$/, `${SANTA_HAT}</svg>`);
-    insurerUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  }
-  return insurerUrl;
-}
+/** Forsikringsselgeren (Frida, med nisselue) fra rollelista. Brukes også i tilbudsvinduet. */
+export const insurerImage = (): string => characterUrl(CHARACTER_BY_ID['forsikringsselgeren']);
 
 // ---------- Spesielle besøkende: selgeren, Tilsynsmannen og tyven ----------
 // De står på én plass bak disken så lenge serveren sier de er der. Kunder på plassen går.
@@ -406,7 +373,7 @@ export function showGiftSeller(g: { seed: string; name: string; color: string } 
     el.dataset.action = 'gift';
     el.title = `${g!.name} – trykk for å høre tilbudet`;
     el.style.setProperty('--brand', g!.color);
-    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${avatarFor(g!.seed)}"><div class="want">🎁</div></div>`;
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${CHARACTER_BY_ID[g!.seed] ? characterUrl(CHARACTER_BY_ID[g!.seed]) : avatarFor(g!.seed)}"><div class="want">🎁</div></div>`;
   });
 }
 const INSPECTOR_X = 2; // står på plassen lengst til venstre
@@ -421,33 +388,8 @@ export function showInsurer(here: boolean) {
   });
 }
 
-let inspectorUrl = '';
-/** Tilsynsmannen: briller, bart, grå skjorte og en streng mine. */
-export function inspectorImage(): string {
-  if (!inspectorUrl) {
-    const svg = createAvatar(micah, {
-      seed: 'Tilsynsmannen',
-      size: 256,
-      glassesProbability: 100,
-      facialHairProbability: 100,
-      earringsProbability: 0,
-      glasses: ['square'],
-      facialHair: ['scruff'],
-      hair: ['mrClean'],
-      mouth: ['nervous'],
-      eyes: ['eyes'],
-      eyebrows: ['down'],
-      shirt: ['collared'],
-      shirtColor: ['4a5560'],
-      baseColor: ['ac6651'],
-      hairColor: ['77311d'],
-      facialHairColor: ['2c1b18'],
-      glassesColor: ['000000'],
-    } as never).toString();
-    inspectorUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  }
-  return inspectorUrl;
-}
+/** Tilsynsmannen: briller, bart, grå skjorte og en streng mine (rollelista). */
+export const inspectorImage = (): string => characterUrl(CHARACTER_BY_ID['tilsynsmannen']);
 
 /** Viser eller sender bort Tilsynsmannen (data-action="inspector"). */
 export function showInspector(here: boolean) {
@@ -465,7 +407,7 @@ export function showInspector(here: boolean) {
  */
 export function showThief(seed: string | null, night: boolean) {
   const s = showSpecial('thief', seed, null, (el) => {
-    el.dataset.action = 'suspect';
+    el.dataset.action = 'customer'; // tyven ser ut som en vanlig kunde
     el.dataset.seed = seed!;
     const list = offers();
     const want = list.length ? list[Math.floor(Math.random() * list.length)].icon : '👀';
@@ -498,4 +440,25 @@ export function mountCustomers(scene: Element | null, key: string | null, counte
   const list = counter();
   for (const c of customers) update(c, list); // prisene eller bordet kan ha endret seg
   if (!timer) timer = window.setInterval(tick, 1000);
+}
+
+// ---------- Kundevinduet ----------
+
+/** Det kundevinduet trenger å vite om en kunde ved disken (null: kunden har gått). */
+export function customerInfo(seed: string): { lead: ClientLead | null; want: string | null; mood: Mood | null; url: string } | null {
+  const c = customers.find((x) => x.seed === seed);
+  if (!c) return null;
+  return { lead: c.lead, want: c.want, mood: c.mood, url: avatarUrl(c.seed, c.mood ?? 'noytral') };
+}
+
+/** Holder kunden igjen mens kundevinduet er åpent (omtrent 5 ekte minutter). null slipper alle. */
+export function holdCustomer(seed: string | null) {
+  const now = Date.now();
+  for (const c of customers) {
+    const hold = c.seed === seed && !c.buying;
+    if (hold && !c.held) c.leaveAt = Math.max(c.leaveAt, now + 5 * 60_000);
+    if (!hold && c.held && !c.buying) c.leaveAt = Math.min(c.leaveAt, now + 3000);
+    c.held = hold;
+    c.el.classList.toggle('talking', hold);
+  }
 }

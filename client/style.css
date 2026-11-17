@@ -645,6 +645,36 @@ body.dragging .nail:not(.used) .nail-head { filter: drop-shadow(0 0 0.25cqw rgba
 .scene:not(.own) .nail { display: none; }
 
 /* «Angi til politiet?» */
+/* Kundevinduet */
+.cust-head { display: flex; gap: 0.9rem; align-items: center; margin-bottom: 0.6rem; }
+.cust-head > img { width: 96px; height: 96px; border-radius: 10px; background: #f3e6d0; border: 2px solid var(--line); flex-shrink: 0; }
+.cust-head h2 { margin: 0 0 0.3rem; }
+.cust-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.cust-tag { font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 5px; }
+.cust-tag.like { background: #e3efd8; color: #2f5a2f; }
+.cust-tag.dislike { background: #f6dcdc; color: #8b1f25; }
+.cust-tag.dislike::before { content: '✕ '; }
+.cust-section { border-top: 1px solid var(--line); padding: 0.6rem 0; }
+.cust-kicker { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+.cust-item { display: flex; gap: 0.6rem; align-items: center; }
+.cust-item .sprite, .cust-item img { width: 40px; height: 40px; font-size: 1.8rem; image-rendering: pixelated; object-fit: contain; }
+.cust-item small { display: block; color: var(--muted); }
+.haggle-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.3rem; }
+.haggle { display: grid; gap: 0.1rem; padding: 0.4rem 0.2rem; text-align: center; background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+.haggle .haggle-label { font-size: 0.75rem; color: var(--muted); }
+.haggle b { font-size: 0.95rem; }
+.haggle small { font-size: 0.7rem; color: var(--muted); }
+.haggle.down { border-color: #9cc59a; }
+.haggle.even { border-color: var(--gold); }
+.haggle.up { border-color: #d99a9a; }
+.haggle:hover { filter: none; background: var(--line); }
+.cust-hint { font-size: 0.8rem; color: var(--muted); margin: 0.4rem 0 0; }
+.cust-police { border-top: 1px solid var(--line); padding-top: 0.6rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; }
+.cust-police button { display: inline-flex; align-items: center; gap: 0.35rem; }
+.cust-police button img { width: 26px; height: 26px; border-radius: 50%; background: #f3e6d0; }
+.cust-police small { font-size: 0.72rem; color: var(--muted); }
+.customer.talking { filter: drop-shadow(0 0 0.6cqw rgba(255, 224, 138, 0.9)); }
+@media (max-width: 520px) { .haggle-row { grid-template-columns: repeat(3, 1fr); } }
 .suspect { display: flex; gap: 0.8rem; justify-content: center; margin-bottom: 0.4rem; }
 .suspect-face { width: 130px; text-align: center; }
 .suspect-face > img { width: 130px; height: 130px; border-radius: 10px; background: #f3e6d0; border: 2px solid var(--line); display: block; }
