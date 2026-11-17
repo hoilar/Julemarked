@@ -317,12 +317,12 @@
       "id": "boksinndeler",
       "name": "Boksinndeler",
       "size": "2x1",
-      "sizeStatus": "Skisse – ikke bestemt",
+      "sizeStatus": "Bestemt",
       "category": "Maskiner og utstyr",
-      "source": "Klas Olsen – pris ikke bestemt",
-      "note": "Planlagt tilbehør til plastkassa. Brukes opp og gir én ny fane; maks to inndelere per kasse, tre faner totalt. Faner kan merkes med penn og ett ark per navn. Foreslått størrelse ca. 2×1; ikke implementert.",
+      "source": "Klas Olsen – 249 kr",
+      "note": "Tilbehør til plastkassa. Brukes opp og gir én ny fane; maks to inndelere per kasse, tre faner totalt. Faner merkes med penn. I spillet fra 17.11.2026.",
       "subject": "Rigid slate-blue plastic crate divider wall with reinforcing ribs and a blank label holder.",
-      "status": "Planlagt – ikke implementert",
+      "status": "I spillet",
       "reference": "VAREPLAN.md – Varemeny, plastbokser og boksinndeler",
       "artPath": "boksinndeler.png"
     }

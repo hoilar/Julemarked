@@ -1,5 +1,5 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
-import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, type Spot } from '../shared/items.ts';
+import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planStash, stashBoxes, stashSources, type Spot, type StashTo } from '../shared/items.ts';
 import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
@@ -10,6 +10,9 @@ import {
   DEVICES,
   DEVICE_BY_ID,
   CLOCK_DISPLAY,
+  PLASTIC_BOX,
+  DIVIDER,
+  MAX_BOX_TABS,
   INGREDIENTS,
   KETTLE,
   KETTLE_KW_PER_LEVEL,
@@ -743,6 +746,49 @@ function powerView(stall: StallPublic, own: boolean): string {
   </div>`;
 }
 
+// --- Varemenyen: legg på bordet, under disken eller i en eske (varer og råvarer) ---
+
+// «Legg i …»-popupen: varen den er åpen for, og hvor (skjermkoordinater under ikonet). Overlever omtegning.
+let stashOpen: { typeId: string; x: number; y: number } | null = null;
+
+function stashMenu(s: GameState, typeId: string, sellable: boolean): string {
+  const items = s.me.items;
+  const count = (to: StashTo, boxId: number | null = null) => planStash(items, typeId, to, boxId).length;
+  const waiting = (to: StashTo, boxId: number | null = null) => stashSources(items, typeId, to, boxId).length;
+  // Bare ikonet; hva knappen gjør og hvor mange som får plass står i verktøytipset.
+  const btn = (to: StashTo, icon: string, label: string) => {
+    const n = count(to);
+    const left = waiting(to);
+    const why = left === 0 ? (to === 'counter' ? 'ingen ligger under disken' : 'ingen å legge under disken') : n === 0 ? 'det er ikke plass' : n < left ? `plass til ${n} av ${left}` : `${n} stk`;
+    return `<button class="ghost stash-btn" data-action="stash" data-type="${typeId}" data-to="${to}" ${n ? '' : 'disabled'} title="${esc(`${label} (${why})`)}" aria-label="${esc(label)}">
+      <img src="/art/ikoner/${icon}.png" alt="" draggable="false"></button>`;
+  };
+  const boxes = stashBoxes(items);
+  const open = stashOpen?.typeId === typeId;
+  const popup = open
+    ? `<div class="stash-popup" style="left:${stashOpen!.x}px;top:${stashOpen!.y}px">
+        ${
+          boxes.length
+            ? `<ul>${boxes
+                .map(({ box, tab, name }) => {
+                  const n = planStash(items, typeId, 'box', box.id, Infinity, tab).length;
+                  return `<li><button class="ghost" data-action="stash" data-type="${typeId}" data-to="box" data-box="${box.id}" ${tab !== null ? `data-tab="${tab}"` : ''} data-name="${esc(name)}" ${n ? '' : 'disabled'}>
+                    ${icon(ITEM_TYPES[box.typeId])}<span>${esc(name)}</span><small>${n ? `${n} stk` : waiting('box', box.id) ? 'fullt' : '–'}</small></button></li>`;
+                })
+                .join('')}</ul>`
+            : '<p class="muted">Du har ingen pappkartonger eller plastkasser under disken. Klas Olsen har begge deler.</p>'
+        }
+      </div>`
+    : '';
+  return `<div class="stash-menu">
+    ${sellable ? btn('counter', 'pa-bordet', 'Legg på bordet') : ''}
+    ${btn('storage', 'under-disken', 'Legg under disken')}
+    <button class="ghost stash-btn ${open ? 'open' : ''}" data-action="stash-toggle" data-type="${typeId}" title="Legg i en pappkartong eller plastkasse" aria-label="Legg i eske" aria-expanded="${open}">
+      <img src="/art/ikoner/i-eske.png" alt="" draggable="false"></button>
+    ${popup}
+  </div>`;
+}
+
 // --- Digitalklokka til venstre for alarmen (samme flytting som alarmen) ---
 
 /** Spilltida akkurat nå som «hh:mm». */
@@ -1168,7 +1214,8 @@ function carryView(s: GameState): string {
 
 function boxPanel(s: GameState, key: PanelKey, n: number): string {
   if (key === 'mail') return mailPanel(s, n);
-  let title: string, grid: string, extra = '', cls = '';
+  let title: string, grid: string, extra = '', cls = '', headBtn = '', tabBar = '', dividerBtn = '';
+  let yoff = 0; // plastkasse med faner: første rad i fanen som vises
   let cols: number, rows: number;
   if (key === 'trash') {
     ({ cols, rows } = TRASH_GRID);
@@ -1189,9 +1236,29 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     if (t.car) return ''; // bagasjerommet tegnes inni bilen (carView)
     if (t.docFolder) return docFolderPanel(s, box, n);
     ({ cols, rows } = t.inner);
-    title = t.car ? `${icon(t)} Bagasjerommet · ${esc(t.name)}` : `${icon(t)} ${esc(t.name)}`;
+    title = t.car ? `${icon(t)} Bagasjerommet · ${esc(t.name)}` : `${icon(t)} ${esc(box.boxName ?? t.name)}`;
+    // Pappkartonger og plastkasser kan få navn med penn (vises i «Legg i …» i varemenyen).
+    const named = (t.id === 'kartong' && !box.device) || t.id === PLASTIC_BOX;
+    if (named && hasTool(s, PEN))
+      headBtn = `<button class="small ghost" data-action="box-rename" data-box="${box.id}" title="Skriv et navn på ${t.id === PLASTIC_BOX ? 'plastkassa' : 'kartongen'} med penn" aria-label="Skriv navn">✏️</button>`;
+    // Plastkasse med boksinndelere: én fane av gangen (som dokumentmappa).
+    const tabs = boxTabs(box);
+    if (tabs) {
+      const tab = Math.min(folderTab.get(box.id) ?? 0, tabs.count - 1);
+      rows = tabs.tabGrid.rows;
+      yoff = tab * rows;
+      const pen = !!hasTool(s, PEN);
+      tabBar = `<div class="box-tabs">${box.tabs!
+        .map((nm, k) => {
+          const c = itemsIn(s.me.items, 'box', box.id).filter((i) => Math.floor(i.y / rows) === k).length;
+          return `<button class="small ${k === tab ? '' : 'ghost'}" data-action="box-tab" data-box="${box.id}" data-tab="${k}" title="${esc(nm)}${c ? ` (${c})` : ''}${pen ? ' – dobbeltklikk for å skrive nytt navn med penn' : ''}">${esc(nm)}</button>`;
+        })
+        .join('')}</div>`;
+    }
+    if (t.id === PLASTIC_BOX && (box.tabs?.length ?? 1) < MAX_BOX_TABS && hasTool(s, DIVIDER))
+      dividerBtn = `<button class="small ghost" data-action="box-divider" data-box="${box.id}" title="Boksinndeleren brukes opp og gir kassa én fane til (høyst ${MAX_BOX_TABS})">🧱 Sett inn boksinndeler</button>`;
     if (t.car) cls = 'trunk-panel';
-    grid = `data-grid="box" data-box="${box.id}"`;
+    grid = `data-grid="box" data-box="${box.id}"${tabBar ? ` data-yoff="${yoff}"` : ''}`;
     const contents = itemsIn(s.me.items, 'box', box.id);
     const dev = box.device ? DEVICE_BY_ID[box.device] : undefined;
     if (dev) {
@@ -1208,8 +1275,10 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
     }
   }
   const items = itemsIn(s.me.items, key === 'trash' ? 'trash' : 'box', key === 'trash' ? null : key)
-    .map((i) => gridItemView(i, cols, rows))
+    .filter((i) => !tabBar || (i.y >= yoff && i.y < yoff + rows))
+    .map((i) => gridItemView(tabBar ? { ...i, y: i.y - yoff } : i, cols, rows))
     .join('');
+  if (dividerBtn) extra = extra ? extra.replace('<div class="unpack">', `<div class="unpack">${dividerBtn}`) : `<div class="unpack">${dividerBtn}</div>`;
   // Standardplass første gang: i høyre marg, litt forskjøvet for hvert nytt vindu.
   if (!panelPos.has(key)) {
     const w = cols * BOX_CELL + 1.6; // % av scenebredden (cqw)
@@ -1220,13 +1289,13 @@ function boxPanel(s: GameState, key: PanelKey, n: number): string {
   const pos = panelPos.get(key)!;
   return `
   <div class="box-panel ${cls}" data-panel="${key}" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
-    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${title}</span><button class="small ghost" data-action="close-box" data-panel-key="${key}" aria-label="Lukk">✕</button></div>
-    <div class="grid box-grid" ${grid} style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">${items}</div>
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${title}</span>${headBtn}<button class="small ghost" data-action="close-box" data-panel-key="${key}" aria-label="Lukk">✕</button></div>
+    ${tabBar}<div class="grid box-grid" ${grid} style="width:${cols * BOX_CELL}cqw;height:${rows * BOX_CELL}cqw;--cols:${cols};--rows:${rows}">${items}</div>
     ${extra}
   </div>`;
 }
 
-/** Fanen som er åpen i hver dokumentmappe (huskes mens siden er åpen). */
+/** Fanen som er åpen i hver dokumentmappe og plastkasse (huskes mens siden er åpen). */
 const folderTab = new Map<number, number>();
 
 /** Dokumentmappa: fire faner med egne navn, 5×5 papirer i hver. Fanene ligger stablet i rutenettet (y = fane × 5 + rad). */
@@ -1706,7 +1775,8 @@ function snoopBoxes(view: SnoopView): string {
       if (!it) return '';
       const t = ITEM_TYPES[it.typeId];
       if (t.kind !== 'container' || it.locked) return '';
-      const folder = (t as { docFolder?: { tabs: number; tabGrid: { cols: number; rows: number } } }).docFolder;
+      // Dokumentmappa og plastkasser med boksinndelere: én fane av gangen.
+      const folder = boxTabs({ ...it, place: 'box', boxId: null } as Item);
       let tabs = '';
       let rows = t.inner.rows;
       let yoff = 0;
@@ -2945,7 +3015,8 @@ function modalView(s: GameState): string {
         <dt>Du har</dt><dd>${held}</dd>
         <dt>Innkjøp</dt><dd>${where}</dd>
       </dl>
-      ${uses ? `<div class="label-head">Brukes i oppskriftene dine</div><ul class="ingredient-uses">${uses}</ul>` : ''}`,
+      ${uses ? `<div class="label-head">Brukes i oppskriftene dine</div><ul class="ingredient-uses">${uses}</ul>` : ''}
+      ${stashMenu(s, t.id, false)}`,
     );
   }
 
@@ -2997,10 +3068,7 @@ function modalView(s: GameState): string {
         <div class="price-feedback">${priceFeedback(price, inv.avgCost, base)}</div>
         <button>Lagre pris</button>
       </form>
-      <div class="row auto-row">
-        ${stored > 0 ? `<button class="ghost" data-action="auto" data-to="counter" data-qty="${stored}">${stored === 1 ? 'Legg den på bordet' : `Legg alle ${stored} på bordet`}</button>` : ''}
-        ${inv.onCounter > 0 ? `<button class="ghost" data-action="auto" data-to="storage" data-qty="${inv.onCounter}">${inv.onCounter === 1 ? 'Ta den av bordet' : 'Ta alle av bordet'}</button>` : ''}
-      </div>`,
+      ${stashMenu(s, p.id, true)}`,
     );
   }
 
@@ -3487,9 +3555,27 @@ window.addEventListener('pointercancel', endPhoneDrag);
 // ---------- Klikk og skjema ----------
 
 app.addEventListener('click', (e) => {
+  // «Legg i …»-popupen lukkes av et klikk utenfor den (og utenfor knappen som åpner den).
+  if (stashOpen && !(e.target as HTMLElement).closest('.stash-popup, [data-action="stash-toggle"]')) {
+    stashOpen = null;
+    render();
+  }
   const el = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
   if (!el) return;
   const action = el.dataset.action;
+  if (action === 'stash-toggle') {
+    const typeId = el.dataset.type!;
+    if (stashOpen?.typeId === typeId) stashOpen = null;
+    else {
+      // Popupen er fast plassert (modalvinduets rulling ville klippet den): under knappen, eller over hvis det ikke er plass.
+      const r = el.getBoundingClientRect();
+      const h = Math.max(1, state ? stashBoxes(state.me.items).length : 1) * 44 + 16;
+      const y = r.bottom + 4 + h > innerHeight - 8 ? Math.max(8, r.top - 4 - h) : r.bottom + 4;
+      stashOpen = { typeId, x: Math.round(Math.max(8, Math.min(r.left, innerWidth - 248))), y: Math.round(y) };
+    }
+    render();
+    return;
+  }
   if (action === 'close') {
     if (e.target !== el && el.classList.contains('modal-backdrop')) return; // klikk inni dialogen
     if (Date.now() - sdragEndAt < 400) return; // slapp noe utenfor vinduet
@@ -3624,6 +3710,29 @@ app.addEventListener('click', (e) => {
   if (action === 'open-car') togglePanel(Number(el.dataset.item));
   if (action === 'trash-dump') {
     if (confirm('Kjøre søpla til gjenbruksstasjonen? Boden er stengt mens du er borte.')) void act('/api/trash/dump', {}, '🚗 Søpla er lastet i bilen – du kjører til gjenbruksstasjonen.');
+    return;
+  }
+  if (action === 'box-rename') {
+    const boxId = Number(el.dataset.box);
+    const now = state?.me.items.find((i) => i.id === boxId)?.boxName ?? '';
+    const what = state?.me.items.find((i) => i.id === boxId)?.typeId === PLASTIC_BOX ? 'plastkassa' : 'kartongen';
+    const name = prompt(`Skriv et navn på ${what} (maks 16 tegn). Tomt visker ut navnet:`, now);
+    if (name !== null) void act('/api/box/rename', { itemId: boxId, name }, name.trim() ? `✏️ Navnet står på ${what}.` : 'Navnet er visket ut.');
+    return;
+  }
+  if (action === 'box-tab') {
+    const boxId = Number(el.dataset.box);
+    const tab = Number(el.dataset.tab);
+    if (folderTab.get(boxId) === tab && (e as MouseEvent).detail >= 2 && state && hasTool(state, PEN)) {
+      const now = state.me.items.find((i) => i.id === boxId)?.tabs?.[tab] ?? '';
+      const name = prompt('Nytt navn på fanen (maks 16 tegn):', now);
+      if (name && name.trim()) void act('/api/box/tab', { itemId: boxId, tab, name }, '✏️ Fanen har fått nytt navn.');
+      return;
+    }
+    folderTab.set(boxId, tab);
+  }
+  if (action === 'box-divider') {
+    void act('/api/box/divider', { itemId: Number(el.dataset.box) }, '🧱 Boksinndeleren står i kassa. Den har fått en ny fane.');
     return;
   }
   if (action === 'folder-tab') {
@@ -3940,11 +4049,21 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'modal') modal = { kind: el.dataset.modal as 'wholesale' | 'events' };
   if (action === 'buy') modal = { kind: 'buy', stallId: Number(el.dataset.stall), productId: el.dataset.product! };
-  if (action === 'auto' && modal?.kind === 'product') {
-    const productId = modal.productId;
-    const to = el.dataset.to;
-    modal = null;
-    act('/api/item/auto', { productId, to, qty: Number(el.dataset.qty) }, to === 'counter' ? 'Lagt ut på bordet.' : 'Tatt av bordet.');
+  if (action === 'stash' && state) {
+    // Varemenyen: flytt så mange som får plass. Vinduet blir stående, så tallene oppdateres.
+    const typeId = el.dataset.type!;
+    const to = el.dataset.to as StashTo;
+    const boxId = el.dataset.box ? Number(el.dataset.box) : null;
+    const tab = el.dataset.tab ? Number(el.dataset.tab) : null;
+    const n = planStash(state.me.items, typeId, to, boxId, Infinity, tab).length;
+    const name = el.dataset.name ?? 'eska';
+    const what = n === 1 ? '1 stk' : `${n} stk`;
+    stashOpen = null;
+    act(
+      '/api/item/stash',
+      { typeId, to, boxId, tab },
+      to === 'counter' ? `Lagt ${what} på bordet.` : to === 'storage' ? `Lagt ${what} under disken.` : `Lagt ${what} i ${name}.`,
+    );
   }
   render();
 });

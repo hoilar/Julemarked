@@ -1013,6 +1013,11 @@ img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.
 }
 .box-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6cqw; color: #f5d9b0; font-size: max(11px, 0.95cqw); font-weight: 700; cursor: grab; touch-action: none; }
 .box-head button { color: #f5d9b0; border-color: rgba(255, 230, 180, 0.3); padding: 0.1em 0.5em; cursor: pointer; }
+.box-head > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Plastkasse med boksinndelere: fanene over rutenettet */
+.box-tabs { display: flex; gap: 0.3cqw; margin: 0.3cqw 0; }
+.box-tabs button { flex: 1; min-width: 0; font-size: max(10px, 0.8cqw); padding: 0.15em 0.4em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.box-tabs button.ghost { color: #f5d9b0; border-color: rgba(255, 230, 180, 0.3); }
 .box-panel.moving { box-shadow: 0 1.6cqw 3cqw rgba(0, 0, 0, 0.7); }
 .box-panel.moving .box-head { cursor: grabbing; }
 .box-grid { position: relative; }
@@ -1073,6 +1078,22 @@ img.icon { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.
 }
 
 .auto-row { margin-top: 0.8rem; flex-wrap: wrap; }
+/* Varemenyen: bare ikoner på én rad; «Legg i …» åpner en popup med kartongene og plastkassene */
+.stash-menu { margin-top: 0.8rem; display: flex; flex-wrap: nowrap; gap: 0.4rem; align-items: center; }
+.stash-btn { display: inline-grid; place-items: center; padding: 0.2rem; line-height: 0; }
+.stash-btn img { width: 40px; height: 40px; image-rendering: pixelated; }
+.stash-btn:disabled img { filter: grayscale(1); opacity: 0.6; }
+.stash-btn.open { background: var(--line); }
+.stash-popup {
+  position: fixed; z-index: 60; min-width: 14rem; max-width: calc(100vw - 32px);
+  padding: 0.3rem; background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 0.5rem; box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.35);
+}
+.stash-popup ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.25rem; }
+.stash-popup p { margin: 0.3rem; }
+.stash-popup li button { display: flex; width: 100%; align-items: center; gap: 0.5rem; text-align: left; }
+.stash-popup li button span { flex: 1; }
+.stash-popup li button img { width: 24px; height: 24px; image-rendering: pixelated; }
 .modal h3 { margin-top: 1.2rem; font-size: 1rem; }
 
 body.dragging, body.dragging * { cursor: grabbing !important; }

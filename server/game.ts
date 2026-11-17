@@ -29,6 +29,10 @@ import {
   carOf,
   sizeOf,
   gridOf,
+  planStash,
+  stashBoxes,
+  stashSources,
+  type StashTo,
 } from '../shared/items.ts';
 import { DUMP, tripPlaceName, CAR_BATTERY, CAR_BATTERY_FULL, CAR_BY_ID, START_CAR, TRADE_IN, fuelExpensive, fuelPrice, isCar, tripFuelCost } from '../shared/car.ts';
 import {
@@ -64,6 +68,9 @@ import {
   THEFT_TO,
   TOOLS,
   PEN,
+  PLASTIC_BOX,
+  DIVIDER,
+  MAX_BOX_TABS,
   PAD,
   SCISSORS,
   SCREWDRIVER,
@@ -602,6 +609,13 @@ function itemsOf(stallId: number): Item[] {
       const dev = (JSON.parse(r.state) as { device?: unknown }).device;
       if (typeof dev === 'string') item.device = dev;
     }
+    if (r.type_id === MACHINE_BOX && typeof st.name === 'string' && st.name) item.boxName = st.name; // skrevet på med penn
+    if (r.type_id === PLASTIC_BOX) {
+      if (typeof st.name === 'string' && st.name) item.boxName = st.name;
+      // Boksinndelere: fanenavnene (to eller tre). Én fane = ingen inndeler.
+      if (Array.isArray(st.tabs) && st.tabs.length > 1)
+        item.tabs = st.tabs.slice(0, MAX_BOX_TABS).map((t, n) => (typeof t === 'string' && t ? t : `Tab ${n + 1}`));
+    }
     if (r.type_id === STRIP.id) item.strip = { sockets: Array.isArray(st.sockets) ? (st.sockets as (string | null)[]) : [] };
     const mk = MAKER_BY_ID[r.type_id];
     if (mk)
@@ -647,6 +661,61 @@ export function renameFolderTab(player: PlayerRow, itemId: number, tab: number, 
   const tabs = folderTabs(rawState(item.id).tabs);
   tabs[tab] = clean;
   saveState(item.id, { ...rawState(item.id), tabs });
+}
+
+/** Skriver et navn på en pappkartong eller plastkasse med penn (tomt navn visker det ut). */
+export function renameBox(player: PlayerRow, itemId: number, name: string) {
+  const stall = myStall(player);
+  const items = itemsOf(stall.id);
+  const box = items.find((i) => i.id === itemId && (i.typeId === MACHINE_BOX || i.typeId === PLASTIC_BOX) && !isTrashed(items, i) && !isUndelivered(items, i));
+  if (!box) throw new GameError('Fant ikke eska.');
+  if (!holds(items, PEN)) throw new GameError('Du har ingenting å skrive med.');
+  const clean = name.replace(/\s+/g, ' ').trim().slice(0, 16);
+  const st = rawState(box.id);
+  if (clean) st.name = clean;
+  else delete st.name;
+  saveState(box.id, st);
+}
+
+/** En plastkasse under disken som eieren har (ikke i søpla eller på vei). */
+function plasticBox(items: Item[], itemId: number): Item {
+  const box = items.find((i) => i.id === itemId && i.typeId === PLASTIC_BOX && !isTrashed(items, i) && !isUndelivered(items, i));
+  if (!box) throw new GameError('Fant ikke plastkassa.');
+  return box;
+}
+
+/** Setter en boksinndeler i plastkassa: den brukes opp, og kassa får én fane til (høyst tre). */
+export function addDivider(player: PlayerRow, itemId: number) {
+  const stall = myStall(player);
+  return tx(() => {
+    const items = itemsOf(stall.id);
+    const box = plasticBox(items, itemId);
+    const tabs = box.tabs ?? ['Tab 1'];
+    if (tabs.length >= MAX_BOX_TABS) throw new GameError(`Plassen er brukt opp: en plastkasse kan ha høyst ${MAX_BOX_TABS} faner.`);
+    const divider = holds(items, DIVIDER);
+    if (!divider) throw new GameError('Du har ingen boksinndeler. Klas Olsen har.');
+    if (divider.place === 'box' && divider.boxId === box.id) throw new GameError('Ta boksinndeleren ut av kassa først.');
+    q.deleteItem.run(divider.id);
+    const next = [...tabs, `Tab ${tabs.length + 1}`];
+    saveState(box.id, { ...rawState(box.id), tabs: next });
+    return { tabs: next.length };
+  });
+}
+
+/** Skriver et navn på en fane i plastkassa med penn. */
+export function renameBoxTab(player: PlayerRow, itemId: number, tab: number, name: string) {
+  const stall = myStall(player);
+  const items = itemsOf(stall.id);
+  const box = plasticBox(items, itemId);
+  const tabs = box.tabs;
+  if (!tabs) throw new GameError('Kassa har ingen faner. Sett inn en boksinndeler først.');
+  if (!Number.isInteger(tab) || tab < 0 || tab >= tabs.length) throw new GameError('Ugyldig fane.');
+  if (!holds(items, PEN)) throw new GameError('Du har ingenting å skrive med.');
+  const clean = name.replace(/\s+/g, ' ').trim().slice(0, 16);
+  if (!clean) throw new GameError('Fanen må ha et navn.');
+  const next = [...tabs];
+  next[tab] = clean;
+  saveState(box.id, { ...rawState(box.id), tabs: next });
 }
 
 /** Har boden et verktøy i hende (ikke i søpla, ikke på vei)? */
@@ -2096,30 +2165,26 @@ export function discardItem(player: PlayerRow, itemId: number): string {
   return ITEM_TYPES[item.typeId].name;
 }
 
-/** Flytter mange av samme vare på én gang: ut på bordet, eller tilbake under disken. */
-export function autoMove(player: PlayerRow, productId: string, to: 'counter' | 'storage', qty: number): number {
-  product(productId);
+/**
+ * Varemenyen: flytter så mange som får plass av én vare eller råvare (høyst `qty`) på bordet, løst under
+ * disken eller i en eske under disken. Tar bare fra bordet, under disken og eskene der (ikke bil, søppel, maskiner).
+ */
+export function stashItems(player: PlayerRow, typeId: string, to: StashTo, boxId: number | null, qty: number, tab: number | null = null): number {
+  const t = ITEM_TYPES[typeId];
+  if (!t || (t.kind !== 'product' && t.kind !== 'ingredient')) throw new GameError('Ukjent vare.');
+  if (!['counter', 'storage', 'box'].includes(to)) throw new GameError('Ugyldig sted.');
   if (int(qty, 'antall') < 1) throw new GameError('Ugyldig antall.');
+  if (to === 'counter' && t.kind === 'ingredient') throw new GameError('Råvarer selges ikke – kok noe av dem først.');
   const stall = myStall(player);
   return tx(() => {
     const items = itemsOf(stall.id);
-    const candidates = items.filter(
-      (i) =>
-        i.typeId === productId &&
-        !isTrashed(items, i) &&
-        !isUndelivered(items, i) &&
-        (to === 'counter' ? i.place !== 'counter' : i.place === 'counter'),
-    );
-    let moved = 0;
-    for (const item of candidates.slice(0, qty)) {
-      const spot = to === 'counter' ? findCounterSpot(items, productId) : findStorageSpot(items, productId);
-      if (!spot) break;
-      q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, item.id);
-      Object.assign(item, spot);
-      moved++;
-    }
-    if (moved === 0) throw new GameError(to === 'counter' ? 'Det er ikke plass på bordet.' : 'Det er ikke plass under disken.');
-    return moved;
+    if (to === 'box' && !stashBoxes(items).some((b) => b.box.id === boxId && b.tab === tab)) throw new GameError('Fant ikke eska.');
+    if (stashSources(items, typeId, to, boxId).length === 0) throw new GameError('Det er ingen å flytte.');
+    const moves = planStash(items, typeId, to, to === 'box' ? boxId : null, qty, to === 'box' ? tab : null);
+    for (const { item, spot } of moves) q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, item.id);
+    if (moves.length === 0)
+      throw new GameError(to === 'counter' ? 'Det er ikke plass på bordet.' : to === 'storage' ? 'Det er ikke plass under disken.' : 'Det er ikke plass i eska.');
+    return moves.length;
   });
 }
 
@@ -2446,7 +2511,8 @@ export function hangDevice(player: PlayerRow, boxId: number) {
     const d = DEVICE_BY_ID[box.device!];
     if (!d || d.item) throw new GameError('Ukjent apparat.');
     const p = powerOf(stall);
-    saveState(box.id, {});
+    const { name } = rawState(box.id);
+    saveState(box.id, typeof name === 'string' ? { name } : {}); // navnet med penn står fortsatt på kartongen
     if (p.devices.includes(d.id)) return { name: d.name }; // henger der allerede: kartongen er bare tom
     // En ny lyslenke bytter ut den gamle (de henger på samme sted). Står den gamle i en kontakt, tar den nye plassen.
     let socketOfOld = -1;

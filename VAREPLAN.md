@@ -313,6 +313,8 @@ Små tilleggsmoduler som settes i en **modulplass** på maskinene (som batteripl
 
 ## Varemeny, plastbokser og boksinndeler (13.11.2026)
 
+**✅ Varemenyen er bygd (17.11.2026):** tre ikonknapper på én rad (uten tekst; forklaring og antall i verktøytipset): «Legg på bordet» (bare varer), «Legg under disken» og «Legg i …». Den siste åpner en popup med pappkartongene og plastkassene under disken (ikke poser, safer eller dokumentmappa) og hvor mange som får plass i hver. Hver knapp flytter så mange den kan, og tar bare fra bordet, under disken og eskene der. Bordet fylles kolonne for kolonne fra venstre, nedover alle ledige rader før neste kolonne. **Pappkartonger kan få navn** med penn (✏️ i eskevinduet, maks 16 tegn); navnet vises i popupen. **Plastkasser og boksinndeler (bygd 17.11.2026, bare penn – ikke papir):** plastkasser kan få navn med penn som kartongene. Boksinndeleren (249 kr, 2×1, Klas Olsen) settes inn fra plastkassevinduet («🧱 Sett inn boksinndeler»), brukes opp og gir én fane til, høyst tre faner (Tab 1–3). Fanene vises over rutenettet, én av gangen; dobbeltklikk med penn gir nytt navn. Ingenting kan ligge over to faner. «Legg i …» viser hver fane for seg («Plastkasse 1 · Tab 2»). Inndelerne kan ikke tas ut igjen.
+
 **Varemenyen** (når man trykker på en vare eller råvare):
 
 - Knapper med ikon for **Legg under disken** og **Legg på bordet** (ikoner bestilt i `GRAFIKK.md`).

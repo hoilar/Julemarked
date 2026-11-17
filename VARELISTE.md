@@ -177,7 +177,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🚙 Toyota HighAss 2014 | `bil_highass` | 4×4 | 0 kr | rommer 12×6 · 60 min per tur, bensin | Bilbutikken | `biler/bil-highass.png`<br>`biler/bil-highass-apen.png` |
 | 🚘 ID Fuzz | `bil_fuzz` | 4×4 | 0 kr | rommer 12×6 · 50 min per tur, batteri | Bilbutikken | `biler/bil-fuzz.png`<br>`biler/bil-fuzz-apen.png` |
 
-## Verktøy (9)
+## Verktøy (10)
 
 | Ting | id | Str. | Pris | Info | Skaffes | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -187,6 +187,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 📱 Smarttelefon | `telefon` | 2×3 | 499 kr | Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden. | Klas Olsen | `telefon/telefon.png` ↓ |
 | 🔍 Forstørrelsesglass | `lupe` | 2×2 | 129 kr | Gjør små ting store. Nyttig for den som vil se nøyere etter. | Klas Olsen | `verktoy/lupe.png` |
 | ✂️ Saks | `saks` | 2×2 | 79 kr | Skarp. Pass på fingrene. | Klas Olsen | `verktoy/saks.png` |
+| 🧱 Boksinndeler | `boksinndeler` | 2×1 | 249 kr | Skillevegg i hard plast med etikettholder. Passer i plastkassa med lokk. | Klas Olsen | `boksinndeler.png` |
 | 🧼 Såpestykke | `sapestykke` | 2×2 | 19 kr | Myk, hvit såpe i en blokk. Lukter rent. | Klas Olsen | `verktoy/sapestykke.png` |
 | 🛠️ Nøkkelmaskin | `nokkelmaskin` | 3×3 | 900 kr | Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk. | Fyren bak containeren | `verktoy/nokkelmaskin.png` ↓ |
 | 🗝️ Blank nøkkel | `blank_nokkel` | 2×2 | 30 kr | Et nøkkelemne uten tagger. | Fyren bak containeren | `verktoy/blank-nokkel.png` |

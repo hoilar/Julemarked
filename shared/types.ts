@@ -55,6 +55,7 @@ export interface Item {
   cutCoupons?: number[]; // bare aviser: kupongene som er klippet ut // bare sikringsboksen: kontakt-oppføringer med vippebryteren av
   arrives?: number; // bare poser på vei (transit): spilltid de leveres
   device?: string; // bare pappkartonger fra Klas Olsen: lyslenka/alarmen som ligger i den og skal henges på boden
+  boxName?: string; // bare pappkartonger: navnet som er skrevet på med penn
   label?: Label; // bare salgsvarer: hva etiketten sier (andres boder ser aldri «forged»)
   sheets?: number; // bare papirblokka: ark igjen
   recipe?: string; // bare avskrevne oppskrifter: oppskriftens id
@@ -70,7 +71,7 @@ export interface Item {
    * forged: noen har skrevet «Hjemmelaget» på den. planted: den lå ikke her før – noen har lagt den her.
    */
   tamper?: { looksLike?: string; real?: string; forged?: boolean; planted?: boolean };
-  tabs?: string[]; // bare dokumentmapper: navnene på fanene // bare nøkkelmaskinen: kopien den holder på med (ferdig da)
+  tabs?: string[]; // dokumentmapper og plastkasser med boksinndelere: navnene på fanene // bare nøkkelmaskinen: kopien den holder på med (ferdig da)
   boxId: number | null; // eskens id når place = 'box'
   x: number;
   y: number;

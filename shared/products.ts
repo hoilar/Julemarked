@@ -239,6 +239,7 @@ export const TOOLS: Tool[] = [
   { kind: 'tool', id: 'telefon', name: 'Smarttelefon', emoji: '📱', image: '/art/telefon/telefon.png', price: 499, size: { w: 2, h: 3 }, blurb: 'Klokke, bank, nettbutikk og varsler. Du fikk en da du åpnet boden.' },
   { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', image: '/art/verktoy/lupe.png', price: 129, size: { w: 2, h: 2 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
   { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 2, h: 2 }, blurb: 'Skarp. Pass på fingrene.' },
+  { kind: 'tool', id: 'boksinndeler', name: 'Boksinndeler', emoji: '🧱', image: '/art/boksinndeler.png', price: 249, size: { w: 2, h: 1 }, blurb: 'Skillevegg i hard plast med etikettholder. Passer i plastkassa med lokk.' },
   { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', image: '/art/verktoy/sapestykke.png', price: 19, size: { w: 2, h: 2 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
   // Fra Fyren bak containeren (selges ikke hos Klas Olsen):
   { kind: 'tool', id: 'nokkelmaskin', name: 'Nøkkelmaskin', emoji: '🛠️', image: '/art/verktoy/nokkelmaskin.png', price: 900, size: { w: 3, h: 3 }, blurb: 'Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk.', dealerOnly: true },
@@ -246,6 +247,10 @@ export const TOOLS: Tool[] = [
 ];
 export const PEN = 'penn';
 export const PAD = 'papirblokk';
+/** Plastkassa kan deles i faner med boksinndelere: én ny fane per inndeler, høyst tre faner. */
+export const PLASTIC_BOX = 'plastkasse';
+export const DIVIDER = 'boksinndeler';
+export const MAX_BOX_TABS = 3;
 export const SCISSORS = 'saks';
 export const LOUPE = 'lupe';
 /** Er dette en safe (liten eller stor)? */

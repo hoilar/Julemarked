@@ -1,7 +1,7 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
 import { findFree, fits, type GridSize } from './grid.ts';
-import { CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
+import { PLASTIC_BOX, CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
 import type { Item, Place } from './types.ts';
 import { BACKPACK, CAR_BY_ID } from './car.ts';
 
@@ -29,7 +29,12 @@ export function gridOf(items: Item[], place: Place, boxId: number | null): GridS
   if (place === 'carry') return CARRY_GRID;
   const box = items.find((i) => i.id === boxId);
   const t = box && ITEM_TYPES[box.typeId];
-  if (place === 'box') return t?.kind === 'container' ? t.inner : null;
+  if (place === 'box') {
+    if (t?.kind !== 'container') return null;
+    // Plastkasse med boksinndelere: fanene ligger stablet under hverandre (y = fane × rader + rad).
+    const tabs = box ? boxTabs(box) : null;
+    return tabs && !t.docFolder ? { cols: t.inner.cols, rows: tabs.tabGrid.rows * tabs.count } : t.inner;
+  }
   if (place === 'fuse') return t && fuseboxKind(t.id) === 'screw' ? FUSE_GRID : null; // bare boksen med skrusikringer
   // Batteriplass: maskinene, og elbilen (ID Fuzz).
   if (place === 'cell') return t?.kind === 'kettle' || t?.kind === 'folder' || t?.kind === 'maker' || CAR_BY_ID[t?.id ?? '']?.fuel === 'batteri' ? CELL_GRID : null;
@@ -95,6 +100,18 @@ export function findCarrySpot(items: Item[], typeId: string): Spot | null {
   return null;
 }
 
+/**
+ * Faner i en beholder: dokumentmappa (alltid), og plastkasser med boksinndelere. Hver fane er tabGrid stor,
+ * og fanene ligger stablet i rutenettet. Null = ingen faner.
+ */
+export function boxTabs(box: Item): { count: number; tabGrid: GridSize } | null {
+  const t = ITEM_TYPES[box.typeId];
+  if (t?.kind !== 'container') return null;
+  if (t.docFolder) return { count: t.docFolder.tabs, tabGrid: t.docFolder.tabGrid };
+  if (box.typeId === PLASTIC_BOX && box.tabs && box.tabs.length > 1) return { count: box.tabs.length, tabGrid: t.inner };
+  return null;
+}
+
 /** Gjenstander som ligger inni en eske eller kjele. */
 export function contentsOf(items: Item[], parentId: number): Item[] {
   return items.filter((i) => NESTED.has(i.place) && i.boxId === parentId);
@@ -142,12 +159,15 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
     if (hands.some((i) => i.x === spot.x)) return 'Den hånden er opptatt.';
     return null;
   }
-  // Dokumentmappa: bare papirer, og ingenting som går over to faner.
+  // Dokumentmappa: bare papirer. Ingenting går over to faner (mappa og plastkasser med boksinndelere).
   const folder = spot.place === 'box' && parent ? (ITEM_TYPES[parent.typeId] as { docFolder?: { tabGrid: GridSize } }).docFolder : undefined;
   if (folder) {
     const paperish = (t.kind === 'doc' && t.id !== 'sapeavtrykk' && t.id !== 'kopinokkel') || t.kind === 'policy' || t.kind === 'paper';
     if (!paperish) return 'I dokumentmappa er det bare plass til papirer: dokumenter, lapper, oppskrifter, utklipp og aviser.';
-    const rows = folder.tabGrid.rows;
+  }
+  const tabbed = spot.place === 'box' && parent ? boxTabs(parent) : null;
+  if (tabbed) {
+    const rows = tabbed.tabGrid.rows;
     if (Math.floor(spot.y / rows) !== Math.floor((spot.y + t.size.h - 1) / rows)) return 'Det får ikke plass på én fane.';
   }
   const shreddable = t.kind === 'paper' || t.kind === 'doc' || t.kind === 'policy' || t.kind === 'folded' || (t.kind === 'container' && !!t.shopBag);
@@ -230,9 +250,25 @@ export function findStorageSpot(items: Item[], typeId: string): Spot | null {
   if (s) return { place: 'storage', boxId: null, ...s };
   if (ITEM_TYPES[typeId].kind === 'container') return null;
   for (const box of items.filter((i) => ITEM_TYPES[i.typeId].kind === 'container' && !(ITEM_TYPES[i.typeId] as { docFolder?: unknown }).docFolder && (i.place === 'storage' || i.place === 'counter'))) {
-    const grid = gridOf(items, 'box', box.id)!;
-    const b = findFree(w, h, itemsIn(items, 'box', box.id), grid);
+    const b = findFreeInBox(items, box, w, h);
     if (b) return { place: 'box', boxId: box.id, ...b };
+  }
+  return null;
+}
+
+/** Første ledige plass i en eske; i en eske med faner (plastkasse med boksinndelere) aldri over to faner. */
+export function findFreeInBox(items: Item[], box: Item, w: number, h: number): { x: number; y: number } | null {
+  const inside = itemsIn(items, 'box', box.id);
+  const tabs = boxTabs(box);
+  if (!tabs) {
+    const grid = gridOf(items, 'box', box.id);
+    return grid ? findFree(w, h, inside, grid) : null;
+  }
+  const rows = tabs.tabGrid.rows;
+  for (let k = 0; k < tabs.count; k++) {
+    const local = inside.map((i) => ({ x: i.x, y: i.y - k * rows, w: i.w, h: i.h }));
+    const s = findFree(w, h, local, tabs.tabGrid);
+    if (s) return { x: s.x, y: s.y + k * rows };
   }
   return null;
 }
@@ -246,10 +282,104 @@ export function findTrashSpot(items: Item[], typeId: string): Spot | null {
 
 export function findCounterSpot(items: Item[], typeId: string): Spot | null {
   const { w, h } = sizeOf(typeId);
-  // Fyll fra fremre rad og bakover, så bordet ser fullt ut forfra.
+  // Kolonne for kolonne fra venstre: nedover alle ledige rader i en kolonne før neste kolonne.
   const counter = itemsIn(items, 'counter', null);
-  for (let y = COUNTER_GRID.rows - h; y >= 0; y--)
-    for (let x = 0; x + w <= COUNTER_GRID.cols; x++)
+  for (let x = 0; x + w <= COUNTER_GRID.cols; x++)
+    for (let y = 0; y + h <= COUNTER_GRID.rows; y++)
       if (fits({ x, y, w, h }, counter, COUNTER_GRID)) return { place: 'counter', boxId: null, x, y };
   return null;
+}
+
+// ---------- Varemenyen: legg på bordet, under disken eller i en eske ----------
+
+export type StashTo = 'counter' | 'storage' | 'box';
+
+/** Ligger gjenstanden løst under disken eller i en eske som står under disken (ikke i bilen, søpla eller en låst safe)? */
+function underCounter(items: Item[], i: Item): boolean {
+  if (i.place === 'storage') return true;
+  if (i.place !== 'box') return false;
+  const box = items.find((b) => b.id === i.boxId);
+  return !!box && box.place === 'storage' && !box.safe?.locked;
+}
+
+/** Eskene varemenyen kan legge ting i (ikke poser, safer, sekker eller dokumentmappa). */
+export const STASH_BOX_TYPES: ReadonlySet<string> = new Set(['kartong', 'plastkasse']);
+
+/** Navnet på en pappkartong eller plastkasse: det som er skrevet på med penn, ellers «Plastkasse 2» osv. */
+export function boxNames(items: Item[]): Map<number, string> {
+  const seen = new Map<string, number>();
+  const out = new Map<number, string>();
+  for (const box of items.filter((i) => STASH_BOX_TYPES.has(i.typeId)).sort((a, b) => a.id - b.id)) {
+    const short = ITEM_TYPES[box.typeId].name.split(/,| med /)[0];
+    const n = (seen.get(short) ?? 0) + 1;
+    seen.set(short, n);
+    out.set(box.id, box.boxName ?? `${short} ${n}`);
+  }
+  return out;
+}
+
+/**
+ * Valgene i «Legg i …»: pappkartonger og plastkasser under disken, og hver fane for seg i plastkasser med
+ * boksinndelere («Plastkasse 1 · Tab 2»). Ikke kartonger med noe som skal henges opp.
+ */
+export function stashBoxes(items: Item[]): { box: Item; tab: number | null; name: string }[] {
+  const names = boxNames(items);
+  return items
+    .filter((i) => i.place === 'storage' && STASH_BOX_TYPES.has(i.typeId) && !i.device)
+    .sort((a, b) => a.id - b.id)
+    .flatMap((box): { box: Item; tab: number | null; name: string }[] => {
+      const name = names.get(box.id)!;
+      const tabs = boxTabs(box);
+      return tabs ? box.tabs!.map((tab, n) => ({ box, tab: n, name: `${name} · ${tab}` })) : [{ box, tab: null, name }];
+    });
+}
+
+/** Gjenstander av en type som kan flyttes dit (i den rekkefølgen de tas). */
+export function stashSources(items: Item[], typeId: string, to: StashTo, boxId: number | null = null): Item[] {
+  const mine = items.filter((i) => i.typeId === typeId);
+  const counter = mine.filter((i) => i.place === 'counter');
+  const loose = mine.filter((i) => i.place === 'storage');
+  const boxed = mine.filter((i) => i.place === 'box' && underCounter(items, i));
+  if (to === 'counter') return [...loose, ...boxed];
+  if (to === 'storage') return [...counter, ...boxed];
+  return [...loose, ...counter, ...boxed.filter((i) => i.boxId !== boxId)];
+}
+
+/** Neste ledige plass for én gjenstand: på bordet (kolonnevis), løst under disken, eller i eska (ev. én fane). */
+export function stashSpot(items: Item[], item: Item, to: StashTo, boxId: number | null = null, tab: number | null = null): Spot | null {
+  if (to === 'counter') return findCounterSpot(items, item.typeId);
+  const place: Place = to === 'storage' ? 'storage' : 'box';
+  const parent = to === 'box' ? items.find((b) => b.id === boxId) : undefined;
+  const grid = gridOf(items, place, to === 'box' ? boxId : null);
+  if (!grid) return null;
+  const { w, h } = sizeOf(item.typeId);
+  // Én fane: bare radene i den fanen.
+  const tabs = parent ? boxTabs(parent) : null;
+  const y0 = tabs && tab !== null ? tab * tabs.tabGrid.rows : 0;
+  const y1 = tabs && tab !== null ? y0 + tabs.tabGrid.rows : grid.rows;
+  const others = itemsIn(items, place, to === 'box' ? boxId : null).filter((o) => o.id !== item.id);
+  for (let y = y0; y + h <= y1; y++)
+    for (let x = 0; x + w <= grid.cols; x++) {
+      if (!fits({ x, y, w, h }, others, grid)) continue;
+      const spot: Spot = { place, boxId: to === 'box' ? boxId : null, x, y };
+      if (!placementError(items, item, spot)) return spot;
+    }
+  return null;
+}
+
+/**
+ * Flytter (i en kopi av lista) så mange som får plass, høyst `max`. Gir tilbake flyttene i rekkefølge.
+ * Serveren bruker det til å flytte; klienten til å vise hvor mange som får plass.
+ */
+export function planStash(items: Item[], typeId: string, to: StashTo, boxId: number | null = null, max = Infinity, tab: number | null = null): { item: Item; spot: Spot }[] {
+  const copy = items.map((i) => ({ ...i }));
+  const moves: { item: Item; spot: Spot }[] = [];
+  for (const item of stashSources(copy, typeId, to, boxId)) {
+    if (moves.length >= max) break;
+    const spot = stashSpot(copy, item, to, boxId, tab);
+    if (!spot) break;
+    Object.assign(item, spot);
+    moves.push({ item, spot });
+  }
+  return moves;
 }

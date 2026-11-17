@@ -408,7 +408,7 @@ med felles kremfarget, avrundet ikonplate, transparent ytterkant og tynn mørkeb
 En rød varepakke og en gyllen retningspil viser handlingen: under bordplata med pil ned,
 på bordplata med pil opp, og ned i en åpen pappeske. Fin pikselstil etter telefonens app-ikoner.
 Vises i en egen seksjon «Ikoner til varemenyen» i `vareliste.html`, også ved 32 og 48 px.
-Merket som grafikkforslag til planlagt varemeny; spillknappene er ikke endret.
+Brukt i varemenyen i spillet fra 17.11.2026 (vist i 32 px).
 Originaler og oversikt: `GFX_assets/planlagte/varemeny-ikoner/`. Prompter og filoversikt:
 `tools/varemeny-ikoner.json`. Klargjøring: `tools/varemeny-ikoner.py`.
 

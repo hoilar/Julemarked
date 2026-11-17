@@ -4,7 +4,6 @@ import { extname, join, normalize } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
   GameError,
-  autoMove,
   placeKlasOrder,
   buyFromStall,
   claimStall,
@@ -19,6 +18,7 @@ import {
   fetchPaper,
   hangDevice,
   togglePower,
+  stashItems,
   noteClock,
   setClock,
   setKettle,
@@ -49,6 +49,9 @@ import {
   buyCar,
   dumpTrash,
   renameFolderTab,
+  renameBox,
+  addDivider,
+  renameBoxTab,
   loupeCell,
   loupeScan,
   setLook,
@@ -160,6 +163,9 @@ const routes: Record<string, Handler> = {
   'POST /api/trash/take': action((p, b) => takeFromTrash(p, Number(b.stallId), Number(b.itemId))),
   'POST /api/car/buy': action((p, b) => buyCar(p, String(b.car))),
   'POST /api/trash/dump': action((p) => dumpTrash(p)),
+  'POST /api/box/divider': action((p, b) => addDivider(p, Number(b.itemId))),
+  'POST /api/box/tab': action((p, b) => renameBoxTab(p, Number(b.itemId), Number(b.tab), String(b.name ?? ''))),
+  'POST /api/box/rename': action((p, b) => renameBox(p, Number(b.itemId), String(b.name ?? ''))),
   'POST /api/folder/rename': action((p, b) => renameFolderTab(p, Number(b.itemId), Number(b.tab), String(b.name ?? ''))),
   'POST /api/dealer/order': action((p, b) => dealerOrder(p, b.lines)),
   'POST /api/dealer/sell': action((p, b) => dealerSell(p, String(b.typeId ?? ''))),
@@ -187,9 +193,9 @@ const routes: Record<string, Handler> = {
   'POST /api/item/discard': action((p, b) => {
     discardItem(p, Number(b.itemId));
   }),
-  'POST /api/item/auto':action((p, b) => {
-    autoMove(p, String(b.productId), b.to === 'storage' ? 'storage' : 'counter', Number(b.qty));
-  }),
+  'POST /api/item/stash': action((p, b) => ({
+    moved: stashItems(p, String(b.typeId ?? ''), b.to === 'storage' ? 'storage' : b.to === 'box' ? 'box' : 'counter', b.boxId == null ? null : Number(b.boxId), b.qty == null ? 9999 : Number(b.qty), b.tab == null ? null : Number(b.tab)),
+  })),
   'POST /api/paper/recipe': action((p, b) => copyRecipe(p, Number(b.edition), b.which === 'machine' ? 'machine' : 'kettle')),
   'POST /api/paper/coupon': action((p, b) => cutCoupon(p, Number(b.edition), Number(b.index))),
   'POST /api/gift': action((p, b) => answerGift(p, !!b.accept)),
