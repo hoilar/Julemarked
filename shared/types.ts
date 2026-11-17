@@ -84,6 +84,7 @@ export interface Power {
   sockets: (string | null)[]; // apparat-id i hver av de fire kontaktene
   devices: string[]; // apparater boden eier (i en kontakt eller ikke)
   blown: boolean; // hovedsikringen har gått (bare uten sikringsboks): ingen strøm før den byttes
+  clockBlink: boolean; // digitalklokka har mistet strømmen og blinker «00:00» til den stilles
 }
 
 /** Det du ser når du snoker bak disken hos en annen. */

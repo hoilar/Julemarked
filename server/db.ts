@@ -217,3 +217,5 @@ export function tx<T>(fn: () => T): T {
     throw err;
   }
 }
+// Digitalklokka på boden: 1 = blinker «00:00» (har mistet strømmen og er ikke stilt ennå).
+if (!hasColumn('stalls', 'clock_blink')) db.exec('ALTER TABLE stalls ADD COLUMN clock_blink INTEGER NOT NULL DEFAULT 1');

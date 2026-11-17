@@ -292,6 +292,7 @@ interface StallRow {
   liquor_order: number; // avisutgaven bevillingen ble bestilt (0 = ingen på vei)
   liquor_ban: number; // spilltid (ms) da man kan kjøpe ny bevilling etter inndragning
   main_blown: number; // 1 = hovedsikringen har gått
+  clock_blink: number; // 1 = digitalklokka blinker «00:00»
   bypass_kwh: number; // strøm gjennom forbikoblet sikringsboks som ikke er målt
   car_trip: string | null; // JSON (CarTrip): handleturen bilen er på
 }
@@ -2311,6 +2312,7 @@ function powerOf(s: StallRow): Power {
     sockets: Array.from({ length: SOCKETS }, (_, i) => sockets[i] ?? null),
     devices: JSON.parse(s.devices) as string[],
     blown: s.main_blown === 1,
+    clockBlink: s.clock_blink === 1,
   };
 }
 
@@ -2373,7 +2375,12 @@ function batteryHour(market: MarketRow, s: StallRow, t: number, gridDown: boolea
 
 /** Får alarmen strøm akkurat nå (og er det ikke strømbrudd i gata)? */
 function alarmOn(market: MarketRow, s: StallRow, t: number): boolean {
-  if (!runningDevices(s, itemsOf(s.id)).some((d) => d.id === 'alarm')) return false;
+  return deviceOn(market, s, t, 'alarm');
+}
+
+/** Får et apparat som henger på boden (alarm, klokke) strøm akkurat nå, også med tanke på strømbrudd i gata? */
+function deviceOn(market: MarketRow, s: StallRow, t: number, id: string): boolean {
+  if (!runningDevices(s, itemsOf(s.id)).some((d) => d.id === id)) return false;
   const outage = outageFor(market.id, currentEdition(t).key);
   const hour = osloParts(t).hour;
   return !(outage && LAYOUT[s.slot_index].street === outage.street && hour >= outage.from && hour < outage.to);
@@ -2395,6 +2402,29 @@ function cleanPower(s: StallRow) {
     const after = before.map((e) => cleanEntry(e, items));
     if (JSON.stringify(after) !== JSON.stringify(before)) saveState(strip.id, { sockets: after });
   }
+}
+
+/** Har digitalklokka mistet strømmen? Da blinker den «00:00» til eieren stiller den. */
+function checkClock(market: MarketRow, s: StallRow, t: number) {
+  if (s.clock_blink || !powerOf(s).devices.includes('klokke')) return;
+  if (!deviceOn(market, s, t, 'klokke')) db.prepare('UPDATE stalls SET clock_blink = 1 WHERE id = ?').run(s.id);
+}
+
+/** Kalles før og etter hver handling: fanger strømbrudd som spilleren selv lager eller retter opp. */
+export function noteClock(player: PlayerRow) {
+  const stall = one<StallRow>(q.stallByOwner, player.id);
+  if (!stall) return;
+  const market = marketOf(player);
+  checkClock(market, stall, nowFor(market));
+}
+
+/** Trykk på digitalklokka: still den etter spilltida, så den slutter å blinke. */
+export function setClock(player: PlayerRow) {
+  const market = marketOf(player);
+  const stall = myStall(player);
+  if (!powerOf(stall).devices.includes('klokke')) throw new GameError('Du har ingen digitalklokke.');
+  if (!deviceOn(market, stall, nowFor(market), 'klokke')) throw new GameError('Klokka har ikke strøm.');
+  db.prepare('UPDATE stalls SET clock_blink = 0 WHERE id = ?').run(stall.id);
 }
 
 function saveState(itemId: number, state: unknown) {
@@ -2432,6 +2462,7 @@ export function hangDevice(player: PlayerRow, boxId: number) {
       }
     }
     p.devices.push(d.id);
+    if (d.id === 'klokke') db.prepare('UPDATE stalls SET clock_blink = 1 WHERE id = ?').run(stall.id); // ny klokke: blinker til den stilles
     const free = socketOfOld >= 0 ? socketOfOld : p.sockets.indexOf(null);
     if (free >= 0) p.sockets[free] = d.id;
     savePower(stall.id, p);
@@ -2584,6 +2615,7 @@ function blowFuse(market: MarketRow, s: StallRow, t: number, entry: string, why:
   } else {
     if (one<StallRow>(q.stallById, s.id)!.main_blown) return;
     db.prepare('UPDATE stalls SET main_blown = 1 WHERE id = ?').run(s.id);
+    checkClock(market, one<StallRow>(q.stallById, s.id)!, t);
     event(market, s.owner_id, t, `💥 ${why}: hovedsikringen gikk (${name.toLowerCase()} trakk for mye) – hele boden er uten strøm! Skru inn en ny skrusikring (trykk på bryteren på grenuttaket). En sikringsboks gjør at bare ett apparat stopper.`);
   }
 }
@@ -4266,6 +4298,7 @@ function processHour(market: MarketRow, hour: number) {
       );
   }
   stalls = all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ?'), market.id);
+  for (const s of stalls) checkClock(market, s, t); // strømbrudd i gata eller en sikring som har gått
 
   // Leveranser fra nettbutikkene som har kommet fram.
   deliverArrived(market, t);

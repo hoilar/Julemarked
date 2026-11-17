@@ -201,6 +201,22 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
   cursor: pointer;
 }
 .power-hot:hover { box-shadow: 0 0 0.8cqw rgba(255, 210, 120, 0.75); }
+/* Digitalklokka: spillet skriver sifrene i det tomme LED-feltet (CLOCK_DISPLAY) */
+.clock-digits {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 1.5cqw/1 'Courier New', ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  color: #ff4a3a;
+  text-shadow: 0 0 0.35cqw rgba(255, 60, 40, 0.85);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.clock-digits.blink { animation: clock-blink 1s steps(1, end) infinite; }
+@keyframes clock-blink { 50% { opacity: 0; } }
+.clock-hot:hover { box-shadow: 0 0 0.8cqw rgba(255, 90, 60, 0.8); }
 
 /* ---------- Vareoppslag: bilde til venstre, info til høyre ---------- */
 .modal:has(.item-card) { max-width: 600px; }

@@ -539,6 +539,8 @@ rett over boden. Ingen tall i bildet: spillet skriver klokkeslettet i displayet 
 - `art/devices/klokke-pa.png`: med strøm, displayet lyser svakt rødt (bakgrunnsglød uten sifre).
 - `art/devices/ikon-klokke.png`: lite butikkikon til Klas Olsen, som `ikon-alarm.png`.
 
+**✅ I spillet (17.11.2026):** lagene flyttes med samme `SHIFT.alarm` som alarmen, og sifrene skrives i `CLOCK_DISPLAY` (shared/products.ts).
+
 **✅ Grafikk klar (14.11.2026):** alle tre bildefilene over er laget og lagt inn i
 `vareliste.html` under «Digitalklokke på boden», merket «Planlagt – ikke implementert».
 Av/på er transparente **1536×1024 px** lag i samme koordinatsystem som boden og alarmen.

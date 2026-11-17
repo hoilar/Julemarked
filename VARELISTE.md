@@ -140,7 +140,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🫠 Mislykket batch | `feilbatch` | 2×2 |  | — |  | `ravarer/feilbatch.png` |
 | 🪨 Svidd klump | `svidd` | 2×2 |  | — |  | `ravarer/svidd.png` |
 
-## Apparater (11)
+## Apparater (12)
 
 Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 
@@ -157,6 +157,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
 | 🔌 Ladestasjon | `ladestasjon` | 299 kr | 2 | Lader fire batterier. Maskiner med batteri går videre når strømmen går | `ladestasjon` (se Maskiner) | `elektro/ladestasjon-0.png` ↓ |
 | 🚨 Alarmsystem | `alarm` | 349 kr | 0.1 | Skremmer bort nattetyven – men bare når det har strøm | henger på boden | `devices/ikon-alarm.png`<br>`devices/alarm-av.png`<br>`devices/alarm-pa.png` |
+| 🕰️ Digitalklokke | `klokke` | 149 kr | 0.01 | Viser spilltida på boden. Mister den strømmen, blinker den «00:00» til du stiller den | henger på boden | `devices/ikon-klokke.png`<br>`devices/klokke-av.png`<br>`devices/klokke-pa.png` |
 
 ## Esker, poser og biler (13)
 

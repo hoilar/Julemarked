@@ -19,6 +19,8 @@ import {
   fetchPaper,
   hangDevice,
   togglePower,
+  noteClock,
+  setClock,
   setKettle,
   placeOrder,
   openDelivery,
@@ -109,7 +111,13 @@ const action =
   (fn: (p: Player, b: Record<string, unknown>) => unknown): Handler =>
   (b, req) => {
     const p = playerFromToken(tokenOf(req));
-    const result = fn(p, b);
+    noteClock(p); // fanger strøm som har gått før handlingen (f.eks. en sikring som nå byttes)
+    let result: unknown;
+    try {
+      result = fn(p, b);
+    } finally {
+      noteClock(p); // og strøm som handlingen selv tar (bryter, kontakt, sikring)
+    }
     // Handlingen kan gi tilbake litt info (f.eks. hvor mange som ble flyttet).
     return { ...(result && typeof result === 'object' ? result : {}), marketId: p.market_id };
   };
@@ -128,6 +136,7 @@ const routes: Record<string, Handler> = {
   'POST /api/bill/pay': action((p, b) => (b.all ? payAllBills(p) : payBill(p, Number(b.billId)))),
   'POST /api/device/hang': action((p, b) => hangDevice(p, Number(b.boxId))),
   'POST /api/power/switch': action((p) => togglePower(p)),
+  'POST /api/clock/set': action((p) => setClock(p)),
   'POST /api/shop/order': action((p, b) =>
     placeOrder(p, String(b.store), Array.isArray(b.lines) ? b.lines : [], b.mode === 'car' ? 'car' : b.mode === 'express' || b.express === true ? 'express' : 'standard', b.useCards !== false),
   ),

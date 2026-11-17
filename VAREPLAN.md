@@ -264,7 +264,10 @@ Mulige norske tillegg (sjekk at både tekst og melodi er fri før bruk): «Jeg e
 beskyttet hver for seg.** Bruk egne arrangementer (for eksempel enkle chiptune- eller MIDI-versjoner som passer
 pixelstilen), eller opptak som er tydelig merket CC0/public domain.
 
-## 🕰️ Digitalklokke på boden (idé, 14.11.2026)
+## 🕰️ Digitalklokke på boden (idé 14.11.2026, ✅ bygd 17.11.2026)
+
+**Bygd:** apparatet «Digitalklokke» (149 kr, 0,01 kW) hos Klas Olsen. Den kommer i pappkartong, henges opp og plugges inn som alarmen, og trenger sin egen sikringsplass. Sifrene følger spilltida. En ny klokke blinker «00:00» til du trykker på den. Det samme skjer etter strømbrudd (bryter, kontakt, sikring eller strømbrudd i gata). Vekking står fortsatt som idé.
+
 
 - Et apparat fra Klas Olsen som **henger på bodkanten til venstre for alarmen**, festet på samme måte som alarmen
   (et eget lag over boden, ikke en gjenstand under disken).

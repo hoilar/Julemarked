@@ -899,9 +899,21 @@ export const DEVICES: Device[] = [
     layers: { off: '/art/devices/alarm-av.png', on: '/art/devices/alarm-pa.png' }, // øverst på venstre stolpe; lyser rødt med strøm
     image: '/art/devices/ikon-alarm.png',
   },
+  {
+    id: 'klokke',
+    name: 'Digitalklokke',
+    emoji: '🕰️',
+    price: 149,
+    kw: 0.01,
+    effect: 'Viser spilltida på boden. Mister den strømmen, blinker den «00:00» til du stiller den',
+    layers: { off: '/art/devices/klokke-av.png', on: '/art/devices/klokke-pa.png' }, // til venstre for alarmen
+    image: '/art/devices/ikon-klokke.png',
+  },
 ];
 /** Alarmen: så mye mindre sjanse har tyven per vare når den er på. */
 export const ALARM_STEAL_FACTOR = 0.15;
+/** Displayet på digitalklokka i bodpiksler (1536×1024, før flyttingen i SHIFT.alarm). */
+export const CLOCK_DISPLAY = { x: 135, y: 340, w: 74, h: 24 };
 export const DEVICE_BY_ID: Record<string, Device> = Object.fromEntries(DEVICES.map((d) => [d.id, d]));
 
 /**

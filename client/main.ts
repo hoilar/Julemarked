@@ -9,6 +9,7 @@ import {
   COUNTER_GRID,
   DEVICES,
   DEVICE_BY_ID,
+  CLOCK_DISPLAY,
   INGREDIENTS,
   KETTLE,
   KETTLE_KW_PER_LEVEL,
@@ -329,7 +330,7 @@ function tickClock() {
   const game = clockBase.game + (Date.now() - clockBase.real) * clockBase.speed;
   const parts = osloParts(game);
   const hhmm = formatClock(parts).replace(/^.* kl\. /, '');
-  for (const el of document.querySelectorAll('#phone-clock, .phone-clock-small')) el.textContent = hhmm;
+  for (const el of document.querySelectorAll('#phone-clock, .phone-clock-small, .clock-digits:not(.blink)')) el.textContent = hhmm;
   document.body.classList.toggle('night', phaseOf(parts.hour) === 'night');
   document.body.dataset.daypart = daypart(parts.hour);
   // Forsikringsselgeren, Tilsynsmannen og tyven kommer bare til din egen bod.
@@ -716,6 +717,7 @@ function powerView(stall: StallPublic, own: boolean): string {
     .filter((d) => d?.layers) // kjelen er en gjenstand, ikke et lag
     .map((d) => {
       const running = powered.has(d.id);
+      if (d.id === 'klokke') return clockView(running, power.clockBlink, own);
       const img = layer(running ? d.layers!.on : d.layers!.off, running);
       const shift = d.light ? SHIFT.lights : d.id === 'alarm' ? SHIFT.alarm : null;
       return shift ? `<div class="frame" style="${frameStyle(shift)}">${img}</div>` : img;
@@ -738,6 +740,33 @@ function powerView(stall: StallPublic, own: boolean): string {
     ${hot(POWER_SWITCH, 'power-switch', power.blown ? '💥 Hovedsikringen har gått – trykk for å skru inn en ny skrusikring' : `${power.on ? 'Slå av' : 'Slå på'} grenuttaket (trekker nå ${kw.toString().replace('.', ',')} kW)`)}
     ${POWER_SOCKETS.map((r, i) => hot(r, 'power-plug', socketLabel(i), `data-plug="${i}"`)).join('')}
     </div>
+  </div>`;
+}
+
+// --- Digitalklokka til venstre for alarmen (samme flytting som alarmen) ---
+
+/** Spilltida akkurat nå som «hh:mm». */
+function gameHhmm(): string {
+  const game = clockBase.game + (Date.now() - clockBase.real) * clockBase.speed;
+  return formatClock(osloParts(game)).replace(/^.* kl\. /, '');
+}
+
+function clockView(running: boolean, blink: boolean, own: boolean): string {
+  const d = DEVICE_BY_ID.klokke;
+  const r = CLOCK_DISPLAY;
+  const box = `left:${(r.x / 1536) * 100}%;top:${(r.y / 1024) * 100}%;width:${(r.w / 1536) * 100}%;height:${(r.h / 1024) * 100}%`;
+  const digits = running ? `<div class="clock-digits ${blink ? 'blink' : ''}" style="${box}">${blink ? '00:00' : gameHhmm()}</div>` : '';
+  const label = !running
+    ? 'Digitalklokka har ikke strøm'
+    : blink
+      ? 'Klokka blinker 00:00 etter at strømmen gikk – trykk for å stille den'
+      : 'Digitalklokke';
+  const hot =
+    own && running && blink
+      ? `<button class="power-hot clock-hot" data-action="clock-set" aria-label="${label}" title="${label}" style="${box}"></button>`
+      : '';
+  return `<div class="frame" style="${frameStyle(SHIFT.alarm)}">
+    <img class="power-layer" src="${running ? d.layers!.on : d.layers!.off}" alt="" draggable="false">${digits}${hot}
   </div>`;
 }
 
@@ -3748,6 +3777,13 @@ app.addEventListener('click', (e) => {
   const mine = state ? myStall(state) : null;
   if (action === 'power-switch' && mine && mine.power.blown) {
     act('/api/fuse/replace', { entry: 'main' }, '🔩 Ny hovedsikring skrudd inn. Strømmen er tilbake.');
+    return;
+  }
+  if (action === 'clock-set' && mine) {
+    mine.power.clockBlink = false;
+    act('/api/clock/set', {}, '🕰️ Klokka er stilt.').then((ok) => {
+      if (!ok) refresh();
+    });
     return;
   }
   if (action === 'power-switch' && mine) {
