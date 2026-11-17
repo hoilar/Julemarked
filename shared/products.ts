@@ -292,6 +292,8 @@ export const INGREDIENTS: Ingredient[] = [
   { kind: 'ingredient', id: 'flote', name: 'Fløte', emoji: '🥛', image: '/art/ravarer/flote.png', price: 12, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'mandler', name: 'Mandler', emoji: '🌰', image: '/art/ravarer/mandler.png', price: 18, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'mel', name: 'Hvetemel', emoji: '🌾', image: '/art/ravarer/mel.png', price: 6, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'ris', name: 'Grøtris', emoji: '🍚', image: '/art/ravarer/ris.png', price: 15, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'melk', name: 'Helmelk', emoji: '🥛', image: '/art/ravarer/melk.png', price: 10, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'smor', name: 'Smør', emoji: '🧈', image: '/art/ravarer/smor.png', price: 15, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'garn', name: 'Garnnøste', emoji: '🧶', image: '/art/ravarer/garn.png', price: 25, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'glassemne', name: 'Glassemne', emoji: '🔮', image: '/art/ravarer/glassemne.png', price: 8, size: { w: 2, h: 2 } },
@@ -744,6 +746,7 @@ export const PRODUCTS: Product[] = [
   // Mat
   vare('polse_lompe', 'Pølse i lompe', '🌭', 1, 1, 12, 45, 2.0, 'Hjemmelaget', 'mat', crafted),
   vare('rommegrot', 'Rømmegrøt', '🥣', 1, 1, 6, 59, 0.9, 'Hjemmelaget', 'mat', crafted),
+  vare('risengrynsgrot', 'Risengrynsgrøt', '🍚', 2, 2, 12, 69, 1.1, 'Hjemmelaget', 'mat', crafted), // i bolle med smør og kanel
   vare('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
   vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
   vare('lutefisk', 'Lutefisk', '🐟', 1, 2, 70, 189, 0.25, 'Fiskemottaket', 'mat', rare(0.15)),

@@ -4,7 +4,7 @@
 
 Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/`. ⚠️ = bildefila mangler (emoji brukes). ↓ = har nedskalert kopi i `art/spill/` (`py tools/spillbilder.py`).
 
-## Salgsvarer (65)
+## Salgsvarer (66)
 
 ### 🎄 Dekor (10)
 
@@ -73,13 +73,14 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🍬 Anisdrops | `anisdrops` | 1×1 | 4 kr | 15 kr | 1.8 | Søtt & Co | Nettbutikkene |  | `goods/anisdrops.png` ↓ |
 | 📅 Julekalender (24 luker) | `julekalender` | 2×2 | 45 kr | 129 kr | 0.5 | Kakaokompaniet | Nettbutikkene |  | `goods/julekalender.png` ↓ |
 
-### 🫙 Mat (6)
+### 🫙 Mat (7)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 🍓 Syltetøy | `syltetoy` | 2×2 | 35 kr | 119 kr | 0.7 | Mills | Lages: Kokeplate med kjele (Syltetøy, 1 stk)<br>Nettbutikkene |  | `goods/syltetoy.png` ↓ |
 | 🌭 Pølse i lompe | `polse_lompe` | 1×1 | 12 kr | 45 kr | 2 | Hjemmelaget | Lages: Kokeplate med kjele (Pølse i lompe, 4 stk) | kan bare lages | `goods/polse-lompe.png` ↓ |
 | 🥣 Rømmegrøt | `rommegrot` | 1×1 | 6 kr | 59 kr | 0.9 | Hjemmelaget | Lages: Kokeplate med kjele (Rømmegrøt, 3 stk) | kan bare lages | `goods/rommegrot.png` ↓ |
+| 🍚 Risengrynsgrøt | `risengrynsgrot` | 2×2 | 12 kr | 69 kr | 1.1 | Hjemmelaget | Lages: Kokeplate med kjele (Risengrynsgrøt, 3 stk) | kan bare lages | `goods/risengrynsgrot.png` |
 | 🫓 Lefse | `lefse` | 1×1 | 10 kr | 35 kr | 1.2 | Hjemmelaget | Lages: Bakemaskin (Lefser, 4 stk) | kan bare lages | `goods/lefse.png` ↓ |
 | 🍖 Fenalår | `fenalaar` | 1×3 | 300 kr | 799 kr | 0.1 | Fjellspekeriet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/fenalaar.png` ↓ |
 | 🐟 Lutefisk | `lutefisk` | 1×2 | 70 kr | 189 kr | 0.25 | Fiskemottaket | Nettbutikkene, sjelden (15 % av dagene) | sjelden | `goods/lutefisk.png` ↓ |
@@ -116,7 +117,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🫙 Hjemmebrent | `hjemmebrent` | 2×3 | 20 kr | 299 kr | 0.5 | Hjemmelaget | Lages: Kokeplate med kjele (Hjemmebrent, 2 stk) | kan bare lages, kan avsløres | `goods/hjemmebrent.png` ↓ |
 | 🧤 «Merkevotter» | `merkevotter` | 2×2 | 80 kr | 799 kr | 0.2 | Hjemmelaget | Lages: Strikkemaskin («Merkevotter», 1 stk) | kan bare lages, kan avsløres | `goods/merkevotter.png` ↓ |
 
-## Råvarer (25)
+## Råvarer (27)
 
 | Råvare | id | Str. | Pris | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -125,6 +126,8 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🥛 Fløte | `flote` | 2×2 | 12 kr | Nettbutikkene |  | `ravarer/flote.png` |
 | 🌰 Mandler | `mandler` | 2×2 | 18 kr | Nettbutikkene |  | `ravarer/mandler.png` |
 | 🌾 Hvetemel | `mel` | 2×2 | 6 kr | Nettbutikkene |  | `ravarer/mel.png` |
+| 🍚 Grøtris | `ris` | 2×2 | 15 kr | Nettbutikkene |  | `ravarer/ris.png` |
+| 🥛 Helmelk | `melk` | 2×2 | 10 kr | Nettbutikkene |  | `ravarer/melk.png` |
 | 🧈 Smør | `smor` | 2×2 | 15 kr | Nettbutikkene |  | `ravarer/smor.png` |
 | 🧶 Garnnøste | `garn` | 2×2 | 25 kr | Nettbutikkene |  | `ravarer/garn.png` |
 | 🔮 Glassemne | `glassemne` | 2×2 | 8 kr | Nettbutikkene |  | `ravarer/glassemne.png` |

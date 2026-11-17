@@ -30,7 +30,7 @@
       "source": "Kjele: ris + melk",
       "note": "Bolle med risengrynsgrøt, smørøye og kanel. Uten mandel.",
       "subject": "Low round red ceramic bowl with creamy Norwegian rice porridge, a golden pat of butter and a sprinkle of cinnamon. No handle, no almond or nuts.",
-      "status": "Idé – ikke bestemt",
+      "status": "I spillet",
       "original": "GFX_assets/planlagte/originaler/risengrynsgrot-bolle-v2.png"
     },
     {
@@ -171,7 +171,7 @@
       "source": "Ikke avklart",
       "note": "Til risengrynsgrøt.",
       "subject": "Upright cream paper bag of white rice with a small bowl-of-rice pictogram, no text.",
-      "status": "Idé – ikke bestemt"
+      "status": "I spillet"
     },
     {
       "id": "melk",
@@ -181,7 +181,7 @@
       "source": "Ikke avklart",
       "note": "Til risengrynsgrøt.",
       "subject": "Upright cream and muted blue milk carton with folded gable top, no text.",
-      "status": "Idé – ikke bestemt"
+      "status": "I spillet"
     },
     {
       "id": "olje",
