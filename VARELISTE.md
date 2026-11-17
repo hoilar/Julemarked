@@ -4,7 +4,7 @@
 
 Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/`. ⚠️ = bildefila mangler (emoji brukes). ↓ = har nedskalert kopi i `art/spill/` (`py tools/spillbilder.py`).
 
-## Salgsvarer (68)
+## Salgsvarer (69)
 
 ### 🎄 Dekor (10)
 
@@ -43,7 +43,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🧩 Julepuslespill | `puslespill` | 2×2 | 55 kr | 169 kr | 0.5 | Spillfabrikken | Nettbutikkene |  | `goods/puslespill.png` ↓ |
 | 🚗 Blikkbil fra 50-tallet | `blikkbil` | 2×1 | 180 kr | 499 kr | 0.12 | Loppemarkedet | Nettbutikkene, sjelden (10 % av dagene) | sjelden | `goods/blikkbil.png` ↓ |
 
-### 🍪 Kaker (11)
+### 🍪 Kaker (12)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -58,6 +58,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🍪 Serinakake | `serinakake` | 1×1 | 6 kr | 19 kr | 1.8 | Hjemmelaget | Lages: Bakemaskin (Serinakaker, 6 stk) | kan bare lages | `goods/serinakake.png` ↓ |
 | 🥨 Berlinerkrans | `berlinerkrans` | 1×1 | 9 kr | 25 kr | 1.6 | Hjemmelaget | Lages: Bakemaskin (Berlinerkranser, 5 stk) | kan bare lages | `goods/berlinerkrans.png` ↓ |
 | 🎁 Kakeboks med syv slag | `syv_slag` | 3×3 | 120 kr | 329 kr | 0.35 | Hjemmelaget | — | kan bare lages | `goods/syv-slag.png` ↓ |
+| 🏠 Pepperkakehus | `pepperkakehus` | 3×3 | 110 kr | 449 kr | 0.25 | Hjemmelaget | Lages: Bakemaskin (Pepperkakehus, 1 stk) | kan bare lages | `goods/pepperkakehus.png` ↓ |
 
 ### 🍬 Godteri (11)
 
@@ -164,7 +165,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🍲 Kokeplate med kjele | `kjele` | 399 kr | 2 | Kok gløgg, karameller, brente mandler og syltetøy (oppskrifter i avisa). 0,5 kW per styrke | `kjele` (se Maskiner) | `kjele/off.png` ↓<br>`kjele/on1.png` ↓<br>`kjele/on2.png` ↓<br>`kjele/on3.png` ↓<br>`kjele/on4.png` ↓ |
 | 🗜️ Brettemaskin | `posebretter` | 299 kr | 0.3 | Bretter sammen tomme handleposer og pappkartonger – én per time. Flatpakket papp kan ikke brettes ut igjen. | `posebretter` (se Maskiner) | `posebretter/off.png` ↓<br>`posebretter/on.png` ↓ |
 | 🧻 Makuleringsmaskin | `makulator` | 249 kr | 0.2 | Makulerer aviser, lapper og plastposer, så de ikke havner i søpla. Plast kan bli mikroplast… | `makulator` (se Maskiner) | `maskiner/makulator.png` ↓<br>`maskiner/makulator-pa.png` ↓ |
-| 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker, Berlinerkranser – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
+| 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker, Berlinerkranser, Pepperkakehus – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
 | 🧶 Strikkemaskin | `strikkemaskin` | 899 kr | 0.4 | Votter, Nisselue, Julestrømpe, Skjerf, Pulsvarmere, Alpakkaskjerf, Strikket bamse, «Merkevotter» – hjemmelaget | `strikkemaskin` (se Maskiner) | `maskiner/strikkemaskin.png` ↓<br>`maskiner/strikkemaskin-pa.png` ↓ |
 | 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
 | 🔌 Ladestasjon | `ladestasjon` | 299 kr | 2 | Lader fire batterier. Maskiner med batteri går videre når strømmen går | `ladestasjon` (se Maskiner) | `elektro/ladestasjon-0.png` ↓ |

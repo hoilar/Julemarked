@@ -188,7 +188,7 @@ export interface Paper {
   wanted: { seed: string; alias: string; reward: number; caught: boolean };
   /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */
   /** Ros fra kunder som fikk bestillingen sin levert dagen før (konseptet 12.4). */
-  praise?: { stall: string; mine: boolean; text: string }[];
+  praise?: { stall: string; mine: boolean; text: string; bad?: boolean }[];
   crime: {
     thefts: { stall: string; mine: boolean; lines: string[]; value: number }[];
     log: string;

@@ -254,6 +254,8 @@ export const MAX_BOX_TABS = 3;
 /** Kakeboksen: én av hver av de sju småkakene. Den første ligger i midten på bildet (tools/syv-slag.py). */
 export const COOKIE_BOX = 'kakeboks';
 export const COOKIE_BOX_FULL = 'syv_slag';
+/** Pepperkakehuset: kan få et navn skrevet på med penn (bestillinger), og et hus med navn selges ikke til andre. */
+export const GINGER_HOUSE = 'pepperkakehus';
 export const COOKIE_SORTS = ['krumkake', 'pepperkake_stjerne', 'pepperkake_hjerte', 'sirupssnipp', 'sandkake', 'serinakake', 'berlinerkrans'];
 export const SCISSORS = 'saks';
 export const LOUPE = 'lupe';
@@ -404,6 +406,7 @@ export const MAKERS: Maker[] = [
       { id: 'sandkaker', name: 'Sandkaker', inputs: { mel: 1, smor: 1, sukker: 1, mandler: 1 }, outputs: { sandkake: 5 }, hours: 2 },
       { id: 'serinakaker', name: 'Serinakaker', inputs: { mel: 1, smor: 2, sukker: 1 }, outputs: { serinakake: 6 }, hours: 2 },
       { id: 'berlinerkranser', name: 'Berlinerkranser', inputs: { mel: 1, smor: 1, sukker: 1, egg: 1 }, outputs: { berlinerkrans: 5 }, hours: 2 },
+      { id: 'pepperkakehus', name: 'Pepperkakehus', inputs: { mel: 3, smor: 2, sukker: 2, sirup: 1 }, outputs: { pepperkakehus: 1 }, hours: 6 },
     ],
   },
   {
@@ -745,6 +748,7 @@ export const PRODUCTS: Product[] = [
   vare('berlinerkrans', 'Berlinerkrans', '🥨', 1, 1, 9, 25, 1.6, 'Hjemmelaget', 'kaker', crafted),
   // Full kakeboks (lukkes i eskevinduet). Kundene betaler mer enn for kakene hver for seg.
   vare('syv_slag', 'Kakeboks med syv slag', '🎁', 3, 3, 120, 329, 0.35, 'Hjemmelaget', 'kaker', crafted),
+  vare('pepperkakehus', 'Pepperkakehus', '🏠', 3, 3, 110, 449, 0.25, 'Hjemmelaget', 'kaker', crafted), // bakemaskinen, 6 timer
   // Godteri
   vare('marsipangris', 'Marsipangris', '🐷', 1, 1, 8, 35, 1.5, 'Hjemmelaget', 'godteri', crafted),
   vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),

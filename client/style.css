@@ -1801,3 +1801,7 @@ body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
   image-rendering: pixelated;
   pointer-events: none;
 }
+
+/* Kundebestillinger: navn på pepperkakehuset og avsløringer i avisa. */
+.gitem .item-name { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); max-width: 92%; padding: 0 0.3em; border-radius: 3px; background: rgba(255, 250, 235, 0.92); color: #6b3a1a; font: italic 700 clamp(7px, 0.9cqw, 12px) / 1.3 Georgia, serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.paper-praise li.bad { font-style: normal; font-weight: bold; color: #8a1c1c; }

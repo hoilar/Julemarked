@@ -344,7 +344,7 @@ Varer som gir ny mekanikk, ikke bare flere rader i tabellen. Favorittene er merk
 | Julestjerne (potteplante) | 2×2 | Nettbutikk | Visner etter noen dager. Første vare med holdbarhet. |
 | ⭐ Risengrynsgrøt | 2×2 (bolle) | Kjele: ris + melk | Serveres i bolle med smør og kanel, uten mandel (bekreftet 14.11.2026). |
 | ⭐ Smultringer | 1×1 | Ny frityrgryte: mel + sukker + olje | Kan ta fyr. Gir brannforsikringen noe å gjøre. |
-| Pepperkakehus | 3×3 | Bakemaskin, lang tid | Dyreste hjemmelagde varen. Tar mye plass, og tyver kan knuse det. |
+| Pepperkakehus | 3×3 | Bakemaskin, lang tid | ✅ I spillet (17.11.2026): 3 mel + 2 smør + 2 sukker + 1 sirup, 6 timer, 449 kr. Navn med penn til bestillinger; et hus med navn selges ikke til andre. Tyver som knuser det gjenstår. |
 | Julekrans | 2×2 | Dekormaskin: granbar + kongler | Granbar hentes med bilen i skogen eller «lånes» fra torget, som juletreet. |
 | Lutefisk | 1×2 | ★ Nettbutikk | Deler kundene: noen betaler godt, andre klager og gir dårligere omdømme. |
 | Vafler med brunost | 1×1 | Nytt vaffeljern: mel + egg + brunost | Billig storselger, men vaffeljernet trekker mye strøm (se bodtyper og strømgrense i konseptet, 12.3). |
@@ -369,7 +369,7 @@ En ekte kakeboks med «syv slag» krever sju ulike småkaker. I dag finnes peppe
 
 **Kakeboks** (2×2, Klas Olsen): en eske med 7 rom. Fylles med én kake av hver sort og selges eller leveres som én vare. Kunder betaler mer for en full boks enn for kakene hver for seg.
 
-**✅ Bygd 17.11.2026:** kakeboksen koster 59 kr hos Klas Olsen. De sju slagene er krumkake, pepperkakestjerne, pepperkakehjerte, sirupssnipp, sandkake, serinakake og berlinerkrans (`COOKIE_SORTS`). Sandkaker, serinakaker og berlinerkranser bakes i bakemaskinen; berlinerkranser trenger egg (25 kr). Hvert rom tar én kake, og hver sort bare én gang. Når alle sju ligger der, gir «🎁 Lukk kakeboksen» varen «Kakeboks med syv slag» (2×2, 329 kr), med bilde fra `tools/syv-slag.py`. Den er hjemmelaget bare hvis alle kakene er det. Kundebestillinger (12.4) gjenstår.
+**✅ Bygd 17.11.2026:** kakeboksen koster 59 kr hos Klas Olsen. De sju slagene er krumkake, pepperkakestjerne, pepperkakehjerte, sirupssnipp, sandkake, serinakake og berlinerkrans (`COOKIE_SORTS`). Sandkaker, serinakaker og berlinerkranser bakes i bakemaskinen; berlinerkranser trenger egg (25 kr). Hvert rom tar én kake, og hver sort bare én gang. Når alle sju ligger der, gir «🎁 Lukk kakeboksen» varen «Kakeboks med syv slag» (2×2, 329 kr), med bilde fra `tools/syv-slag.py`. Den er hjemmelaget bare hvis alle kakene er det. Kundebestillinger (12.4) er bygd: Fru Kvist bestiller kakeboksen.
 
 ## Nye råvarer
 

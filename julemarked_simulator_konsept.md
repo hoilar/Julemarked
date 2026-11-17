@@ -399,7 +399,10 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 | Rolf Rask | 6 kopper gløgg til julebordet | i morgen, kl. 16–18 | +25 % (340 kr) | ingen |
 | Natt-Nora | 5 pakker kinaputter | i overmorgen, kl. 21–24 | +30 % (1 620 kr) | 50 % |
 
-Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke klar, krever kunden forskuddet tilbake. Leverte bestillinger gir ros under «Fornøyde kunder» på forsiden av avisa dagen etter (ikke for Natt-Nora). Pepperkakehus med navn og syltetøy-fristelsen gjenstår.
+Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke klar, krever kunden forskuddet tilbake. Leverte bestillinger gir ros under «Fornøyde kunder» på forsiden av avisa dagen etter (ikke for Natt-Nora). **✅ Pepperkakehus og syltetøy (17.11.2026):**
+
+- **Line Berg** bestiller et pepperkakehus med «Familien Berg» på (om 3 dager, 540 kr, 110 kr i forskudd). Pepperkakehuset er en ny vare (3×3) fra bakemaskinen. Trykk på huset under disken, og skriv navnet med penn. Hun godtar alt der «Berg» står, og et hus med navn selges ikke til andre kunder.
+- **Per Penn** vil ha tre glass hjemmelaget syltetøy til en test i Markedsposten (om 2 dager, 460 kr). Fristelsen er å skrive «hjemmelaget» på butikkjøpt syltetøy. Han har med forstørrelsesglass og ser hver omskrevne etikett med 50 % sjanse; kundevinduet viser sjansen før du leverer. Avslørt: han går uten syltetøyet, etikettene blir rettet, omdømmet faller 8, og avisa skriver «AVSLØRT: …» dagen etter. Ekte hjemmelaget brukes alltid først.
 
 **Eksempel:** «Fru Kvist kommer tilbake om 3 dager. Hun skal ha syv slag kakeboks.» Da må boden ha sju ulike småkaker i en kakeboks når hun kommer (krever flere kakesorter, se VAREPLAN.md, «Syv slag»).
 

@@ -173,6 +173,7 @@ if (!hasColumn('customer_orders', 'qty')) {
     ALTER TABLE customer_orders ADD COLUMN deposit INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE customer_orders ADD COLUMN done_at INTEGER;`);
 }
+if (!hasColumn('customer_orders', 'caught')) db.exec('ALTER TABLE customer_orders ADD COLUMN caught INTEGER NOT NULL DEFAULT 0'); // jukset ble avslørt
 db.exec('CREATE TABLE IF NOT EXISTS leads_used (stall_id INTEGER NOT NULL, lead TEXT NOT NULL, PRIMARY KEY (stall_id, lead))');
 // Lageret under disken ble 28 ruter bredt (to nye kolonner på hver side): flytt det som lå der to ruter mot høyre, én gang.
 if (!hasColumn('stalls', 'storage_wide')) {

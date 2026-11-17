@@ -13,6 +13,7 @@ import {
   PLASTIC_BOX,
   DIVIDER,
   COOKIE_BOX,
+  GINGER_HOUSE,
   COOKIE_BOX_FULL,
   COOKIE_SORTS,
   MAX_BOX_TABS,
@@ -100,7 +101,7 @@ import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
 import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
-import { dayName, hoursText, orderWhat, pickupHours } from '../shared/orders.ts';
+import { catchChance, dayName, hoursText, orderHomemade, orderNameOk, orderWhat, pickupHours } from '../shared/orders.ts';
 import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
@@ -1113,6 +1114,7 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   if (i.coupon) title += `: ${i.coupon.pct} % på ${ITEM_TYPES[i.coupon.productId].name.toLowerCase()} (${STORE_BY_ID[i.coupon.store].name}, ${dayRange(i.coupon.from, i.coupon.to)})`;
   if (i.giftcard) title += `: ${kr(i.giftcard.value)}`;
   if (i.label && PRODUCT_BY_ID[i.typeId]) title += ` (${labelText(i.typeId, i.label, myStall(state!)?.name ?? '')})`;
+  if (i.boxName) title += ` – «${i.boxName}»`;
   // Kupongen: butikkens farge, gullkant hvis den gjelder hele sesongen, og falmet med kryss når den er gått ut.
   if (i.coupon) {
     const today = state!.paper?.edition ?? 0;
@@ -1123,7 +1125,7 @@ function gridItemView(i: Item, cols: number, rows: number): string {
   const power = myStall(state!)?.power;
   const off = (ITEM_TYPES[i.typeId] as { imageOff?: string }).imageOff;
   const dark = !!off && (!power?.on || power.blown);
-  return `<div class="gitem ${t.image ? 'has-img' : ''} ${i.label === 'forged' ? 'forged' : ''}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(dark ? { emoji: t.emoji, image: off } : t)}</div>`;
+  return `<div class="gitem ${t.image ? 'has-img' : ''} ${i.label === 'forged' ? 'forged' : ''}" style="${style}" data-drag="${i.id}" title="${esc(title)}">${sprite(dark ? { emoji: t.emoji, image: off } : t)}${i.boxName ? `<span class="item-name">${esc(i.boxName)}</span>` : ''}</div>`;
 }
 
 function storageView(s: GameState): string {
@@ -2686,8 +2688,8 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
     </ul>
     ${
       p.praise?.length
-        ? `<div class="paper-kicker">Fornøyde kunder</div>
-      <ul class="paper-praise">${p.praise.map((x) => `<li class="${x.mine ? 'mine' : ''}">${esc(x.text)}</li>`).join('')}</ul>`
+        ? `<div class="paper-kicker">${p.praise.some((x) => x.bad) ? 'Kundene mener' : 'Fornøyde kunder'}</div>
+      <ul class="paper-praise">${p.praise.map((x) => `<li class="${x.mine ? 'mine' : ''} ${x.bad ? 'bad' : ''}">${esc(x.text)}</li>`).join('')}</ul>`
         : ''
     }
     <div class="paper-kicker">Notiser</div>
@@ -3039,7 +3041,7 @@ function regularView(s: GameState, visitId: string, charId: string): string {
     deal = `<div class="cust-section order-ask"><div class="cust-kicker">Vil bestille</div>
         <div class="cust-item">${icon(p)}<div><b>${a.qty > 1 ? `${a.qty} × ` : ''}${esc(p.name)}</b><small>Henter ${esc(dayName(a.dueDay))} ${hoursText(pickupHours(c))} · betaler ${kr(a.price)}${a.deposit ? `, ${kr(a.deposit)} i forskudd nå` : ''}</small></div></div>
         <div class="order-buttons"><button class="primary" data-action="order-yes">📝 Ja, det skal bli</button><button data-action="order-no">Nei, beklager</button></div>
-        <p class="cust-hint">Ja: avtalen havner i telefonen. Har du ikke ${esc(orderWhat(a.productId, a.qty))} klar når hen kommer, går hen skuffet, omdømmet faller${a.deposit ? ', og du må betale tilbake forskuddet' : ''}.${c.buy?.homemadeOnly ? ' Hen tar bare imot hjemmelaget.' : ''}</p></div>`;
+        <p class="cust-hint">Ja: avtalen havner i telefonen. Har du ikke ${esc(orderWhat(a.productId, a.qty))} klar når hen kommer, går hen skuffet, omdømmet faller${a.deposit ? ', og du må betale tilbake forskuddet' : ''}.${orderHomemade(c) ? ' Hen tar bare imot hjemmelaget.' : ''}${c.order.name ? ` Skriv «${esc(c.order.name)}» på med penn.` : ''}${c.order.inspect ? ' Hen har med forstørrelsesglass.' : ''}</p></div>`;
   }
   if (!want && deal) {
     // Ingenting på bordet hen vil ha: bare bestillingen.
@@ -3079,16 +3081,25 @@ function regularHead(c: Character, tags: string, quote: string): string {
 function pickupView(s: GameState, c: Character, pickup: { productId: string; qty: number; price: number; deposit: number }): string {
   const p = PRODUCT_BY_ID[pickup.productId];
   const have = s.me.items.filter((i) => i.typeId === p.id && !isTrashed(s.me.items, i));
-  const good = c.buy?.homemadeOnly ? have.filter((i) => isHomemade(i.label)) : have;
+  const named = have.filter((i) => orderNameOk(c, i.boxName));
+  const good = orderHomemade(c) ? named.filter((i) => isHomemade(i.label)) : named;
   const ok = good.length >= pickup.qty;
   const what = orderWhat(p.id, pickup.qty);
   const rest = pickup.price - pickup.deposit;
+  // Samme rekkefølge som serveren: ekte hjemmelaget først, så omskrevne.
+  const real = good.filter((i) => i.label === 'home').length;
+  const forged = Math.max(0, Math.min(pickup.qty - real, good.filter((i) => i.label === 'forged').length));
+  const risk = catchChance(c, forged);
   const why =
     have.length < pickup.qty
       ? `Du har ${have.length} av ${pickup.qty} i boden. Hen venter til kl. ${pickupHours(c)[1]}.`
-      : !ok
-        ? `Det du har, er ikke merket «hjemmelaget», og ${esc(c.name)} tar bare imot hjemmelaget.`
-        : 'Hen betaler resten kontant, og en fornøyd stamkunde gir omdømme.';
+      : named.length < pickup.qty
+        ? `Det skal stå «${esc(c.order?.name ?? '')}» på ${esc(p.name.toLowerCase())}. Trykk på den under disken og skriv navnet med penn.`
+        : !ok
+          ? `Det du har, er ikke merket «hjemmelaget», og ${esc(c.name)} tar bare imot hjemmelaget.`
+          : risk > 0
+            ? `⚠️ ${forged} av dem har omskrevet etikett. ${esc(c.name)} har med forstørrelsesglass: ${Math.round(risk * 100)} % sjanse for at hen ser det.`
+            : 'Hen betaler resten kontant, og en fornøyd stamkunde gir omdømme.';
   return `<div class="cust-section"><div class="cust-kicker">Henter bestillingen</div>
       <div class="cust-item">${icon(p)}<div><b>${pickup.qty > 1 ? `${pickup.qty} × ` : ''}${esc(p.name)}</b><small>Avtalt ${kr(pickup.price)}${pickup.deposit ? ` · forskudd ${kr(pickup.deposit)} · rest ${kr(rest)}` : ''}</small></div></div>
       <button class="haggle-gift" data-action="order-deliver" ${ok ? '' : 'disabled'}>🎁 Lever ${esc(what)}</button>
@@ -3327,6 +3338,14 @@ function modalView(s: GameState): string {
            <small>kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, thisItem.label !== 'store'))}</small></div>
            ${canRewrite ? `<button class="small ghost" data-action="relabel" title="${thisItem.label === 'store' ? 'Skriv «Hjemmelaget» på etiketten med penn' : 'Skriv riktig produsent igjen'}">✏️ Skriv om</button>` : ''}</li></ul>`
       : '';
+    // Pepperkakehuset: et navn med penn (bestillinger). Et hus med navn selges ikke til andre.
+    const nameRow =
+      thisItem && p.id === GINGER_HOUSE
+        ? `<div class="label-head">Navn på taket</div>
+         <ul class="label-list"><li class="label-row"><div><b>${thisItem.boxName ? `«${esc(thisItem.boxName)}»` : 'Ingen navn'}</b>
+           <small>${thisItem.boxName ? 'Selges ikke til andre kunder.' : 'Skriv et navn med penn til en bestilling.'}</small></div>
+           ${pen ? `<button class="small ghost" data-action="box-rename" data-box="${thisItem.id}">✏️ Skriv navn</button>` : ''}</li></ul>`
+        : '';
     const groups = (['store', 'home', 'forged'] as const)
       .filter((l) => count(l) > 0)
       .map(
@@ -3350,6 +3369,7 @@ function modalView(s: GameState): string {
         <dt>Kunder forventer</dt><dd>~${kr(base)}</dd>
       </dl>
       ${thisRow || (groups ? `<div class="label-head">Produsent</div><ul class="label-list">${groups}</ul>` : '')}
+      ${nameRow}
       <form data-form="price" class="stack-form" data-cost="${inv.avgCost}" data-base="${base}">
         <label>Pris per stk <input name="price" type="number" min="1" max="9999" value="${price}"></label>
         <div class="price-feedback">${priceFeedback(price, inv.avgCost, base)}</div>
@@ -4021,7 +4041,8 @@ app.addEventListener('click', (e) => {
   if (action === 'box-rename') {
     const boxId = Number(el.dataset.box);
     const now = state?.me.items.find((i) => i.id === boxId)?.boxName ?? '';
-    const what = state?.me.items.find((i) => i.id === boxId)?.typeId === PLASTIC_BOX ? 'plastkassa' : 'kartongen';
+    const typeId = state?.me.items.find((i) => i.id === boxId)?.typeId;
+    const what = typeId === PLASTIC_BOX ? 'plastkassa' : typeId === GINGER_HOUSE ? 'pepperkakehuset' : 'kartongen';
     const name = prompt(`Skriv et navn på ${what} (maks 16 tegn). Tomt visker ut navnet:`, now);
     if (name !== null) void act('/api/box/rename', { itemId: boxId, name }, name.trim() ? `✏️ Navnet står på ${what}.` : 'Navnet er visket ut.');
     return;
@@ -4130,9 +4151,9 @@ app.addEventListener('click', (e) => {
     if (action !== 'order-no') modal = null;
     const req =
       action === 'order-deliver'
-        ? api<{ amount: number; txId: number; line: string }>('/api/order/deliver', { visitId }).then((r) => {
+        ? api<{ amount: number; txId: number; line: string; caught: boolean }>('/api/order/deliver', { visitId }).then((r) => {
             if (r.txId) ownSales.add(r.txId);
-            toast(`🎁 Levert for ${kr(r.amount)}. ${r.line}`);
+            toast(r.caught ? `🔍 Avslørt! ${r.line}` : `🎁 Levert for ${kr(r.amount)}. ${r.line}`, r.caught);
           })
         : api<{ accepted: boolean; line: string; deposit?: number }>('/api/order', { visitId, accept: action === 'order-yes' }).then((r) => {
             if (r.accepted) toast(`📝 Bestilt${r.deposit ? ` – ${kr(r.deposit)} i forskudd` : ''}. ${r.line}`);

@@ -75,6 +75,7 @@ import {
   DIVIDER,
   COOKIE_BOX,
   COOKIE_BOX_FULL,
+  GINGER_HOUSE,
   COOKIE_SORTS,
   MAX_BOX_TABS,
   PAD,
@@ -235,7 +236,7 @@ import { weatherDemand, weatherFor } from '../shared/weather.ts';
 import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
 import { regularChance, regularLikes, regularReputation, regularVisits } from '../shared/regulars.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
-import { ORDER_REP_DONE, ORDER_REP_FAILED, dayName, hoursText, orderDeposit, orderDueDay, orderPrice, orderQty, orderWhat, pickupHours, type CustomerOrder } from '../shared/orders.ts';
+import { ORDER_REP_CAUGHT, ORDER_REP_DONE, ORDER_REP_FAILED, catchChance, orderHomemade, orderNameOk, dayName, hoursText, orderDeposit, orderDueDay, orderPrice, orderQty, orderWhat, pickupHours, type CustomerOrder } from '../shared/orders.ts';
 
 export class GameError extends Error {}
 
@@ -361,12 +362,14 @@ const q = {
   moveItem: db.prepare('UPDATE items SET place = ?, box_id = ?, x = ?, y = ? WHERE id = ?'),
   deleteItem: db.prepare('DELETE FROM items WHERE id = ?'),
   // Fremste rad først: det er de kundene ser og tar.
+  // Et pepperkakehus med navn på (bestilling) selges ikke til andre.
   counterUnits: db.prepare(
-    "SELECT id FROM items WHERE stall_id = ? AND type_id = ? AND place = 'counter' ORDER BY y DESC, x LIMIT ?",
+    "SELECT id FROM items WHERE stall_id = ? AND type_id = ? AND place = 'counter' AND NOT (type_id = 'pepperkakehus' AND state LIKE '%\"name\"%') ORDER BY y DESC, x LIMIT ?",
   ),
   // Samme, men bare «hjemmelaget» (home/forged) eller bare butikkjøpt.
   counterUnitsBy: db.prepare(
     `SELECT id FROM items WHERE stall_id = ? AND type_id = ? AND place = 'counter'
+     AND NOT (type_id = 'pepperkakehus' AND state LIKE '%"name"%')
      AND (CASE WHEN label IN ('home', 'forged') THEN 1 ELSE 0 END) = ? ORDER BY y DESC, x LIMIT ?`,
   ),
   prices: db.prepare('SELECT product_id, price FROM prices WHERE stall_id = ?'),
@@ -620,7 +623,7 @@ function itemsOf(stallId: number): Item[] {
       const dev = (JSON.parse(r.state) as { device?: unknown }).device;
       if (typeof dev === 'string') item.device = dev;
     }
-    if (r.type_id === MACHINE_BOX && typeof st.name === 'string' && st.name) item.boxName = st.name; // skrevet på med penn
+    if ((r.type_id === MACHINE_BOX || r.type_id === GINGER_HOUSE) && typeof st.name === 'string' && st.name) item.boxName = st.name; // skrevet på med penn
     if (r.type_id === PLASTIC_BOX) {
       if (typeof st.name === 'string' && st.name) item.boxName = st.name;
       // Boksinndelere: fanenavnene (to eller tre). Én fane = ingen inndeler.
@@ -674,12 +677,14 @@ export function renameFolderTab(player: PlayerRow, itemId: number, tab: number, 
   saveState(item.id, { ...rawState(item.id), tabs });
 }
 
-/** Skriver et navn på en pappkartong eller plastkasse med penn (tomt navn visker det ut). */
+/** Skriver et navn på en pappkartong, plastkasse eller et pepperkakehus med penn (tomt navn visker det ut). */
 export function renameBox(player: PlayerRow, itemId: number, name: string) {
   const stall = myStall(player);
   const items = itemsOf(stall.id);
-  const box = items.find((i) => i.id === itemId && (i.typeId === MACHINE_BOX || i.typeId === PLASTIC_BOX) && !isTrashed(items, i) && !isUndelivered(items, i));
-  if (!box) throw new GameError('Fant ikke eska.');
+  const box = items.find(
+    (i) => i.id === itemId && (i.typeId === MACHINE_BOX || i.typeId === PLASTIC_BOX || i.typeId === GINGER_HOUSE) && !isTrashed(items, i) && !isUndelivered(items, i),
+  );
+  if (!box) throw new GameError('Fant ikke tingen du ville skrive på.');
   if (!holds(items, PEN)) throw new GameError('Du har ingenting å skrive med.');
   const clean = name.replace(/\s+/g, ' ').trim().slice(0, 16);
   const st = rawState(box.id);
@@ -3432,17 +3437,18 @@ function paperFor(market: MarketRow, player: PlayerRow, key: number, myStallId: 
 
 /** Ros i avisa fra kunder som fikk bestillingen sin levert døgnet før utgaven (bare figurer med en avistekst). */
 function praiseFor(market: MarketRow, time: number, myStallId: number | null): NonNullable<Paper['praise']> {
-  const rows = all<{ char_id: string; stall_id: number; name: string }>(
+  const rows = all<{ char_id: string; stall_id: number; name: string; caught: number }>(
     db.prepare(
-      "SELECT o.char_id, o.stall_id, s.name FROM customer_orders o JOIN stalls s ON s.id = o.stall_id WHERE s.market_id = ? AND o.status = 'done' AND o.done_at >= ? AND o.done_at < ? ORDER BY o.done_at",
+      "SELECT o.char_id, o.stall_id, s.name, o.caught FROM customer_orders o JOIN stalls s ON s.id = o.stall_id WHERE s.market_id = ? AND (o.status = 'done' OR o.caught = 1) AND o.done_at >= ? AND o.done_at < ? ORDER BY o.done_at",
     ),
     market.id,
     time - 24 * HOUR,
     time,
   );
   return rows.flatMap((r) => {
-    const news = CHARACTER_BY_ID[r.char_id]?.order?.news;
-    return news ? [{ stall: r.name, mine: r.stall_id === myStallId, text: news.replace('{stall}', r.name) }] : [];
+    const o = CHARACTER_BY_ID[r.char_id]?.order;
+    const news = r.caught ? o?.exposed : o?.news;
+    return news ? [{ stall: r.name, mine: r.stall_id === myStallId, text: news.replace('{stall}', r.name), ...(r.caught ? { bad: true } : {}) }] : [];
   });
 }
 
@@ -3726,19 +3732,34 @@ export function deliverOrder(player: PlayerRow, visitId: string) {
     const p = PRODUCT_BY_ID[pk.productId];
     const items = itemsOf(stall.id);
     const mine = items.filter((i) => i.typeId === p.id && !isTrashed(items, i) && !isUndelivered(items, i));
-    // Hjemmelagede først; den som bare vil ha hjemmelaget, får bare dem.
-    const ok = c.buy?.homemadeOnly ? mine.filter((i) => isHomemade(i.label)) : [...mine.filter((i) => isHomemade(i.label)), ...mine.filter((i) => !isHomemade(i.label))];
     const what = orderWhat(p.id, pk.qty);
     if (mine.length < pk.qty) throw new GameError(`Du har ${mine.length} av ${pk.qty} i boden. ${c.name} skal ha ${what}.`);
+    const named = mine.filter((i) => orderNameOk(c, i.boxName));
+    if (named.length < pk.qty) throw new GameError(`Det skal stå «${c.order.name}» på ${p.name.toLowerCase()}. Skriv det på med penn.`);
+    // Ekte hjemmelaget først, så omskrevne, så butikkjøpt (bare for den som tar imot butikkjøpt).
+    const rank = (i: Item) => (i.label === 'home' ? 0 : i.label === 'forged' ? 1 : 2);
+    const ok = named.filter((i) => !orderHomemade(c) || isHomemade(i.label)).sort((a, b) => rank(a) - rank(b));
     if (ok.length < pk.qty) throw new GameError(`${c.name} vil bare ha hjemmelaget, og det du har, er ikke merket «hjemmelaget».`);
-    for (const i of ok.slice(0, pk.qty)) q.deleteItem.run(i.id);
+    const given = ok.slice(0, pk.qty);
+    // Forstørrelsesglasset: omskrevne etiketter kan bli avslørt. Da går hen uten varene, og det blir en sak.
+    const forged = given.filter((i) => i.label === 'forged');
+    if (Math.random() < catchChance(c, forged.length)) {
+      for (const i of forged) q.setLabel.run(null, i.id); // riktig produsent igjen
+      db.prepare("UPDATE customer_orders SET status = 'failed', caught = 1, done_at = ? WHERE id = ?").run(t, pk.orderId);
+      q.setReputation.run(Math.max(0, stall.reputation + ORDER_REP_CAUGHT), stall.id);
+      if (pk.deposit > 0) q.addCash.run(-pk.deposit, stall.id);
+      const line = c.order.caught ?? c.order.sad;
+      event(market, player.id, t, `🔍 ${c.name} så under etiketten: ${line}${pk.deposit ? ` Du betalte tilbake ${pk.deposit} kr i forskudd.` : ''} Omdømmet stuper.`);
+      return { amount: 0, txId: 0, line, caught: true };
+    }
+    for (const i of given) q.deleteItem.run(i.id);
     const rest = pk.price - pk.deposit; // forskuddet er allerede betalt
     q.addCash.run(rest, stall.id); // kontant, i konvolutt
     const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, pk.qty, pk.price);
     q.setReputation.run(Math.max(0, Math.min(100, stall.reputation + ORDER_REP_DONE)), stall.id);
     db.prepare("UPDATE customer_orders SET status = 'done', done_at = ? WHERE id = ?").run(t, pk.orderId);
     event(market, player.id, t, `🎁 ${c.name} hentet ${what} og betalte ${rest} kr${pk.deposit ? ` (pluss ${pk.deposit} kr i forskudd)` : ''}. ${c.order.happy}`);
-    return { amount: rest, txId: Number(res.lastInsertRowid), line: c.order.happy };
+    return { amount: rest, txId: Number(res.lastInsertRowid), line: c.order.happy, caught: false };
   });
 }
 

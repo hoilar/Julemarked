@@ -7,6 +7,25 @@ import { PRODUCT_BY_ID } from './products.ts';
 /** Omdømme når bestillingen blir levert i tide, og når den ikke er klar. */
 export const ORDER_REP_DONE = 3;
 export const ORDER_REP_FAILED = -4;
+/** Omdømme når kunden avslører en omskrevet etikett i bestillingen. */
+export const ORDER_REP_CAUGHT = -8;
+
+/** Må varene i bestillingen være hjemmelaget? */
+export const orderHomemade = (c: Character) => !!(c.order?.homemade || c.buy?.homemadeOnly);
+
+/** Står det riktig navn på varen? (siste ordet i navnet, f.eks. «Berg», uansett store og små bokstaver) */
+export function orderNameOk(c: Character, written: string | undefined): boolean {
+  const want = c.order?.name;
+  if (!want) return true;
+  const key = want.trim().split(/\s+/).pop()!.toLowerCase();
+  return !!written && written.toLowerCase().includes(key);
+}
+
+/** Sjansen for at figuren ser jukset når `forged` av varene har omskrevet etikett. */
+export function catchChance(c: Character, forged: number): number {
+  const p = c.order?.inspect ?? 0;
+  return forged > 0 ? 1 - Math.pow(1 - p, forged) : 0;
+}
 
 /** Antall stk figuren bestiller. */
 export const orderQty = (c: Character) => c.order?.qty ?? 1;

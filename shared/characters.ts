@@ -79,6 +79,15 @@ export interface Character {
     happy: string;
     sad: string;
     news?: string;
+    /** Bare hjemmelaget (også når figuren ellers kjøper butikkjøpt). */
+    homemade?: boolean;
+    /** Navnet som skal stå på varen (skrives med penn). Godtas når navnet inneholder siste ord, f.eks. «Berg». */
+    name?: string;
+    /** Sjansen per omskrevet etikett for at figuren ser jukset (forstørrelsesglass). */
+    inspect?: number;
+    /** Replikken og avisoppslaget når jukset blir avslørt ({stall} = boden). */
+    caught?: string;
+    exposed?: string;
   };
 }
 
@@ -328,6 +337,19 @@ export const CHARACTERS: Character[] = [
     visit: { from: 10, to: 17, chance: 0.2, peakDays: [6], peakChance: 0.5 },
     buy: { base: 0.6, slope: 1.8 },
     lines: { yes: '«Så hyggelig! Jeg skal si det til de andre i barnehagen.»', no: '«Det blir for dyrt for oss i år, dessverre.»' },
+    order: {
+      productId: 'pepperkakehus',
+      chance: 0.5,
+      days: 3,
+      markup: 0.2,
+      deposit: 0.2,
+      name: 'Familien Berg',
+      ask: '«Ungene ønsker seg et ekte pepperkakehus. Kan du bake et med «Familien Berg» på? Da ser de at det er vårt. Her er litt i forskudd.»',
+      thanks: '«Å, de kommer til å bli så glade! Husk navnet, da.»',
+      happy: '«Familien Berg! De kommer til å hoppe i taket. Tusen takk!»',
+      sad: '«Ikke noe hus? Og jeg som hadde lovet ungene … Forskuddet vil jeg ha tilbake.»',
+      news: 'Ungene til Line Berg jublet for pepperkakehuset fra {stall}: «Navnet vårt sto på taket!»',
+    },
     quote: '«Får jeg tre for to hvis jeg tar én til?»',
     story: [
       'Gir du henne avslag, kommer hun tilbake med flere foreldre (flere kunder neste dag).',
@@ -411,10 +433,27 @@ export const CHARACTERS: Character[] = [
     visit: { from: 10, to: 16, chance: 0.12 },
     buy: { base: 0.8, slope: 1.2 },
     lines: { yes: '«Takk! Kanskje du havner i avisa en dag.»', no: '«Det får jeg skrive om …»' },
+    order: {
+      productId: 'syltetoy',
+      qty: 3,
+      chance: 0.8,
+      days: 2,
+      markup: 0.3,
+      homemade: true,
+      inspect: 0.5,
+      ask: '«Jeg tester julesyltetøy for Markedsposten. Kan du ha tre glass hjemmelaget klare til meg i overmorgen? Ikke butikkjøpt, altså. Jeg sjekker etikettene.»',
+      thanks: '«Avtale. Jeg tar med forstørrelsesglasset.»',
+      happy: '«Ekte vare, det kjenner jeg. Dette blir en fin sak.»',
+      sad: '«Ingen syltetøy? Det blir en kort sak, da.»',
+      news: 'Markedsposten tester julesyltetøy: hjemmelaget fra {stall} får terningkast seks.',
+      caught: '«Står det ikke Mills under lappen her? Dette blir en sak, gitt.»',
+      exposed: 'AVSLØRT: {stall} solgte butikkjøpt syltetøy som «hjemmelaget». Markedsposten så det gjennom forstørrelsesglasset.',
+    },
     quote: '«Har du en kommentar til Markedsposten?»',
     story: [
       'Intervjuer boden etter et tyveri: ærlig svar gir sympati (flere kunder), løgn kan avsløres.',
       'Skriver om den beste boden på julaften (årsrapporten).',
+      'Bestiller tre glass hjemmelaget syltetøy til en test (12.4: i spillet). Skriver du «hjemmelaget» på butikkjøpt, kan han se det gjennom forstørrelsesglasset.',
     ],
   },
   {
