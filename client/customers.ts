@@ -379,7 +379,7 @@ export function showGiftSeller(g: { seed: string; name: string; color: string } 
 const INSPECTOR_X = 2; // står på plassen lengst til venstre
 
 /** Stamkunden (Fru Kvist, Lille Emma …) ved disken. Trykk åpner kundevinduet for stamkunder (data-action="regular"). */
-export function showRegular(r: { id: string; visitId: string } | null) {
+export function showRegular(r: { id: string; visitId: string; pickup?: unknown } | null) {
   const c = r ? CHARACTER_BY_ID[r.id] : undefined;
   showSpecial('regular', c ? r!.visitId : null, 56, (el) => {
     el.classList.add('regular', 'special');
@@ -387,7 +387,7 @@ export function showRegular(r: { id: string; visitId: string } | null) {
     el.dataset.visit = r!.visitId;
     el.dataset.char = c!.id;
     el.title = `${c!.name} – trykk for å snakke med ${c!.name.startsWith('Fru') || c!.name.startsWith('Lille') ? 'henne' : 'hen'}`;
-    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${characterUrl(c!)}"><div class="want">💬</div></div>`;
+    el.innerHTML = `<div class="bob"><img alt="" draggable="false" src="${characterUrl(c!)}"><div class="want">${r!.pickup ? '🎁' : '💬'}</div></div>`;
   });
 }
 

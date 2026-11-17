@@ -60,6 +60,11 @@ export interface Character {
   favorite?: string;
   /** Replikker når handelen går bra eller dårlig. */
   lines?: { yes: string; no: string };
+  /**
+   * Bestilling (shared/orders.ts): varen figuren ber om når den ikke står på bordet, hentes om `days` dager
+   * til veiledende pris + `markup`. Replikkene: når hen spør, takker for ja, henter og blir skuffet.
+   */
+  order?: { productId: string; days: number; markup: number; ask: string; thanks: string; happy: string; sad: string };
 }
 
 /** Felles for alle: bare de valgte delene, ingen tilfeldige briller, skjegg eller øredobber. */
@@ -103,10 +108,19 @@ export const CHARACTERS: Character[] = [
     visit: { from: 9, to: 13, chance: 0.25, peakDays: [2, 6], peakChance: 0.6 },
     buy: { base: 0.85, slope: 1.2, homemadeOnly: true },
     lines: { yes: '«Hm. Den får duge. Mamma ville ha godkjent den.»', no: '«Nei, takk. Så mye betalte vi ikke for kaker i min tid.»' },
+    order: {
+      productId: 'syv_slag',
+      days: 3,
+      markup: 0.35,
+      ask: '«Barnebarna kommer, og hendene mine vil ikke lenger. Kan du lage en kakeboks med syv slag til meg? Hjemmelaget, selvfølgelig.»',
+      thanks: '«Fint. Da kommer jeg og henter den. Ikke skuff meg nå.»',
+      happy: '«Alle sju! Akkurat som jeg lagde dem selv. Takk, kjære deg.»',
+      sad: '«Ingen kakeboks? Jeg som hadde lovet barnebarna … Nei, nei.»',
+    },
     quote: '«Er disse virkelig hjemmelaget? Jeg merker det, vet du.»',
     story: [
       'Første uke: kommer innom, smaker på en krumkake og sier at «den var nesten god».',
-      'Andre uke: bestiller en kakeboks med syv slag til barnebarna, hentes om tre dager (kundebestilling, 12.4).',
+      'Bestiller en kakeboks med syv slag til barnebarna når det ikke står en på bordet, og henter den om tre dager (kundebestilling, 12.4: i spillet).',
       'Tredje uke: forteller at barnebarnet i Bergen kanskje ikke kommer hjem til jul i år.',
       'Lille julaften: kommer for siste kakeboks, med barnebarnet på slep. Leverer du, får boden et pent oppslag i avisa.',
       'Skriver du om etiketten og hun avslører det, forteller hun det til alle i gata.',

@@ -19,6 +19,8 @@ import {
   hangDevice,
   togglePower,
   sellToRegular,
+  answerOrder,
+  deliverOrder,
   stashItems,
   noteClock,
   setClock,
@@ -164,6 +166,8 @@ const routes: Record<string, Handler> = {
   'POST /api/maker': action((p, b) =>
     setMaker(p, Number(b.itemId), b.on === undefined ? undefined : !!b.on, typeof b.program === 'string' ? b.program : undefined),
   ),
+  'POST /api/order': action((p, b) => answerOrder(p, String(b.visitId ?? ''), !!b.accept)),
+  'POST /api/order/deliver': action((p, b) => deliverOrder(p, String(b.visitId ?? ''))),
   'POST /api/regular': action((p, b) => sellToRegular(p, String(b.visitId ?? ''), String(b.productId ?? ''), b.budget ? 'budget' : Number(b.pct ?? 0))),
   'POST /api/lead': action((p, b) => sellLead(p, String(b.leadId ?? ''), Number(b.pct ?? 0))),
   'POST /api/autogiro': action((p, b) => setAutogiro(p, !!b.on)),

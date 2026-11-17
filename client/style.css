@@ -673,6 +673,14 @@ body.dragging .nail:not(.used) .nail-head { filter: drop-shadow(0 0 0.25cqw rgba
 .insurer-no { margin-top: 0.6rem; justify-content: flex-end; flex-wrap: wrap; gap: 0.4rem; }
 .customer-modal .cust-tags { margin-bottom: 0.4rem; }
 .haggle-gift { width: 100%; margin-top: 0.4rem; background: var(--green); }
+.order-buttons { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+.order-buttons button { flex: 1; }
+.phone-orders { list-style: none; margin: 0 0 0.5rem; padding: 0; display: grid; gap: 0.3rem; }
+.phone-orders li { display: flex; gap: 0.45rem; align-items: center; background: rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 0.3rem 0.45rem; }
+.phone-orders img { width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); }
+.phone-orders span { display: grid; line-height: 1.2; }
+.phone-orders small { opacity: 0.75; }
+.phone-orders li.done, .phone-orders li.failed { opacity: 0.6; }
 .customer.regular .want { font-size: 0.9em; }
 .cust-police { border-top: 1px solid var(--line); padding-top: 0.6rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; }
 .cust-police button { display: inline-flex; align-items: center; gap: 0.35rem; }

@@ -390,6 +390,8 @@ Til sammenligning: kjelen trekker opptil 2 kW (0,5 kW per styrke), strikkemaskin
 
 Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dager** for å hente det. Det gir planlegging over flere dager og en grunn til å logge inn igjen.
 
+**✅ Første versjon bygd (17.11.2026):** Fru Kvist kan be om en kakeboks med syv slag når hun står ved disken og det ikke står en på bordet. Du svarer ja eller nei i kundevinduet. Ja gir en avtale på telefonens hjemskjerm med hentedag (om 3 dager, kl. 9–13) og avtalt pris (veiledende + 35 %, 440 kr). På hentedagen står hun ved disken med 🎁 og tar bare imot en hjemmelaget kakeboks. Levert: kontant betaling og +3 i omdømme. Ikke klar innen kl. 13: −4 i omdømme og en skuffet replikk. Én åpen bestilling per figur, ingen henting etter lille julaften (`shared/orders.ts`, tabellen `customer_orders`). Andre bestillinger enn syv slag, forskudd og avisoppslag gjenstår.
+
 **Eksempel:** «Fru Kvist kommer tilbake om 3 dager. Hun skal ha syv slag kakeboks.» Da må boden ha sju ulike småkaker i en kakeboks når hun kommer (krever flere kakesorter, se VAREPLAN.md, «Syv slag»).
 
 **Slik kan det virke:**
@@ -564,7 +566,7 @@ Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dage
 **Neste steg:**
 
 - ✅ Bygd 17.11.2026 (`shared/regulars.ts`): stamkundene kommer til disken i sine egne tidsrom, bestemt av serveren per dag og bod (omtrent 3–8 besøk per bod gjennom desember per figur). Trykk åpner kundevinduet: favorittvaren eller den dyreste varen de liker på bordet, forhandling etter personligheten (Fru Kvist bare hjemmelaget, direktøren tåler ikke avslag) og «Gi den for det hen har» når varen er dyrere enn budsjettet (Lille Emma og snøkula). Fornøyde stamkunder gir omdømme, mer jo rausere du er.
-- Fru Kvists bestilling av syv slag blir den første kundebestillingen (12.4).
+- ✅ Fru Kvists bestilling av syv slag er den første kundebestillingen (12.4, bygd 17.11.2026).
 - Tyttebærpolitiet kommer og henter tyven når tipset er riktig.
 
 **Åpne spørsmål:** Skal stamkundene huske hvordan du har behandlet dem (et forhold per bod)? Skal historiene følge kalenderen (samme for alle) eller hver bod for seg?

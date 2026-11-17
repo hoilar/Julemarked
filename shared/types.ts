@@ -1,4 +1,5 @@
 import type { Weather } from './weather.ts';
+import type { CustomerOrder } from './orders.ts';
 import type { Phase } from './clock.ts';
 import type { BillKind, BillStage } from './bills.ts';
 import type { Label } from './products.ts';
@@ -219,7 +220,16 @@ export interface GameState {
     /** Hvem som står ved boden din nå utenom vanlige kunder. thief = ansiktet (seed), uten å si at det er tyven. */
     visitors: { thief: string | null; inspector: boolean };
     /** Stamkunden som står ved disken nå (shared/regulars.ts), eller null. */
-    regular: { id: string; visitId: string } | null;
+    regular: {
+      id: string;
+      visitId: string;
+      /** Hen vil bestille noe (shared/orders.ts): varen, avtalt pris og hentedagen. */
+      ask?: { productId: string; price: number; dueDay: number };
+      /** Hen er her for å hente bestillingen. */
+      pickup?: { orderId: number; productId: string; price: number };
+    } | null;
+    /** Åpne bestillinger fra kunder, og de som ble avgjort de siste dagene. */
+    orders: CustomerOrder[];
     /** Andelen kunder i dag etter feil tips til politiet i går (1 = som vanlig). */
     crowd: number;
     /** Strømmåleren (vises i sikringsboksen). kwh = målerstanden, sinceBill/cost = siden forrige regning. */
