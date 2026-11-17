@@ -60,7 +60,7 @@
       "visits": "Ettermiddager i helgene",
       "story": [
         "Leter etter en ekte lusekofte og en antikk julekule. Den som har sjeldne varer på bordet, får ham som stamkunde.",
-        "Kan bestille noe sjeldent «til svigermor før lørdag» (12.4) og betaler godt over prisen.",
+        "Bestiller en lusekofte «til svigermor» (12.4: i spillet), betaler forskudd og godt over prisen.",
         "Tilbyr du avslag, blir han fornærmet og går."
       ],
       "accessories": [
@@ -125,7 +125,8 @@
       "visits": "Hverdager kl. 15–18",
       "story": [
         "Går fra boden hvis han må vente, men blir stamkunde hvis det alltid står noe varmt klart.",
-        "Kaldt vær: kjøper to kopper, én til kollegaen."
+        "Kaldt vær: kjøper to kopper, én til kollegaen.",
+        "Bestiller seks kopper gløgg til julebordet dagen etter (12.4: i spillet). Står de ikke klare, går han."
       ],
       "accessories": [
         "Strikkelue med dusk",
@@ -253,7 +254,8 @@
       "haggle": "litt",
       "visits": "Om natta (kl. 21–02)",
       "story": [
-        "Kjøper luguberte varer om natta. Tipser du politiet om henne, slutter Fyren å svare på SMS."
+        "Kjøper luguberte varer om natta. Tipser du politiet om henne, slutter Fyren å svare på SMS.",
+        "Bestiller fem pakker kinaputter med halvparten i forskudd (12.4: i spillet). Ingen avisoppslag, naturligvis."
       ],
       "accessories": [
         "Caps",

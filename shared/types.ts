@@ -187,6 +187,8 @@ export interface Paper {
   /** Dagens etterlyste tyv (ansiktet tegnes fra seed). `caught` = noen har angitt ham. */
   wanted: { seed: string; alias: string; reward: number; caught: boolean };
   /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */
+  /** Ros fra kunder som fikk bestillingen sin levert dagen før (konseptet 12.4). */
+  praise?: { stall: string; mine: boolean; text: string }[];
   crime: {
     thefts: { stall: string; mine: boolean; lines: string[]; value: number }[];
     log: string;
@@ -224,9 +226,9 @@ export interface GameState {
       id: string;
       visitId: string;
       /** Hen vil bestille noe (shared/orders.ts): varen, avtalt pris og hentedagen. */
-      ask?: { productId: string; price: number; dueDay: number };
+      ask?: { productId: string; qty: number; price: number; deposit: number; dueDay: number };
       /** Hen er her for å hente bestillingen. */
-      pickup?: { orderId: number; productId: string; price: number };
+      pickup?: { orderId: number; productId: string; qty: number; price: number; deposit: number };
     } | null;
     /** Åpne bestillinger fra kunder, og de som ble avgjort de siste dagene. */
     orders: CustomerOrder[];

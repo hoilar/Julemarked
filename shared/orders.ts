@@ -8,10 +8,18 @@ import { PRODUCT_BY_ID } from './products.ts';
 export const ORDER_REP_DONE = 3;
 export const ORDER_REP_FAILED = -4;
 
-/** Avtalt pris: varens veiledende pris pluss figurens påslag for å bestille, rundet til nærmeste tier. */
+/** Antall stk figuren bestiller. */
+export const orderQty = (c: Character) => c.order?.qty ?? 1;
+
+/** Avtalt pris for hele bestillingen: veiledende pris × antall pluss figurens påslag, rundet til nærmeste tier. */
 export function orderPrice(c: Character): number {
   const o = c.order!;
-  return Math.round((PRODUCT_BY_ID[o.productId].basePrice * (1 + o.markup)) / 10) * 10;
+  return Math.round((PRODUCT_BY_ID[o.productId].basePrice * orderQty(c) * (1 + o.markup)) / 10) * 10;
+}
+
+/** Forskuddet hen betaler når du sier ja (0 hvis hen betaler alt ved henting). */
+export function orderDeposit(c: Character, price: number): number {
+  return Math.round((price * (c.order?.deposit ?? 0)) / 10) * 10;
 }
 
 /** Hentedagen for en bestilling gjort på avisdagen `day`, eller null hvis den havner etter lille julaften. */
@@ -20,9 +28,19 @@ export function orderDueDay(c: Character, day: number): number | null {
   return due < seasonEnd(day) ? due : null;
 }
 
-/** Timene [fra, til) figuren venter ved disken på hentedagen (besøkstimene hennes). */
+/** Timene [fra, til) figuren venter ved disken på hentedagen: avtalt tid, ellers besøkstimene (høyst til midnatt). */
 export function pickupHours(c: Character): [number, number] {
-  return [c.visit?.from ?? 10, c.visit?.to ?? 14];
+  if (c.order?.hours) return c.order.hours;
+  return [c.visit?.from ?? 10, Math.min(24, c.visit?.to ?? 14)];
+}
+
+/** «kl. 9–13» */
+export const hoursText = ([from, to]: [number, number]) => `kl. ${from}–${to}`;
+
+/** «6 kopper gløgg», «kakeboks med syv slag» */
+export function orderWhat(productId: string, qty: number): string {
+  const name = PRODUCT_BY_ID[productId]?.name.toLowerCase() ?? productId;
+  return qty > 1 ? `${qty} × ${name}` : name;
 }
 
 const WEEKDAYS = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
@@ -38,7 +56,9 @@ export interface CustomerOrder {
   id: number;
   charId: string;
   productId: string;
-  price: number;
+  qty: number;
+  price: number; // hele bestillingen
+  deposit: number; // betalt forskudd (trekkes fra ved henting, betales tilbake hvis den ikke er klar)
   dueDay: number; // ÅÅÅÅMMDD
   status: 'open' | 'done' | 'failed';
 }

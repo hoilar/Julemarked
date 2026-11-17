@@ -100,7 +100,7 @@ import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
 import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
-import { dayName, pickupHours } from '../shared/orders.ts';
+import { dayName, hoursText, orderWhat, pickupHours } from '../shared/orders.ts';
 import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
@@ -536,9 +536,8 @@ function ordersWidget(s: GameState): string {
     const c = CHARACTER_BY_ID[o.charId];
     const p = PRODUCT_BY_ID[o.productId];
     if (!c || !p) return '';
-    const [from, to] = pickupHours(c);
-    const status = o.status === 'done' ? '✅ Levert' : o.status === 'failed' ? '❌ Ikke klar' : `${dayName(o.dueDay)} kl. ${from}–${to}`;
-    return `<li class="${o.status}"><img src="${characterUrl(c)}" alt=""><span><b>${esc(c.name)}: ${esc(p.name.toLowerCase())}</b><small>${esc(status)} · ${kr(o.price)}</small></span></li>`;
+    const status = o.status === 'done' ? '✅ Levert' : o.status === 'failed' ? '❌ Ikke klar' : `${dayName(o.dueDay)} ${hoursText(pickupHours(c))}`;
+    return `<li class="${o.status}"><img src="${characterUrl(c)}" alt=""><span><b>${esc(c.name)}: ${esc(orderWhat(p.id, o.qty))}</b><small>${esc(status)} · ${kr(o.price)}${o.deposit && o.status === 'open' ? ` (${kr(o.deposit)} betalt)` : ''}</small></span></li>`;
   });
   return `<div class="phone-kicker">Bestillinger</div><ul class="phone-orders">${rows.join('')}</ul>`;
 }
@@ -2685,6 +2684,12 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
           : '🚓 Rolig natt på markedet'
       }</span><small>Kriminalitet, s. 4</small></button></li>
     </ul>
+    ${
+      p.praise?.length
+        ? `<div class="paper-kicker">Fornøyde kunder</div>
+      <ul class="paper-praise">${p.praise.map((x) => `<li class="${x.mine ? 'mine' : ''}">${esc(x.text)}</li>`).join('')}</ul>`
+        : ''
+    }
     <div class="paper-kicker">Notiser</div>
     <ul class="paper-notices">${p.notices.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
 
@@ -3029,12 +3034,12 @@ function regularView(s: GameState, visitId: string, charId: string): string {
   if (here?.pickup) return regularHead(c, tags, c.order?.ask ?? c.quote) + pickupView(s, c, here.pickup);
   let deal = '';
   if (here?.ask && c.order) {
-    const p = PRODUCT_BY_ID[here.ask.productId];
-    const [from, to] = pickupHours(c);
+    const a = here.ask;
+    const p = PRODUCT_BY_ID[a.productId];
     deal = `<div class="cust-section order-ask"><div class="cust-kicker">Vil bestille</div>
-        <div class="cust-item">${icon(p)}<div><b>${esc(p.name)}</b><small>Henter ${esc(dayName(here.ask.dueDay))} kl. ${from}–${to} · betaler ${kr(here.ask.price)}</small></div></div>
+        <div class="cust-item">${icon(p)}<div><b>${a.qty > 1 ? `${a.qty} × ` : ''}${esc(p.name)}</b><small>Henter ${esc(dayName(a.dueDay))} ${hoursText(pickupHours(c))} · betaler ${kr(a.price)}${a.deposit ? `, ${kr(a.deposit)} i forskudd nå` : ''}</small></div></div>
         <div class="order-buttons"><button class="primary" data-action="order-yes">📝 Ja, det skal bli</button><button data-action="order-no">Nei, beklager</button></div>
-        <p class="cust-hint">Ja: avtalen havner i telefonen. Har du ikke en ${esc(p.name.toLowerCase())} klar når hen kommer, går hen skuffet, og omdømmet faller.</p></div>`;
+        <p class="cust-hint">Ja: avtalen havner i telefonen. Har du ikke ${esc(orderWhat(a.productId, a.qty))} klar når hen kommer, går hen skuffet, omdømmet faller${a.deposit ? ', og du må betale tilbake forskuddet' : ''}.${c.buy?.homemadeOnly ? ' Hen tar bare imot hjemmelaget.' : ''}</p></div>`;
   }
   if (!want && deal) {
     // Ingenting på bordet hen vil ha: bare bestillingen.
@@ -3071,18 +3076,22 @@ function regularHead(c: Character, tags: string, quote: string): string {
 }
 
 /** Stamkunden henter bestillingen: lever hvis du har varen (hjemmelaget for den som krever det). */
-function pickupView(s: GameState, c: Character, pickup: { productId: string; price: number }): string {
+function pickupView(s: GameState, c: Character, pickup: { productId: string; qty: number; price: number; deposit: number }): string {
   const p = PRODUCT_BY_ID[pickup.productId];
-  const have = s.me.items.filter((i) => i.typeId === p.id);
-  const ok = c.buy?.homemadeOnly ? have.some((i) => isHomemade(i.label)) : have.length > 0;
-  const why = !have.length
-    ? `Du har ingen ${esc(p.name.toLowerCase())} i boden. Lag den før hen går (kl. ${pickupHours(c)[1]}).`
-    : !ok
-      ? `Den du har, er ikke merket «hjemmelaget», og ${esc(c.name)} tar bare imot hjemmelaget.`
-      : 'Hen betaler kontant, og en fornøyd stamkunde gir omdømme.';
+  const have = s.me.items.filter((i) => i.typeId === p.id && !isTrashed(s.me.items, i));
+  const good = c.buy?.homemadeOnly ? have.filter((i) => isHomemade(i.label)) : have;
+  const ok = good.length >= pickup.qty;
+  const what = orderWhat(p.id, pickup.qty);
+  const rest = pickup.price - pickup.deposit;
+  const why =
+    have.length < pickup.qty
+      ? `Du har ${have.length} av ${pickup.qty} i boden. Hen venter til kl. ${pickupHours(c)[1]}.`
+      : !ok
+        ? `Det du har, er ikke merket «hjemmelaget», og ${esc(c.name)} tar bare imot hjemmelaget.`
+        : 'Hen betaler resten kontant, og en fornøyd stamkunde gir omdømme.';
   return `<div class="cust-section"><div class="cust-kicker">Henter bestillingen</div>
-      <div class="cust-item">${icon(p)}<div><b>${esc(p.name)}</b><small>Avtalt pris ${kr(pickup.price)}</small></div></div>
-      <button class="haggle-gift" data-action="order-deliver" ${ok ? '' : 'disabled'}>🎁 Lever ${esc(p.name.toLowerCase())}</button>
+      <div class="cust-item">${icon(p)}<div><b>${pickup.qty > 1 ? `${pickup.qty} × ` : ''}${esc(p.name)}</b><small>Avtalt ${kr(pickup.price)}${pickup.deposit ? ` · forskudd ${kr(pickup.deposit)} · rest ${kr(rest)}` : ''}</small></div></div>
+      <button class="haggle-gift" data-action="order-deliver" ${ok ? '' : 'disabled'}>🎁 Lever ${esc(what)}</button>
       <p class="cust-hint">${why}</p></div>`;
 }
 
@@ -4125,8 +4134,8 @@ app.addEventListener('click', (e) => {
             if (r.txId) ownSales.add(r.txId);
             toast(`🎁 Levert for ${kr(r.amount)}. ${r.line}`);
           })
-        : api<{ accepted: boolean; line: string }>('/api/order', { visitId, accept: action === 'order-yes' }).then((r) => {
-            if (r.accepted) toast(`📝 Bestilt. ${r.line}`);
+        : api<{ accepted: boolean; line: string; deposit?: number }>('/api/order', { visitId, accept: action === 'order-yes' }).then((r) => {
+            if (r.accepted) toast(`📝 Bestilt${r.deposit ? ` – ${kr(r.deposit)} i forskudd` : ''}. ${r.line}`);
           });
     req.catch((err) => toast((err as Error).message, true)).finally(refresh);
     return;

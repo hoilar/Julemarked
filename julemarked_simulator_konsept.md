@@ -390,7 +390,16 @@ Til sammenligning: kjelen trekker opptil 2 kW (0,5 kW per styrke), strikkemaskin
 
 Noen kunder vil ha noe du ikke har akkurat nå, og **kommer tilbake om noen dager** for å hente det. Det gir planlegging over flere dager og en grunn til å logge inn igjen.
 
-**✅ Første versjon bygd (17.11.2026):** Fru Kvist kan be om en kakeboks med syv slag når hun står ved disken og det ikke står en på bordet. Du svarer ja eller nei i kundevinduet. Ja gir en avtale på telefonens hjemskjerm med hentedag (om 3 dager, kl. 9–13) og avtalt pris (veiledende + 35 %, 440 kr). På hentedagen står hun ved disken med 🎁 og tar bare imot en hjemmelaget kakeboks. Levert: kontant betaling og +3 i omdømme. Ikke klar innen kl. 13: −4 i omdømme og en skuffet replikk. Én åpen bestilling per figur, ingen henting etter lille julaften (`shared/orders.ts`, tabellen `customer_orders`). Andre bestillinger enn syv slag, forskudd og avisoppslag gjenstår.
+**✅ Første versjon bygd (17.11.2026):** Fru Kvist kan be om en kakeboks med syv slag når hun står ved disken og det ikke står en på bordet. Du svarer ja eller nei i kundevinduet. Ja gir en avtale på telefonens hjemskjerm med hentedag (om 3 dager, kl. 9–13) og avtalt pris (veiledende + 35 %, 440 kr). På hentedagen står hun ved disken med 🎁 og tar bare imot en hjemmelaget kakeboks. Levert: kontant betaling og +3 i omdømme. Ikke klar innen kl. 13: −4 i omdømme og en skuffet replikk. Én åpen bestilling per figur, ingen henting etter lille julaften (`shared/orders.ts`, tabellen `customer_orders`). **✅ Utvidet samme dag:** fire figurer bestiller nå, hver med sin sjanse per besøk (`order` i `shared/characters.ts`):
+
+| Figur | Bestilling | Henting | Pris | Forskudd |
+|---|---|---|---|---|
+| Fru Kvist | Kakeboks med syv slag (bare hjemmelaget) | om 3 dager, kl. 9–13 | +35 % (440 kr) | 20 % |
+| Direktør Hagen-Haugli | Lusekofte «til svigermor» | om 3 dager, kl. 13–17 | +20 % (2 990 kr) | 25 % |
+| Rolf Rask | 6 kopper gløgg til julebordet | i morgen, kl. 16–18 | +25 % (340 kr) | ingen |
+| Natt-Nora | 5 pakker kinaputter | i overmorgen, kl. 21–24 | +30 % (1 620 kr) | 50 % |
+
+Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke klar, krever kunden forskuddet tilbake. Leverte bestillinger gir ros under «Fornøyde kunder» på forsiden av avisa dagen etter (ikke for Natt-Nora). Pepperkakehus med navn og syltetøy-fristelsen gjenstår.
 
 **Eksempel:** «Fru Kvist kommer tilbake om 3 dager. Hun skal ha syv slag kakeboks.» Da må boden ha sju ulike småkaker i en kakeboks når hun kommer (krever flere kakesorter, se VAREPLAN.md, «Syv slag»).
 

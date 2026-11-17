@@ -61,10 +61,25 @@ export interface Character {
   /** Replikker når handelen går bra eller dårlig. */
   lines?: { yes: string; no: string };
   /**
-   * Bestilling (shared/orders.ts): varen figuren ber om når den ikke står på bordet, hentes om `days` dager
-   * til veiledende pris + `markup`. Replikkene: når hen spør, takker for ja, henter og blir skuffet.
+   * Bestilling (shared/orders.ts): `qty` stk av varen figuren ber om (sjansen `chance` per besøk) når det ikke står nok på
+   * bordet. Hentes om `days` dager i timene `hours` (ellers besøkstimene) til veiledende pris + `markup`.
+   * `deposit` = andelen hen betaler i forskudd (og krever tilbake hvis varen ikke er klar).
+   * Replikkene: når hen spør, takker for ja, henter og blir skuffet. `news` = rosen i avisa dagen etter ({stall} = boden).
    */
-  order?: { productId: string; days: number; markup: number; ask: string; thanks: string; happy: string; sad: string };
+  order?: {
+    productId: string;
+    qty?: number;
+    chance: number;
+    days: number;
+    hours?: [number, number];
+    markup: number;
+    deposit?: number;
+    ask: string;
+    thanks: string;
+    happy: string;
+    sad: string;
+    news?: string;
+  };
 }
 
 /** Felles for alle: bare de valgte delene, ingen tilfeldige briller, skjegg eller øredobber. */
@@ -110,8 +125,11 @@ export const CHARACTERS: Character[] = [
     lines: { yes: '«Hm. Den får duge. Mamma ville ha godkjent den.»', no: '«Nei, takk. Så mye betalte vi ikke for kaker i min tid.»' },
     order: {
       productId: 'syv_slag',
+      chance: 0.7,
       days: 3,
       markup: 0.35,
+      deposit: 0.2,
+      news: '«Akkurat som mine egne.» Fru Kvist (82) gir {stall} toppkarakter for kakeboksen med syv slag.',
       ask: '«Barnebarna kommer, og hendene mine vil ikke lenger. Kan du lage en kakeboks med syv slag til meg? Hjemmelaget, selvfølgelig.»',
       thanks: '«Fint. Da kommer jeg og henter den. Ikke skuff meg nå.»',
       happy: '«Alle sju! Akkurat som jeg lagde dem selv. Takk, kjære deg.»',
@@ -164,10 +182,22 @@ export const CHARACTERS: Character[] = [
     visit: { from: 13, to: 17, chance: 0.15, peakDays: [0, 6], peakChance: 0.45 },
     buy: { base: 0.9, slope: 0.7, noDiscount: true },
     lines: { yes: '«Utmerket. Behold vekslepengene.»', no: '«Avslag? Ser jeg ut som en som trenger avslag?»' },
+    order: {
+      productId: 'lusekofte',
+      chance: 0.5,
+      days: 3,
+      markup: 0.2,
+      deposit: 0.25,
+      ask: '«Svigermor fyller åtti. Skaff meg en ekte lusekofte innen tre dager, så skal De ikke angre. Her er et forskudd.»',
+      thanks: '«Utmerket. Jeg stoler på Dem.»',
+      happy: '«Strålende! Svigermor kommer til å gråte. Behold vekslepengene.»',
+      sad: '«Ingen kofte? Da får jeg kjøpe et gavekort. Forskuddet, takk.»',
+      news: 'Direktør Hagen-Haugli fant årets julegave hos {stall}: «Endelig en bod med kvalitet.»',
+    },
     quote: '«Er dette den eneste? Utmerket. Pakk den inn.»',
     story: [
       'Leter etter en ekte lusekofte og en antikk julekule. Den som har sjeldne varer på bordet, får ham som stamkunde.',
-      'Kan bestille noe sjeldent «til svigermor før lørdag» (12.4) og betaler godt over prisen.',
+      'Bestiller en lusekofte «til svigermor» (12.4: i spillet), betaler forskudd og godt over prisen.',
       'Tilbyr du avslag, blir han fornærmet og går.',
     ],
   },
@@ -243,10 +273,24 @@ export const CHARACTERS: Character[] = [
     visit: { from: 15, to: 18, chance: 0.4, onlyDays: [1, 2, 3, 4, 5] },
     buy: { base: 0.92, slope: 1.2 },
     lines: { yes: '«Perfekt, takk – må løpe!»', no: '«Glem det, bussen går!»' },
+    order: {
+      productId: 'glogg',
+      qty: 6,
+      chance: 0.25,
+      days: 1,
+      hours: [16, 18],
+      markup: 0.25,
+      ask: '«Julebord på jobben i morgen! Kan du ha seks kopper gløgg klare til meg mellom fire og seks? Jeg har ikke tid til å vente.»',
+      thanks: '«Supert! Står det klart, så er det klart. Må løpe!»',
+      happy: '«Seks kopper, rykende varme. Du redder julebordet!»',
+      sad: '«Ingen gløgg? Nå kommer jeg for sent med tomme hender også.»',
+      news: 'Julebordet på Bussdepotet ble reddet av gløgg fra {stall}, melder pendler Rolf Rask.',
+    },
     quote: '«En kopp gløgg, takk – bussen går om fire minutter!»',
     story: [
       'Går fra boden hvis han må vente, men blir stamkunde hvis det alltid står noe varmt klart.',
       'Kaldt vær: kjøper to kopper, én til kollegaen.',
+      'Bestiller seks kopper gløgg til julebordet dagen etter (12.4: i spillet). Står de ikke klare, går han.',
     ],
   },
   {
@@ -408,8 +452,24 @@ export const CHARACTERS: Character[] = [
     visit: { from: 21, to: 26, chance: 0.25 },
     buy: { base: 0.9, slope: 0.9 },
     lines: { yes: '«Hyggelig å handle med deg. Vi har aldri møttes.»', no: '«Fyren hadde det billigere.»' },
+    order: {
+      productId: 'kinaputter',
+      qty: 5,
+      chance: 0.3,
+      days: 2,
+      hours: [21, 24],
+      markup: 0.3,
+      deposit: 0.5,
+      ask: '«Jeg trenger fem pakker kinaputter. Til nyttårsaften, sånn i tilfelle. Halvparten nå, resten når jeg henter i overmorgen.»',
+      thanks: '«Avtale. Vi har aldri snakket sammen.»',
+      happy: '«Fem pakker. Du er grei, du.»',
+      sad: '«Ingenting? Da vil jeg ha pengene mine tilbake. Nå.»',
+    },
     quote: '«Fyren sa du hadde … varer.»',
-    story: ['Kjøper luguberte varer om natta. Tipser du politiet om henne, slutter Fyren å svare på SMS.'],
+    story: [
+      'Kjøper luguberte varer om natta. Tipser du politiet om henne, slutter Fyren å svare på SMS.',
+      'Bestiller fem pakker kinaputter med halvparten i forskudd (12.4: i spillet). Ingen avisoppslag, naturligvis.',
+    ],
   },
 
   // ---------- Myndigheter ----------

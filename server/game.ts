@@ -235,7 +235,7 @@ import { weatherDemand, weatherFor } from '../shared/weather.ts';
 import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
 import { regularChance, regularLikes, regularReputation, regularVisits } from '../shared/regulars.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
-import { ORDER_REP_DONE, ORDER_REP_FAILED, dayName, orderDueDay, orderPrice, pickupHours, type CustomerOrder } from '../shared/orders.ts';
+import { ORDER_REP_DONE, ORDER_REP_FAILED, dayName, hoursText, orderDeposit, orderDueDay, orderPrice, orderQty, orderWhat, pickupHours, type CustomerOrder } from '../shared/orders.ts';
 
 export class GameError extends Error {}
 
@@ -3425,7 +3425,25 @@ function paperFor(market: MarketRow, player: PlayerRow, key: number, myStallId: 
       mine: myStallId === null ? null : (rows.find((r) => r.from_stall === myStallId)?.amount ?? 0),
     };
   }
-  return buildPaper(market.id, key, yesterday, player.paper_read, nightThefts(market, time, myStallId), market.thief_caught === key);
+  const paper = buildPaper(market.id, key, yesterday, player.paper_read, nightThefts(market, time, myStallId), market.thief_caught === key);
+  paper.praise = praiseFor(market, time, myStallId);
+  return paper;
+}
+
+/** Ros i avisa fra kunder som fikk bestillingen sin levert døgnet før utgaven (bare figurer med en avistekst). */
+function praiseFor(market: MarketRow, time: number, myStallId: number | null): NonNullable<Paper['praise']> {
+  const rows = all<{ char_id: string; stall_id: number; name: string }>(
+    db.prepare(
+      "SELECT o.char_id, o.stall_id, s.name FROM customer_orders o JOIN stalls s ON s.id = o.stall_id WHERE s.market_id = ? AND o.status = 'done' AND o.done_at >= ? AND o.done_at < ? ORDER BY o.done_at",
+    ),
+    market.id,
+    time - 24 * HOUR,
+    time,
+  );
+  return rows.flatMap((r) => {
+    const news = CHARACTER_BY_ID[r.char_id]?.order?.news;
+    return news ? [{ stall: r.name, mine: r.stall_id === myStallId, text: news.replace('{stall}', r.name) }] : [];
+  });
 }
 
 /** Det som ble stjålet fra bordene natta før en utgave (tyveriene skjer 23–06, avisa kommer 07). */
@@ -3595,10 +3613,13 @@ interface OrderRow {
   stall_id: number;
   char_id: string;
   product_id: string;
+  qty: number;
   price: number;
+  deposit: number;
   ordered_day: number;
   due_day: number;
   status: 'open' | 'done' | 'failed';
+  done_at: number | null;
 }
 
 type RegularHere = NonNullable<GameState['me']['regular']>;
@@ -3612,7 +3633,8 @@ function regularAt(market: MarketRow, s: StallRow, t: number): RegularHere | nul
     const c = CHARACTER_BY_ID[o.char_id];
     if (!c) continue;
     const [from, to] = pickupHours(c);
-    if (hour >= from && hour < to) return { id: c.id, visitId: `bestilling:${o.id}`, pickup: { orderId: o.id, productId: o.product_id, price: o.price } };
+    if (hour >= from && hour < to)
+      return { id: c.id, visitId: `bestilling:${o.id}`, pickup: { orderId: o.id, productId: o.product_id, qty: o.qty, price: o.price, deposit: o.deposit } };
   }
   // Den som henter en bestilling i dag, kommer ikke i tillegg på vanlig besøk.
   const v = regularVisits(market.id, day, s.id).find((x) => x.hour === hour && !due.some((o) => o.char_id === x.id));
@@ -3624,16 +3646,22 @@ function regularAt(market: MarketRow, s: StallRow, t: number): RegularHere | nul
   return out;
 }
 
-/** Vil figuren bestille noe nå? Bare når varen ikke står på bordet, hen ikke har en åpen bestilling, og hentedagen er før julaften. */
+/**
+ * Vil figuren bestille noe nå? Med sjansen hen har per besøk, bare når det ikke står nok av varen på bordet,
+ * hen ikke har en åpen bestilling, og hentedagen er før julaften.
+ */
 function orderAsk(s: StallRow, charId: string, visitId: string, day: number): RegularHere['ask'] {
   const c = CHARACTER_BY_ID[charId];
   if (!c?.order) return undefined;
+  if (hash01('bestilling', visitId, s.id) >= c.order.chance) return undefined;
   const dueDay = orderDueDay(c, day);
   if (dueDay === null) return undefined;
   if (one(db.prepare("SELECT 1 FROM customer_orders WHERE stall_id = ? AND char_id = ? AND status = 'open'"), s.id, c.id)) return undefined;
-  if (one(db.prepare("SELECT 1 FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ?"), s.id, c.order.productId)) return undefined;
+  const onCounter = one<{ n: number }>(db.prepare("SELECT COUNT(*) AS n FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ?"), s.id, c.order.productId)?.n ?? 0;
+  if (onCounter >= orderQty(c)) return undefined;
   if (one(db.prepare('SELECT 1 FROM leads_used WHERE stall_id = ? AND lead = ?'), s.id, `bestilling-nei:${visitId}`)) return undefined;
-  return { productId: c.order.productId, price: orderPrice(c), dueDay };
+  const price = orderPrice(c);
+  return { productId: c.order.productId, qty: orderQty(c), price, deposit: orderDeposit(c, price), dueDay };
 }
 
 /** Bestillingene til boden: de åpne, og de som ble avgjort de siste tre dagene. */
@@ -3642,7 +3670,7 @@ function ordersOf(stallId: number, day: number): CustomerOrder[] {
     db.prepare("SELECT * FROM customer_orders WHERE stall_id = ? AND (status = 'open' OR due_day >= ?) ORDER BY due_day, id"),
     stallId,
     addDays(day, -3),
-  ).map((o) => ({ id: o.id, charId: o.char_id, productId: o.product_id, price: o.price, dueDay: o.due_day, status: o.status }));
+  ).map((o) => ({ id: o.id, charId: o.char_id, productId: o.product_id, qty: o.qty, price: o.price, deposit: o.deposit, dueDay: o.due_day, status: o.status }));
 }
 
 /** Stamkunden som står ved disken med dette besøket (nå, eller da kundevinduet ble åpnet for opptil 5 ekte minutter siden). */
@@ -3668,14 +3696,20 @@ export function answerOrder(player: PlayerRow, visitId: string, accept: boolean)
       return { accepted: false, line: '' };
     }
     const day = currentEdition(t).key;
-    db.prepare('INSERT INTO customer_orders (stall_id, char_id, product_id, price, ordered_day, due_day, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      stall.id, c.id, here.ask.productId, here.ask.price, day, here.ask.dueDay, t,
+    const a = here.ask;
+    db.prepare('INSERT INTO customer_orders (stall_id, char_id, product_id, qty, price, deposit, ordered_day, due_day, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      stall.id, c.id, a.productId, a.qty, a.price, a.deposit, day, a.dueDay, t,
     );
     db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, visitId); // hen går fornøyd
-    const p = PRODUCT_BY_ID[here.ask.productId];
-    const [from, to] = pickupHours(c);
-    event(market, player.id, t, `📝 Bestilling: ${c.name} henter ${p.name.toLowerCase()} ${dayName(here.ask.dueDay)} kl. ${from}–${to} og betaler ${here.ask.price} kr.`);
-    return { accepted: true, line: c.order.thanks };
+    if (a.deposit > 0) q.addCash.run(a.deposit, stall.id); // forskudd, kontant
+    const what = orderWhat(a.productId, a.qty);
+    event(
+      market,
+      player.id,
+      t,
+      `📝 Bestilling: ${c.name} henter ${what} ${dayName(a.dueDay)} ${hoursText(pickupHours(c))} og betaler ${a.price} kr${a.deposit ? ` (${a.deposit} kr i forskudd nå)` : ''}.`,
+    );
+    return { accepted: true, line: c.order.thanks, deposit: a.deposit };
   });
 }
 
@@ -3688,20 +3722,23 @@ export function deliverOrder(player: PlayerRow, visitId: string) {
     const here = regularHere(market, stall, t, visitId);
     const c = CHARACTER_BY_ID[here.id];
     if (!here.pickup || !c?.order) throw new GameError('Hen er ikke her for å hente noe.');
-    const p = PRODUCT_BY_ID[here.pickup.productId];
+    const pk = here.pickup;
+    const p = PRODUCT_BY_ID[pk.productId];
     const items = itemsOf(stall.id);
     const mine = items.filter((i) => i.typeId === p.id && !isTrashed(items, i) && !isUndelivered(items, i));
-    if (!mine.length) throw new GameError(`Du har ingen ${p.name.toLowerCase()} i boden.`);
-    const home = mine.find((i) => isHomemade(i.label));
-    const item = c.buy?.homemadeOnly ? home : home ?? mine[0];
-    if (!item) throw new GameError(`${c.name} vil bare ha hjemmelaget, og den du har, er ikke merket «hjemmelaget».`);
-    q.deleteItem.run(item.id);
-    q.addCash.run(here.pickup.price, stall.id); // kontant, i konvolutt
-    const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, 1, here.pickup.price);
+    // Hjemmelagede først; den som bare vil ha hjemmelaget, får bare dem.
+    const ok = c.buy?.homemadeOnly ? mine.filter((i) => isHomemade(i.label)) : [...mine.filter((i) => isHomemade(i.label)), ...mine.filter((i) => !isHomemade(i.label))];
+    const what = orderWhat(p.id, pk.qty);
+    if (mine.length < pk.qty) throw new GameError(`Du har ${mine.length} av ${pk.qty} i boden. ${c.name} skal ha ${what}.`);
+    if (ok.length < pk.qty) throw new GameError(`${c.name} vil bare ha hjemmelaget, og det du har, er ikke merket «hjemmelaget».`);
+    for (const i of ok.slice(0, pk.qty)) q.deleteItem.run(i.id);
+    const rest = pk.price - pk.deposit; // forskuddet er allerede betalt
+    q.addCash.run(rest, stall.id); // kontant, i konvolutt
+    const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, pk.qty, pk.price);
     q.setReputation.run(Math.max(0, Math.min(100, stall.reputation + ORDER_REP_DONE)), stall.id);
-    db.prepare("UPDATE customer_orders SET status = 'done' WHERE id = ?").run(here.pickup.orderId);
-    event(market, player.id, t, `🎁 ${c.name} hentet ${p.name.toLowerCase()} og betalte ${here.pickup.price} kr. ${c.order.happy}`);
-    return { amount: here.pickup.price, txId: Number(res.lastInsertRowid), line: c.order.happy };
+    db.prepare("UPDATE customer_orders SET status = 'done', done_at = ? WHERE id = ?").run(t, pk.orderId);
+    event(market, player.id, t, `🎁 ${c.name} hentet ${what} og betalte ${rest} kr${pk.deposit ? ` (pluss ${pk.deposit} kr i forskudd)` : ''}. ${c.order.happy}`);
+    return { amount: rest, txId: Number(res.lastInsertRowid), line: c.order.happy };
   });
 }
 
@@ -3717,10 +3754,15 @@ function expireOrders(market: MarketRow, t: number) {
   for (const o of rows) {
     const c = CHARACTER_BY_ID[o.char_id];
     if (o.due_day === day && c && hour < pickupHours(c)[1]) continue; // hen venter fortsatt
-    db.prepare("UPDATE customer_orders SET status = 'failed' WHERE id = ?").run(o.id);
+    db.prepare("UPDATE customer_orders SET status = 'failed', done_at = ? WHERE id = ?").run(t, o.id);
     q.setReputation.run(Math.max(0, o.reputation + ORDER_REP_FAILED), o.stall_id);
-    const p = PRODUCT_BY_ID[o.product_id];
-    event(market, o.player_id, t, `😞 ${c?.name ?? 'Kunden'} kom for å hente ${p?.name.toLowerCase() ?? 'bestillingen'}, men den var ikke klar. ${c?.order?.sad ?? ''} Omdømmet faller.`);
+    if (o.deposit > 0) q.addCash.run(-o.deposit, o.stall_id); // hen krever forskuddet tilbake
+    event(
+      market,
+      o.player_id,
+      t,
+      `😞 ${c?.name ?? 'Kunden'} kom for å hente ${orderWhat(o.product_id, o.qty)}, men den var ikke klar. ${c?.order?.sad ?? ''}${o.deposit ? ` Du betalte tilbake ${o.deposit} kr i forskudd.` : ''} Omdømmet faller.`,
+    );
   }
 }
 
