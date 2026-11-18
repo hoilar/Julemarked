@@ -8,6 +8,8 @@ import type { Look } from '../shared/look.ts';
 import { styleOfSeed, type FaceStyle } from '../shared/names.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
 import { characterUrl } from '../shared/portrait.ts';
+import { PRODUCT_BY_ID } from '../shared/products.ts';
+import { playVoice, type Voice } from './sound.ts';
 
 /** En vare på bordet slik kundene ser den. */
 export interface Offer {
@@ -211,6 +213,8 @@ function update(c: Customer, list: Offer[]) {
 
 function setMood(c: Customer, mood: Mood) {
   if (c.mood === mood) return;
+  // Blir kunden sur (for dyrt, eller varen er borte), mumler hen misfornøyd.
+  if ((mood === 'sur' || mood === 'sjokk') && layer.isConnected) playVoice('misfornoyd');
   c.mood = mood;
   c.el.dataset.mood = mood;
   c.img.src = avatarUrl(c.seed, mood);
@@ -258,6 +262,10 @@ function arrive(): Customer | null {
   customers.push(c);
   layer.appendChild(el);
   update(c, offers());
+  const cat = c.want ? PRODUCT_BY_ID[c.want]?.category : undefined;
+  // Den som kommer for brennevin eller lyssky varer er gjerne litt påvirket; den som vil ha leker er et barn.
+  if (cat === 'alkohol' || cat === 'lugubert') playVoice('rus');
+  else if (cat === 'leketoy' && Math.random() < 0.6) playVoice('tegnefilm');
   setTimeout(() => el.classList.remove('enter'), 700);
   return c;
 }
@@ -366,7 +374,24 @@ function showSpecial(kind: SpecialKind, key: string | null, x: number | null, bu
   setTimeout(() => el.classList.remove('enter'), 700);
   const s = { el, x: spot, key };
   specials.set(kind, s);
+  const voice = specialVoice(kind, el.dataset.char);
+  if (voice) playVoice(voice);
   return s;
+}
+
+/** Hvordan de spesielle besøkende høres ut når de kommer bort til disken. */
+const REGULAR_VOICE: Record<string, Voice> = {
+  'haakon-hagen': 'gjorSegTil',
+  'vilde-vibe': 'gjorSegTil',
+  'lille-emma': 'tegnefilm',
+  'natt-nora': 'rus',
+  'rolf-rask': 'misfornoyd',
+};
+function specialVoice(kind: SpecialKind, charId: string | undefined): Voice | null {
+  if (kind === 'insurer' || kind === 'gift') return 'gjorSegTil'; // selgere som skryter av tilbudet
+  if (kind === 'inspector') return 'misfornoyd';
+  if (kind === 'regular' && charId) return REGULAR_VOICE[charId] ?? null;
+  return null; // tyven holder kjeft
 }
 
 const INSURER_X = 74; // står på plassen lengst til høyre

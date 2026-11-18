@@ -96,7 +96,7 @@ import {
   customersAtCounter,
   type Offer,
 } from './customers.ts';
-import { playSound, putDownSound, setAmbience, setSoundMuted } from './sound.ts';
+import { playSound, putDownSound, setAmbience, setSoundMuted, type MarketLoop } from './sound.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
@@ -375,9 +375,17 @@ function tickClock() {
   showRegular(home ? state.me.regular : null);
   showThief(home ? state.me.visitors.thief : null, phaseOf(parts.hour) === 'night');
   setCrowd(state.me.crowd);
-  // Torget høres i bakgrunnen (svakere om natta), og kundene ved disken mumler.
-  const night = phaseOf(parts.hour) === 'night';
-  setAmbience(shownStall ? (night ? 0.35 : 1) : night ? 0.25 : 0.6, shownStall ? customersAtCounter() : 0);
+  // Torget høres i bakgrunnen bare mens det kan selges (dagtid), etter været og tid på dagen.
+  // Kundene ved disken mumler.
+  const kind = wx?.kind;
+  let market: MarketLoop | null = null;
+  if (phaseOf(parts.hour) === 'day') {
+    if (kind === 'sno') market = 'sno';
+    else if (kind === 'sludd') market = 'regn';
+    else if (kind === 'storm') market = 'storm';
+    else market = parts.hour < 12 ? 'formiddag' : parts.hour < 17 ? 'ettermiddag' : 'kveld';
+  }
+  setAmbience(market, shownStall ? 1 : 0.6, shownStall ? customersAtCounter() : 0);
 }
 setInterval(tickClock, 500);
 
@@ -863,7 +871,8 @@ function syncMusic(music: StallPublic['music']) {
     musicNow = src;
     musicAudio.src = src;
   }
-  musicAudio.volume = (music.speakers ? 0.55 : 0.22) * (music.pirate && !musicFilter ? 0.8 : 1);
+  // Lavt nok til at torget, kundene og lydeffektene fortsatt høres.
+  musicAudio.volume = (music.speakers ? 0.04 : 0.01) *(music.pirate && !musicFilter ? 0.8 : 1);
   musicAudio.preservesPitch = false;
   musicAudio.playbackRate = music.pirate ? 0.97 : 1; // båndet går litt for sakte
   if (musicFilter) musicFilter.frequency.value = music.pirate ? 1800 : 20000;
@@ -877,7 +886,7 @@ document.addEventListener('pointerdown', () => {
 /** Liten knapp på boden: skru lyden (musikk og lydeffekter) av og på (huskes i nettleseren). */
 function musicButton(music: StallPublic['music']): string {
   const title = musicMuted ? 'Skru på lyden' : music ? `Spiller «${esc(music.title)}» – trykk for å skru av lyden` : 'Trykk for å skru av lyden';
-  return `<button class="music-toggle ${musicMuted ? 'muted' : ''}" data-action="music-mute" title="${title}" aria-label="${musicMuted ? 'Skru på lyden' : 'Skru av lyden'}">${musicMuted ? '🔇' : music ? '🎵' : '🔊'}</button>`;
+  return `<button class="music-toggle ${musicMuted ? 'muted' : ''}" data-action="music-mute" title="${title}" aria-label="${musicMuted ? 'Skru på lyden' : 'Skru av lyden'}"><img src="/art/ikoner/lyd-${musicMuted ? 'av' : 'pa'}.png" alt="" draggable="false"></button>`;
 }
 
 /** Strømbrudd i egen bod: hovedsikringen, en automatsikring eller en skrusikring har gått siden sist. */
