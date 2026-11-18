@@ -93,8 +93,10 @@ import {
   showRegular,
   showSale,
   showThief,
+  customersAtCounter,
   type Offer,
 } from './customers.ts';
+import { playSound, putDownSound, setAmbience, setSoundMuted } from './sound.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
@@ -373,6 +375,9 @@ function tickClock() {
   showRegular(home ? state.me.regular : null);
   showThief(home ? state.me.visitors.thief : null, phaseOf(parts.hour) === 'night');
   setCrowd(state.me.crowd);
+  // Torget høres i bakgrunnen (svakere om natta), og kundene ved disken mumler.
+  const night = phaseOf(parts.hour) === 'night';
+  setAmbience(shownStall ? (night ? 0.35 : 1) : night ? 0.25 : 0.6, shownStall ? customersAtCounter() : 0);
 }
 setInterval(tickClock, 500);
 
@@ -433,7 +438,10 @@ function playNewSales(s: GameState) {
   lastSaleId = Math.max(lastSaleId, newest);
   fresh.slice(0, 6).forEach((sale, i) => {
     const p = PRODUCT_BY_ID[sale.productId];
-    setTimeout(() => showSale(sale.productId, icon(p), sale.qty, sale.amount), i * 900);
+    setTimeout(() => {
+      showSale(sale.productId, icon(p), sale.qty, sale.amount);
+      playSound('betaling');
+    }, i * 900);
   });
 }
 
@@ -471,6 +479,7 @@ function render() {
     const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
     app.innerHTML = body + paperWindow(s) + phoneWindow(s) + modalView(s);
     syncMusic(shownStall?.music ?? null);
+    if (shownStall && shownStall.id === s.me.stallId) checkOutage(shownStall, s.me.items);
     if (phoneOpen) markPhoneSeen(s); // varslene er sett når telefonen er åpen
     const m = app.querySelector('.modal-backdrop .modal');
     if (m) m.scrollTop = scroll;
@@ -821,6 +830,7 @@ let musicMuted = (() => {
     return false;
   }
 })();
+setSoundMuted(musicMuted);
 let musicAudio: HTMLAudioElement | null = null;
 let musicFilter: BiquadFilterNode | null = null;
 let musicNow = ''; // sangen som er lastet
@@ -864,10 +874,22 @@ document.addEventListener('pointerdown', () => {
   if (musicWanted && !musicMuted && musicAudio?.paused) musicAudio.play().catch(() => undefined);
 });
 
-/** Liten knapp på boden: skru musikken av og på (huskes i nettleseren). */
+/** Liten knapp på boden: skru lyden (musikk og lydeffekter) av og på (huskes i nettleseren). */
 function musicButton(music: StallPublic['music']): string {
-  if (!music) return '';
-  return `<button class="music-toggle ${musicMuted ? 'muted' : ''}" data-action="music-mute" title="${musicMuted ? 'Skru på lyden' : `Spiller «${esc(music.title)}» – trykk for å skru av lyden`}" aria-label="${musicMuted ? 'Skru på lyden' : 'Skru av lyden'}">${musicMuted ? '🔇' : '🎵'}</button>`;
+  const title = musicMuted ? 'Skru på lyden' : music ? `Spiller «${esc(music.title)}» – trykk for å skru av lyden` : 'Trykk for å skru av lyden';
+  return `<button class="music-toggle ${musicMuted ? 'muted' : ''}" data-action="music-mute" title="${title}" aria-label="${musicMuted ? 'Skru på lyden' : 'Skru av lyden'}">${musicMuted ? '🔇' : music ? '🎵' : '🔊'}</button>`;
+}
+
+/** Strømbrudd i egen bod: hovedsikringen, en automatsikring eller en skrusikring har gått siden sist. */
+let outageSeen: { stallId: number; n: number } | null = null;
+function checkOutage(stall: StallPublic, items: Item[]) {
+  const box = fuseboxOf(items);
+  const n =
+    (stall.power.blown ? 1 : 0) +
+    (box?.fuse?.tripped?.length ?? 0) +
+    items.filter((i) => i.place === 'fuse' && i.typeId === BLOWN_FUSE.id).length;
+  if (outageSeen?.stallId === stall.id && n > outageSeen.n) playSound('strombrudd');
+  outageSeen = { stallId: stall.id, n };
 }
 
 // --- Varemenyen: legg på bordet, under disken eller i en eske (varer og råvarer) ---
@@ -3867,6 +3889,7 @@ function endDrag(cancelled = false) {
   const toTrash = spot.place === 'trash' && d.item.place !== 'trash';
   const fromTrash = d.item.place === 'trash' && spot.place !== 'trash';
   Object.assign(d.item, spot); // vis flyttingen med en gang
+  if (!toTrash) playSound(putDownSound(d.item.typeId));
   if (toTrash) closePanel(d.item.id);
   render();
   act(
@@ -4279,6 +4302,7 @@ app.addEventListener('click', (e) => {
     api<{ sold: boolean; amount: number; txId: number }>('/api/lead', { leadId: id })
       .then((r) => {
         if (r.txId) ownSales.add(r.txId);
+        if (r.sold) playSound('betaling');
         leadResult(id, r.sold, r.amount);
         if (!r.sold) toast('🤷 Kunden takket nei likevel.');
       })
@@ -4298,6 +4322,7 @@ app.addEventListener('click', (e) => {
       action === 'order-deliver'
         ? api<{ amount: number; txId: number; line: string; caught: boolean }>('/api/order/deliver', { visitId }).then((r) => {
             if (r.txId) ownSales.add(r.txId);
+            if (!r.caught) playSound('betaling');
             toast(r.caught ? `🔍 Avslørt! ${r.line}` : `🎁 Levert for ${kr(r.amount)}. ${r.line}`, r.caught);
           })
         : api<{ accepted: boolean; line: string; deposit?: number }>('/api/order', { visitId, accept: action === 'order-yes' }).then((r) => {
@@ -4314,6 +4339,7 @@ app.addEventListener('click', (e) => {
     api<{ sold: boolean; amount: number; txId: number; line: string }>('/api/regular', { visitId, productId: el.dataset.product, pct, budget })
       .then((r) => {
         if (r.txId) ownSales.add(r.txId);
+        if (r.sold) playSound('betaling');
         toast(r.sold ? `😊 Solgt for ${kr(r.amount)}. ${r.line}` : `🙅 ${r.line || 'Nei takk.'}`, !r.sold);
       })
       .catch((err) => toast((err as Error).message, true))
@@ -4327,6 +4353,7 @@ app.addEventListener('click', (e) => {
     api<{ sold: boolean; amount: number; txId: number }>('/api/lead', { leadId: id, pct })
       .then((r) => {
         if (r.txId) ownSales.add(r.txId);
+        if (r.sold) playSound('betaling');
         leadResult(id, r.sold, r.amount);
         toast(r.sold ? `🤝 Solgt for ${kr(r.amount)}.` : pct > 0 ? '😤 For drøyt – kunden gikk.' : '🤷 Kunden takket nei likevel.', !r.sold);
       })
@@ -4545,6 +4572,7 @@ app.addEventListener('click', (e) => {
       const st = (k.kettle ??= { on: false, level: 1 });
       const body: { itemId: number; on?: boolean; level?: number } = { itemId: k.id };
       if (action === 'kettle-power') body.on = st.on = !st.on;
+      if (body.on) playSound('kokeplatePa');
       else body.level = st.level = Number(el.dataset.level);
       act('/api/kettle', body).then((ok) => {
         if (!ok) refresh();
@@ -4555,6 +4583,7 @@ app.addEventListener('click', (e) => {
     const m = state.me.items.find((i) => i.id === Number(el.dataset.maker));
     if (m?.maker) {
       const on = !m.maker.on;
+      if (on) playSound('kokeplatePa');
       act('/api/maker', { itemId: m.id, on }).then((ok) => {
         if (ok) m.maker!.on = on;
       });
@@ -4570,6 +4599,7 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'music-mute') {
     musicMuted = !musicMuted;
+    setSoundMuted(musicMuted);
     try {
       localStorage.setItem(MUSIC_MUTED, musicMuted ? '1' : '0');
     } catch {
@@ -4581,6 +4611,7 @@ app.addEventListener('click', (e) => {
     if (p) {
       const st = (p.player ??= { on: false });
       st.on = !st.on;
+      if (st.on) playSound('kassettspillerPa');
       act('/api/player', { itemId: p.id, on: st.on });
     }
   }
@@ -4589,6 +4620,7 @@ app.addEventListener('click', (e) => {
     if (m) {
       const st = (m.folder ??= { on: false });
       st.on = !st.on;
+      if (st.on) playSound('kokeplatePa');
       act('/api/folder', { itemId: m.id, on: st.on }).then((ok) => {
         if (!ok) refresh();
       });
@@ -4612,6 +4644,7 @@ app.addEventListener('click', (e) => {
     const name = el.dataset.name ?? 'eska';
     const what = n === 1 ? '1 stk' : `${n} stk`;
     stashOpen = null;
+    if (n) playSound(putDownSound(typeId));
     act(
       '/api/item/stash',
       { typeId, to, boxId, tab },

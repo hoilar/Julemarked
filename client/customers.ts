@@ -289,6 +289,11 @@ let shut = false;
 export function setShut(v: boolean) {
   shut = v;
 }
+/** Hvor mange kunder som står ved boden som vises nå (til mumlingen). */
+export function customersAtCounter(): number {
+  return layer.isConnected ? customers.length : 0;
+}
+
 /** Færre kunder i dag (f.eks. etter feil tips til politiet): 1 = som vanlig. */
 export function setCrowd(n: number) {
   crowd = n;
