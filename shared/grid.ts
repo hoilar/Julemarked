@@ -11,6 +11,8 @@ export interface Rect {
 export interface GridSize {
   cols: number;
   rows: number;
+  /** Bare disse rutene kan brukes (resten er sperret, f.eks. smalere bod i bakgata). Mangler = hele. */
+  area?: Rect;
 }
 
 export function overlaps(a: Rect, b: Rect): boolean {
@@ -18,7 +20,9 @@ export function overlaps(a: Rect, b: Rect): boolean {
 }
 
 export function inBounds(r: Rect, g: GridSize): boolean {
-  return r.x >= 0 && r.y >= 0 && r.x + r.w <= g.cols && r.y + r.h <= g.rows;
+  if (!(r.x >= 0 && r.y >= 0 && r.x + r.w <= g.cols && r.y + r.h <= g.rows)) return false;
+  const a = g.area;
+  return !a || (r.x >= a.x && r.y >= a.y && r.x + r.w <= a.x + a.w && r.y + r.h <= a.y + a.h);
 }
 
 /** Får `r` plass blant `others`? Elementer der `skip(o)` er sann, ignoreres (f.eks. seg selv). */

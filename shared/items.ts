@@ -1,10 +1,10 @@
 // Regler for hvor gjenstander kan ligge. Brukes av serveren (autoritativt)
 // og klienten (grønn/rød forhåndsvisning).
-import { findFree, fits, type GridSize } from './grid.ts';
+import { findFree, fits, type GridSize, type Rect } from './grid.ts';
 import { MODULE_GRID } from './products.ts';
 import { moduleFits, moduleFitsText } from './modules.ts';
 import { COOKIE_BOX, COOKIE_SORTS, PLASTIC_BOX, CELL_GRID, FOLDER_BY_ID, FOLD_OUTPUT, PHONE, FUSE, fuseboxKind, isFusebox, FUSE_GRID, MAIL_GRID, NEWSPAPER, COUNTER_GRID, ITEM_TYPES, NAIL_GRID, STORAGE_GRID, TRASH_GRID, WANTED } from './products.ts';
-import type { Item, Place } from './types.ts';
+import type { Item, MarketSlot, Place } from './types.ts';
 import { BACKPACK, CAR_BY_ID } from './car.ts';
 
 export interface Spot {
@@ -21,10 +21,29 @@ export function sizeOf(typeId: string) {
 /** Steder som ligger inni en annen gjenstand (boxId peker på den). */
 export const NESTED: ReadonlySet<Place> = new Set<Place>(['box', 'pot_in', 'pot_out', 'cell', 'module', 'fuse']);
 
-/** Rutenettet for et sted. Null hvis eska/kjelen ikke finnes. */
-export function gridOf(items: Item[], place: Place, boxId: number | null): GridSize | null {
-  if (place === 'storage') return STORAGE_GRID;
-  if (place === 'counter') return COUNTER_GRID;
+export type Street = MarketSlot['street'];
+
+/**
+ * Hvor mye av lageret under disken og bordet som kan brukes i hver gate. Rutenettet har samme koordinater
+ * overalt (34×9 under disken, 31×6 på bordet); i de mindre bodene er rutene ytterst sperret.
+ * Sidegata: 2 kolonner mindre på hver side (begge steder) og 1 rad mindre under disken.
+ * Bakgata: 4 kolonner mindre på hver side (begge steder) og 2 rader mindre under disken.
+ * Radene som tas bort under disken er de øverste, rett under bordplata; varene står på gulvet.
+ */
+export const STALL_AREA: Record<Street, { storage: Rect; counter: Rect }> = {
+  hovedgate: { storage: { x: 0, y: 0, w: STORAGE_GRID.cols, h: STORAGE_GRID.rows }, counter: { x: 0, y: 0, w: COUNTER_GRID.cols, h: COUNTER_GRID.rows } },
+  sidegate: { storage: { x: 2, y: 1, w: STORAGE_GRID.cols - 4, h: STORAGE_GRID.rows - 1 }, counter: { x: 2, y: 0, w: COUNTER_GRID.cols - 4, h: COUNTER_GRID.rows } },
+  bakgate: { storage: { x: 4, y: 2, w: STORAGE_GRID.cols - 8, h: STORAGE_GRID.rows - 2 }, counter: { x: 4, y: 0, w: COUNTER_GRID.cols - 8, h: COUNTER_GRID.rows } },
+};
+/** Lageret under disken i en bod i denne gata. */
+export const storageGrid = (street: Street): GridSize => ({ ...STORAGE_GRID, area: STALL_AREA[street].storage });
+/** Bordet i en bod i denne gata. */
+export const counterGrid = (street: Street): GridSize => ({ ...COUNTER_GRID, area: STALL_AREA[street].counter });
+
+/** Rutenettet for et sted. Null hvis eska/kjelen ikke finnes. Gata avgjør hvor stort lageret og bordet er. */
+export function gridOf(items: Item[], street: Street, place: Place, boxId: number | null): GridSize | null {
+  if (place === 'storage') return storageGrid(street);
+  if (place === 'counter') return counterGrid(street);
   if (place === 'trash') return TRASH_GRID;
   if (place === 'nail') return NAIL_GRID;
   if (place === 'mail') return MAIL_GRID;
@@ -138,7 +157,7 @@ export function isTrashed(items: Item[], item: Item): boolean {
 }
 
 /** Kan gjenstanden `item` (ev. ny, uten id) ligge på `spot`? Returnerer feilmelding eller null. */
-export function placementError(items: Item[], item: { id?: number; typeId: string }, spot: Spot): string | null {
+export function placementError(items: Item[], street: Street, item: { id?: number; typeId: string }, spot: Spot): string | null {
   const t = ITEM_TYPES[item.typeId];
   const boxKind = (id: number | null) => (id == null ? null : ITEM_TYPES[items.find((b) => b.id === id)?.typeId ?? '']?.kind);
   // En tom butikkpose kan legges i posebretterens (eller makuleringsmaskinens) inn-felt.
@@ -199,7 +218,7 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
     return 'Her kommer bare det som ikke lot seg makulere.';
   // Papir som skal makuleres, kan legges i maskinen (ellers stopper reglene for papir/lapper under).
   if (intoFolder && shredder && shreddable) {
-    const grid = gridOf(items, spot.place, spot.boxId);
+    const grid = gridOf(items, street, spot.place, spot.boxId);
     if (!grid) return 'Fant ikke maskinen.';
     const r = { x: spot.x, y: spot.y, w: t.size.w, h: t.size.h };
     return fits(r, itemsIn(items, spot.place, spot.boxId), grid, (o) => o.id === item.id) ? null : 'Det er ikke plass der.';
@@ -255,7 +274,7 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
   if (spot.place === 'transit' || spot.place === 'ground') return 'Dit kan du ikke legge noe.';
   if (NESTED.has(spot.place) && ['transit', 'ground'].includes(items.find((b) => b.id === spot.boxId)?.place ?? ''))
     return 'Ta posen inn under disken først.';
-  const grid = gridOf(items, spot.place, spot.boxId);
+  const grid = gridOf(items, street, spot.place, spot.boxId);
   if (!grid) return 'Fant ikke eska.';
   const r = { x: spot.x, y: spot.y, w: t.size.w, h: t.size.h };
   if (!fits(r, itemsIn(items, spot.place, spot.boxId), grid, (o) => o.id === item.id))
@@ -264,9 +283,9 @@ export function placementError(items: Item[], item: { id?: number; typeId: strin
 }
 
 /** Første ledige plass for en ny vare: først under disken, så i eskene (ikke de som ligger i søpla). */
-export function findStorageSpot(items: Item[], typeId: string): Spot | null {
+export function findStorageSpot(items: Item[], street: Street, typeId: string): Spot | null {
   const { w, h } = sizeOf(typeId);
-  const s = findFree(w, h, itemsIn(items, 'storage', null), STORAGE_GRID);
+  const s = findFree(w, h, itemsIn(items, 'storage', null), storageGrid(street));
   if (s) return { place: 'storage', boxId: null, ...s };
   if (ITEM_TYPES[typeId].kind === 'container') return null;
   // Ikke dokumentmappa (bare papirer) eller kakeboksen (bare én småkake av hver sort).
@@ -282,7 +301,7 @@ export function findFreeInBox(items: Item[], box: Item, w: number, h: number): {
   const inside = itemsIn(items, 'box', box.id);
   const tabs = boxTabs(box);
   if (!tabs) {
-    const grid = gridOf(items, 'box', box.id);
+    const grid = gridOf(items, 'hovedgate', 'box', box.id); // gata gjelder ikke inni esker
     return grid ? findFree(w, h, inside, grid) : null;
   }
   const rows = tabs.tabGrid.rows;
@@ -301,13 +320,14 @@ export function findTrashSpot(items: Item[], typeId: string): Spot | null {
   return s ? { place: 'trash', boxId: null, ...s } : null;
 }
 
-export function findCounterSpot(items: Item[], typeId: string): Spot | null {
+export function findCounterSpot(items: Item[], street: Street, typeId: string): Spot | null {
   const { w, h } = sizeOf(typeId);
+  const grid = counterGrid(street);
   // Kolonne for kolonne fra venstre: nedover alle ledige rader i en kolonne før neste kolonne.
   const counter = itemsIn(items, 'counter', null);
   for (let x = 0; x + w <= COUNTER_GRID.cols; x++)
     for (let y = 0; y + h <= COUNTER_GRID.rows; y++)
-      if (fits({ x, y, w, h }, counter, COUNTER_GRID)) return { place: 'counter', boxId: null, x, y };
+      if (fits({ x, y, w, h }, counter, grid)) return { place: 'counter', boxId: null, x, y };
   return null;
 }
 
@@ -367,11 +387,11 @@ export function stashSources(items: Item[], typeId: string, to: StashTo, boxId: 
 }
 
 /** Neste ledige plass for én gjenstand: på bordet (kolonnevis), løst under disken, eller i eska (ev. én fane). */
-export function stashSpot(items: Item[], item: Item, to: StashTo, boxId: number | null = null, tab: number | null = null): Spot | null {
-  if (to === 'counter') return findCounterSpot(items, item.typeId);
+export function stashSpot(items: Item[], street: Street, item: Item, to: StashTo, boxId: number | null = null, tab: number | null = null): Spot | null {
+  if (to === 'counter') return findCounterSpot(items, street, item.typeId);
   const place: Place = to === 'storage' ? 'storage' : 'box';
   const parent = to === 'box' ? items.find((b) => b.id === boxId) : undefined;
-  const grid = gridOf(items, place, to === 'box' ? boxId : null);
+  const grid = gridOf(items, street, place, to === 'box' ? boxId : null);
   if (!grid) return null;
   const { w, h } = sizeOf(item.typeId);
   // Én fane: bare radene i den fanen.
@@ -383,7 +403,7 @@ export function stashSpot(items: Item[], item: Item, to: StashTo, boxId: number 
     for (let x = 0; x + w <= grid.cols; x++) {
       if (!fits({ x, y, w, h }, others, grid)) continue;
       const spot: Spot = { place, boxId: to === 'box' ? boxId : null, x, y };
-      if (!placementError(items, item, spot)) return spot;
+      if (!placementError(items, street, item, spot)) return spot;
     }
   return null;
 }
@@ -392,12 +412,12 @@ export function stashSpot(items: Item[], item: Item, to: StashTo, boxId: number 
  * Flytter (i en kopi av lista) så mange som får plass, høyst `max`. Gir tilbake flyttene i rekkefølge.
  * Serveren bruker det til å flytte; klienten til å vise hvor mange som får plass.
  */
-export function planStash(items: Item[], typeId: string, to: StashTo, boxId: number | null = null, max = Infinity, tab: number | null = null): { item: Item; spot: Spot }[] {
+export function planStash(items: Item[], street: Street, typeId: string, to: StashTo, boxId: number | null = null, max = Infinity, tab: number | null = null): { item: Item; spot: Spot }[] {
   const copy = items.map((i) => ({ ...i }));
   const moves: { item: Item; spot: Spot }[] = [];
   for (const item of stashSources(copy, typeId, to, boxId)) {
     if (moves.length >= max) break;
-    const spot = stashSpot(copy, item, to, boxId, tab);
+    const spot = stashSpot(copy, street, item, to, boxId, tab);
     if (!spot) break;
     Object.assign(item, spot);
     moves.push({ item, spot });
@@ -424,7 +444,7 @@ export function planBoxToBox(items: Item[], boxId: number, tab: number | null, t
   if (!box) return [];
   const moves: { item: Item; spot: Spot }[] = [];
   for (const item of tabContents(copy, box, tab).sort((a, b) => b.w * b.h - a.w * a.h)) {
-    const spot = stashSpot(copy, item, 'box', targetId, targetTab);
+    const spot = stashSpot(copy, 'hovedgate', item, 'box', targetId, targetTab); // eske til eske: gata gjelder ikke
     if (!spot) continue;
     Object.assign(item, spot);
     moves.push({ item, spot });

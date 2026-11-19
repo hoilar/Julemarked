@@ -1,8 +1,8 @@
 import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { moduleEffectText, moduleFitsText, moduleIn } from '../shared/modules.ts';
 import { FATIGUE, fatigue, tapeIn } from '../shared/music.ts';
-import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, type Spot, type StashTo } from '../shared/items.ts';
-import { CARRY_SLOTS, CARS, CAR_BY_ID, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
+import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, STALL_AREA, type Spot, type StashTo, type Street } from '../shared/items.ts';
+import { CARRY_SLOTS, CARS, CAR_BY_ID, DRIVE_MINUTES, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
   LOUPE,
@@ -11,6 +11,7 @@ import {
   COUNTER_GRID,
   DEVICES,
   DEVICE_BY_ID,
+  hangPackOf,
   CLOCK_DISPLAY,
   PLASTIC_BOX,
   DIVIDER,
@@ -97,6 +98,8 @@ import {
   type Offer,
 } from './customers.ts';
 import { playSound, putDownSound, setAmbience, setSoundMuted, type MarketLoop } from './sound.ts';
+import { setWeatherFx } from './weatherfx.ts';
+import { initDevPanel, updateDevPanel } from './devpanel.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
@@ -144,6 +147,7 @@ type Screen =
 type Modal =
   | null
   | { kind: 'wholesale' }
+  | { kind: 'pricelist'; stallId: number } // hele prislista på fronten av disken
   | { kind: 'events' }
   | { kind: 'mail' }
   | { kind: 'folded'; itemId: number }
@@ -314,6 +318,13 @@ async function act(path: string, body: unknown, ok?: string): Promise<boolean> {
   }
 }
 
+/** Gata en bod står i (avgjør hvor stort lageret under disken og bordet er). */
+function streetOfStall(s: GameState, stallId: number | null): Street {
+  return s.slots.find((sl) => sl.stall?.id === stallId)?.street ?? 'hovedgate';
+}
+/** Gata din egen bod står i. */
+const myStreet = (s: GameState): Street => streetOfStall(s, s.me.stallId);
+
 function myStall(s: GameState): StallPublic | null {
   return s.slots.find((sl) => sl.stall?.id === s.me.stallId)?.stall ?? null;
 }
@@ -338,6 +349,7 @@ async function refresh() {
       localStorage.removeItem('jm_token');
     } else toast((err as Error).message, true);
   }
+  updateDevPanel(state, clockBase);
   render();
 }
 
@@ -386,6 +398,8 @@ function tickClock() {
     else market = parts.hour < 12 ? 'formiddag' : parts.hour < 17 ? 'ettermiddag' : 'kveld';
   }
   setAmbience(market, shownStall ? 1 : 0.6, shownStall ? customersAtCounter() : 0);
+  // Snø, sludd og snøfokk over torget (bare i bodvisningen, ikke på kartet).
+  setWeatherFx(shownStall && (kind === 'sno' || kind === 'sludd' || kind === 'storm') ? kind : null, phaseOf(parts.hour) === 'night');
 }
 setInterval(tickClock, 500);
 
@@ -468,6 +482,7 @@ function render() {
   }
   pendingRender = false;
   shownStall = null;
+  if (screen.kind !== 'stall') ownFront = false; // tilbake til boden: bak disken igjen
   if (!token || !state) {
     app.innerHTML = joinView();
   } else {
@@ -500,7 +515,7 @@ function render() {
   const shut = !!shownStall && (shownStall.serving === 'closed' || shownStall.serving === 'away');
   const ownView = !!shownStall && !!state && shownStall.id === state.me.stallId;
   setShut(shut);
-  mountCustomers(app.querySelector('.scene'), shownStall && ownView ? String(shownStall.id) : null, () =>
+  mountCustomers(app.querySelector('.scene'), shownStall && ownView && !ownFront ? String(shownStall.id) : null, () =>
     shownStall && !shut ? offersOf(shownStall) : [],
   );
   // Kunder du kan selge til selv: spilltid → ekte klokkeslett.
@@ -715,27 +730,54 @@ function phoneWindow(s: GameState): string {
   </div>`;
 }
 
+/**
+ * Bodbildet etter gata: hovedgata har grønne paneler, sidegata brunt treverk med blå paneler og bakgata
+ * værbitte planker. Bak disken (din egen bod) ser du den åpne hylla; forfra (som kunde) ser du fronten av disken.
+ * Alle har samme omriss som bod_selger.png (1536×1024), så bordet, skiltet og lagene over passer.
+ */
+function bodArt(s: GameState, stall: StallPublic, front: boolean): string {
+  const slot = s.slots.find((x) => x.stall?.id === stall.id);
+  return slot ? `/art/bod/${slot.street}${front ? '-front' : ''}.png` : '/art/bod_selger.png';
+}
+
+/** Ser du på din egen bod forfra (slik kundene ser den)? */
+let ownFront = false;
+
 function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
+  const behind = own && !ownFront; // bak disken i din egen bod
+  const art = bodArt(s, stall, !behind);
   return `
   <div class="stage">
     <div class="tint"></div>
     <div class="world">
-    <div class="scene ${own ? 'own' : 'visit'}">
-      <img class="bod-art" src="/art/bod_selger.png" alt="" draggable="false">
+    <div class="scene ${behind ? 'own' : 'visit'}" style="--bod: url('${art}')">
+      <img class="bod-art" src="${art}" alt="" draggable="false">
       <img class="ground" src="/art/bakke.png" alt="" draggable="false">
       <div class="tint"></div>
-      ${powerView(stall, own)}
-      ${own ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
+      ${powerView(stall, behind)}
+      ${behind ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
       <div class="sign">${esc(stall.name)}</div>
-      ${shopSign(s, stall, own)}
+      ${shopSign(s, stall, behind)}
       ${musicButton(stall.music)}
-      ${own ? '' : sellerView(stall)}
-      ${counterView(stall, own)}
-      ${own ? storageView(s) + keyHookView(s) + trashView(s) + carView(s) + carryView(s) + boxPanels(s) : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)}
+      ${behind ? '<button class="small ghost front-toggle" data-action="own-front" title="Se boden din slik kundene ser den">👀 Se fronten</button>' : sellerView(stall)}
+      ${counterView(stall, behind, !own)}
+      ${
+        behind
+          ? storageView(s) + keyHookView(s) + trashView(s) + carView(s) + carryView(s) + boxPanels(s)
+          : own
+            ? ownFrontInfo() + carryView(s) + boxPanels(s, true)
+            : visitorInfo(stall) + otherTrashView(stall) + carryView(s) + boxPanels(s, true)
+      }
     </div>
     </div>
-    ${own ? '' : phoneSprite(s, false)}
+    ${behind ? '' : phoneSprite(s, false)}
   </div>`;
+}
+
+/** Din egen bod forfra: slik ser kundene den. */
+function ownFrontInfo(): string {
+  return `<div class="visitor-info"><div>👀 Slik ser kundene boden din.</div>
+    <button class="small" data-action="own-front">↩ Gå bak disken</button></div>`;
 }
 
 /** I andres boder står eieren bak disken (når hen er der) – du er selv kunden. */
@@ -788,6 +830,7 @@ function powerView(stall: StallPublic, own: boolean): string {
   const devices = power.devices
     .map((id) => DEVICE_BY_ID[id])
     .filter((d) => d?.layers) // kjelen er en gjenstand, ikke et lag
+    .filter((d) => own || (d.id !== 'klokke' && d.id !== 'alarm')) // klokka og alarmen henger bak disken: synes ikke forfra
     .map((d) => {
       const running = powered.has(d.id);
       if (d.id === 'klokke') return clockView(running, power.clockBlink, own);
@@ -808,12 +851,12 @@ function powerView(stall: StallPublic, own: boolean): string {
   const kw = totalKw(power, items);
   return `<div class="power ${power.on ? 'on' : ''}">
     ${devices}${speakers}
-    <div class="strip-wrap" style="${frameStyle(SHIFT.strip)}">
+    ${own ? `<div class="strip-wrap" style="${frameStyle(SHIFT.strip)}">
     ${layer('/art/power/off.png')}${power.on && !power.blown ? layer('/art/power/on.png') : ''}
     ${power.sockets.map((d, i) => (d ? layer(`/art/power/s${i + 1}.png`) : '')).join('')}
     ${hot(POWER_SWITCH, 'power-switch', power.blown ? '💥 Hovedsikringen har gått – trykk for å skru inn en ny skrusikring' : `${power.on ? 'Slå av' : 'Slå på'} grenuttaket (trekker nå ${kw.toString().replace('.', ',')} kW)`)}
     ${POWER_SOCKETS.map((r, i) => hot(r, 'power-plug', socketLabel(i), `data-plug="${i}"`)).join('')}
-    </div>
+    </div>` : '' /* grenuttaket sitter bak disken: synes ikke forfra */}
   </div>`;
 }
 
@@ -908,7 +951,7 @@ let stashOpen: { typeId: string; x: number; y: number } | null = null;
 
 function stashMenu(s: GameState, typeId: string, sellable: boolean): string {
   const items = s.me.items;
-  const count = (to: StashTo, boxId: number | null = null) => planStash(items, typeId, to, boxId).length;
+  const count = (to: StashTo, boxId: number | null = null) => planStash(items, myStreet(s), typeId, to, boxId).length;
   const waiting = (to: StashTo, boxId: number | null = null) => stashSources(items, typeId, to, boxId).length;
   // Bare ikonet; hva knappen gjør og hvor mange som får plass står i verktøytipset.
   const btn = (to: StashTo, icon: string, label: string) => {
@@ -926,7 +969,7 @@ function stashMenu(s: GameState, typeId: string, sellable: boolean): string {
           boxes.length
             ? `<ul>${boxes
                 .map(({ box, tab, name }) => {
-                  const n = planStash(items, typeId, 'box', box.id, Infinity, tab).length;
+                  const n = planStash(items, myStreet(s), typeId, 'box', box.id, Infinity, tab).length;
                   return `<li><button class="ghost" data-action="stash" data-type="${typeId}" data-to="box" data-box="${box.id}" ${tab !== null ? `data-tab="${tab}"` : ''} data-name="${esc(name)}" ${n ? '' : 'disabled'}>
                     ${icon(ITEM_TYPES[box.typeId])}<span>${esc(name)}</span><small>${n ? `${n} stk` : waiting('box', box.id) ? 'fullt' : '–'}</small></button></li>`;
                 })
@@ -1089,7 +1132,9 @@ function deliveriesView(s: GameState): string {
         ? ` med ${(DEVICE_BY_ID[b.device]?.name ?? 'apparat').toLowerCase()}`
         : t.kind === 'container' && t.shopBag
           ? ` med ${count} ${count === 1 ? 'vare' : 'varer'}`
-          : count
+          : count > 1
+            ? ` med ${count} ting`
+            : count
             ? ` med ${ITEM_TYPES[s.me.items.find((i) => i.place === 'box' && i.boxId === b.id)!.typeId].name.toLowerCase()}`
             : '';
       return `<button class="delivery-bag" data-action="open-delivery" data-item="${b.id}"
@@ -1104,12 +1149,51 @@ function deliveriesView(s: GameState): string {
 
 // --- Bordet ---
 
-function counterView(stall: StallPublic, own: boolean): string {
-  const grid = `<div class="table-grid" style="left:${TABLE.left}%;top:${TABLE.top}%;width:${TABLE.right - TABLE.left}%;height:${TABLE.bottom - TABLE.top}%"></div>`;
+/** Varene på disken med pris, én linje per vare (samme rekkefølge som på bordet sett forfra, fra venstre). */
+function priceRows(stall: StallPublic): { icon: string; name: string; price: number }[] {
+  const seen = new Set<string>();
+  const out: { icon: string; name: string; price: number }[] = [];
+  for (const i of [...stall.counter].sort((a, b) => b.x - a.x)) {
+    const p = PRODUCT_BY_ID[i.typeId];
+    if (!p || seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push({ icon: icon(p), name: p.name, price: stall.prices[p.id] ?? p.basePrice });
+  }
+  return out;
+}
+
+/** Hvor mange linjer prislista på fronten har plass til; resten står i vinduet. */
+const PRICE_LINES = 5;
+
+/**
+ * Prislista midt på fronten av disken. Trykk for hele lista i eget vindu.
+ * Midlertidig tegnet med CSS til grafikken (tavle/skilt) er klar – se GRAFIKK.md.
+ */
+function priceBoard(stall: StallPublic): string {
+  const rows = priceRows(stall);
+  const shown = rows.slice(0, PRICE_LINES);
+  const more = rows.length - shown.length;
+  return `<button class="price-board" data-action="pricelist" data-stall="${stall.id}" title="Trykk for hele prislista">
+    <span class="price-board-title">Priser</span>
+    ${shown.length ? shown.map((r) => `<span class="price-line"><span>${esc(r.name)}</span><b>${r.price},-</b></span>`).join('') : '<span class="price-line muted">Ingenting på disken</span>'}
+    ${more > 0 ? `<span class="price-more">+ ${more} til …</span>` : ''}
+  </button>`;
+}
+
+function counterView(stall: StallPublic, own: boolean, shop = !own): string {
+  // Forfra (kunde, eller din egen bod sett forfra) er bordet speilvendt: venstre og høyre bytter plass,
+  // og raden nærmest selgeren er bakerst.
+  const mirror = !own;
+  const cols = COUNTER_GRID.cols;
+  const rows = COUNTER_GRID.rows;
+  const left = (i: Item) => TABLE.left + (mirror ? cols - i.x - i.w : i.x) * CW;
+  const frontOf = (i: Item) => (mirror ? rows - 1 - i.y : i.y + i.h - 1);
+  const a = state ? STALL_AREA[streetOfStall(state, stall.id)].counter : { x: 0, w: COUNTER_GRID.cols };
+  const grid = `<div class="table-grid" style="left:${TABLE.left + a.x * CW}%;top:${TABLE.top}%;width:${a.w * CW}%;height:${TABLE.bottom - TABLE.top}%"></div>`;
   // Pris vises på én enhet per vare (den fremste til venstre).
   const tagged = new Set<number>();
   const seen = new Set<string>();
-  for (const i of [...stall.counter].sort((a, b) => b.y + b.h - (a.y + a.h) || a.x - b.x)) {
+  for (const i of [...stall.counter].sort((a, b) => frontOf(b) - frontOf(a) || left(a) - left(b))) {
     if (!seen.has(i.typeId)) {
       seen.add(i.typeId);
       tagged.add(i.id);
@@ -1117,19 +1201,22 @@ function counterView(stall: StallPublic, own: boolean): string {
   }
   const items = stall.counter
     .map((i) => {
-      const front = i.y + i.h - 1;
+      const front = frontOf(i);
       const t = ITEM_TYPES[i.typeId];
       if (t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker') {
         // Maskin på bordet: dras som en vare, trykk åpner vinduet. Kunder kan ikke kjøpe den.
-        const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 16}%;height:16%;--sp:${t.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
+        const style = `left:${left(i)}%;width:${i.w * CW}%;top:${rowFoot(front) - 16}%;height:16%;--sp:${t.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
         return `<div class="citem kettle-item ${t.kind === 'maker' && makerHot(i, stall) ? 'running' : ''} ${isOpen(i.id) ? 'open' : ''}" style="${style}" ${own ? `data-drag="${i.id}"` : ''} title="${esc(t.name)}">
           <img class="sprite img" src="${spill(machineImage(i, stall))}" alt="" draggable="false"></div>`;
       }
       const p = PRODUCT_BY_ID[i.typeId];
+      // Bak disken: dra varene. Hos andre: trykk for å kjøpe. Din egen bod forfra: bare se.
       const attrs = own
         ? `data-drag="${i.id}"`
-        : `data-action="buy" data-stall="${stall.id}" data-product="${p.id}"`;
-      const style = `left:${TABLE.left + i.x * CW}%;width:${i.w * CW}%;top:${rowFoot(front) - 12}%;height:12%;--sp:${p.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
+        : shop
+          ? `data-action="buy" data-stall="${stall.id}" data-product="${p.id}"`
+          : '';
+      const style = `left:${left(i)}%;width:${i.w * CW}%;top:${rowFoot(front) - 12}%;height:12%;--sp:${p.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
       return `<div class="citem" style="${style}" ${attrs} title="${esc(p.name)}">
           ${sprite(p)}
           ${tagged.has(i.id) ? `<span class="tag">${stall.prices[p.id] ?? p.basePrice},-</span>` : ''}
@@ -1137,7 +1224,7 @@ function counterView(stall: StallPublic, own: boolean): string {
     })
     .join('');
   // Bordkanten tegnes på nytt oppå kundene, så kroppene deres alltid forsvinner bak den (ingen flimring).
-  return `<div class="counter-layer"><div class="table-front"></div>${own ? grid : ''}${items}</div>`;
+  return `<div class="counter-layer"><div class="table-front"></div>${own ? grid : ''}${items}</div>${mirror ? priceBoard(stall) : ''}`;
 }
 
 // --- Under disken og i esker ---
@@ -1247,12 +1334,17 @@ function gridItemView(i: Item, cols: number, rows: number): string {
 }
 
 function storageView(s: GameState): string {
-  const { cols, rows } = STORAGE_GRID;
-  const items = itemsIn(s.me.items, 'storage', null).map((i) => gridItemView(i, cols, rows)).join('');
+  // Bare det brukbare området i denne gata (mindre i sidegata og bakgata). Koordinatene er de samme overalt,
+  // så panelet flyttes inn med data-xoff/data-yoff og tingene tegnes forskjøvet.
+  const a = STALL_AREA[myStreet(s)].storage;
+  const { w: cols, h: rows } = a;
+  const items = itemsIn(s.me.items, 'storage', null)
+    .map((i) => gridItemView({ ...i, x: i.x - a.x, y: i.y - a.y }, cols, rows))
+    .join('');
   // Rutene er hele skjermpiksler (--cell), og lageret står på en hel piksel: alle kolonner blir like skarpe.
-  const style = `left:round(nearest, ${STORAGE.left}%, var(--dpx));top:round(nearest, ${STORAGE.top}%, var(--dpx));--cell:round(nearest, ${STORAGE.cell}cqw, var(--dpx));width:calc(var(--cell) * ${cols});height:calc(var(--cell) * ${rows});--cols:${cols};--rows:${rows}`;
+  const style = `--cell:round(nearest, ${STORAGE.cell}cqw, var(--dpx));left:round(nearest, calc(${STORAGE.left}% + var(--cell) * ${a.x}), var(--dpx));top:round(nearest, calc(${STORAGE.top}% + var(--cell) * ${a.y}), var(--dpx));width:calc(var(--cell) * ${cols});height:calc(var(--cell) * ${rows});--cols:${cols};--rows:${rows}`;
   return `
-  <div class="storage grid" data-grid="storage" style="${style}">
+  <div class="storage grid" data-grid="storage" data-xoff="${a.x}" data-yoff="${a.y}" style="${style}">
     ${items}${loupeMarks()}
     ${s.me.items.length === 0 ? '<button class="small empty-hint" data-action="modal" data-modal="wholesale">Tomt. Kjøp inn varer.</button>' : ''}
   </div>`;
@@ -2003,7 +2095,7 @@ function trashDrop(item: Item): { spot: Spot | null; error: string | null } {
   if (item.place === 'trash') return { spot: null, error: null }; // allerede der: ingen endring
   const spot = findTrashSpot(state!.me.items, item.typeId);
   if (!spot) return { spot: null, error: 'Søppelkassa er full. Søppelbilen kommer i natt.' };
-  return { spot, error: placementError(state!.me.items, item, spot) };
+  return { spot, error: placementError(state!.me.items, myStreet(state!), item, spot) };
 }
 
 /** Søppelkassa ved en annens bod. Den er åpen for alle – trykk for å se hva som ligger der. */
@@ -2013,6 +2105,10 @@ function otherTrashView(stall: StallPublic): string {
 }
 
 function visitorInfo(stall: StallPublic): string {
+  if (state?.me.stalls.includes(stall.id))
+    return `<div class="visitor-info"><div>🏠 Din bod · ⭐ ${stall.reputation}</div>
+      <div class="muted">Du er ikke her nå. Bilen og det du bærer, blir med.</div>
+      <button class="small" data-action="drive" data-stall="${stall.id}">🚗 Kjør hit (${DRIVE_MINUTES} min)</button></div>`;
   return `<div class="visitor-info"><div>👤 ${esc(stall.ownerName)} · ⭐ ${stall.reputation}</div>
     <div class="muted">Trykk på en vare for å kjøpe.</div>${snoopButton(stall)}</div>`;
 }
@@ -2022,7 +2118,7 @@ function snoopButton(stall: StallPublic): string {
   if (!state?.me.stallId) return '';
   const key = state.me.items.some((i) => i.typeId === COPY_KEY && i.key?.stallId === stall.id && !isTrashed(state!.me.items, i));
   if (stall.serving === 'self' || stall.serving === 'away')
-    return `<button class="small ghost snoop-btn" data-action="snoop" data-stall="${stall.id}" title="Ingen ser deg … kanskje. ${POLICE.name} går runder.">🕵️ Snok bak disken</button>`;
+    return `<button class="small ghost snoop-btn" data-action="snoop" data-stall="${stall.id}" title="Ingen ser deg … kanskje. ${POLICE.name} går runder.">🕵️ Gå bak disken</button>`;
   if (stall.serving === 'closed' && key)
     return `<button class="small ghost snoop-btn" data-action="snoop" data-stall="${stall.id}" title="Kopinøkkelen passer i hengelåsen.">🔑 Lås opp med kopinøkkelen</button>`;
   return '';
@@ -2268,7 +2364,7 @@ function snoopTarget(d: SnoopDrag, px: number, py: number): SnoopDrag['target'] 
       kind: 'their',
       place: el.dataset.sgrid === 'box' ? 'box' : 'storage',
       boxId: el.dataset.box ? Number(el.dataset.box) : null,
-      x: Math.round((px - r.left) / cell - d.grabCX),
+      x: Math.round((px - r.left) / cell - d.grabCX) + Number(el.dataset.xoff ?? 0),
       y: Math.round((py - r.top) / cell - d.grabCY) + Number(el.dataset.yoff ?? 0),
     };
   }
@@ -2390,8 +2486,11 @@ function keyHookView(s: GameState): string {
 </div>`;
 }
 
-const cellStyle = (x: number, y: number) =>
-  `left:${(x / STORAGE_GRID.cols) * 100}%;top:${(y / STORAGE_GRID.rows) * 100}%;width:${100 / STORAGE_GRID.cols}%;height:${100 / STORAGE_GRID.rows}%`;
+/** En rute i lageret ditt under disken (koordinater i hele rutenettet; panelet kan være forskjøvet). */
+const cellStyle = (x: number, y: number) => {
+  const a = state ? STALL_AREA[myStreet(state)].storage : { x: 0, y: 0, w: STORAGE_GRID.cols, h: STORAGE_GRID.rows };
+  return `left:${((x - a.x) / a.w) * 100}%;top:${((y - a.y) / a.h) * 100}%;width:${100 / a.w}%;height:${100 / a.h}%`;
+};
 function loupeMark(x: number, y: number, st: 'hint' | 'found'): string {
   return st === 'hint'
     ? `<button class="loupe-mark hint" data-action="loupe-check" data-x="${x}" data-y="${y}" style="${cellStyle(x, y)}" title="Noe rart her – trykk for å se nærmere">?</button>`
@@ -2444,9 +2543,12 @@ function mapScreen(s: GameState): string {
             </form>`;
     } else {
       const afford = s.me.cash >= sl.price;
-      side = `<h2>Flytt til plass #${sl.index + 1}</h2>${facts}
-        <p class="muted">Alt innholdet i boden blir med: lager, bord og apparater. Eventuelle forbindelser til naboene brytes.${afford ? '' : ` Du har ${kr(s.me.cash)} i kassa og mangler ${kr(sl.price - s.me.cash)}.`}</p>
-        <div class="row"><button data-action="move-stall" ${afford ? '' : 'disabled'}>Flytt hit${sl.price ? ` for ${kr(sl.price)}` : ''}</button>${cancel}</div>`;
+      side = `<h2>Kjøp plass #${sl.index + 1}</h2>${facts}
+        <p class="muted">Du får en bod til, i tillegg til den du har. Den nye er tom (bare sikringsboks) og har samme kasse som de andre. Kjør dit med bilen (${DRIVE_MINUTES} min) – bilen med bagasjerommet og det du bærer, blir med.${afford ? '' : ` Du har ${kr(s.me.cash)} og mangler ${kr(sl.price - s.me.cash)}.`}</p>
+        <form data-form="claim" class="stack-form">
+          <label>Navn på den nye boden <input name="stallName" required minlength="2" maxlength="32" value="${esc(myStall(s)?.name ?? '')}" data-autofocus></label>
+          <div class="row"><button ${afford ? '' : 'disabled'}>Kjøp plassen${sl.price ? ` for ${kr(sl.price)}` : ''}</button>${cancel}</div>
+        </form>`;
     }
   } else if (s.me.stallId === null) {
     side = `<h2>Velkommen, ${esc(s.me.name)}!</h2>
@@ -2476,9 +2578,10 @@ function slotButton(s: GameState, sl: MarketSlot): string {
       <small class="slot-price">${sl.price ? `Kjøp: ${kr(sl.price)}` : 'Ingen engangspris'}</small></button>`;
   }
   const mine = sl.stall.id === s.me.stallId;
+  const other = !mine && s.me.stalls.includes(sl.stall.id); // en annen av dine boder
   // Bare salgsvarer (en kjele på bordet er ikke en vare).
   const goods = [...new Set(sl.stall.counter.filter((c) => PRODUCT_BY_ID[c.typeId]).map((c) => c.typeId))].map((id) => icon(PRODUCT_BY_ID[id])).join('');
-  return `<button class="slot taken ${mine ? 'mine' : ''}" data-action="${mine ? 'home' : 'visit'}" data-stall="${sl.stall.id}">
+  return `<button class="slot taken ${mine ? 'mine' : ''} ${other ? 'mine other' : ''}" data-action="${mine ? 'home' : 'visit'}" data-stall="${sl.stall.id}" ${other ? 'title="Din bod – trykk for å se den og kjøre dit"' : ''}>
     <span class="slot-no">#${sl.index + 1}</span>
     <span class="slot-name"><i class="sign-dot ${sl.stall.serving}" title="${sl.stall.serving === 'away' ? 'Straks tilbake' : SIGN_LABEL[sl.stall.sign]}"></i>${esc(sl.stall.name)}</span>
     <small>${goods || '—'}</small></button>`;
@@ -2714,13 +2817,14 @@ function klasView(s: GameState): string {
   const tools = TOOLS.filter((t) => t.id !== PHONE && !t.dealerOnly).map((t) =>
     klasCard({ name: t.name, image: t.image, emoji: t.emoji, size: t.size, price: t.price, sub: esc(t.blurb), have: has(t.id), buy: qty(t.id, 5), incart: !!cart[t.id] }),
   );
-  // Maskiner er gjenstander (man kan ha flere); lyslenka og alarmen henger på boden (bare én). Alt kommer i pappkartong.
+  // Maskiner er gjenstander (man kan ha flere); lyslenka og alarmen henger på boden (bare én). Alt kommer i pappkartonger.
   const devices = (machines: boolean) =>
     DEVICES.filter((d) => !!d.item === machines).map((d) => {
       const id = `device:${d.id}`;
       const t = d.item ? ITEM_TYPES[d.item] : undefined;
       const owned = !d.item && !!myStall(s)?.power.devices.includes(d.id);
-      const boxed = !d.item && s.me.items.some((i) => i.device === d.id && !isTrashed(s.me.items, i));
+      const boxed =
+        !d.item && s.me.items.some((i) => (i.device === d.id || i.typeId === hangPackOf(d.id)) && !isTrashed(s.me.items, i));
       const swaps = !!d.light && !owned && !!myStall(s)?.power.devices.some((x) => DEVICE_BY_ID[x]?.light);
       return klasCard({
         name: d.name,
@@ -2769,7 +2873,7 @@ function klasView(s: GameState): string {
 
   return `
     <header class="store-banner klas"><b>${esc(KLAS.name)}</b><span>Har alt du ikke visste du trengte.</span></header>
-    <p class="muted">Samme levering som nettbutikkene. Tingene kommer løst ved boden; maskiner, lyslenker og alarmer i pappkartong.</p>
+    <p class="muted">Samme levering som nettbutikkene. Alt pakkes i pappkartonger (en ny når den første er full). Lyslenker, alarm, klokke og høyttaleranlegg ligger innpakket i kartongen – trykk på dem for å henge dem opp.</p>
     ${section('Maskiner', 'Plugges i grenuttaket. Trekker strøm mens de står på – prisen står i avisa.', devices(true))}
     ${section('På boden', 'Henger på boden og plugges i grenuttaket. Kommer i en kartong: åpne den og heng den opp.', devices(false))}
     ${section('Elektrisk', '', electric)}
@@ -3428,6 +3532,15 @@ function modalView(s: GameState): string {
     );
   }
   if (modal.kind === 'events') inner = `<h2>Hendelser</h2>${eventList(s)}`;
+  if (modal.kind === 'pricelist') {
+    const id = modal.stallId;
+    const st = s.slots.find((x) => x.stall?.id === id)?.stall;
+    if (!st) return '';
+    const rows = priceRows(st)
+      .map((r) => `<li>${r.icon}<span>${esc(r.name)}</span><b>${r.price},-</b></li>`)
+      .join('');
+    inner = `<h2>Prisliste · ${esc(st.name)}</h2>${rows ? `<ul class="price-list-full">${rows}</ul>` : '<p class="muted">Ingenting på disken akkurat nå.</p>'}`;
+  }
   if (modal.kind === 'customer') inner = customerView(s, modal.seed);
   if (modal.kind === 'regular') inner = regularView(s, modal.visitId, modal.charId);
   if (modal.kind === 'inspector') inner = inspectorView();
@@ -3649,7 +3762,7 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
     return {
       place: el.dataset.grid as Spot['place'],
       boxId: el.dataset.box ? Number(el.dataset.box) : null,
-      x: Math.round((px - r.left) / cell - d.grabCX),
+      x: Math.round((px - r.left) / cell - d.grabCX) + Number(el.dataset.xoff ?? 0),
       y: Math.round((py - r.top) / cell - d.grabCY) + Number(el.dataset.yoff ?? 0),
     };
   }
@@ -3672,7 +3785,8 @@ function computeSpot(d: Drag, px: number, py: number): Spot | null {
   const fy = ((footY - sc.top) / sc.height) * 100;
   if (fx < TABLE.left - 2 * CW || fx > TABLE.right + 2 * CW || fy < TABLE.top - 10 || fy > TABLE.bottom + 2.5) return null;
   const { w, h } = d.item;
-  const x = Math.max(0, Math.min(COUNTER_GRID.cols - w, Math.round((fx - TABLE.left) / CW - w / 2)));
+  const a = STALL_AREA[myStreet(state!)].counter; // smalere bord i sidegata og bakgata
+  const x = Math.max(a.x, Math.min(a.x + a.w - w, Math.round((fx - TABLE.left) / CW - w / 2)));
   const front = Math.max(h - 1, Math.min(COUNTER_GRID.rows - 1, Math.floor((fy - TABLE.top) / RH)));
   return { place: 'counter', boxId: null, x, y: front - h + 1 };
 }
@@ -3706,17 +3820,19 @@ function showPreview(d: Drag | null) {
     });
     document.querySelector('.counter-layer')!.appendChild(el);
   } else {
-    const grid = gridOf(state!.me.items, spot.place, spot.boxId);
+    const grid = gridOf(state!.me.items, myStreet(state!), spot.place, spot.boxId);
     if (!grid) return;
     const sel = spot.place === 'box' || spot.place === 'cell' || spot.place === 'module' ? `[data-grid="${spot.place}"][data-box="${spot.boxId}"]` : `[data-grid="${spot.place}"]`;
     const target = document.querySelector<HTMLElement>(sel);
     // Dokumentmappa viser én fane (5 rader) av gangen.
     const yoff = Number(target?.dataset.yoff ?? 0);
+    const xoff = Number(target?.dataset.xoff ?? 0); // lageret i en mindre bod
     const rows = target?.dataset.yoff !== undefined ? Number(target.style.getPropertyValue('--rows')) : grid.rows;
+    const cols = target?.dataset.xoff !== undefined ? Number(target.style.getPropertyValue('--cols')) : grid.cols;
     Object.assign(el.style, {
-      left: `${(spot.x / grid.cols) * 100}%`,
+      left: `${((spot.x - xoff) / cols) * 100}%`,
       top: `${((spot.y - yoff) / rows) * 100}%`,
-      width: `${(d.item.w / grid.cols) * 100}%`,
+      width: `${(d.item.w / cols) * 100}%`,
       height: `${(d.item.h / rows) * 100}%`,
     });
     target?.appendChild(el);
@@ -3800,9 +3916,10 @@ window.addEventListener('pointermove', (e) => {
   // Linsen sitter til venstre i bildet av lupa.
   const lx = e.clientX - d.grabDX + d.originW * 0.23;
   const ly = e.clientY - d.grabDY + d.originH * 0.5;
-  const x = Math.floor(((lx - r.left) / r.width) * STORAGE_GRID.cols);
-  const y = Math.floor(((ly - r.top) / r.height) * STORAGE_GRID.rows);
-  if (x < 0 || y < 0 || x >= STORAGE_GRID.cols || y >= STORAGE_GRID.rows) return;
+  const a = STALL_AREA[myStreet(state!)].storage;
+  const x = a.x + Math.floor(((lx - r.left) / r.width) * a.w);
+  const y = a.y + Math.floor(((ly - r.top) / r.height) * a.h);
+  if (x < a.x || y < a.y || x >= a.x + a.w || y >= a.y + a.h) return;
   const k = `${x},${y}`;
   if (loupeSeen.has(k)) return;
   loupeSeen.add(k);
@@ -3838,7 +3955,7 @@ window.addEventListener('pointermove', (e) => {
     ({ spot: d.spot, error: d.error } = trashDrop(d.item));
   } else {
     d.spot = computeSpot(d, e.clientX, e.clientY);
-    d.error = d.spot ? placementError(state!.me.items, d.item, d.spot) : null;
+    d.error = d.spot ? placementError(state!.me.items, myStreet(state!), d.item, d.spot) : null;
   }
   bin?.classList.toggle('bad', d.trash && d.error !== null);
   showPreview(d);
@@ -3870,7 +3987,9 @@ function endDrag(cancelled = false) {
       return;
     }
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
-    if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
+    // Innpakket apparat fra Klas Olsen (lyslenke, alarm …): heng det opp på boden.
+    if (t.kind === 'electric' && t.hangs) act('/api/device/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger på boden.`);
+    else if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
     else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') togglePanel(d.item.id);
     else if (t.kind === 'battery')
       toast(`🔋 ${t.name}: ${batteryPct(d.item)} % (${String(Math.round((d.item.charge ?? 0) * 10) / 10).replace('.', ',')} av ${capacityOf(d.item.typeId)} kWh). Dra det til batteriplassen på en maskin, eller i ladestasjonen.`);
@@ -4196,13 +4315,21 @@ app.addEventListener('click', (e) => {
     const kind = el.dataset.kind!;
     void act('/api/insurance/sign', { kind }, `🛡️ ${INSURANCE_BY_KIND[kind as keyof typeof INSURANCE_BY_KIND].label} tegnet!`);
   }
-  if (action === 'move-stall' && screen.kind === 'claim') {
-    void act('/api/stall/move', { slotIndex: screen.slot }, 'Boden har flyttet! 🚚').then((ok) => {
-      if (ok) {
+  if (action === 'pricelist') modal = { kind: 'pricelist', stallId: Number(el.dataset.stall) };
+  if (action === 'own-front') {
+    ownFront = !ownFront;
+    openPanels = openPanels.filter((k) => k !== 'trash' && k !== 'mail'); // vinduene bak disken lukkes
+  }
+  if (action === 'drive' && el.dataset.stall) {
+    // Kjør til en annen av dine boder.
+    api<{ until: number; name: string }>('/api/stall/drive', { stallId: Number(el.dataset.stall) })
+      .then((r) => {
+        toast(`🚗 Du kjører til «${r.name}». Fremme kl. ${formatClock(osloParts(r.until)).replace(/^.* kl\. /, '')}.`);
         screen = { kind: 'map' };
-        render();
-      }
-    });
+      })
+      .catch((err) => toast((err as Error).message, true))
+      .finally(refresh);
+    return;
   }
   if (action === 'visit') screen = { kind: 'visit', stallId: Number(el.dataset.stall) };
   if (action === 'phone') {
@@ -4649,7 +4776,7 @@ app.addEventListener('click', (e) => {
     const to = el.dataset.to as StashTo;
     const boxId = el.dataset.box ? Number(el.dataset.box) : null;
     const tab = el.dataset.tab ? Number(el.dataset.tab) : null;
-    const n = planStash(state.me.items, typeId, to, boxId, Infinity, tab).length;
+    const n = planStash(state.me.items, myStreet(state), typeId, to, boxId, Infinity, tab).length;
     const name = el.dataset.name ?? 'eska';
     const what = n === 1 ? '1 stk' : `${n} stk`;
     stashOpen = null;
@@ -4707,10 +4834,11 @@ app.addEventListener('submit', async (e) => {
       break;
     case 'claim': {
       if (screen.kind !== 'claim') return;
-      const ok = await act('/api/claim', { slotIndex: screen.slot, stallName: data.stallName }, 'Boden er din! 🎉');
+      const first = state?.me.stallId == null;
+      const ok = await act('/api/claim', { slotIndex: screen.slot, stallName: data.stallName }, first ? 'Boden er din! 🎉' : `🎉 Du eier nå en bod til. Kjør dit med bilen (${DRIVE_MINUTES} min).`);
       if (ok) {
-        screen = { kind: 'stall' };
-        modal = { kind: 'wholesale' };
+        screen = first ? { kind: 'stall' } : { kind: 'map' };
+        if (first) modal = { kind: 'wholesale' };
         render();
       }
       break;
@@ -4759,6 +4887,7 @@ if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) Object.ass
 
 // ---------- Oppstart ----------
 
+initDevPanel({ api, refresh, toast }); // bare under npm run dev
 render();
 if (token) {
   connectSocket();

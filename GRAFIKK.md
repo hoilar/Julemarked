@@ -247,6 +247,36 @@ gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scen
 
 ## Gjenstående grafikk-ønsker
 
+### ✅ Grafikk klar (19.11.2026): prisliste på fronten av disken
+
+Kundene ser boden forfra (`art/bod/<gate>-front.png`). Midt på fronten, under bordplata, henger en
+**prisliste** med varene som ligger på disken. Spillet skriver selve teksten (varenavn og pris), så
+bildet skal ha en **tom skriveflate** – ingen tekst, tall eller bokstaver. Trykk på lista åpner hele
+lista i eget vindu når ikke alt får plass. Nå tegnes den midlertidig med CSS (mørk tavle med brun ramme).
+
+- **Én variant per gate**, i samme stil som fronten:
+  - **Hovedgata** (`prisliste-hovedgate.png`): svart kritttavle med smal forgylt ramme, liten granbar-/stjernepynt øverst.
+  - **Sidegata** (`prisliste-sidegate.png`): malt treplate (mørk blågrå) med brun treramme, to spiker øverst.
+  - **Bakgata** (`prisliste-bakgate.png`): en bit pappkartong eller værbitt planke festet med tape/spiker, litt skjev.
+- **Størrelse:** ca. **330 × 160 px** i bodbildets målestokk (1536×1024), dvs. ca. 21 % av bodbredden
+  og 15 % av høyden. Gjerne laget dobbelt så stor (660 × 320) og skalert ned.
+- **Skriveflate:** jevn og rolig, minst 85 % av bredden og 75 % av høyden, så 5 linjer tekst i
+  hvit/kremfarget monospace får plass. Ingen mønster eller skygger i selve flaten.
+- **Plassering:** sentrert vannrett på boden (x ≈ 768), øverst ved y ≈ 660. Skal ikke dekke bordbena.
+- Transparent bakgrunn, samme pikselstil og lysretning (oppe til venstre) som bodene. Ingen tekst.
+- Filer: originaler i `GFX_assets/bodvarianter/prisliste/`, spillfiler i `client/public/art/bod/`.
+
+De tre prislistene er laget med den innebygde bildegeneratoren og bodene som stilreferanser.
+Store genererte originaler er bevart som `prisliste-<gate>-original.png`.
+Ferdige 660×320-filer og `forhandsvisning.png` ligger i originalmappen.
+330×160-filer ligger i `client/public/art/bod/` med navnene angitt over.
+Alle har transparent ytterområde og en helt ensfarget, tom skriveflate på 87,9 % av
+bredden og 76,9 % av høyden. Skrivefelt i spillfilene er x=20, y=22, bredde=290,
+høyde=123 px. Størrelse, alfa og skriveflate er kontrollert, og samlebildet er visuelt gjennomgått.
+Prompter og oppsett ligger i `GFX_assets/bodvarianter/prisliste/prompter-og-oppsett.json`.
+Grafikkfilene er klare for bruk. Visningskoden bruker fortsatt CSS-tavlen.
+
+
 ### ✅ Grafikk klar: torget i snøvær, sludd og storm (14.11.2026)
 
 **12 nye værbakgrunner:** snøvær, sludd og storm for hver av de fire døgnvariantene

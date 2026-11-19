@@ -46,17 +46,27 @@ export const WEATHER: Record<WeatherKind, WeatherDef> = {
 
 const KINDS = Object.keys(WEATHER) as WeatherKind[];
 
-/** Dagens vær i et marked. */
-export function weatherFor(marketId: number, dayKey: number): Weather {
+// Bare for utvikling (dev-panelet): tvinger været i et marked, uansett dag. Glemmes når serveren starter på nytt.
+const forced = new Map<number, WeatherKind>();
+export function forceWeather(marketId: number, kind: WeatherKind | null) {
+  if (kind) forced.set(marketId, kind);
+  else forced.delete(marketId);
+}
+export const forcedWeather = (marketId: number): WeatherKind | null => forced.get(marketId) ?? null;
+
+/** Trekker dagens værtype etter sjansene i WEATHER (samme marked og dag gir alltid samme vær). */
+function drawWeather(marketId: number, dayKey: number): WeatherKind {
   let r = hash01('vær', marketId, dayKey);
-  let kind: WeatherKind = 'pent';
   for (const k of KINDS) {
-    if (r < WEATHER[k].chance) {
-      kind = k;
-      break;
-    }
+    if (r < WEATHER[k].chance) return k;
     r -= WEATHER[k].chance;
   }
+  return 'pent';
+}
+
+/** Dagens vær i et marked. */
+export function weatherFor(marketId: number, dayKey: number): Weather {
+  const kind = forced.get(marketId) ?? drawWeather(marketId, dayKey);
   const [lo, hi] = WEATHER[kind].temp;
   const temp = lo + Math.round(hash01('temperatur', marketId, dayKey) * (hi - lo));
   return { kind, temp };

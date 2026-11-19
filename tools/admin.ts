@@ -186,7 +186,8 @@ switch (cmd) {
     const hit = /^\d+$/.test(who) ? players.filter((p) => p.id === Number(who)) : players.filter((p) => p.name.toLowerCase() === who.toLowerCase());
     if (hit.length === 0) die(`Fant ingen spiller med bod som heter «${who}». Se npm run admin -- brukere`);
     if (hit.length > 1) die(`Flere heter «${who}» – bruk id-en: ${hit.map((p) => `#${p.id}`).join(', ')}`);
-    db.prepare('UPDATE stalls SET cash = cash + ? WHERE id = ?').run(Math.round(n), hit[0].stall_id);
+    // Felles lommebok: alle bodene til samme eier har samme kasse.
+    db.prepare('UPDATE stalls SET cash = cash + ? WHERE owner_id = (SELECT owner_id FROM stalls WHERE id = ?)').run(Math.round(n), hit[0].stall_id);
     console.log(`✔ ${hit[0].name}: ${kr(hit[0].cash)} → ${kr(hit[0].cash + Math.round(n))}`);
     break;
   }
@@ -200,10 +201,10 @@ switch (cmd) {
       }
       const rel = rest[0].match(/^\+(\d+(?:[.,]\d+)?)([td])$/);
       const target = rel ? now + Number(rel[1].replace(',', '.')) * (rel[2] === 'd' ? 24 : 1) * HOUR : parseTime(rest.join(' '));
-      // Klokka: «nå» i ekte tid svarer til målet i spilltid.
-      const real = Date.now();
+      // Klokka: «nå» i ekte tid svarer til målet i spilltid. game_start er dagen markedet åpnet (avisa, første dag)
+      // og røres ikke; vi regner ut real_start på nytt i stedet.
       const backwards = target < now;
-      db.prepare('UPDATE markets SET real_start = ?, game_start = ? WHERE id = ?').run(real, Math.round(target), m.id);
+      db.prepare('UPDATE markets SET real_start = ? WHERE id = ?').run(Math.round(Date.now() - (target - m.game_start) / m.speed), m.id);
       // Bakover, eller --hopp: ikke simuler timene i mellom (ellers tar serveren dem igjen, 72 om gangen).
       if (backwards || flag('--hopp')) db.prepare('UPDATE markets SET last_hour = ? WHERE id = ?').run(hourIndex(target), m.id);
       console.log(`✔ ${m.name}: ${fmt.format(new Date(now))} → ${fmt.format(new Date(target))}${backwards || flag('--hopp') ? ' (timene i mellom simuleres ikke)' : ' (serveren simulerer timene i mellom)'}`);
@@ -215,8 +216,8 @@ switch (cmd) {
     if (!(n > 0)) die('Bruk: npm run admin -- fart <spilltimer per ekte time>   (1 = ekte tid, 60 = test)');
     const db = open();
     for (const m of markets(db)) {
-      // Behold spilltida akkurat nå, bytt bare farten videre.
-      db.prepare('UPDATE markets SET real_start = ?, game_start = ?, speed = ? WHERE id = ?').run(Date.now(), Math.round(nowOf(m)), n, m.id);
+      // Behold spilltida akkurat nå, bytt bare farten videre (game_start røres ikke, se tid).
+      db.prepare('UPDATE markets SET real_start = ?, speed = ? WHERE id = ?').run(Math.round(Date.now() - (nowOf(m) - m.game_start) / n), n, m.id);
       console.log(`✔ ${m.name}: fart ${m.speed}× → ${n}×`);
     }
     break;

@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS stalls (
   id INTEGER PRIMARY KEY,
   market_id INTEGER NOT NULL REFERENCES markets(id),
   slot_index INTEGER NOT NULL,
-  owner_id INTEGER NOT NULL UNIQUE REFERENCES players(id),
+  owner_id INTEGER NOT NULL REFERENCES players(id), -- en spiller kan eie flere boder
   name TEXT NOT NULL,
   cash INTEGER NOT NULL,
   reputation REAL NOT NULL,
@@ -227,3 +227,27 @@ export function tx<T>(fn: () => T): T {
 }
 // Digitalklokka på boden: 1 = blinker «00:00» (har mistet strømmen og er ikke stilt ennå).
 if (!hasColumn('stalls', 'clock_blink')) db.exec('ALTER TABLE stalls ADD COLUMN clock_blink INTEGER NOT NULL DEFAULT 1');
+
+// Flere boder per spiller (19.11.2026): owner_id var UNIQUE. SQLite kan ikke fjerne en slik regel med ALTER,
+// så tabellen bygges på nytt (samme kolonner og data). players.stall_at = boden spilleren er i nå.
+{
+  const row = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'stalls'").get() as { sql: string } | undefined;
+  if (row && /owner_id INTEGER NOT NULL UNIQUE/.test(row.sql)) {
+    const indexes = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'stalls' AND sql IS NOT NULL").all() as { sql: string }[];
+    db.exec('PRAGMA foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(row.sql.replace(/CREATE TABLE (IF NOT EXISTS )?"?stalls"?/, 'CREATE TABLE stalls_ny').replace('owner_id INTEGER NOT NULL UNIQUE', 'owner_id INTEGER NOT NULL'));
+      db.exec('INSERT INTO stalls_ny SELECT * FROM stalls; DROP TABLE stalls; ALTER TABLE stalls_ny RENAME TO stalls;');
+      for (const i of indexes) db.exec(i.sql);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    } finally {
+      db.exec('PRAGMA foreign_keys = ON');
+    }
+  }
+}
+db.exec('CREATE INDEX IF NOT EXISTS stalls_owner ON stalls (owner_id)');
+if (!hasColumn('players', 'stall_at')) db.exec('ALTER TABLE players ADD COLUMN stall_at INTEGER');

@@ -169,6 +169,7 @@ export interface Electric {
   fusebox?: FuseboxKind; // sikringsbokser: hva slags sikringer den har
   imageOff?: string; // bilde når boden er uten strøm (grenuttaket av eller hovedsikringen gått)
   dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
+  hangs?: string; // innpakket apparat fra Klas Olsen (lyslenke, alarm …): trykk på det, så henges det opp på boden
 }
 
 /**
@@ -1102,6 +1103,25 @@ export const CLOCK_DISPLAY = { x: 135, y: 340, w: 74, h: 24 };
 export const DEVICE_BY_ID: Record<string, Device> = Object.fromEntries(DEVICES.map((d) => [d.id, d]));
 
 /**
+ * Apparatene som henger på boden (lyslenker, alarm, klokke, høyttaleranlegg) kommer innpakket i pappkartongen
+ * fra Klas Olsen som egne gjenstander. Trykk på en, så henges den opp. Selges ikke løst – bare som «device:<id>».
+ */
+const HANG_SIZE: Record<string, { w: number; h: number }> = { hoyttaleranlegg: { w: 2, h: 2 }, alarm: { w: 1, h: 1 }, klokke: { w: 1, h: 1 } };
+export const HANG_PACKS: Electric[] = DEVICES.filter((d) => !d.item).map((d) => ({
+  kind: 'electric',
+  id: `apparat_${d.id}`,
+  name: d.name,
+  emoji: d.emoji,
+  image: d.image ?? '/art/kartong.png',
+  price: d.price,
+  size: HANG_SIZE[d.id] ?? { w: 2, h: 1 },
+  blurb: 'Trykk på den for å henge den opp på boden.',
+  hangs: d.id,
+}));
+/** Den innpakkede gjenstanden for et apparat som henger på boden. */
+export const hangPackOf = (deviceId: string) => `apparat_${deviceId}`;
+
+/**
  * Hva står i en kontakt? Faste apparater lagres som id-en sin («lyslenke»); apparater som er
  * gjenstander (kjeler – man kan ha flere) lagres som «kjele:<gjenstand-id>».
  */
@@ -1118,7 +1138,7 @@ export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES, CASSETTE_PLAYER, ...TAPES].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, ...HANG_PACKS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES, CASSETTE_PLAYER, ...TAPES].map((t) => [t.id, t]),
 );
 
 /**

@@ -151,8 +151,8 @@ body.night .tint { background: rgba(20, 30, 90, 0.28); }
 .stage > .tint { z-index: 0; }
 /* Bodens tone skal bare treffe selve boden, ikke bakgrunnen som synes gjennom. */
 .scene > .tint {
-  -webkit-mask: url('/art/bod_selger.png') center / 100% 100% no-repeat;
-  mask: url('/art/bod_selger.png') center / 100% 100% no-repeat;
+  -webkit-mask: var(--bod, url('/art/bod_selger.png')) center / 100% 100% no-repeat;
+  mask: var(--bod, url('/art/bod_selger.png')) center / 100% 100% no-repeat;
 }
 .scene { z-index: 1; }
 /* Slaps og hjulspor (hele torget) og selve boden ligger nederst i scenen. */
@@ -1362,7 +1362,7 @@ body:has(.world) #toast.show { transform: translate(-50%, 0); opacity: 1; }
 @keyframes lead-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
 /* Andres boder: eieren står bak disken */
-.seller { position: absolute; left: 44.6%; width: 18%; bottom: 47.07%; z-index: 1; display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: bob 2.4s ease-in-out infinite; }
+.seller { position: absolute; left: 48.1%; width: 11%; bottom: 47.07%; z-index: 1; display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: bob 2.4s ease-in-out infinite; }
 .seller img { width: 100%; aspect-ratio: 1; filter: drop-shadow(0 0.3cqw 0.4cqw rgba(0, 0, 0, 0.45)); }
 .seller span { position: absolute; top: -1.6cqw; padding: 0.1cqw 0.6cqw; border-radius: 99px; background: rgba(29, 26, 22, 0.75); color: #fff7e6; font-size: max(9px, 0.8cqw); font-weight: 700; white-space: nowrap; }
 
@@ -1433,6 +1433,9 @@ body[data-daypart="morgen"] .stage { --bg: url('/art/bg/marked-morgen.jpg'); }
 body[data-daypart="dag"] .stage { --bg: url('/art/bg/marked-dag.jpg'); }
 body[data-daypart="kveld"] .stage { --bg: url('/art/bg/marked-kveld.jpg'); }
 body[data-daypart="natt"] .stage { --bg: url('/art/bg/marked-natt.jpg'); }
+/* Snø og regn over torget (client/weatherfx.ts): over boden, under telefonen, avisa og vinduene. */
+#weather-fx { position: fixed; inset: 0; width: 100vw; height: 100dvh; z-index: 8; pointer-events: none; image-rendering: pixelated; }
+
 /* Været (body[data-weather]): samme torg i snø, sludd og storm, for hver tid på døgnet. */
 body[data-weather="sno"][data-daypart="morgen"] .stage { --bg: url('/art/bg/marked-sno-morgen.jpg'); }
 body[data-weather="sno"][data-daypart="dag"] .stage { --bg: url('/art/bg/marked-sno-dag.jpg'); }
@@ -1555,8 +1558,8 @@ img.title-icon { height: 1.3em; width: auto; vertical-align: -0.3em; image-rende
 .phone-screen { background: #1b2440 url('/art/telefon/bakgrunn.jpg') center / cover no-repeat; }
 
 /* Bordkanten (en stripe av bodbildet) oppå kundene og under varene */
-.table-front { position: absolute; inset: 0; pointer-events: none; background: url('/art/bod_selger.png') center / 100% 100% no-repeat; clip-path: inset(51.76% 14.7% 39.45% 23.1%); } /* hele bordplata og forkanten (y 530–620) mellom stolpene, der kundene står */
-.table-front::after { content: ''; position: absolute; inset: 0; background: rgba(20, 30, 90, 0); transition: background 1.2s; -webkit-mask: url('/art/bod_selger.png') center / 100% 100% no-repeat; mask: url('/art/bod_selger.png') center / 100% 100% no-repeat; }
+.table-front { position: absolute; inset: 0; pointer-events: none; background: var(--bod, url('/art/bod_selger.png')) center / 100% 100% no-repeat; clip-path: inset(51.76% 14.7% 39.45% 23.1%); } /* hele bordplata og forkanten (y 530–620) mellom stolpene, der kundene står */
+.table-front::after { content: ''; position: absolute; inset: 0; background: rgba(20, 30, 90, 0); transition: background 1.2s; -webkit-mask: var(--bod, url('/art/bod_selger.png')) center / 100% 100% no-repeat; mask: var(--bod, url('/art/bod_selger.png')) center / 100% 100% no-repeat; }
 body.night .table-front::after { background: rgba(20, 30, 90, 0.28); }
 
 /* Telefonrammen (art/telefon/ramme.png, 600×1200). Rammen: x 41–559, y 104–1124.
@@ -1836,5 +1839,28 @@ body.night .speaker { filter: brightness(0.85) drop-shadow(0 0.3cqw 0.3cqw rgba(
 .music-toggle { position: absolute; left: 1%; top: 1.5%; z-index: 6; width: 3.2cqw; height: 3.2cqw; min-width: 30px; min-height: 30px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
 .music-toggle img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .music-toggle:hover img { filter: brightness(1.25); }
+/* Prislista midt på fronten av disken (midlertidig CSS-tavle til grafikken er klar). Fronten: y ≈ 620–890 av 1024. */
+.price-board { position: absolute; left: 50%; top: 64.5%; translate: -50% 0; width: 21%; min-height: 15%; z-index: 4; padding: 0.6cqw 0.9cqw; display: flex; flex-direction: column; gap: 0.15cqw; border: 0.3cqw solid #6b4224; border-radius: 0.5cqw; background: #1f2a22; color: #f5ead6; font: 600 max(9px, 1cqw) / 1.25 'Courier New', monospace; text-align: left; cursor: pointer; box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.45); }
+.price-board:hover { border-color: #a66a3a; }
+.price-board-title { align-self: center; font-size: max(10px, 1.15cqw); letter-spacing: 0.1em; text-transform: uppercase; color: #f2d27a; margin-bottom: 0.2cqw; }
+.price-line { display: flex; justify-content: space-between; gap: 0.6cqw; white-space: nowrap; overflow: hidden; }
+.price-line span { overflow: hidden; text-overflow: ellipsis; }
+.price-more { align-self: center; color: #c9b89a; font-size: max(8px, 0.9cqw); }
+.price-list-full { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.price-list-full li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; }
+.price-list-full li .icon { width: 28px; height: 28px; object-fit: contain; }
+/* «Se fronten» under lydknappen i din egen bod. */
+.front-toggle { position: absolute; left: 1%; top: calc(1.5% + max(30px, 3.2cqw) + 0.6cqw); z-index: 6; }
 .player-row { display: flex; align-items: center; gap: 1cqw; justify-content: center; padding: 0.6cqw 0; }
 .tape-grid.empty { background: rgba(28, 10, 6, 0.6); border: 1px dashed rgba(245, 217, 176, 0.35); }
+
+/* Dev-panelet (client/devpanel.ts, bare under npm run dev): fart, klokkeslett og vær. */
+#dev-panel { position: fixed; left: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); z-index: 60; font: 13px/1.3 system-ui, sans-serif; color: #f5ead6; }
+#dev-panel .dev-toggle { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(245, 217, 176, 0.4); background: rgba(28, 10, 6, 0.8); font-size: 18px; cursor: pointer; }
+#dev-panel .dev-body { position: absolute; left: 0; bottom: 44px; width: min(300px, calc(100vw - 20px)); padding: 10px; border-radius: 10px; background: rgba(20, 12, 10, 0.94); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); display: grid; gap: 6px; }
+#dev-panel .dev-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+#dev-panel .dev-row small { color: #c9b89a; }
+#dev-panel .dev-body button { min-width: 34px; padding: 3px 7px; border: 1px solid rgba(245, 217, 176, 0.3); border-radius: 6px; background: #3a2a20; color: inherit; font: inherit; cursor: pointer; }
+#dev-panel .dev-body button:hover { background: #57402f; }
+#dev-panel .dev-body button.on { background: #b3262d; border-color: #e0767b; }
+#dev-panel input[type='time'] { padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(245, 217, 176, 0.3); background: #2a1d16; color: inherit; font: inherit; }

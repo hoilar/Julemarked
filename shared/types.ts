@@ -215,7 +215,8 @@ export interface GameState {
   me: {
     playerId: number;
     name: string;
-    stallId: number | null;
+    stallId: number | null; // boden du er i nå
+    stalls: number[]; // alle bodene du eier (du er i én om gangen)
     cash: number;
     reputation: number;
     inventory: InventoryRow[];

@@ -12,7 +12,7 @@ import {
   join as joinMarket,
   migrate,
   moveItem,
-  moveStall,
+  driveToStall,
   signPolicy,
   discardItem,
   fetchPaper,
@@ -24,6 +24,7 @@ import {
   stashItems,
   noteClock,
   setClock,
+  devControl,
   setKettle,
   placeOrder,
   openDelivery,
@@ -134,7 +135,7 @@ const routes: Record<string, Handler> = {
   'POST /api/join': (b) => ({ token: joinMarket(String(b.name ?? ''), String(b.code ?? '')) }),
   'GET /api/state': (_b, req) => getState(playerFromToken(tokenOf(req))),
   'POST /api/claim': action((p, b) => claimStall(p, Number(b.slotIndex), String(b.stallName ?? ''))),
-  'POST /api/stall/move': action((p, b) => moveStall(p, Number(b.slotIndex))),
+  'POST /api/stall/drive': action((p, b) => driveToStall(p, Number(b.stallId))),
   'POST /api/insurance/sign': action((p, b) => signPolicy(p, String(b.kind ?? ''))),
   'POST /api/klas/order': action((p, b) => placeKlasOrder(p, b.lines, b.mode === 'car' ? 'car' : b.mode === 'express' ? 'express' : 'standard')),
   'POST /api/item/move': action((p, b) =>
@@ -142,7 +143,7 @@ const routes: Record<string, Handler> = {
   ),
   'POST /api/paper/fetch': action((p) => fetchPaper(p)),
   'POST /api/bill/pay': action((p, b) => (b.all ? payAllBills(p) : payBill(p, Number(b.billId)))),
-  'POST /api/device/hang': action((p, b) => hangDevice(p, Number(b.boxId))),
+  'POST /api/device/hang': action((p, b) => hangDevice(p, Number(b.itemId ?? b.boxId))),
   'POST /api/power/switch': action((p) => togglePower(p)),
   'POST /api/clock/set': action((p) => setClock(p)),
   'POST /api/shop/order': action((p, b) =>
@@ -249,6 +250,9 @@ async function serveStatic(path: string, res: ServerResponse) {
     }
   }
 }
+
+// Dev-panelet i klienten: fart, klokkeslett og vær. Finnes bare når serveren kjører med --dev.
+if (process.argv.includes('--dev')) routes['POST /api/dev'] = action((p, b) => devControl(p, b));
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://x');

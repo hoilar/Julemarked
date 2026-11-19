@@ -24,8 +24,13 @@ export const CAR_BY_ID: Record<string, CarSpec> = Object.fromEntries(CARS.map((c
 export const START_CAR = 'bil_tennis';
 /** Kjør søpla bort: gjenbruksstasjonen tar alt gratis (ingen avgift for poser). */
 export const DUMP = { id: 'gjenbruk', name: 'Gjenbruksstasjonen' };
+/** Kjøring mellom to av dine egne boder: spillminutter på veien (alle biler). */
+export const DRIVE_MINUTES = 15;
+/** Turen går til en annen av dine boder (store = DRIVE_STORE). */
+export const DRIVE_STORE = 'bod';
 /** Navnet på der bilen kjører (en nettbutikk eller gjenbruksstasjonen). */
-export const tripPlaceName = (id: string, stores: Record<string, { name: string }>) => (id === DUMP.id ? DUMP.name : (stores[id]?.name ?? 'butikken'));
+export const tripPlaceName = (id: string, stores: Record<string, { name: string }>) =>
+  id === DUMP.id ? DUMP.name : id === DRIVE_STORE ? 'den andre boden' : (stores[id]?.name ?? 'butikken');
 export const isCar = (typeId: string) => !!CAR_BY_ID[typeId];
 
 /** Bilbutikken tar den gamle bilen i innbytte for denne andelen av prisen. */
