@@ -10,6 +10,13 @@ under **SIL Open Font License 1.1** (OFL), som tillater bruk, bundling og redist
 
 Lisenstekst: https://openfontlicense.org (SIL OFL 1.1). `@font-face`-reglene står i `client/style.css`.
 
+| Fil | Font | Rolle | Opphav og lisens |
+|---|---|---|---|
+| `homemade-apple.ttf` | Homemade Apple (Font Diner, 2010) | Krittskrift på prislista foran på disken | https://fonts.google.com/specimen/Homemade+Apple · **Apache License 2.0** (https://www.apache.org/licenses/LICENSE-2.0) |
+
+Homemade Apple er lagt inn som hel TTF (dekker æ/ø/å og tall). «Chalk Board» (StringLabs) i `GFX_assets`
+er «All Rights Reserved» og brukes ikke i spillet.
+
 Håndskrift (oppskrifter, notater) bruker systemfonten Segoe Print / Comic Sans, ikke en
 selvhostet font.
 

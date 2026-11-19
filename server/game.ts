@@ -41,7 +41,7 @@ import {
   stashSources,
   type StashTo,
 } from '../shared/items.ts';
-import { DUMP, DRIVE_MINUTES, DRIVE_STORE, tripPlaceName, CAR_BATTERY, CAR_BATTERY_FULL, CAR_BY_ID, START_CAR, TRADE_IN, fuelExpensive, fuelPrice, isCar, tripFuelCost } from '../shared/car.ts';
+import { DUMP, DRIVE_STORE, driveMinutes, tripPlaceName, CAR_BATTERY, CAR_BATTERY_FULL, CAR_BY_ID, START_CAR, TRADE_IN, fuelExpensive, fuelPrice, isCar, tripFuelCost } from '../shared/car.ts';
 import {
   DARK_FROM,
   DEVICES,
@@ -1265,7 +1265,7 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
 
 /**
  * Kjøper en bodplass til. Den nye boden er tom (bare sikringsboks, som en ny bod) og har samme kasse som de andre
- * (felles lommebok). Du blir stående der du er; kjør dit med bilen (DRIVE_MINUTES = 15 min).
+ * (felles lommebok). Du blir stående der du er; kjør dit med bilen (3–5 min, se driveMinutes).
  * Telefonen og bilen er dine og følger deg.
  */
 function buyAnotherStall(market: MarketRow, player: PlayerRow, current: StallRow, def: (typeof LAYOUT)[number], stallName: string) {
@@ -1294,7 +1294,7 @@ function buyAnotherStall(market: MarketRow, player: PlayerRow, current: StallRow
 }
 
 /**
- * Kjører til en annen av dine boder (DRIVE_MINUTES = 15 spillminutter). Bilen med bagasjerommet og det du bærer
+ * Kjører til en annen av dine boder (3–5 spillminutter etter avstanden). Bilen med bagasjerommet og det du bærer
  * (hender og ryggsekk) blir med. Bensin (eller batteri) som en vanlig tur. Boden du forlater, blir ubetjent.
  */
 export function driveToStall(player: PlayerRow, stallId: number) {
@@ -1313,7 +1313,8 @@ export function driveToStall(player: PlayerRow, stallId: number) {
     if (stall.cash < fuel) throw new GameError(`Du har ikke råd til bensinen (${fuel} kr).`);
     q.addCash.run(-fuel, stall.id);
     if (battery) saveState(battery.id, { charge: Math.max(0, Math.round(((battery.charge ?? 0) - capacityOf(CAR_BATTERY)) * 100) / 100) });
-    const plan: CarTrip = { store: DRIVE_STORE, until: t + DRIVE_MINUTES * 60_000, bags: [], goods: [], toStall: target.id };
+    const minutes = driveMinutes(LAYOUT[stall.slot_index].street, LAYOUT[target.slot_index].street);
+    const plan: CarTrip = { store: DRIVE_STORE, until: t + minutes * 60_000, bags: [], goods: [], toStall: target.id };
     db.prepare('UPDATE stalls SET car_trip = ? WHERE id = ?').run(JSON.stringify(plan), stall.id);
     const at = formatClock(osloParts(plan.until)).replace(/^.* kl\. /, '');
     event(market, player.id, t, `🚗 Du kjører til «${target.name}»${fuel ? ` (${fuel} kr i bensin)` : ''}. Fremme kl. ${at}.`);

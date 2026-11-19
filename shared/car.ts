@@ -24,8 +24,15 @@ export const CAR_BY_ID: Record<string, CarSpec> = Object.fromEntries(CARS.map((c
 export const START_CAR = 'bil_tennis';
 /** Kjør søpla bort: gjenbruksstasjonen tar alt gratis (ingen avgift for poser). */
 export const DUMP = { id: 'gjenbruk', name: 'Gjenbruksstasjonen' };
-/** Kjøring mellom to av dine egne boder: spillminutter på veien (alle biler). */
-export const DRIVE_MINUTES = 15;
+/** Gatene i rekkefølge (hovedgata øverst, bakgata nederst) – avstanden avgjør hvor lenge du kjører. */
+const STREET_ORDER = ['hovedgate', 'sidegate', 'bakgate'];
+/**
+ * Kjøring mellom to av dine egne boder (spillminutter, alle biler): 3 min i samme gate,
+ * 4 min til nabogata og 5 min mellom hovedgata og bakgata.
+ */
+export function driveMinutes(fromStreet: string, toStreet: string): number {
+  return 3 + Math.abs(STREET_ORDER.indexOf(fromStreet) - STREET_ORDER.indexOf(toStreet));
+}
 /** Turen går til en annen av dine boder (store = DRIVE_STORE). */
 export const DRIVE_STORE = 'bod';
 /** Navnet på der bilen kjører (en nettbutikk eller gjenbruksstasjonen). */

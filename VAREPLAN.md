@@ -155,8 +155,8 @@ Prisene justeres etter hvert som vi tester.
 Kundene ser boden forfra. **Prislista** henger midt på fronten (bygd, midlertidig CSS-grafikk; se GRAFIKK.md).
 Feltene **til venstre og høyre for prislista** holdes ledige til dekor:
 
-- To dekorplasser på fronten: venstre (x ≈ 330–600 av 1536) og høyre (x ≈ 960–1340), under bordplata (y ≈ 640–880).
-  Prislista i midten (x ≈ 618–940) skal ikke dekkes.
+- To dekorplasser på fronten: venstre (x ≈ 350–650 av 1536) og høyre (x ≈ 1010–1310), under bordplata (y ≈ 640–880).
+  Prislista i midten (x ≈ 665–995, midt på boden ved x 830) skal ikke dekkes.
 - Idé: dekor er gjenstander man kjøper eller lager (kranser, lysslynger, skilt, granbar, en liten nisse) og
   legger i en dekorplass fra boden din. Den vises for alle som går forbi, og kan gi litt flere kunder eller bedre
   omdømme (stil + jul). Kanskje en egen «pynt»-kategori som ikke selges, men brukes.

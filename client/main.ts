@@ -2,7 +2,7 @@ import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { moduleEffectText, moduleFitsText, moduleIn } from '../shared/modules.ts';
 import { FATIGUE, fatigue, tapeIn } from '../shared/music.ts';
 import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, STALL_AREA, type Spot, type StashTo, type Street } from '../shared/items.ts';
-import { CARRY_SLOTS, CARS, CAR_BY_ID, DRIVE_MINUTES, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
+import { CARRY_SLOTS, CARS, CAR_BY_ID, driveMinutes, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
   LOUPE,
@@ -1163,19 +1163,19 @@ function priceRows(stall: StallPublic): { icon: string; name: string; price: num
 }
 
 /** Hvor mange linjer prislista på fronten har plass til; resten står i vinduet. */
-const PRICE_LINES = 5;
+const PRICE_LINES = 4;
 
 /**
- * Prislista midt på fronten av disken. Trykk for hele lista i eget vindu.
- * Midlertidig tegnet med CSS til grafikken (tavle/skilt) er klar – se GRAFIKK.md.
+ * Prislista midt på fronten av disken, én tavle per gate (art/bod/prisliste-<gate>.png, 660×320 med
+ * skriveflate x 40, y 44, 580×246). Spillet skriver teksten. Trykk for hele lista i eget vindu.
  */
 function priceBoard(stall: StallPublic): string {
   const rows = priceRows(stall);
   const shown = rows.slice(0, PRICE_LINES);
   const more = rows.length - shown.length;
-  return `<button class="price-board" data-action="pricelist" data-stall="${stall.id}" title="Trykk for hele prislista">
-    <span class="price-board-title">Priser</span>
-    ${shown.length ? shown.map((r) => `<span class="price-line"><span>${esc(r.name)}</span><b>${r.price},-</b></span>`).join('') : '<span class="price-line muted">Ingenting på disken</span>'}
+  const street = state ? streetOfStall(state, stall.id) : 'hovedgate';
+  return `<button class="price-board ${street}" data-action="pricelist" data-stall="${stall.id}" title="Trykk for hele prislista">
+    ${shown.map((r) => `<span class="price-line"><span>${esc(r.name)}</span><b>    ${r.price},-</b></span>`).join('')}
     ${more > 0 ? `<span class="price-more">+ ${more} til …</span>` : ''}
   </button>`;
 }
@@ -2108,7 +2108,7 @@ function visitorInfo(stall: StallPublic): string {
   if (state?.me.stalls.includes(stall.id))
     return `<div class="visitor-info"><div>🏠 Din bod · ⭐ ${stall.reputation}</div>
       <div class="muted">Du er ikke her nå. Bilen og det du bærer, blir med.</div>
-      <button class="small" data-action="drive" data-stall="${stall.id}">🚗 Kjør hit (${DRIVE_MINUTES} min)</button></div>`;
+      <button class="small" data-action="drive" data-stall="${stall.id}">🚗 Kjør hit (${driveMinutes(myStreet(state), streetOfStall(state, stall.id))} min)</button></div>`;
   return `<div class="visitor-info"><div>👤 ${esc(stall.ownerName)} · ⭐ ${stall.reputation}</div>
     <div class="muted">Trykk på en vare for å kjøpe.</div>${snoopButton(stall)}</div>`;
 }
@@ -2544,7 +2544,7 @@ function mapScreen(s: GameState): string {
     } else {
       const afford = s.me.cash >= sl.price;
       side = `<h2>Kjøp plass #${sl.index + 1}</h2>${facts}
-        <p class="muted">Du får en bod til, i tillegg til den du har. Den nye er tom (bare sikringsboks) og har samme kasse som de andre. Kjør dit med bilen (${DRIVE_MINUTES} min) – bilen med bagasjerommet og det du bærer, blir med.${afford ? '' : ` Du har ${kr(s.me.cash)} og mangler ${kr(sl.price - s.me.cash)}.`}</p>
+        <p class="muted">Du får en bod til, i tillegg til den du har. Den nye er tom (bare sikringsboks) og har samme kasse som de andre. Kjør dit med bilen (${driveMinutes(myStreet(s), sl.street)} min) – bilen med bagasjerommet og det du bærer, blir med.${afford ? '' : ` Du har ${kr(s.me.cash)} og mangler ${kr(sl.price - s.me.cash)}.`}</p>
         <form data-form="claim" class="stack-form">
           <label>Navn på den nye boden <input name="stallName" required minlength="2" maxlength="32" value="${esc(myStall(s)?.name ?? '')}" data-autofocus></label>
           <div class="row"><button ${afford ? '' : 'disabled'}>Kjøp plassen${sl.price ? ` for ${kr(sl.price)}` : ''}</button>${cancel}</div>
@@ -4835,7 +4835,7 @@ app.addEventListener('submit', async (e) => {
     case 'claim': {
       if (screen.kind !== 'claim') return;
       const first = state?.me.stallId == null;
-      const ok = await act('/api/claim', { slotIndex: screen.slot, stallName: data.stallName }, first ? 'Boden er din! 🎉' : `🎉 Du eier nå en bod til. Kjør dit med bilen (${DRIVE_MINUTES} min).`);
+      const ok = await act('/api/claim', { slotIndex: screen.slot, stallName: data.stallName }, first ? 'Boden er din! 🎉' : `🎉 Du eier nå en bod til. Kjør dit med bilen (3–5 min).`);
       if (ok) {
         screen = first ? { kind: 'stall' } : { kind: 'map' };
         if (first) modal = { kind: 'wholesale' };

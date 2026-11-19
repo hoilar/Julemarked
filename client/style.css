@@ -11,6 +11,12 @@
   src: url('/fonts/pixelify-sans-700.woff2') format('woff2');
   font-weight: 700; font-style: normal; font-display: swap;
 }
+/* Håndskrift med kritt på prislista (Apache 2.0, se fonts/README.md). */
+@font-face {
+  font-family: 'Homemade Apple';
+  src: url('/fonts/homemade-apple.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
 
 :root {
   --bg: #f6efe4;
@@ -1840,12 +1846,18 @@ body.night .speaker { filter: brightness(0.85) drop-shadow(0 0.3cqw 0.3cqw rgba(
 .music-toggle img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .music-toggle:hover img { filter: brightness(1.25); }
 /* Prislista midt på fronten av disken (midlertidig CSS-tavle til grafikken er klar). Fronten: y ≈ 620–890 av 1024. */
-.price-board { position: absolute; left: 50%; top: 64.5%; translate: -50% 0; width: 21%; min-height: 15%; z-index: 4; padding: 0.6cqw 0.9cqw; display: flex; flex-direction: column; gap: 0.15cqw; border: 0.3cqw solid #6b4224; border-radius: 0.5cqw; background: #1f2a22; color: #f5ead6; font: 600 max(9px, 1cqw) / 1.25 'Courier New', monospace; text-align: left; cursor: pointer; box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.45); }
-.price-board:hover { border-color: #a66a3a; }
-.price-board-title { align-self: center; font-size: max(10px, 1.15cqw); letter-spacing: 0.1em; text-transform: uppercase; color: #f2d27a; margin-bottom: 0.2cqw; }
-.price-line { display: flex; justify-content: space-between; gap: 0.6cqw; white-space: nowrap; overflow: hidden; }
-.price-line span { overflow: hidden; text-overflow: ellipsis; }
-.price-more { align-self: center; color: #c9b89a; font-size: max(8px, 0.9cqw); }
+/* Tavla er 330×160 bodpiksler (21,48 % × 15,63 % av boden), midt på boden (x = 830, ikke midt i bildet) og øvre kant ved y = 660. Bildet er 660×320 med
+   skriveflate x 40, y 44, 580×246. Padding i % regnes av scenens bredde (ikke tavlas), så den er i cqw:
+   tavla er 21,48cqw bred → 44/660, 40/660 og 30/660 av det. */
+.price-board { position: absolute; left: 53.59%; top: 64.45%; translate: -50% 0; width: 21.48%; aspect-ratio: 660 / 320; box-sizing: border-box; padding: 1.43cqw 1.3cqw 0.98cqw; z-index: 4; display: flex; flex-direction: column; justify-content: flex-start; overflow: hidden; border: 0; border-radius: 0; background: url('/art/bod/prisliste-hovedgate.png') center / 100% 100% no-repeat; image-rendering: pixelated; color: #f4f2ec; text-shadow: 0 0 0.12cqw rgba(255, 255, 255, 0.35); font: 400 max(9px, 1cqw) / 1.6 'Homemade Apple', 'Segoe Print', cursive; text-align: left; cursor: pointer; }
+.price-board.sidegate { background-image: url('/art/bod/prisliste-sidegate.png'); }
+.price-board.bakgate { background-image: url('/art/bod/prisliste-bakgate.png'); }
+.price-board:hover { filter: brightness(1.12); }
+/* Navn, fire mellomrom, pris. Håndskriften har lange haler under linja: litt luft under, så de ikke kuttes. */
+.price-line { display: flex; justify-content: flex-start; white-space: pre; overflow: hidden; padding-bottom: 0.12em; }
+.price-line span { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+.price-line b { flex: none; font-weight: 400; }
+.price-more { align-self: center; color: #d9d6cc; font-size: max(7px, 0.78cqw); }
 .price-list-full { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .price-list-full li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; }
 .price-list-full li .icon { width: 28px; height: 28px; object-fit: contain; }

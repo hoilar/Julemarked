@@ -247,7 +247,7 @@ gjelder ikke grensa – da er det ditt ansvar å ikke pixelifisere et stort scen
 
 ## Gjenstående grafikk-ønsker
 
-### ✅ Grafikk klar (19.11.2026): prisliste på fronten av disken
+### ✅ I bruk (20.11.2026): prisliste på fronten av disken (grafikk klar 19.11.2026)
 
 Kundene ser boden forfra (`art/bod/<gate>-front.png`). Midt på fronten, under bordplata, henger en
 **prisliste** med varene som ligger på disken. Spillet skriver selve teksten (varenavn og pris), så
@@ -262,7 +262,7 @@ lista i eget vindu når ikke alt får plass. Nå tegnes den midlertidig med CSS 
   og 15 % av høyden. Gjerne laget dobbelt så stor (660 × 320) og skalert ned.
 - **Skriveflate:** jevn og rolig, minst 85 % av bredden og 75 % av høyden, så 5 linjer tekst i
   hvit/kremfarget monospace får plass. Ingen mønster eller skygger i selve flaten.
-- **Plassering:** sentrert vannrett på boden (x ≈ 768), øverst ved y ≈ 660. Skal ikke dekke bordbena.
+- **Plassering:** sentrert på boden (x ≈ 830 – boden står ikke midt i bildet; stolpene ved x 294 og 1366), øverst ved y ≈ 660. Skal ikke dekke bordbena.
 - Transparent bakgrunn, samme pikselstil og lysretning (oppe til venstre) som bodene. Ingen tekst.
 - Filer: originaler i `GFX_assets/bodvarianter/prisliste/`, spillfiler i `client/public/art/bod/`.
 
