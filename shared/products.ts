@@ -1145,7 +1145,7 @@ export const DECOR_PACKS: Tool[] = DECOR.map((d) => ({
   id: decorPackOf(d.id),
   name: d.name,
   emoji: d.emoji,
-  image: `/art/bodfront/${d.file}`,
+  image: `/art/bodfront/${d.packFile ?? d.file}`,
   price: d.price,
   size: d.pack,
   blurb: 'Trykk på den for å henge den opp på fronten av boden.',

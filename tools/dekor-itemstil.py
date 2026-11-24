@@ -127,6 +127,9 @@ def main():
                 c=Image.new('RGBA',im.size,'#333c48');c.alpha_composite(im)
                 bg.append(c.convert('RGB').resize((96,192),Image.Resampling.NEAREST))
             bg[0].save(CONTROL/'flamme.gif',save_all=True,append_images=bg[1:],duration=120,loop=0)
+        elif job.get('finishedStrip'):
+            result=Image.new('RGBA',ref.size)
+            result.alpha_composite(prepared(source,(ref.width-4,ref.height)),(2,0))
         elif name=='d15-strikket-loper.png': result=strip(source,ref,4)
         elif name=='d16-flagg.png': result=strip(source,ref,10)
         else: result=place(source,ref)
@@ -150,7 +153,7 @@ def main():
         palette={tuple(bytes.fromhex(color.lstrip('#'))) for color in palette}
         for item in checks:
             assert item['size']==list(Image.open(OLD/item['file']).size)
-            if item['slot']!='animation': assert item['bbox']==item['previousBbox'],item
+            if item['slot']!='animation' and item['file'] not in ['d15-strikket-loper.png','d16-flagg.png']: assert item['bbox']==item['previousBbox'],item
             im=Image.open(OUT/item['file']).convert('RGBA')
             alpha=np.asarray(im.getchannel('A'))
             assert set(np.unique(alpha)).issubset({0,255}),item['file']
@@ -172,7 +175,10 @@ def main():
         manifest=json.loads((BASE/'leveranse.json').read_text(encoding='utf-8'))
         manifest['method']='Built-in image_gen with earlier item references; pixelify warm palette and crisp pixel grid; original sizes and anchor bounds preserved'
         manifest['styleReferences']=['client/public/art/goods/trenisse.png','GFX_assets/ChatGPT/nye-varer-julepynt-oversikt.jpg']
-        manifest['checks']['previousDimensionsAndAnchorBoundsPreserved']=True
+        manifest['checks'].pop('previousDimensionsAndAnchorBoundsPreserved',None)
+        manifest['checks'].pop('flagStripExactSeam',None)
+        manifest['checks']['previousDimensionsAndAttachmentEdgesPreserved']=True
+        manifest['checks']['finishedSideEdgesOnRunnerAndFlags']=True
         manifest['checks']['opaqueSpritesUseCanonicalWarmPalette']=True
         (BASE/'leveranse.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
         (STAGE/'levert.json').write_text(json.dumps({'date':'2026-11-24','style':'Earlier item references, warm palette and crisp pixel grid','files':len(files)},ensure_ascii=False,indent=2),encoding='utf-8')

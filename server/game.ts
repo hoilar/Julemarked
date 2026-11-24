@@ -905,6 +905,18 @@ export function migrate() {
     // Telefonen er spillerens og vises alltid nede i høyre hjørne: den er ikke lenger en ting i lageret.
     const phones = db.prepare('DELETE FROM items WHERE type_id = ?').run(PHONE).changes;
     if (Number(phones) > 0) console.log(`Tok ${phones} telefoner ut av lagrene (telefonen ligger nå i hjørnet).`);
+    // Pyntepakker som har fått ny størrelse (løper og flagg er 2×6): får de ikke lenger plass der de ligger
+    // (under disken, på bordet eller i kartongen), settes de innpakket ved boden.
+    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) {
+      const items = itemsOf(s.id);
+      for (const it of items.filter((i) => decorOfPack(i.typeId) && ['storage', 'counter', 'box'].includes(i.place))) {
+        const g = gridOf(items, streetOf(s.id), it.place, it.boxId);
+        if (g && fits(it, itemsIn(items, it.place, it.boxId), g, (o) => o.id === it.id)) continue;
+        db.prepare("UPDATE items SET place = 'ground', box_id = NULL, x = 0, y = 0 WHERE id = ?").run(it.id);
+        it.place = 'ground';
+        it.boxId = null;
+      }
+    }
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterCar(s.id);
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterFusebox(s.id);
     // Sikringsbokser fra før skrusikringene ble gjenstander: gi plassene sikringer.

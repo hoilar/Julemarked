@@ -60,6 +60,7 @@ export interface Decor {
   w: number; // bodpiksler
   h: number;
   pack: { w: number; h: number }; // pakken i rutenettet
+  packFile?: string; // eget pakkebilde under disken (løper og flagg: snudd 90°, rullet sammen i en høy pakke)
   blurb: string;
   glow?: string; // lyslag (samme lerret) som lyser når det er mørkt
   flame?: boolean; // fakkelflamme (d24b-flamme-ark.png) over fakkelen
@@ -98,8 +99,8 @@ export const DECOR: Decor[] = [
   d('granbar_hoyre', 'Granbar rundt stolpen (h.)', '🌲', 89, 'stolpe', 'd12-granbar-hoyre.png', 60, 230, [1, 3], 'Snor seg rundt stolpen.'),
   d('krans_kongler', 'Stor krans med kongler', '🎄', 249, 'panel', 'd13-krans-kongler.png', 180, 180, [3, 3], 'Stor krans med kongler og bær. Fyller et sidepanel.'),
   d('rosemalt_plate', 'Rosemalt plate', '🌸', 229, 'panel', 'd14-rosemalt-plate.png', 220, 150, [3, 2], 'Håndmalt plate med roser i kantene.'),
-  d('strikket_loper', 'Strikket løper', '🧶', 299, 'kant', 'd15-strikket-loper.png', 1160, 110, [3, 1], 'Lusekoftemønster over hele diskkanten.'),
-  d('flagg', 'Flagg i snor', '🇳🇴', 129, 'kant', 'd16-flagg.png', 1160, 60, [2, 1], 'Små norske flagg langs kanten.'),
+  d('strikket_loper', 'Strikket løper', '🧶', 299, 'kant', 'd15-strikket-loper.png', 1160, 110, [2, 6], 'Lusekoftemønster over hele diskkanten.', { packFile: 'd15-strikket-loper-pakke.png' }),
+  d('flagg', 'Flagg i snor', '🇳🇴', 129, 'kant', 'd16-flagg.png', 1160, 60, [2, 6], 'Små norske flagg langs kanten.', { packFile: 'd16-flagg-pakke.png' }),
   d('skinnfell', 'Skinnfell', '🐑', 199, 'kant', 'd17-skinnfell.png', 200, 140, [2, 2], 'Lunt og mykt over hjørnet av disken.', { dy: -50 }),
   d('juletre_botte', 'Juletre i bøtte', '🎄', 349, 'bakke', 'd18-juletre-botte.png', 160, 280, [2, 4], 'Et lite tre i sinkbøtte.'),
   d('halmbukk', 'Julebukk i halm', '🐐', 299, 'bakke', 'd19-halmbukk.png', 150, 160, [3, 3], 'Stor halmbukk med røde bånd.'),
