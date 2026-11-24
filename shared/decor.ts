@@ -64,6 +64,7 @@ export interface Decor {
   glow?: string; // lyslag (samme lerret) som lyser når det er mørkt
   flame?: boolean; // fakkelflamme (d24b-flamme-ark.png) over fakkelen
   dy?: number; // flytt opp/ned fra plassen (bodpiksler)
+  scale?: number; // vis større/mindre enn w×h (flammen følger med)
 }
 
 const d = (
@@ -106,7 +107,7 @@ export const DECOR: Decor[] = [
   d('kjelke_pakker', 'Kjelke med pakker', '🛷', 329, 'bakke', 'd21-kjelke-pakker.png', 200, 130, [3, 2], 'Gammel kjelke med tomme pakker.'),
   d('snomann', 'Snømann', '⛄', 199, 'bakke', 'd22-snomann.png', 140, 200, [2, 3], 'Smelter ikke. Lover vi.'),
   d('melkespann', 'Melkespann med granbar', '🥛', 149, 'bakke', 'd23-melkespann.png', 90, 150, [2, 2], 'Gammelt melkespann fylt med gran.'),
-  d('utefakkel', 'Utefakkel', '🔥', 129, 'bakke', 'd24-utefakkel.png', 50, 180, [1, 3], 'Brenner hele dagen.', { flame: true }),
+  d('utefakkel', 'Utefakkel', '🔥', 129, 'bakke', 'd24-utefakkel.png', 50, 180, [1, 3], 'Brenner hele dagen.', { flame: true, scale: 1.3 }),
   d('bakkelykt', 'Lykt på bakken', '🏮', 179, 'bakke', 'd25-bakkelykt.png', 70, 110, [1, 2], 'Lykt med stearinlys. Lyser når det er mørkt.', { glow: 'd25b-bakkelykt-glod.png' }),
   d('vedstabel', 'Vedstabel', '🪵', 159, 'bakke', 'd26-vedstabel.png', 180, 120, [3, 2], 'Kløyvd bjørk med snø på.'),
 ];
@@ -119,12 +120,19 @@ export const decorOfPack = (typeId: string) => (typeId.startsWith('pynt_') ? DEC
 /** Fakkelflammen: ark med fire trinn à 32×64, festet x+9, y−60 fra fakkelbildets øvre venstre hjørne. */
 export const TORCH_FLAME = { file: 'd24b-flamme-ark.png', w: 32, h: 64, frames: 4, ms: 120, dx: 9, dy: -60 };
 
+/** Størrelsen pynten vises i på fronten (bodpiksler), med scale. */
+export function decorSize(decor: Decor): { w: number; h: number } {
+  const k = decor.scale ?? 1;
+  return { w: Math.round(decor.w * k), h: Math.round(decor.h * k) };
+}
+
 /** Øvre venstre hjørne for en pynt på en plass (bodpiksler). */
 export function decorBox(slot: DecorSlot, decor: Decor): { x: number; y: number } {
   const dy = decor.dy ?? 0;
+  const { w, h } = decorSize(decor);
   if (slot.anchor === 'left') return { x: slot.x, y: slot.y + dy };
-  const x = Math.round(slot.x - decor.w / 2);
+  const x = Math.round(slot.x - w / 2);
   if (slot.anchor === 'top') return { x, y: slot.y + dy };
-  if (slot.anchor === 'bottom') return { x, y: slot.y - decor.h + dy };
-  return { x, y: Math.round(slot.y - decor.h / 2) + dy };
+  if (slot.anchor === 'bottom') return { x, y: slot.y - h + dy };
+  return { x, y: Math.round(slot.y - h / 2) + dy };
 }

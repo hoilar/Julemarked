@@ -1,0 +1,8 @@
+{
+  "_om": "Referansene som tools/stilmatch.py tilpasser ny grafikk til. Legg til flere: path (fra prosjektroten) og eventuelt crop [x0, y0, x1, y1]. Bruk utsnitt med motiv, ikke tom himmel eller gjennomsiktige felt.",
+  "referanser": [
+    { "path": "client/public/art/bod/hovedgate-front.png", "crop": [300, 600, 1300, 900], "om": "disken forfra" },
+    { "path": "client/public/art/bod/hovedgate-front.png", "crop": [200, 0, 1400, 250], "om": "taket med granbar og snø" },
+    { "path": "client/public/art/bod/hovedgate.png", "crop": [300, 300, 1300, 900], "om": "boden bakfra" }
+  ]
+}

@@ -292,6 +292,14 @@ body.night .power-layer.glow { filter: drop-shadow(0 0 0.6cqw rgba(255, 210, 120
 .shop-tab.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
 .store-banner { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; border-radius: 10px; background: var(--brand); color: var(--brand-ink); margin-bottom: 0.4rem; }
 .store-banner b { font-size: 1.5rem; letter-spacing: 0.02em; }
+/* Ordbildene (client/public/art/butikker/): lys skrift med mørk kontur, på butikkfargen eller mørk bakgrunn. */
+.store-banner { align-items: center; padding: 0.35rem 1rem 0.35rem 0.4rem; }
+.store-banner b { display: flex; line-height: 0; }
+.shop-logo.logo { height: 4.2rem; width: auto; }
+.shop-tab { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.3rem; background: #1f2433; color: #f4f2ec; }
+.shop-tab:not(.on) .shop-logo { opacity: 0.85; }
+.shop-tab:hover .shop-logo { opacity: 1; }
+.shop-logo.fane { height: 30px; width: auto; display: block; }
 .store-banner span { font-style: italic; font-size: 0.85rem; opacity: 0.9; }
 .store-banner.klas { --brand: #6b4224; --brand-ink: #fff3d6; }
 .shop-tab.bil, .store-banner.bil { --brand: #2f4f6f; --brand-ink: #e8f1ff; }
@@ -745,7 +753,9 @@ body.dragging .nail:not(.used) .nail-head { filter: drop-shadow(0 0 0.25cqw rgba
   top: 10%;
   height: 42.9%; /* ned til y ≈ 542 px: bakkanten av bordplata */
   /* Klipp bare nederst (bordet skjuler kroppen) – hoder og luer får stikke opp over feltet. */
-  clip-path: inset(-60% 0 -20% 0); /* kroppene fortsetter ned bak hele bordet (.table-front dekker dem), også tyven som lusker lavt */
+  /* Kroppene fortsetter ned bak bordet (.table-front dekker y 530–620), også tyven som lusker lavt. Ikke lenger ned:
+     da synes de i glippa mellom forkanten og lageret. 52,9 % + 17,5 % × 42,9 % ≈ 60,4 % (y ≈ 618). */
+  clip-path: inset(-60% 0 -17.5% 0);
   pointer-events: none;
 }
 .customer {
@@ -1874,14 +1884,21 @@ body.night .speaker { filter: brightness(0.85) drop-shadow(0 0.3cqw 0.3cqw rgba(
 /* Pynten på bodfronten (decorView, shared/decor.ts): under lyslenka og prislista. */
 .decor { position: absolute; display: block; padding: 0; border: 0; background: none; pointer-events: none; }
 button.decor { pointer-events: auto; cursor: pointer; }
-button.decor:hover img:first-child { filter: brightness(1.15) drop-shadow(0 0 0.3cqw rgba(255, 230, 160, 0.8)); }
-/* Filene er i tre ganger bodpiksler (tools/dekor-hires.py): glatt skalering, ikke pixelated. */
-.decor img { position: absolute; inset: 0; width: 100%; height: 100%; }
-body.night .decor img:first-child { filter: brightness(0.8); }
+/* Diskkanten (løper, flagg, skinnfell) ligger oppå bordplata, som tegnes som eget lag (.table-front) over pynten. */
+.decor-kant { z-index: 1; }
+/* Kunstig skygge under pynten på bakken: en mørk kopi av bildet, lagt bakover på bakken (følger formen),
+   pluss en myk kontaktskygge rett under foten. */
+.decor .decor-shadow { transform-origin: 50% 100%; transform: skewX(-50deg) scaleY(0.3); filter: brightness(0) blur(1.5px); opacity: 0.32; }
+body.night .decor .decor-shadow { opacity: 0.45; }
+.decor-bakke::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: -3%; height: 8%; border-radius: 50%; background: radial-gradient(closest-side, #1a1e33, transparent); opacity: 0.4; }
+button.decor:hover .decor-art { filter: brightness(1.15) drop-shadow(0 0 0.3cqw rgba(255, 230, 160, 0.8)); }
+/* Ekte pikselgrafikk i bodpiksler (itemstilen, tools/dekor-itemstil.py): harde piksler, ikke utjevning. */
+.decor img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+body.night .decor .decor-art { filter: brightness(0.8); }
 .decor-glow { opacity: 0; mix-blend-mode: screen; transition: opacity 1.2s; }
 body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicker 3.1s ease-in-out infinite; }
 @keyframes decor-flicker { 50% { opacity: 0.8; } }
-.decor-flame { position: absolute; background: url('/art/bodfront/d24b-flamme-ark.png') 0 0 / 400% 100% no-repeat; animation: decor-flame 0.48s steps(4) infinite; }
+.decor-flame { position: absolute; background: url('/art/bodfront/d24b-flamme-ark.png') 0 0 / 400% 100% no-repeat; image-rendering: pixelated; animation: decor-flame 0.48s steps(4) infinite; }
 @keyframes decor-flame { to { background-position: 133.333% 0; } }
 @media (prefers-reduced-motion: reduce) { .decor-flame, .decor-glow { animation: none !important; } }
 .store-banner.pynt { background: #7a1f2b; color: #f7e6c4; }

@@ -1,9 +1,29 @@
 # Grafikk – stilguide og prompter (ChatGPT)
 
-## Logoer til nettbutikkene – bestilling (24.11.2026)
+## Stiltilpasning av ny grafikk (`tools/stilmatch.py`)
+
+Generert grafikk glir ofte bort fra stilen (skarpere, mer kontrast og metning enn bodgrafikken). Paletten tvinges
+ikke, siden heller ikke bodgrafikken har ekte pikselpalett. I stedet måles referansene i `tools/stilreferanser.json`
+(finkornet detalj, lysspredning, metning), og hvert motiv gjøres passe grovt og dras delvis mot dem.
+
+- Pynten til bodfronten er nå tegnet på nytt som ekte pikselgrafikk i itemstilen (`tools/dekor-itemstil.py`),
+  og skal ikke stiltilpasses: `py tools/stilmatch.py bodfront` nekter når filene er pikselgrafikk.
+- `py tools/stilmatch.py mappe <inn> <ut>` for andre leveranser.
+- Kontrollark og liste over motiver som fortsatt avviker mye. Legg til flere referanser, eller overstyr
+  `korn`/`styrke` per fil, i `stilreferanser.json`.
+
+## Logoer til nettbutikkene – grafikk klar (24.11.2026)
 
 Ordbilder til KIWI, REMA 1000, Extra, Klas Olsen, Dekoringen og Bilbutikken, til fanene og toppstripene i
 «Innkjøp»: `GFX_assets/planlagte/logoer/BESTILLING.md`. De ekte kjedene får spillets egen versjon, ikke kopier.
+
+Alle seks er laget i 480 × 120 og 160 × 40, totalt tolv transparente PNG-filer.
+Ferdige filer ligger i `client/public/art/butikker/`, med navnene `<id>-logo.png`
+og `<id>-fane.png`. Originaler, prompter, leveranseoversikt og kontrollbilder ligger i
+`GFX_assets/planlagte/logoer/`. Se `LEVERANSE.md` i samme mappe.
+Begge størrelsene vises på butikkfarge og mørk bakgrunn i `vareliste.html`.
+Lagt inn i spillet: fanene (30 px høye, mørk bakgrunn, butikkfarge når valgt) og toppstripene i «Innkjøp»
+(`shopLogo` i `client/main.ts`). Navnet ligger igjen som `alt` og `title`.
 
 ## Bodfronten – frontknapp og dekor, grafikk klar (24.11.2026)
 
@@ -15,6 +35,12 @@ separate lyslag og fire flammetrinn med samleark gir 38 ferdige PNG-filer.
 Knappene ligger i `client/public/art/ikoner/`, dekoren i `client/public/art/bodfront/`.
 Originaler, prompter, plasseringer og visuelle kontroller ligger i `GFX_assets/planlagte/bodfront/`.
 Detaljer står i `LEVERANSE.md` i samme mappe. Leveransen vises også i `vareliste.html`.
+
+**Stilretting 24.11.2026:** All dekor er tegnet på nytt med de tidligere julevarene
+som referanse, med tydelige pikselflater, mørk kontur og felles varm palett.
+Samme filnavn, størrelser og festepunkter er beholdt. Sammenligning ligger i
+`GFX_assets/planlagte/bodfront/kontroll/for-og-etter.png`.
+De tidligere dekorfilene er arkivert i `arkiv-for-ny-stil-2026-11-24/`.
 
 **Lagt inn i spillet:** Ikonknappene står under lydknappen. Pynten selges i nettbutikken **Dekoringen**
 (fane i «Innkjøp»), kommer innpakket i pappkartonger og henges opp ved å trykke på pakken.

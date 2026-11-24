@@ -902,8 +902,9 @@ export function migrate() {
       p.devices = p.devices.filter((d) => d !== KETTLE.id);
       savePower(s.id, p);
     }
-    // Alle boder har en smarttelefon under disken (klokke, bank, nettbutikk og varsler).
-    for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterPhone(s.id);
+    // Telefonen er spillerens og vises alltid nede i høyre hjørne: den er ikke lenger en ting i lageret.
+    const phones = db.prepare('DELETE FROM items WHERE type_id = ?').run(PHONE).changes;
+    if (Number(phones) > 0) console.log(`Tok ${phones} telefoner ut av lagrene (telefonen ligger nå i hjørnet).`);
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterCar(s.id);
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls'))) giveStarterFusebox(s.id);
     // Sikringsbokser fra før skrusikringene ble gjenstander: gi plassene sikringer.
@@ -1010,17 +1011,18 @@ function installFusebox(stallId: number, newBoxId: number): string | null {
   return ITEM_TYPES[old.typeId].name;
 }
 
-function giveStarterCar(stallId: number) {
-  if (itemsOf(stallId).some((i) => isCar(i.typeId))) return;
-  q.insertItem.run(stallId, START_CAR, 'car', null, 0, 0, null);
+/** Bodene til samme eier som stallId (bare den selv hvis den ikke har eier). Telefonen og bilen er eierens, ikke bodens. */
+function ownerStallIds(stallId: number): number[] {
+  const s = one<StallRow>(q.stallById, stallId);
+  if (!s?.owner_id) return [stallId];
+  return all<{ id: number }>(db.prepare('SELECT id FROM stalls WHERE owner_id = ?'), s.owner_id).map((r) => r.id);
 }
 
-/** Legger en smarttelefon under disken hvis boden ikke har en. */
-function giveStarterPhone(stallId: number) {
-  const items = itemsOf(stallId);
-  if (items.some((i) => i.typeId === PHONE)) return;
-  const spot = findStorageSpot(items, streetOf(stallId), PHONE);
-  if (spot) q.insertItem.run(stallId, PHONE, spot.place, spot.boxId, spot.x, spot.y, null);
+const ownerHas = (stallId: number, pred: (i: Item) => boolean) => ownerStallIds(stallId).some((id) => itemsOf(id).some(pred));
+
+function giveStarterCar(stallId: number) {
+  if (ownerHas(stallId, (i) => isCar(i.typeId))) return;
+  q.insertItem.run(stallId, START_CAR, 'car', null, 0, 0, null);
 }
 
 // ---------- Spillerhandlinger ----------
@@ -1257,7 +1259,6 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
     }
     if (def.price > 0) q.insertTx.run(market.id, nowFor(market), 'plass', id, null, null, null, def.price);
     db.prepare('UPDATE stalls SET storage_26 = 1, counter_20 = 1, grid_v2 = 1, counter_31 = 1 WHERE id = ?').run(id);
-    giveStarterPhone(id);
     giveStarterCar(id);
     giveStarterFusebox(id);
     deliverPapers(market, nowFor(market));
@@ -1268,7 +1269,7 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
 /**
  * Kjøper en bodplass til. Den nye boden er tom (bare sikringsboks, som en ny bod) og har samme kasse som de andre
  * (felles lommebok). Du blir stående der du er; kjør dit med bilen (3–5 min, se driveMinutes).
- * Telefonen og bilen er dine og følger deg.
+ * Bilen er din og følger deg; telefonen er alltid i hjørnet av skjermen.
  */
 function buyAnotherStall(market: MarketRow, player: PlayerRow, current: StallRow, def: (typeof LAYOUT)[number], stallName: string) {
   tx(() => {
@@ -1297,7 +1298,7 @@ function buyAnotherStall(market: MarketRow, player: PlayerRow, current: StallRow
 
 /**
  * Kjører til en annen av dine boder (3–5 spillminutter etter avstanden). Bilen med bagasjerommet og det du bærer
- * (hender og ryggsekk) blir med. Bensin (eller batteri) som en vanlig tur. Boden du forlater, blir ubetjent.
+ * (hender og ryggsekk) blir med. Telefonen er alltid i hjørnet av skjermen. Bensin (eller batteri) som en vanlig tur. Boden du forlater, blir ubetjent.
  */
 export function driveToStall(player: PlayerRow, stallId: number) {
   const market = marketOf(player);

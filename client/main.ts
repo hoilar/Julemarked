@@ -103,7 +103,7 @@ import { mountSky, setSky, type Vaer } from './sky.ts';
 import { initDevPanel, updateDevPanel } from './devpanel.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
-import { DECOR, DECOR_BY_ID, DECOR_SLOTS, DECOR_SLOT_BY_ID, DEKORINGEN, SPOT_LABEL, TORCH_FLAME, decorBox, decorOfPack, decorPackOf, type DecorSpot } from '../shared/decor.ts';
+import { DECOR, DECOR_BY_ID, DECOR_SLOTS, DECOR_SLOT_BY_ID, DEKORINGEN, SPOT_LABEL, TORCH_FLAME, decorBox, decorSize, decorOfPack, decorPackOf, type DecorSpot } from '../shared/decor.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
@@ -188,7 +188,7 @@ let modalBack: Modal = null;
 // Avisa er et eget vindu som kan dras rundt og ligger oppå scenen uten å blokkere den
 // (så du kan sammenligne etterlysningen med folka ved disken).
 let paperWin: { edition: number; page: number } | null = null;
-// Smarttelefonen: ligger bak disken (eller i hjørnet), åpnes som et vindu som kan dras rundt.
+// Smarttelefonen: alltid nede i høyre hjørne (spillerens, ikke en ting i lageret), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
 let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' = 'home';
 let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
@@ -562,7 +562,7 @@ function reputationTitle(rep: number): string {
   return `Omdømme ${rep} av 100. Kundestrøm ${pct(reputationCrowd(rep))}, prisene kundene forventer ${pct(reputationPrice(rep))}.`;
 }
 
-/** Telefonen der den ligger: bak disken i din egen bod, ellers i hjørnet av skjermen. */
+/** Telefonen nede i høyre hjørne av skjermen, likt bak disken, forfra og på kartet. */
 function phoneSprite(s: GameState, inScene: boolean): string {
   const n = unreadCount(s);
   return `<button class="phone-sprite ${inScene ? 'in-scene' : 'corner'} ${n ? 'buzz' : ''} ${phoneOpen ? 'open' : ''}" data-action="phone" aria-label="Telefonen${n ? ` – ${n} nye varsler` : ''}" title="Telefonen${n ? ` – ${n} nye varsler` : ''}">
@@ -775,7 +775,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       }
     </div>
     </div>
-    ${behind ? '' : phoneSprite(s, false)}
+    ${phoneSprite(s, false)}
   </div>`;
 }
 
@@ -2628,14 +2628,19 @@ function cartOf(store: string): Record<string, number> {
   return (carts[store] ??= {});
 }
 
+/** Ordbildet til en nettbutikk (client/public/art/butikker/): 'fane' (160×40) eller 'logo' (480×120, toppstripen). */
+function shopLogo(id: string, kind: 'fane' | 'logo', name: string): string {
+  return `<img class="shop-logo ${kind}" src="/art/butikker/${id}-${kind}.png" alt="${esc(name)}" draggable="false">`;
+}
+
 /** «Innkjøp»: nettbutikkene (varer og råvarer, levert i poser) og Klas Olsen (esker og elektrisk). */
 function shopView(s: GameState): string {
   const tabs = [
     ...STORES.map((st) => `<button class="shop-tab ${shopTab === st.id ? 'on' : ''}" data-action="shop-tab" data-tab="${st.id}"
-        style="--brand:${st.color};--brand-ink:${st.ink}">${esc(st.name)}${Object.values(cartOf(st.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`),
-    `<button class="shop-tab klas ${shopTab === 'klas' ? 'on' : ''}" data-action="shop-tab" data-tab="klas">Klas Olsen</button>`,
-    `<button class="shop-tab pynt ${shopTab === 'pynt' ? 'on' : ''}" data-action="shop-tab" data-tab="pynt">${esc(DEKORINGEN.name)}${Object.values(cartOf(DEKORINGEN.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`,
-    `<button class="shop-tab bil ${shopTab === 'bil' ? 'on' : ''}" data-action="shop-tab" data-tab="bil">Bilbutikken</button>`,
+        style="--brand:${st.color};--brand-ink:${st.ink}" title="${esc(st.name)}">${shopLogo(st.id, 'fane', st.name)}${Object.values(cartOf(st.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`),
+    `<button class="shop-tab klas ${shopTab === 'klas' ? 'on' : ''}" data-action="shop-tab" data-tab="klas" title="Klas Olsen">${shopLogo('klas', 'fane', 'Klas Olsen')}</button>`,
+    `<button class="shop-tab pynt ${shopTab === 'pynt' ? 'on' : ''}" data-action="shop-tab" data-tab="pynt" title="${esc(DEKORINGEN.name)}">${shopLogo(DEKORINGEN.id, 'fane', DEKORINGEN.name)}${Object.values(cartOf(DEKORINGEN.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`,
+    `<button class="shop-tab bil ${shopTab === 'bil' ? 'on' : ''}" data-action="shop-tab" data-tab="bil" title="Bilbutikken">${shopLogo('bil', 'fane', 'Bilbutikken')}</button>`,
   ].join('');
   // Toppen (tittel, faner) står fast; bare varene scroller.
   return `<div class="shop-head"><h2>${appIcon('nettbutikk').replace('<img ', '<img class="title-icon" ')} Innkjøp</h2><nav class="shop-tabs">${tabs}</nav></div>
@@ -2667,7 +2672,7 @@ function carShopView(s: GameState): string {
     });
   });
   return `
-    <header class="store-banner bil"><b>Bilbutikken</b><span>Brukt, men ærlig. Nesten.</span></header>
+    <header class="store-banner bil"><b>${shopLogo('bil', 'logo', 'Bilbutikken')}</b><span>Brukt, men ærlig. Nesten.</span></header>
     <p class="fuel-line ${s.me.car.fuelExpensive ? 'dear' : ''}">⛽ Bensin i dag: <b>${s.me.car.fuelPrice.toFixed(2).replace('.', ',')} kr/l</b> ${s.me.car.fuelExpensive ? '– ⚠️ dyr periode, det varer noen dager.' : '– prisen byttes kl. 07.'}</p>
     <p class="muted">Den gamle bilen tas i innbytte for halv pris${tradeIn ? ` (${kr(tradeIn)} for ${esc(carSpec!.name)})` : ''}. Bagasjerommet må være tomt før du bytter.</p>
     <div class="shop-grid">${cards.join('')}</div>`;
@@ -2761,7 +2766,7 @@ function storeView(s: GameState, storeId: string): string {
 
   return `
     <header class="store-banner" style="--brand:${store.color};--brand-ink:${store.ink}">
-      <b>${esc(store.name)}</b><span>${esc(store.tagline)}</span>
+      <b>${shopLogo(store.id, 'logo', store.name)}</b><span>${esc(store.tagline)}</span>
     </header>
     <p class="muted">Utvalget og lageret byttes hver morgen kl. 07. Varene kommer i ${esc(store.name)}-poser og settes ved boden.</p>
     ${deals.length ? `<section class="deals" style="--brand:${store.color};--brand-ink:${store.ink}"><h3>🔥 Dagens tilbud</h3><div class="shop-grid">${deals.map(card).join('')}</div></section>` : ''}
@@ -2884,7 +2889,7 @@ function klasView(s: GameState): string {
     : '<p class="muted">Handlekurven er tom.</p>';
 
   return `
-    <header class="store-banner klas"><b>${esc(KLAS.name)}</b><span>Har alt du ikke visste du trengte.</span></header>
+    <header class="store-banner klas"><b>${shopLogo('klas', 'logo', KLAS.name)}</b><span>Har alt du ikke visste du trengte.</span></header>
     <p class="muted">Samme levering som nettbutikkene. Alt pakkes i pappkartonger (en ny når den første er full). Lyslenker, alarm, klokke og høyttaleranlegg ligger innpakket i kartongen – trykk på dem for å henge dem opp.</p>
     ${section('Maskiner', 'Plugges i grenuttaket. Trekker strøm mens de står på – prisen står i avisa.', devices(true))}
     ${section('På boden', 'Henger på boden og plugges i grenuttaket. Kommer i en kartong: åpne den og heng den opp.', devices(false))}
@@ -2921,13 +2926,16 @@ function decorView(stall: StallPublic, own: boolean): string {
       const d = DECOR_BY_ID[id];
       if (!slot || !d) return '';
       const { x, y } = decorBox(slot, d);
-      const box = `left:${pct(x, 1536)};top:${pct(y, 1024)};width:${pct(d.w, 1536)};height:${pct(d.h, 1024)}`;
+      const size = decorSize(d);
+      const box = `left:${pct(x, 1536)};top:${pct(y, 1024)};width:${pct(size.w, 1536)};height:${pct(size.h, 1024)}`;
+      // Bakkepynt: skygge av selve bildet, lagt ned på bakken bak motivet.
+      const shadow = d.spot === 'bakke' ? `<img class="decor-shadow" src="/art/bodfront/${d.file}" alt="" draggable="false">` : '';
       const glow = d.glow ? `<img class="decor-glow" src="/art/bodfront/${d.glow}" alt="" draggable="false">` : '';
       const f = TORCH_FLAME;
       const flame = d.flame
         ? `<span class="decor-flame" style="left:${pct(f.dx, d.w)};top:${pct(f.dy, d.h)};width:${pct(f.w, d.w)};height:${pct(f.h, d.h)}"></span>`
         : '';
-      const inner = `<img src="/art/bodfront/${d.file}" alt="" draggable="false">${glow}${flame}`;
+      const inner = `${shadow}<img class="decor-art" src="/art/bodfront/${d.file}" alt="" draggable="false">${glow}${flame}`;
       return own
         ? `<button class="decor decor-${d.spot}" data-action="decor-down" data-slot="${slotId}" style="${box}" title="${esc(d.name)} – trykk for å ta den ned" aria-label="Ta ned ${esc(d.name.toLowerCase())}">${inner}</button>`
         : `<div class="decor decor-${d.spot}" style="${box}" title="${esc(d.name)}">${inner}</div>`;
@@ -2982,7 +2990,7 @@ function decorShopView(s: GameState): string {
        <button class="order-btn pynt" data-action="shop-order" data-store="${DEKORINGEN.id}">Bestill fra ${esc(DEKORINGEN.name)}</button>`
     : '<p class="muted">Handlekurven er tom.</p>';
   return `
-    <header class="store-banner pynt"><b>${esc(DEKORINGEN.name)}</b><span>Pynt som synes fra hele torget.</span></header>
+    <header class="store-banner pynt"><b>${shopLogo(DEKORINGEN.id, 'logo', DEKORINGEN.name)}</b><span>Pynt som synes fra hele torget.</span></header>
     <p class="muted">Pynten kommer innpakket i pappkartonger. Trykk på pakken under disken, så henges den opp på første ledige plass foran på boden. Er alle plassene av det slaget tatt, byttes pynten på den første plassen ut og settes innpakket ved boden. Trykk på pynten når du ser boden forfra for å ta den ned.</p>
     ${sections.join('')}
     <div class="cart" id="cart">
