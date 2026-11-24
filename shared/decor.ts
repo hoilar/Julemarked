@@ -32,19 +32,21 @@ export interface DecorSlot {
 
 export const DECOR_SLOTS: DecorSlot[] = [
   { id: 'mone', spot: 'mone', x: 830, y: 15, anchor: 'top' },
-  { id: 'bjelke-1', spot: 'bjelke', x: 480, y: 280, anchor: 'top' },
-  { id: 'bjelke-2', spot: 'bjelke', x: 640, y: 280, anchor: 'top' },
-  { id: 'bjelke-3', spot: 'bjelke', x: 830, y: 280, anchor: 'top' },
-  { id: 'bjelke-4', spot: 'bjelke', x: 1020, y: 280, anchor: 'top' },
-  { id: 'bjelke-5', spot: 'bjelke', x: 1180, y: 280, anchor: 'top' },
+  // Bjelken slutter på y=237 på alle tre frontene; midt på henger navneskiltet ned til y=270.
+  { id: 'bjelke-1', spot: 'bjelke', x: 480, y: 232, anchor: 'top' },
+  { id: 'bjelke-2', spot: 'bjelke', x: 640, y: 232, anchor: 'top' },
+  { id: 'bjelke-3', spot: 'bjelke', x: 830, y: 265, anchor: 'top' },
+  { id: 'bjelke-4', spot: 'bjelke', x: 1020, y: 232, anchor: 'top' },
+  { id: 'bjelke-5', spot: 'bjelke', x: 1180, y: 232, anchor: 'top' },
   { id: 'stolpe-v', spot: 'stolpe', x: 318, y: 412, anchor: 'top' }, // under skiltet (Åpent/Stengt) som henger på venstre stolpe
   { id: 'stolpe-h', spot: 'stolpe', x: 1340, y: 300, anchor: 'top' },
   { id: 'panel-v', spot: 'panel', x: 491, y: 746, anchor: 'center' },
   { id: 'panel-h', spot: 'panel', x: 1157, y: 746, anchor: 'center' },
   { id: 'kant', spot: 'kant', x: 255, y: 575, anchor: 'left' },
   // Bare til venstre for boden: til høyre står telefonen (forfra) og søppelkassa (hos andre).
-  { id: 'bakke-1', spot: 'bakke', x: 95, y: 1000, anchor: 'bottom' },
-  { id: 'bakke-2', spot: 'bakke', x: 215, y: 1000, anchor: 'bottom' },
+  // Bodføttene står på y≈905; lenger ned skjæres scenen av nederst i vinduet.
+  { id: 'bakke-1', spot: 'bakke', x: 95, y: 905, anchor: 'bottom' },
+  { id: 'bakke-2', spot: 'bakke', x: 205, y: 905, anchor: 'bottom' },
 ];
 export const DECOR_SLOT_BY_ID: Record<string, DecorSlot> = Object.fromEntries(DECOR_SLOTS.map((s) => [s.id, s]));
 
@@ -97,7 +99,7 @@ export const DECOR: Decor[] = [
   d('rosemalt_plate', 'Rosemalt plate', '🌸', 229, 'panel', 'd14-rosemalt-plate.png', 220, 150, [3, 2], 'Håndmalt plate med roser i kantene.'),
   d('strikket_loper', 'Strikket løper', '🧶', 299, 'kant', 'd15-strikket-loper.png', 1160, 110, [3, 1], 'Lusekoftemønster over hele diskkanten.'),
   d('flagg', 'Flagg i snor', '🇳🇴', 129, 'kant', 'd16-flagg.png', 1160, 60, [2, 1], 'Små norske flagg langs kanten.'),
-  d('skinnfell', 'Skinnfell', '🐑', 199, 'kant', 'd17-skinnfell.png', 200, 140, [2, 2], 'Lunt og mykt over hjørnet av disken.', { dy: -25 }),
+  d('skinnfell', 'Skinnfell', '🐑', 199, 'kant', 'd17-skinnfell.png', 200, 140, [2, 2], 'Lunt og mykt over hjørnet av disken.', { dy: -50 }),
   d('juletre_botte', 'Juletre i bøtte', '🎄', 349, 'bakke', 'd18-juletre-botte.png', 160, 280, [2, 4], 'Et lite tre i sinkbøtte.'),
   d('halmbukk', 'Julebukk i halm', '🐐', 299, 'bakke', 'd19-halmbukk.png', 150, 160, [3, 3], 'Stor halmbukk med røde bånd.'),
   d('trenisse', 'Trenisse', '🎅', 279, 'bakke', 'd20-trenisse.png', 110, 200, [2, 3], 'Utskåret og malt. Ser på kundene.'),
