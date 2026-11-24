@@ -139,6 +139,7 @@ export interface StallPublic {
   trash: Item[]; // det som ligger i søppelkassa (den er åpen for alle)
   prices: Record<string, number>; // pris per vare
   music: { song: string; title: string; pirate: boolean; speakers: boolean } | null; // det som spilles ved boden nå
+  decor: Record<string, string>; // pynten på fronten: plass-id → pynt-id (shared/decor.ts)
 }
 
 export interface MarketSlot {

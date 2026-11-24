@@ -1,3 +1,4 @@
+import { DECOR, decorPackOf } from './decor.ts';
 import type { Category } from './categories.ts';
 import type { GridSize } from './grid.ts';
 import { INSURANCES, policyItemId, type InsuranceKind } from './insurance.ts';
@@ -46,6 +47,7 @@ export interface Tool {
   blurb: string; // butikkteksten – sier med vilje ikke hva verktøyet er til
   sheets?: number; // papirblokka: antall ark når den er ny
   dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
+  decor?: string; // innpakket pynt fra Dekoringen (shared/decor.ts): trykk for å henge den opp på fronten
 }
 
 /** Et ark du har laget selv: avskrevet oppskrift eller utklipt etterlysning (1×1). */
@@ -1137,8 +1139,21 @@ export const DARK_FROM = 15; // desember: mørkt fra ca. kl. 15
 export const LIGHT_BOOST = 1.3;
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
+/** Pynt fra Dekoringen kommer innpakket (pynt_<id>) i pappkartongen. Trykk på en, så henges den opp på bodfronten. */
+export const DECOR_PACKS: Tool[] = DECOR.map((d) => ({
+  kind: 'tool',
+  id: decorPackOf(d.id),
+  name: d.name,
+  emoji: d.emoji,
+  image: `/art/bodfront/${d.file}`,
+  price: d.price,
+  size: d.pack,
+  blurb: 'Trykk på den for å henge den opp på fronten av boden.',
+  decor: d.id,
+}));
+
 export const ITEM_TYPES: Record<string, ItemType> = Object.fromEntries(
-  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DOCS, ...ELECTRICS, ...HANG_PACKS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES, CASSETTE_PLAYER, ...TAPES].map((t) => [t.id, t]),
+  [...PRODUCTS, ...CONTAINERS, NEWSPAPER, ...INGREDIENTS, KETTLE, ...FOLDERS, ...FOLDED_BAGS, FLATPACK, ...POLICIES, ...TOOLS, ...DECOR_PACKS, ...DOCS, ...ELECTRICS, ...HANG_PACKS, BLOWN_FUSE, ...MAKERS, ...BATTERIES, CHARGER, ...MODULES, CASSETTE_PLAYER, ...TAPES].map((t) => [t.id, t]),
 );
 
 /**

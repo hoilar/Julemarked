@@ -1864,8 +1864,26 @@ body.night .speaker { filter: brightness(0.85) drop-shadow(0 0.3cqw 0.3cqw rgba(
 .price-list-full { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .price-list-full li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; }
 .price-list-full li .icon { width: 28px; height: 28px; object-fit: contain; }
-/* «Se fronten» under lydknappen i din egen bod. */
-.front-toggle { position: absolute; left: 1%; top: calc(1.5% + max(30px, 3.2cqw) + 0.6cqw); z-index: 6; }
+/* «Se fronten» / «Gå bak disken» under lydknappen i din egen bod: rund ikonknapp som lydknappen. */
+.front-toggle { position: absolute; left: 1%; top: calc(1.5% + max(30px, 3.2cqw) + 0.6cqw); z-index: 6; width: 3.2cqw; height: 3.2cqw; min-width: 30px; min-height: 30px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.front-toggle img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.front-toggle:hover img { filter: brightness(1.25); }
+
+/* Pynten på bodfronten (decorView, shared/decor.ts): under lyslenka og prislista. */
+.decor { position: absolute; display: block; padding: 0; border: 0; background: none; pointer-events: none; }
+button.decor { pointer-events: auto; cursor: pointer; }
+button.decor:hover img:first-child { filter: brightness(1.15) drop-shadow(0 0 0.3cqw rgba(255, 230, 160, 0.8)); }
+.decor img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+body.night .decor img:first-child { filter: brightness(0.8); }
+.decor-glow { opacity: 0; mix-blend-mode: screen; transition: opacity 1.2s; }
+body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicker 3.1s ease-in-out infinite; }
+@keyframes decor-flicker { 50% { opacity: 0.8; } }
+.decor-flame { position: absolute; background: url('/art/bodfront/d24b-flamme-ark.png') 0 0 / 400% 100% no-repeat; image-rendering: pixelated; animation: decor-flame 0.48s steps(4) infinite; }
+@keyframes decor-flame { to { background-position: 133.333% 0; } }
+@media (prefers-reduced-motion: reduce) { .decor-flame, .decor-glow { animation: none !important; } }
+.store-banner.pynt { background: #7a1f2b; color: #f7e6c4; }
+.order-btn.pynt, .cart-bar.pynt button { background: #7a1f2b; color: #f7e6c4; }
+.shop-tab.pynt.on { background: #7a1f2b; color: #f7e6c4; border-color: #7a1f2b; }
 .player-row { display: flex; align-items: center; gap: 1cqw; justify-content: center; padding: 0.6cqw 0; }
 .tape-grid.empty { background: rgba(28, 10, 6, 0.6); border: 1px dashed rgba(245, 217, 176, 0.35); }
 

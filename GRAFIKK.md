@@ -1,9 +1,28 @@
 # Grafikk – stilguide og prompter (ChatGPT)
 
-## Bodfronten – frontknapp og dekor, bestilling (24.11.2026)
+## Logoer til nettbutikkene – bestilling (24.11.2026)
+
+Ordbilder til KIWI, REMA 1000, Extra, Klas Olsen, Dekoringen og Bilbutikken, til fanene og toppstripene i
+«Innkjøp»: `GFX_assets/planlagte/logoer/BESTILLING.md`. De ekte kjedene får spillets egen versjon, ikke kopier.
+
+## Bodfronten – frontknapp og dekor, grafikk klar (24.11.2026)
 
 To ikonknapper til «Se fronten» og «Gå bak disken», og 26 dekorelementer med faste plasser på fronten:
 `GFX_assets/planlagte/bodfront/BESTILLING.md`.
+
+Begge visningsknappene og alle 26 dekortyper er laget. To ekstra grunnvarianter,
+separate lyslag og fire flammetrinn med samleark gir 38 ferdige PNG-filer.
+Knappene ligger i `client/public/art/ikoner/`, dekoren i `client/public/art/bodfront/`.
+Originaler, prompter, plasseringer og visuelle kontroller ligger i `GFX_assets/planlagte/bodfront/`.
+Detaljer står i `LEVERANSE.md` i samme mappe. Leveransen vises også i `vareliste.html`.
+
+**Lagt inn i spillet:** Ikonknappene står under lydknappen. Pynten selges i nettbutikken **Dekoringen**
+(fane i «Innkjøp»), kommer innpakket i pappkartonger og henges opp ved å trykke på pakken.
+Data og plasser: `shared/decor.ts`. 13 plasser: møne, fem på takbjelken, to stolper, to sidepaneler,
+diskkanten og to på bakken til venstre. Til høyre står telefonen og søppelkassa.
+Venstre stolpeplass er flyttet ned under «Åpent»-skiltet. Pynten tegnes i `decorView` i `client/main.ts`.
+Lyslagene gløder når det ikke er dag, og fakkelflammen er animert. Trykk på pynten forfra for å ta den ned.
+Pynten har ingen virkning på salget ennå.
 
 ## Himmel, skyer, måne, lykteglød og røyk – grafikk klar (24.11.2026)
 

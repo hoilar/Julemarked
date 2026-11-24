@@ -230,6 +230,7 @@ import type { Module } from '../shared/products.ts';
 import { CASSETTE_PLAYER, SPEAKERS, TAPE_BY_ID, TAPE_SALAD } from '../shared/products.ts';
 import { EAT_CHANCE, NEIGHBOUR_HIT, PIRATE_FINE, PIRATE_REP_HIT, musicBoost, playerReady, songOf, tapeIn } from '../shared/music.ts';
 import { hash01 } from '../shared/hash.ts';
+import { DECOR_BY_ID, DECOR_SLOTS, DEKORINGEN, decorOfPack, decorPackOf } from '../shared/decor.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
 import {
   INSURANCE_BY_KIND,
@@ -326,6 +327,7 @@ interface StallRow {
   clock_blink: number; // 1 = digitalklokka blinker «00:00»
   bypass_kwh: number; // strøm gjennom forbikoblet sikringsboks som ikke er målt
   car_trip: string | null; // JSON (CarTrip): handleturen bilen er på
+  decor: string; // JSON: pynten på fronten, plass-id → pynt-id
 }
 
 /** En handletur med bilen. Varene lages når du kommer tilbake, på plassene som ble satt av i bagasjerommet. */
@@ -1378,6 +1380,7 @@ function klasUnits(stall: StallRow, lines: KlasLine[]): KlasUnit[] {
     if (!t || t.kind === 'paper' || t.kind === 'kettle' || (t.kind === 'ingredient' && t.price <= 0)) throw new GameError('Ukjent vare.');
     // Varer og råvarer kjøpes i nettbutikkene; her (Klas Olsen) er det esker, verktøy og elektrisk.
     if (t.kind === 'tool' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
+    if (t.kind === 'tool' && t.decor) throw new GameError('Pynt kjøper du i Dekoringen.');
     if (t.kind === 'container' && t.car) throw new GameError('Biler kjøper du i Bilbutikken på telefonen.');
     if (t.kind === 'electric' && t.dealerOnly) throw new GameError('Det har ikke Klas Olsen. Spør heller Fyren bak containeren.');
     if (t.kind === 'electric' && t.hangs) throw new GameError('Ukjent vare.'); // bestilles som apparat (device:<id>)
@@ -1453,6 +1456,95 @@ function packKlas(units: KlasUnit[]): { typeId: string; x: number; y: number }[]
     box.push({ typeId: u.typeId, ...findFree(w, h, box, inner)!, w, h });
   }
   return boxes.map((b) => b.map(({ typeId, x, y }) => ({ typeId, x, y })));
+}
+
+// ---------- Dekoringen: pynt til bodfronten (shared/decor.ts) ----------
+
+function decorOf(s: StallRow): Record<string, string> {
+  const raw = JSON.parse(s.decor || '{}') as Record<string, string>;
+  return Object.fromEntries(Object.entries(raw).filter(([slot, id]) => DECOR_SLOTS.some((x) => x.id === slot) && DECOR_BY_ID[id]));
+}
+
+function saveDecor(stallId: number, decor: Record<string, string>) {
+  db.prepare('UPDATE stalls SET decor = ? WHERE id = ?').run(JSON.stringify(decor), stallId);
+}
+
+/**
+ * Bestiller pynt fra Dekoringen (lines: [{ id: pynt-id, qty }]). Samme frakt som nettbutikkene (standard eller
+ * ekspress, ikke hent selv); pynten kommer innpakket i pappkartonger.
+ */
+export function placeDecorOrder(player: PlayerRow, lines: unknown, mode: 'standard' | 'express') {
+  const clean = (Array.isArray(lines) ? lines : [])
+    .map((l) => ({ id: String((l as KlasLine).id ?? ''), qty: Number((l as KlasLine).qty) }))
+    .filter((l) => l.qty > 0);
+  if (clean.length === 0) throw new GameError('Handlekurven er tom.');
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    const units: KlasUnit[] = [];
+    for (const l of clean) {
+      const d = DECOR_BY_ID[l.id];
+      if (!d) throw new GameError('Ukjent pynt.');
+      if (!Number.isInteger(l.qty) || l.qty > 10) throw new GameError('Ugyldig antall.');
+      for (let n = 0; n < l.qty; n++) units.push({ typeId: decorPackOf(d.id), price: d.price });
+    }
+    const goods = units.reduce((n, u) => n + u.price, 0);
+    const shipping = mode === 'express' ? expressPrice(isFirstDay(market, t)) : SHIPPING.standard;
+    const pay = goods + shipping;
+    if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr.`);
+    q.setCash.run(stall.cash - pay, stall.id);
+    const arrives = mode === 'express' || instantDelivery.has(market.id) ? t : currentEdition(t).time + 24 * HOUR;
+    for (const box of packKlas(units)) {
+      const id = Number(q.insertItem.run(stall.id, MACHINE_BOX, 'transit', null, 0, 0, null).lastInsertRowid);
+      saveState(id, { arrives, from: DEKORINGEN.id });
+      for (const c of box) q.insertItem.run(stall.id, c.typeId, 'box', id, c.x, c.y, null);
+    }
+    if (instantDelivery.has(market.id)) deliverArrived(market, t); // dev: står ved boden med en gang
+    q.insertTx.run(market.id, t, 'wholesale', stall.id, null, DEKORINGEN.id, units.length, pay);
+    return { pay, count: units.length };
+  });
+}
+
+/**
+ * Pakker ut pynt og henger den opp på første ledige plass av riktig slag. Er alle tatt, tas pynten på den
+ * første plassen ned og settes innpakket ved boden.
+ */
+export function hangDecor(player: PlayerRow, itemId: number) {
+  const market = marketOf(player);
+  return tx(() => {
+    const stall = myStall(player);
+    const items = itemsOf(stall.id);
+    const it = items.find((i) => i.id === itemId);
+    const d = it && decorOfPack(it.typeId);
+    if (!it || !d || isTrashed(items, it)) throw new GameError('Fant ikke pynten.');
+    if (isUndelivered(items, it)) throw new GameError(it.place === 'box' ? 'Ta kartongen inn først.' : 'Ta pakken inn under disken først.');
+    const decor = decorOf(stall);
+    const slots = DECOR_SLOTS.filter((x) => x.spot === d.spot);
+    const slot = slots.find((x) => !decor[x.id]) ?? slots[0];
+    const old = decor[slot.id];
+    q.deleteItem.run(it.id);
+    if (old) q.insertItem.run(stall.id, decorPackOf(old), 'ground', null, 0, 0, null);
+    decor[slot.id] = d.id;
+    saveDecor(stall.id, decor);
+    const where = d.spot === 'bakke' ? 'står foran boden' : 'henger på boden';
+    event(market, player.id, nowFor(market), `${d.emoji} ${d.name} ${where}.${old ? ` ${DECOR_BY_ID[old].name} er tatt bort og står innpakket ved boden.` : ''}`);
+    return { name: d.name, replaced: old ?? null };
+  });
+}
+
+/** Tar ned pynten på en plass. Den settes innpakket ved boden. */
+export function takeDownDecor(player: PlayerRow, slotId: string) {
+  return tx(() => {
+    const stall = myStall(player);
+    const decor = decorOf(stall);
+    const id = decor[slotId];
+    if (!id) throw new GameError('Det henger ingen pynt der.');
+    delete decor[slotId];
+    saveDecor(stall.id, decor);
+    q.insertItem.run(stall.id, decorPackOf(id), 'ground', null, 0, 0, null);
+    return { name: DECOR_BY_ID[id].name };
+  });
 }
 
 /** Hent selv hos Klas Olsen: pappkartongene legges i bagasjerommet. */
@@ -2411,6 +2503,7 @@ export function getState(player: PlayerRow): GameState {
         sign: s.sign,
         serving: servingOf(s),
         music: musicPublic(market, s, t),
+        decor: decorOf(s),
       },
     };
   });
@@ -3285,18 +3378,19 @@ function deliverArrived(market: MarketRow, t: number) {
     ),
     market.id,
   );
-  const perStall = new Map<number, { bags: string[]; klas: number }>();
+  const perStall = new Map<number, { bags: string[]; klas: number; pynt: number }>();
   for (const r of rows) {
     const { arrives, from, ...rest } = JSON.parse(r.state ?? '{}') as { arrives?: number; from?: string } & Record<string, unknown>;
     if ((arrives ?? 0) > t) continue;
     // Resten av tilstanden (f.eks. hvilken lyslenke som ligger i kartongen) blir med.
     db.prepare("UPDATE items SET place = 'ground', state = ? WHERE id = ?").run(Object.keys(rest).length ? JSON.stringify(rest) : null, r.id);
-    const got = perStall.get(r.stall_id) ?? { bags: [], klas: 0 };
+    const got = perStall.get(r.stall_id) ?? { bags: [], klas: 0, pynt: 0 };
     if (from === KLAS.id) got.klas++;
+    else if (from === DEKORINGEN.id) got.pynt++;
     else got.bags.push(r.type_id);
     perStall.set(r.stall_id, got);
   }
-  for (const [stallId, { bags, klas }] of perStall) {
+  for (const [stallId, { bags, klas, pynt }] of perStall) {
     const s = one<StallRow>(q.stallById, stallId)!;
     const parts: string[] = [];
     if (bags.length) {
@@ -3304,6 +3398,7 @@ function deliverArrived(market: MarketRow, t: number) {
       parts.push(`${bags.length} ${bags.length === 1 ? 'pose' : 'poser'} fra ${names}`);
     }
     if (klas) parts.push(`${klas} ${klas === 1 ? 'pakke' : 'pakker'} fra ${KLAS.name}`);
+    if (pynt) parts.push(`${pynt} ${pynt === 1 ? 'kartong' : 'kartonger'} fra ${DEKORINGEN.name}`);
     event(market, s.owner_id, t, `📦 ${parts.join(' og ')} står ved boden din.`);
   }
 }

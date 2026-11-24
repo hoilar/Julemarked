@@ -159,6 +159,8 @@ if (!hasColumn('stalls', 'tip_day')) {
   db.exec(`ALTER TABLE stalls ADD COLUMN tip_day INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE stalls ADD COLUMN tip_wrong INTEGER NOT NULL DEFAULT 0;`);
 }
+// Pynten på bodfronten (shared/decor.ts): JSON { plass-id: pynt-id }.
+if (!hasColumn('stalls', 'decor')) db.exec("ALTER TABLE stalls ADD COLUMN decor TEXT NOT NULL DEFAULT '{}'");
 // Kunder du har solgt til selv (eller som sa nei), så samme kunde ikke kan brukes to ganger.
 // Bestillinger hos Fyren bak containeren: leveres i søppelkassa kl. 04. lines = JSON [{typeId, qty}] som ikke er levert ennå.
 // Det du selger til Fyren: han henter qty stk av type_id i søppelkassa ved pickup_at og betaler price per stk.

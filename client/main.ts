@@ -103,6 +103,7 @@ import { mountSky, setSky, type Vaer } from './sky.ts';
 import { initDevPanel, updateDevPanel } from './devpanel.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
+import { DECOR, DECOR_BY_ID, DECOR_SLOTS, DECOR_SLOT_BY_ID, DEKORINGEN, SPOT_LABEL, TORCH_FLAME, decorBox, decorOfPack, decorPackOf, type DecorSpot } from '../shared/decor.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
 import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
@@ -757,6 +758,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       <img class="bod-art" src="${art}" alt="" draggable="false">
       <img class="ground" src="/art/bakke.png" alt="" draggable="false">
       <div class="tint"></div>
+      ${behind ? '' : decorView(stall, own)}
       ${powerView(stall, behind)}
       ${behind ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
       <div class="sign">${esc(stall.name)}</div>
@@ -780,8 +782,8 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
 /** «Se fronten» bak disken og «Gå bak disken» forfra: samme knapp på samme sted, under lydknappen. */
 function frontToggle(behind: boolean): string {
   return behind
-    ? '<button class="small ghost front-toggle" data-action="own-front" title="Se boden din slik kundene ser den">👀 Se fronten</button>'
-    : '<button class="small ghost front-toggle" data-action="own-front" title="Tilbake bak disken">↩ Gå bak disken</button>';
+    ? '<button class="front-toggle" data-action="own-front" title="Se boden din slik kundene ser den" aria-label="Se fronten"><img src="/art/ikoner/se-fronten.png" alt="" draggable="false"></button>'
+    : '<button class="front-toggle" data-action="own-front" title="Tilbake bak disken" aria-label="Gå bak disken"><img src="/art/ikoner/bak-disken.png" alt="" draggable="false"></button>';
 }
 
 /** Din egen bod forfra: slik ser kundene den. */
@@ -2606,7 +2608,7 @@ function eventList(s: GameState): string {
 
 // ---------- Nettbutikkene ----------
 
-type ShopTab = 'kiwi' | 'rema' | 'extra' | 'klas' | 'bil';
+type ShopTab = 'kiwi' | 'rema' | 'extra' | 'klas' | 'pynt' | 'bil';
 let shopTab: ShopTab = 'kiwi';
 const carts: Record<string, Record<string, number>> = {}; // butikk → vare → antall
 let shipMode: 'standard' | 'express' | 'car' = 'standard';
@@ -2632,11 +2634,12 @@ function shopView(s: GameState): string {
     ...STORES.map((st) => `<button class="shop-tab ${shopTab === st.id ? 'on' : ''}" data-action="shop-tab" data-tab="${st.id}"
         style="--brand:${st.color};--brand-ink:${st.ink}">${esc(st.name)}${Object.values(cartOf(st.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`),
     `<button class="shop-tab klas ${shopTab === 'klas' ? 'on' : ''}" data-action="shop-tab" data-tab="klas">Klas Olsen</button>`,
+    `<button class="shop-tab pynt ${shopTab === 'pynt' ? 'on' : ''}" data-action="shop-tab" data-tab="pynt">${esc(DEKORINGEN.name)}${Object.values(cartOf(DEKORINGEN.id)).some((n) => n > 0) ? ' 🛒' : ''}</button>`,
     `<button class="shop-tab bil ${shopTab === 'bil' ? 'on' : ''}" data-action="shop-tab" data-tab="bil">Bilbutikken</button>`,
   ].join('');
   // Toppen (tittel, faner) står fast; bare varene scroller.
   return `<div class="shop-head"><h2>${appIcon('nettbutikk').replace('<img ', '<img class="title-icon" ')} Innkjøp</h2><nav class="shop-tabs">${tabs}</nav></div>
-    <div class="shop-body">${shopTab === 'klas' ? klasView(s) : shopTab === 'bil' ? carShopView(s) : storeView(s, shopTab)}</div>`;
+    <div class="shop-body">${shopTab === 'klas' ? klasView(s) : shopTab === 'pynt' ? decorShopView(s) : shopTab === 'bil' ? carShopView(s) : storeView(s, shopTab)}</div>`;
 }
 
 /** Bilbutikken: bytt bil (den gamle tas i innbytte), og dagens bensinpris. */
@@ -2671,9 +2674,9 @@ function carShopView(s: GameState): string {
 }
 
 /** Leveringsmåtene (nettbutikkene og Klas Olsen): standard, ekspress eller hent selv med bilen. */
-function shipChoice(s: GameState): { html: string; cost: number; label: string } {
+function shipChoice(s: GameState, car = true): { html: string; cost: number; label: string } {
   const expressCost = expressPrice(state!.clock.firstDay);
-  const myCar = s.me.items.find((i) => i.place === 'car');
+  const myCar = car ? s.me.items.find((i) => i.place === 'car') : undefined;
   const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
   const fuelCost = carSpec ? tripFuelCost(carSpec, s.me.car.fuelPrice) : 0;
   if (shipMode === 'car' && (!carSpec || s.me.car.trip)) shipMode = 'standard';
@@ -2900,6 +2903,97 @@ function klasView(s: GameState): string {
         ? `<div class="cart-bar klas">
              <span>🛒 ${count} ting · <b>${kr(total)}</b> <small>(${shipping.label})</small></span>
              <button class="small" data-action="shop-order" data-store="${KLAS.id}">Bestill</button>
+           </div>`
+        : ''
+    }`;
+}
+
+/**
+ * Pynten på fronten (shared/decor.ts), mellom bodbildet og lyslenka/prislista. Lysene i pynten (messingstjernen,
+ * adventsstjernen, bakkelykta) gløder når det er mørkt; fakkelen brenner alltid. På din egen front kan du trykke på
+ * pynten for å ta den ned.
+ */
+function decorView(stall: StallPublic, own: boolean): string {
+  const pct = (n: number, of: number) => `${((n / of) * 100).toFixed(3)}%`;
+  return Object.entries(stall.decor ?? {})
+    .map(([slotId, id]) => {
+      const slot = DECOR_SLOT_BY_ID[slotId];
+      const d = DECOR_BY_ID[id];
+      if (!slot || !d) return '';
+      const { x, y } = decorBox(slot, d);
+      const box = `left:${pct(x, 1536)};top:${pct(y, 1024)};width:${pct(d.w, 1536)};height:${pct(d.h, 1024)}`;
+      const glow = d.glow ? `<img class="decor-glow" src="/art/bodfront/${d.glow}" alt="" draggable="false">` : '';
+      const f = TORCH_FLAME;
+      const flame = d.flame
+        ? `<span class="decor-flame" style="left:${pct(f.dx, d.w)};top:${pct(f.dy, d.h)};width:${pct(f.w, d.w)};height:${pct(f.h, d.h)}"></span>`
+        : '';
+      const inner = `<img src="/art/bodfront/${d.file}" alt="" draggable="false">${glow}${flame}`;
+      return own
+        ? `<button class="decor decor-${d.spot}" data-action="decor-down" data-slot="${slotId}" style="${box}" title="${esc(d.name)} – trykk for å ta den ned" aria-label="Ta ned ${esc(d.name.toLowerCase())}">${inner}</button>`
+        : `<div class="decor decor-${d.spot}" style="${box}" title="${esc(d.name)}">${inner}</div>`;
+    })
+    .join('');
+}
+
+/** Dekoringen: pynt til bodfronten. Kommer innpakket i pappkartonger; trykk på pakken for å henge den opp. */
+function decorShopView(s: GameState): string {
+  const cart = cartOf(DEKORINGEN.id);
+  const mine = myStall(s);
+  const hung = Object.values(mine?.decor ?? {});
+  const packed = (id: string) => s.me.items.filter((i) => i.typeId === decorPackOf(id) && !isTrashed(s.me.items, i)).length;
+  const qty = (id: string) => {
+    const n = cart[id] ?? 0;
+    return `<div class="shop-qty">
+        <button class="ghost small" data-action="cart" data-store="${DEKORINGEN.id}" data-type="${id}" data-max="5" data-delta="-1" ${n === 0 ? 'disabled' : ''} aria-label="Færre">−</button>
+        <span>${n}</span>
+        <button class="small" data-action="cart" data-store="${DEKORINGEN.id}" data-type="${id}" data-max="5" data-delta="1" ${n >= 5 ? 'disabled' : ''} aria-label="Flere">+</button>
+      </div>`;
+  };
+  const places = (spot: DecorSpot) => DECOR_SLOTS.filter((x) => x.spot === spot).length;
+  const sections = (Object.keys(SPOT_LABEL) as DecorSpot[]).map((spot) => {
+    const cards = DECOR.filter((d) => d.spot === spot).map((d) => {
+      const up = hung.filter((x) => x === d.id).length;
+      const box = packed(d.id);
+      const note = [up ? `${up} henger på boden` : '', box ? `${box} innpakket` : ''].filter(Boolean).join(' · ');
+      return klasCard({
+        name: d.name,
+        image: `/art/bodfront/${d.file}`,
+        emoji: d.emoji,
+        price: d.price,
+        sub: `${esc(d.blurb)}${note ? `<br><span class="muted">${note}</span>` : ''}`,
+        buy: qty(d.id),
+        incart: !!cart[d.id],
+      });
+    });
+    const n = places(spot);
+    return `<h3>${SPOT_LABEL[spot]}</h3><p class="muted">${n === 1 ? 'Én plass' : `${n} plasser`}.</p><div class="shop-grid">${cards.join('')}</div>`;
+  });
+  const lines = Object.entries(cart)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => ({ id, qty: n, d: DECOR_BY_ID[id] }))
+    .filter((l) => l.d);
+  const shipping = shipChoice(s, false);
+  const count = lines.reduce((n, l) => n + l.qty, 0);
+  const total = lines.reduce((n, l) => n + l.qty * l.d.price, 0) + (lines.length ? shipping.cost : 0);
+  const cartHtml = lines.length
+    ? `<ul class="cart-lines">${lines.map((l) => `<li><span>${l.qty} × ${esc(l.d.name)}</span><span>${kr(l.qty * l.d.price)}</span></li>`).join('')}</ul>
+       ${shipping.html}
+       <div class="cart-total"><span>Totalt</span><b>${kr(total)}</b></div>
+       <button class="order-btn pynt" data-action="shop-order" data-store="${DEKORINGEN.id}">Bestill fra ${esc(DEKORINGEN.name)}</button>`
+    : '<p class="muted">Handlekurven er tom.</p>';
+  return `
+    <header class="store-banner pynt"><b>${esc(DEKORINGEN.name)}</b><span>Pynt som synes fra hele torget.</span></header>
+    <p class="muted">Pynten kommer innpakket i pappkartonger. Trykk på pakken under disken, så henges den opp på første ledige plass foran på boden. Er alle plassene av det slaget tatt, byttes pynten på den første plassen ut og settes innpakket ved boden. Trykk på pynten når du ser boden forfra for å ta den ned.</p>
+    ${sections.join('')}
+    <div class="cart" id="cart">
+      <h3>🛒 Handlekurv</h3>
+      ${cartHtml}
+    </div>
+    ${
+      lines.length
+        ? `<div class="cart-bar pynt">
+             <span>🛒 ${count} ting · <b>${kr(total)}</b> <small>(${shipping.label})</small></span>
+             <button class="small" data-action="shop-order" data-store="${DEKORINGEN.id}">Bestill</button>
            </div>`
         : ''
     }`;
@@ -3998,6 +4092,7 @@ function endDrag(cancelled = false) {
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
     // Innpakket apparat fra Klas Olsen (lyslenke, alarm …): heng det opp på boden.
     if (t.kind === 'electric' && t.hangs) act('/api/device/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger på boden.`);
+    else if (t.kind === 'tool' && t.decor) act('/api/decor/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger foran på boden. Se fronten for å se den.`);
     else if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
     else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') togglePanel(d.item.id);
     else if (t.kind === 'battery')
@@ -4655,14 +4750,18 @@ app.addEventListener('click', (e) => {
     const store = el.dataset.store!;
     const entries = Object.entries(cartOf(store)).filter(([, n]) => n > 0);
     const klas = store === KLAS.id;
-    const name = klas ? KLAS.name : STORE_BY_ID[store].name;
+    const pynt = store === DEKORINGEN.id;
+    const name = klas ? KLAS.name : pynt ? DEKORINGEN.name : STORE_BY_ID[store].name;
+    if (pynt && shipMode === 'car') shipMode = 'standard';
     const okMsg =
       shipMode === 'car'
         ? `🚗 Du kjører til ${name}. ${klas ? 'Tingene' : 'Varene'} ligger i bagasjerommet når du er tilbake.`
         : shipMode === 'express'
           ? `🚚 Ekspress fra ${name} – kommer innen en time.`
           : `📦 Bestilt fra ${name} – kommer ${osloParts(state!.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.`;
-    const order = klas
+    const order = pynt
+      ? act('/api/decor/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode }, okMsg)
+      : klas
       ? act('/api/klas/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode }, okMsg)
       : act('/api/shop/order', { store, lines: entries.map(([typeId, qty]) => ({ typeId, qty })), mode: shipMode, useCards }, okMsg);
     order.then(
@@ -4705,6 +4804,10 @@ app.addEventListener('click', (e) => {
       )
       .catch((err) => toast((err as Error).message, true))
       .finally(refresh);
+    return;
+  }
+  if (action === 'decor-down') {
+    act('/api/decor/down', { slot: el.dataset.slot }, '📦 Pynten er tatt ned og står innpakket ved boden.');
     return;
   }
   if (action === 'hang-device') {

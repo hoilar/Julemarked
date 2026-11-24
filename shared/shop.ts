@@ -1,6 +1,7 @@
 // Nettbutikkene (KIWI, REMA 1000, Extra). Alle har alle råvarene; resten av utvalget,
 // prisene og hvor mye de har på lager varierer fra dag til dag. Lageret gjelder per spiller.
 // Varene pakkes i butikkens poser (4×4) og leveres ved boden – neste morgen eller ekspress.
+import { DEKORINGEN } from './decor.ts';
 import { findFree } from './grid.ts';
 import { hash01 } from './hash.ts';
 import { INGREDIENTS, ITEM_TYPES, PRODUCTS } from './products.ts';
@@ -29,7 +30,7 @@ export const BAG_PRICE = 1;
 /** Klas Olsen (esker, verktøy og elektrisk): samme leveringsmåter som nettbutikkene, men tingene kommer løst, ikke i poser. */
 export const KLAS = { id: 'klas', name: 'Klas Olsen' };
 /** Alle stedene man kan handle (for navn på handleturer og leveranser). */
-export const PLACE_BY_ID: Record<string, { name: string }> = { ...STORE_BY_ID, [KLAS.id]: KLAS };
+export const PLACE_BY_ID: Record<string, { name: string }> = { ...STORE_BY_ID, [KLAS.id]: KLAS, [DEKORINGEN.id]: DEKORINGEN };
 /** Rutenettet inni butikkposene (samme for alle butikkene): hentes fra posetypen, så det følger med når rutene endres. */
 export const BAG_GRID = (ITEM_TYPES.kiwipose as unknown as { inner: { cols: number; rows: number } }).inner;
 
