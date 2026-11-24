@@ -759,7 +759,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       <div class="sign">${esc(stall.name)}</div>
       ${shopSign(s, stall, behind)}
       ${musicButton(stall.music)}
-      ${behind ? '<button class="small ghost front-toggle" data-action="own-front" title="Se boden din slik kundene ser den">👀 Se fronten</button>' : sellerView(stall)}
+      ${own ? frontToggle(behind) : sellerView(stall)}
       ${counterView(stall, behind, !own)}
       ${
         behind
@@ -774,10 +774,16 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
   </div>`;
 }
 
+/** «Se fronten» bak disken og «Gå bak disken» forfra: samme knapp på samme sted, under lydknappen. */
+function frontToggle(behind: boolean): string {
+  return behind
+    ? '<button class="small ghost front-toggle" data-action="own-front" title="Se boden din slik kundene ser den">👀 Se fronten</button>'
+    : '<button class="small ghost front-toggle" data-action="own-front" title="Tilbake bak disken">↩ Gå bak disken</button>';
+}
+
 /** Din egen bod forfra: slik ser kundene den. */
 function ownFrontInfo(): string {
-  return `<div class="visitor-info"><div>👀 Slik ser kundene boden din.</div>
-    <button class="small" data-action="own-front">↩ Gå bak disken</button></div>`;
+  return `<div class="visitor-info"><div>👀 Slik ser kundene boden din.</div></div>`;
 }
 
 /** I andres boder står eieren bak disken (når hen er der) – du er selv kunden. */

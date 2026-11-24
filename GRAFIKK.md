@@ -1,5 +1,26 @@
 # Grafikk – stilguide og prompter (ChatGPT)
 
+## Bodfronten – frontknapp og dekor, bestilling (24.11.2026)
+
+To ikonknapper til «Se fronten» og «Gå bak disken», og 26 dekorelementer med faste plasser på fronten:
+`GFX_assets/planlagte/bodfront/BESTILLING.md`.
+
+## Himmel, skyer, måne, lykteglød og røyk – grafikk klar (24.11.2026)
+
+Bakgrunnene kan få himmelen skåret bort med én felles maske, siden alle 16 markedsvariantene
+har byen på samme sted. Bestillingslisten, plasseringer og hva som må avgjøres først:
+`GFX_assets/planlagte/himmel/BESTILLING.md`. Maske: `py tools/himmelmaske.py`; prøvebilder:
+`py tools/himmeltest.py` (`GFX_assets/planlagte/himmel/test/`).
+
+Hele grafikkleveransen er laget. Ferdige lag, originaler, eksakte plasseringsdata,
+prompter og kontroller ligger i `GFX_assets/planlagte/himmel/`.
+Leveransebeskrivelsen er `GFX_assets/planlagte/himmel/LEVERANSE.md`.
+De tolv værbakgrunnene uten fallende nedbør ligger i
+`GFX_assets/planlagte/marked-vaer/uten-nedbor/`. Samleoversikt er `oversikt.png` i samme mappe.
+Leveransen omfatter også de valgfrie månefasene og stjerneskuddet.
+Samlet forskyvning av byen mot dagbildet er kontrollert til 0 piksler etter registrering.
+Alle filene er levert i arbeidsmappene. Innlegging i spillet gjenstår.
+
 ## Nye idévarer – grafikkforslag (13.11.2026)
 
 31 separate transparente PNG-er er laget til ideene i `VAREPLAN.md` (Idéer / Syv slag)
