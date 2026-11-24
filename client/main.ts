@@ -99,6 +99,7 @@ import {
 } from './customers.ts';
 import { playSound, putDownSound, setAmbience, setSoundMuted, type MarketLoop } from './sound.ts';
 import { setWeatherFx } from './weatherfx.ts';
+import { mountSky, setSky, type Vaer } from './sky.ts';
 import { initDevPanel, updateDevPanel } from './devpanel.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
 import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
@@ -377,6 +378,7 @@ function tickClock() {
   preloadWeather(bg);
   if (bg) document.body.dataset.weather = bg;
   else delete document.body.dataset.weather;
+  setSky(daypart(parts.hour), (bg ?? 'klar') as Vaer, game);
   // Forsikringsselgeren, Tilsynsmannen og tyven kommer bare til din egen bod.
   const home = !!shownStall && shownStall.id === state.me.stallId;
   const visit = insurerVisit(parts.hour);
@@ -512,6 +514,7 @@ function render() {
     if (pm) pm.scrollTop = paperScroll;
   }
   tickClock(); // setter dag/natt før kundene telles
+  mountSky(shownStall ? app.querySelector('.stage') : null); // himmelen, røyken og lyktene over torgbildet
   const shut = !!shownStall && (shownStall.serving === 'closed' || shownStall.serving === 'away');
   const ownView = !!shownStall && !!state && shownStall.id === state.me.stallId;
   setShut(shut);

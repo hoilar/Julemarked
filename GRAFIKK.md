@@ -19,7 +19,14 @@ De tolv værbakgrunnene uten fallende nedbør ligger i
 `GFX_assets/planlagte/marked-vaer/uten-nedbor/`. Samleoversikt er `oversikt.png` i samme mappe.
 Leveransen omfatter også de valgfrie månefasene og stjerneskuddet.
 Samlet forskyvning av byen mot dagbildet er kontrollert til 0 piksler etter registrering.
-Alle filene er levert i arbeidsmappene. Innlegging i spillet gjenstår.
+Alle filene er levert i arbeidsmappene.
+
+**Lagt inn i spillet:** `client/sky.ts` tegner himmel, stjerner, måne (fasen følger spilldatoen),
+skyer, røyk og lykter på ett lerret over torgbildet. Klargjøring: `py tools/himmel-klargjor.py`.
+Den gjør de nye værbakgrunnene om til JPG i `client/public/art/bg/`, lager én maske per vær
+(snøværet har tykkere taksnø) og himmelfargene i `client/himmeldata.json`, og kopierer lagene
+til `client/public/art/himmel/`. Lyktene er slukket på dagtid og gløder ellers. Lyskjeglene er
+ikke brukt, fordi de allerede er tegnet inn i bakgrunnene om kvelden og natta.
 
 ## Nye idévarer – grafikkforslag (13.11.2026)
 
