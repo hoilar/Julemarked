@@ -273,6 +273,9 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 - En server har plass til 24 spillere. Alle kan få én hovedgatebod og to sidegateboder, men bakgata blir knapp: 24 × 3 = 72 ønskede plasser mot 48 ledige. Den knappheten er bevisst.
 - **Grensen gjelder alltid**, både for ledige (tomme) plasser som kjøpes av julemarkedet og for boder som kjøpes av en annen spiller. Ingen kan bli større ved å kjøpe opp andre. Når en plass er tatt, må man kjøpe den av spilleren som har den, men bare hvis man er under grensen for den gata.
 - Flytting finnes fortsatt som eget valg, for eksempel til en bedre plass i samme gate.
+- **Lagt inn (25.11.2026):** Markedssiden er det tegnede kartet med alle 120 plassene (H01–H24, S01–S48, B01–B48). Man zoomer med rullehjul eller knip og drar for å flytte. Hold musa over en bod for å se koden (ledig) eller navn og eier. Trykk for å leie en ledig plass, gå inn i din egen bod eller kikke i andres. Utleide boder har grønn prikk, dine egne gull. Sidepanelet har en liste over leide og ledige boder gate for gate. Ledige plasser bare står tomme; markedet vokser ikke.
+- **NPC-boder:** fem enkle boder i bakgata (B05, B14, B29, B38, B47) selger 1–3 billige varer av gangen kl. 10–18 og tar ingen kunder fra spillerne. Er alle de andre bakgateplassene tatt, kan en spiller leie plassen til en NPC, som da pakker sammen og går.
+- **Husene på kartet:** butikkene (KIWI, Extra, REMA 1000, Klas Olsen, Dekoringen) og containeren med Fyren åpner nettbutikken eller SMS-en. De gamle husene er historiehus der stamkundene bor. Juletreet forklarer hvorfor hovedgata har mest folk. Grensen per spiller i tabellen over er ikke håndhevet ennå.
 
 **Bodsalg mellom spillere:**
 

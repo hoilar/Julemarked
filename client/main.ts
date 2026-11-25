@@ -124,6 +124,7 @@ import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } fro
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
 import { catchChance, dayName, hoursText, orderHomemade, orderNameOk, orderWhat, pickupHours } from '../shared/orders.ts';
 import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
+import { BUILDINGS, EXTRA_BACKSTREET_PRICE, slotPrice, MAP_GLOW, MAP_H, MAP_SLOTS, MAP_TILE, MAP_W, NPC_OPEN, type Building } from '../shared/marketmap.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
 import spillbilder from './spillbilder.json';
@@ -533,7 +534,7 @@ function render() {
     !!active &&
     app.contains(active) &&
     (active.tagName === 'SELECT' || (active.tagName === 'INPUT' && !['radio', 'checkbox'].includes((active as HTMLInputElement).type)));
-  if (drag || sdrag || panelDrag || paperDrag || phoneDrag || typing) {
+  if (drag || sdrag || panelDrag || paperDrag || phoneDrag || mapPanning() || typing) {
     pendingRender = true;
     return;
   }
@@ -563,6 +564,7 @@ function render() {
     syncMusic(shownStall?.music ?? null);
     if (shownStall && shownStall.id === s.me.stallId) checkOutage(shownStall, s.me.items);
     if (phoneOpen) markPhoneSeen(s); // varslene er sett når telefonen er åpen
+    mountMap(s);
     const m = app.querySelector('.modal-backdrop .modal');
     if (m) m.scrollTop = scroll;
     const sb = app.querySelector('.shop-body');
@@ -2738,57 +2740,397 @@ function loupeMarks(): string {
 }
 
 // --- Kart ---
+//
+// Markedet er ett stort kart (shared/marketmap.ts, 4608 × 3072 kartpiksler). Kartet er et fast element som lever
+// mellom tegningene (bildene lastes én gang, og zoom og posisjon blir stående); bare laget med bodene oppå tegnes
+// på nytt. Rullehjul og knip zoomer, dra flytter. Oversiktsbildet er i 1/3 oppløsning; de ni skarpe rutene lastes
+// først når du zoomer så langt inn at det trengs.
+
+const MAP_HIT: Record<MarketSlot['street'], [number, number]> = { hovedgate: [170, 170], sidegate: [150, 140], bakgate: [140, 125] };
+const MAP_MAX_ZOOM = 1.2;
+const MAP_LABEL_ZOOM = 0.42; // navneskiltene vises fra denne zoomen
+const MAP_STREET_NAME: Record<MarketSlot['street'], string> = { hovedgate: 'Hovedgata', sidegate: 'Sidegata', bakgate: 'Bakgata' };
+
+let mapEl: HTMLDivElement | null = null;
+const mapView = { k: 0, tx: 0, ty: 0 }; // k = 0: ikke tilpasset ennå
+let mapPan: { id: number; x: number; y: number; tx: number; ty: number; moved: boolean } | null = null;
+let mapPinch: { d: number; k: number; cx: number; cy: number } | null = null;
+const mapPointers = new Map<number, { x: number; y: number }>();
+let mapSuppressClick = false;
+let mapInfo: { kind: 'npc'; slot: number } | { kind: 'bygg'; i: number } | null = null;
+let mapTab: 'events' | 'boder' | null = null; // null: lista for nye spillere, hendelsene ellers
+let mapFindIdx = 0; // «Mine boder»: hvilken av bodene du er på
+let mapFindAt = 0;
+let mapPulse: number | null = null; // plassen som blinker (valgt i lista)
+
+const mapPanning = () => !!mapPan?.moved || !!mapPinch;
+
+/** Minste zoom: kartet dekker hele ruten (resten når du ved å dra), så det blir ingen tomme kanter. */
+function mapMinZoom(): number {
+  if (!mapEl) return 0.2;
+  return Math.max(mapEl.clientWidth / MAP_W, mapEl.clientHeight / MAP_H);
+}
+
+/** Hold kartet innenfor vinduet (midtstilt når det er mindre enn vinduet). */
+function mapClamp() {
+  if (!mapEl) return;
+  const vw = mapEl.clientWidth;
+  const vh = mapEl.clientHeight;
+  mapView.k = Math.min(MAP_MAX_ZOOM, Math.max(mapMinZoom(), mapView.k));
+  const w = MAP_W * mapView.k;
+  const h = MAP_H * mapView.k;
+  mapView.tx = w <= vw ? (vw - w) / 2 : Math.min(0, Math.max(vw - w, mapView.tx));
+  mapView.ty = h <= vh ? (vh - h) / 2 : Math.min(0, Math.max(vh - h, mapView.ty));
+}
+
+function mapApply() {
+  if (!mapEl) return;
+  mapClamp();
+  const world = mapEl.querySelector<HTMLElement>('.map-world')!;
+  world.style.transform = `translate(${mapView.tx}px, ${mapView.ty}px) scale(${mapView.k})`;
+  world.style.setProperty('--k', String(mapView.k));
+  mapEl.classList.toggle('zoomed', mapView.k >= MAP_LABEL_ZOOM);
+  // De skarpe rutene trengs når oversiktsbildet (1/3) blir forstørret.
+  if (mapView.k > 0.36 && !mapEl.querySelector('.map-tiles img')) {
+    const tiles = mapEl.querySelector('.map-tiles')!;
+    let html = '';
+    for (let r = 0; r < MAP_H / MAP_TILE.h; r++)
+      for (let c = 0; c < MAP_W / MAP_TILE.w; c++)
+        html += `<img src="/art/kart/${r + 1}${c + 1}.webp" alt="" draggable="false" style="left:${c * MAP_TILE.w}px;top:${r * MAP_TILE.h}px;width:${MAP_TILE.w}px;height:${MAP_TILE.h}px">`;
+    tiles.innerHTML = html;
+  }
+}
+
+/** Zoom rundt et punkt i vinduet (px fra kartets øvre venstre hjørne). */
+function mapZoomAt(k: number, cx: number, cy: number) {
+  const wx = (cx - mapView.tx) / mapView.k;
+  const wy = (cy - mapView.ty) / mapView.k;
+  mapView.k = Math.min(MAP_MAX_ZOOM, Math.max(mapMinZoom(), k));
+  mapView.tx = cx - wx * mapView.k;
+  mapView.ty = cy - wy * mapView.k;
+  mapApply();
+}
+
+function mapFit() {
+  mapView.k = mapMinZoom();
+  mapApply();
+}
+
+/** Zoom inn på en plass og la den blinke litt. */
+function mapFocusSlot(index: number) {
+  const m = MAP_SLOTS[index];
+  if (!mapEl || !m) return;
+  mapView.k = Math.max(mapView.k, 0.7);
+  mapView.tx = mapEl.clientWidth / 2 - m.x * mapView.k;
+  mapView.ty = mapEl.clientHeight / 2 - m.y * mapView.k;
+  mapApply();
+  mapPulse = index;
+  if (state) mapEl.querySelector('.map-marks')!.innerHTML = mapMarks(state);
+  setTimeout(() => {
+    if (mapPulse === index) mapPulse = null;
+  }, 2500);
+}
+
+function mapTip(e: PointerEvent) {
+  if (!mapEl) return;
+  const tip = mapEl.querySelector<HTMLElement>('.map-tip')!;
+  const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-tip]');
+  if (!hit || mapPanning() || e.pointerType === 'touch') {
+    tip.hidden = true;
+    return;
+  }
+  const r = mapEl.getBoundingClientRect();
+  tip.textContent = hit.dataset.tip!;
+  tip.hidden = false;
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+  tip.style.left = `${Math.min(x + 14, r.width - tip.offsetWidth - 6)}px`;
+  tip.style.top = `${y + 18 + tip.offsetHeight > r.height ? y - tip.offsetHeight - 10 : y + 18}px`;
+}
+
+function createMap(): HTMLDivElement {
+  const el = document.createElement('div');
+  el.className = 'mapview';
+  el.innerHTML = `<div class="map-world" style="width:${MAP_W}px;height:${MAP_H}px">
+      <img class="map-base" src="/art/kart/oversikt.webp" alt="Markedet" draggable="false">
+      <div class="map-tiles"></div>
+      <div class="map-veil"></div>
+      <img class="map-glow" src="/art/kart/fyren-glod.webp" alt="" draggable="false" style="left:${MAP_GLOW.x}px;top:${MAP_GLOW.y}px;width:${MAP_GLOW.w}px;height:${MAP_GLOW.h}px">
+      <div class="map-marks"></div>
+    </div>
+    <div class="map-tools">
+      <button type="button" class="small" data-action="map-find" title="Zoom inn på boden din">📍 Boden min</button>
+      <button type="button" class="small" data-action="map-fit" title="Zoom helt ut">⤢ Zoom ut</button>
+    </div>
+    <div class="map-tip" hidden></div>`;
+
+  el.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      mapZoomAt(mapView.k * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+    },
+    { passive: false },
+  );
+  el.addEventListener('pointerdown', (e) => {
+    if ((e.target as HTMLElement).closest('.map-tools')) return;
+    mapPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mapPointers.size === 2) {
+      const [a, b] = [...mapPointers.values()];
+      const r = el.getBoundingClientRect();
+      mapPinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: mapView.k, cx: (a.x + b.x) / 2 - r.left, cy: (a.y + b.y) / 2 - r.top };
+      mapPan = null;
+      return;
+    }
+    mapPan = { id: e.pointerId, x: e.clientX, y: e.clientY, tx: mapView.tx, ty: mapView.ty, moved: false };
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (mapPointers.has(e.pointerId)) mapPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mapPinch && mapPointers.size === 2) {
+      const [a, b] = [...mapPointers.values()];
+      mapZoomAt((mapPinch.k * Math.hypot(a.x - b.x, a.y - b.y)) / Math.max(1, mapPinch.d), mapPinch.cx, mapPinch.cy);
+      return;
+    }
+    if (mapPan && mapPan.id === e.pointerId) {
+      const dx = e.clientX - mapPan.x;
+      const dy = e.clientY - mapPan.y;
+      if (!mapPan.moved && Math.hypot(dx, dy) > 5) {
+        mapPan.moved = true;
+        el.setPointerCapture(e.pointerId);
+        el.classList.add('panning');
+      }
+      if (mapPan.moved) {
+        mapView.tx = mapPan.tx + dx;
+        mapView.ty = mapPan.ty + dy;
+        mapApply();
+      }
+    }
+    mapTip(e);
+  });
+  const end = (e: PointerEvent) => {
+    mapPointers.delete(e.pointerId);
+    const was = mapPanning();
+    if (mapPan?.id === e.pointerId || mapPointers.size < 2) {
+      if (mapPan?.moved || mapPinch) mapSuppressClick = true;
+      mapPan = null;
+      mapPinch = null;
+    }
+    el.classList.remove('panning');
+    if (was && pendingRender) render();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('pointerleave', () => (el.querySelector<HTMLElement>('.map-tip')!.hidden = true));
+  // Et klikk etter at kartet er dratt, skal ikke åpne boden du slapp over.
+  el.addEventListener(
+    'click',
+    (e) => {
+      if (!mapSuppressClick) return;
+      mapSuppressClick = false;
+      e.stopPropagation();
+      e.preventDefault();
+    },
+    true,
+  );
+  // Ny størrelse på kartruten (vinduet, sidepanelet, ny CSS): hold kartet innenfor, og vis hele kartet
+  // igjen hvis du så hele kartet før.
+  let last = { w: 0, h: 0 };
+  new ResizeObserver(() => {
+    if (!el.isConnected || !el.clientWidth) return;
+    const wasFit = last.w > 0 && mapView.k <= Math.max(last.w / MAP_W, last.h / MAP_H) + 1e-6;
+    last = { w: el.clientWidth, h: el.clientHeight };
+    if (wasFit) mapView.k = mapMinZoom();
+    mapApply();
+  }).observe(el);
+  return el;
+}
+
+/** Setter det faste kartet inn der siden har plass til det, og tegner bodene på nytt. */
+function mountMap(s: GameState) {
+  const host = app.querySelector('.map-host');
+  if (!host) return;
+  mapEl ??= createMap();
+  host.replaceWith(mapEl);
+  mapEl.querySelector('.map-marks')!.innerHTML = mapMarks(s);
+  const find = mapEl.querySelector<HTMLElement>('[data-action="map-find"]')!;
+  find.hidden = s.me.stallId === null;
+  find.textContent = s.me.stalls.length > 1 ? '📍 Mine boder' : '📍 Boden min';
+  find.title = s.me.stalls.length > 1 ? 'Først boden du står i, så de andre ved nye trykk' : 'Zoom inn på boden din';
+  if (!mapView.k) mapView.k = mapMinZoom();
+  mapApply();
+}
+
+/** Plassene og husene oppå kartbildet (kartpiksler; skiltene skaleres tilbake så de har fast størrelse). */
+function mapMarks(s: GameState): string {
+  const slots = s.slots
+    .map((sl) => {
+      const [w, h] = MAP_HIT[sl.street];
+      const pos = `left:${sl.x - w / 2}px;top:${sl.y - h / 2}px;width:${w}px;height:${h}px`;
+      const pulse = mapPulse === sl.index ? ' pulse' : '';
+      if (sl.stall) {
+        const mine = sl.stall.id === s.me.stallId;
+        const other = !mine && s.me.stalls.includes(sl.stall.id);
+        const lit = sl.stall.serving === 'open' || sl.stall.serving === 'self' ? ' lit' : '';
+        const tip = `${sl.stall.name}\n${sl.stall.ownerName}${mine ? ' (deg)' : other ? ' (din bod)' : ''} · ${sl.code}\n${sl.stall.serving === 'away' ? 'Straks tilbake' : SIGN_LABEL[sl.stall.sign]}`;
+        return `<button class="mslot taken${mine || other ? ' mine' : ''}${lit}${pulse}" style="${pos}" data-action="${mine ? 'home' : 'visit'}" data-stall="${sl.stall.id}" data-tip="${esc(tip)}">
+          <span class="mtag">${mine ? '<span class="mhere" title="Her er du">📍</span>' : ''}<i class="mdot"></i><span class="mlabel">${esc(sl.stall.name)}</span></span></button>`;
+      }
+      if (sl.npc) {
+        const tip = `${sl.npc.name}\n${sl.npc.owner} (NPC) · ${sl.code}\n${sl.npc.open ? 'Åpent' : 'Stengt'}`;
+        return `<button class="mslot npc${sl.npc.open ? ' lit' : ''}${pulse}" style="${pos}" data-action="map-info" data-slot="${sl.index}" data-tip="${esc(tip)}">
+          <span class="mtag"><i class="mdot"></i><span class="mlabel">${esc(sl.npc.name)}</span></span></button>`;
+      }
+      const picked = screen.kind === 'claim' && screen.slot === sl.index ? ' picked' : '';
+      const price = slotPrice(sl.price, s.me.stallId !== null); // en ekstra bod i bakgata er ikke gratis
+      const tip = `${sl.code} · ledig\n${MAP_STREET_NAME[sl.street]}, ${kr(sl.rent)} per dag${price ? ` + ${kr(price)} engangs` : ''}`;
+      return `<button class="mslot free${picked}${pulse}" style="${pos}" data-action="pick" data-slot="${sl.index}" data-tip="${esc(tip)}"></button>`;
+    })
+    .join('');
+  const houses = BUILDINGS.map((b, i) => {
+    const pos = `left:${b.x - b.w / 2}px;top:${b.y - b.h / 2}px;width:${b.w}px;height:${b.h}px`;
+    return `<button class="mhouse ${b.kind}" style="${pos}" data-action="map-info" data-building="${i}" data-tip="${esc(buildingTitle(b))}"></button>`;
+  }).join('');
+  return houses + slots;
+}
+
+function buildingTitle(b: Building): string {
+  if (b.kind === 'historie') return `${CHARACTER_BY_ID[b.charId]?.name ?? 'Noen'} bor her`;
+  if (b.kind === 'fyren') return 'Containeren (det står noen bak den)';
+  return b.name;
+}
+
+/** Sidepanelet når du har trykket på et hus eller en NPC-bod. */
+function mapInfoView(s: GameState): string {
+  const close = `<div class="row"><button type="button" class="ghost" data-action="map-info-close">Lukk</button></div>`;
+  if (mapInfo?.kind === 'npc') {
+    const sl = s.slots[mapInfo.slot];
+    const n = sl?.npc;
+    if (!n) return '';
+    const goods = n.goods.length
+      ? `<ul class="slot-facts">${n.goods.map((g) => `<li><span>${icon(PRODUCT_BY_ID[g.productId])} ${esc(PRODUCT_BY_ID[g.productId]?.name ?? g.productId)}</span><b>${kr(g.price)}</b></li>`).join('')}</ul>`
+      : `<p class="muted">Stengt nå. ${esc(n.owner)} har åpent kl. ${NPC_OPEN.from}–${NPC_OPEN.to}.</p>`;
+    return `<h2>${esc(n.name)}</h2>
+      <p class="muted">${esc(n.owner)} har en liten bod på plass ${sl.code} i bakgata og selger noen få ting av gangen.</p>
+      ${goods}
+      <p class="muted">${n.claimable ? `Bakgata er full. Du kan leie plassen – da pakker ${esc(n.owner)} sammen og går.` : `Plassen kan leies først når alle de andre plassene i bakgata er tatt.`}</p>
+      <div class="row">${n.claimable ? `<button type="button" data-action="pick" data-slot="${sl.index}">Lei plassen</button>` : ''}<button type="button" class="ghost" data-action="map-info-close">Lukk</button></div>`;
+  }
+  if (mapInfo?.kind !== 'bygg') return '';
+  const b = BUILDINGS[mapInfo.i];
+  const hasStall = s.me.stallId !== null;
+  if (b.kind === 'butikk')
+    return `<h2>${esc(b.name)}</h2>
+      <p class="muted">Du handler på nett (telefonen) – varene kommer med bud eller du henter med bilen.</p>
+      <div class="row">${hasStall ? `<button type="button" data-action="map-shop" data-tab="${b.id === DEKORINGEN.id ? 'pynt' : b.id}">Åpne nettbutikken</button>` : ''}<button type="button" class="ghost" data-action="map-info-close">Lukk</button></div>`;
+  if (b.kind === 'fyren')
+    return `<h2>Containeren</h2>
+      <p class="muted">Bak containeren står en fyr med hette. Han svarer på SMS og leverer i søppelkassa di om natta. Ikke spør hvor det kommer fra.</p>
+      <div class="row">${hasStall ? `<button type="button" data-action="map-dealer">📱 Send en SMS</button>` : ''}<button type="button" class="ghost" data-action="map-info-close">Lukk</button></div>`;
+  if (b.kind === 'juletre') {
+    const t = (st: MarketSlot['street']) => `${Math.round((s.slots.find((x) => x.street === st)?.traffic ?? 0) * 100)} %`;
+    return `<h2>🎄 Juletreet</h2>
+      <p>Alle som kommer på markedet, skal bort til juletreet. Hovedgata går rundt treet, og der går det mest folk. Jo lenger unna, jo færre.</p>
+      <ul class="slot-facts">
+        <li><span>Hovedgata (rundt treet)</span><b>${t('hovedgate')} kunder</b></li>
+        <li><span>Sidegata</span><b>${t('sidegate')}</b></li>
+        <li><span>Bakgata (ytterst)</span><b>${t('bakgate')}</b></li>
+      </ul>
+      <p class="muted">Leia og engangsprisen følger trafikken: dyrest ved treet. Den første boden i bakgata er gratis, en ekstra koster ${kr(EXTRA_BACKSTREET_PRICE)}.</p>${close}`;
+  }
+  if (b.kind === 'kirke') return `<h2>Kirka</h2><p class="muted">Klokkene ringer julen inn. Ellers skjer det ikke så mye her – ennå.</p>${close}`;
+  if (b.kind === 'port') return `<h2>Inngangen</h2><p class="muted">Her kommer kundene inn, og varebilene kjører langs Leveringsveien.</p>${close}`;
+  if (b.kind !== 'historie') return '';
+  const c = CHARACTER_BY_ID[b.charId];
+  const story = STORY_OF_CHAR[b.charId];
+  const v = s.me.stories.find((x) => x.id === story?.id);
+  const status = !story
+    ? ''
+    : v?.done
+      ? `✅ «${esc(story.title)}» – fullført`
+      : v?.paused
+        ? `⏸️ «${esc(story.title)}» – utsatt`
+        : v?.started
+          ? `📖 «${esc(story.title)}» – trinn ${v.step + 1} av ${story.steps.length}`
+          : `Hen har en historie å fortelle. Kanskje hen stikker innom boden din en dag.`;
+  return `<h2>${esc(c?.name ?? 'Et hus')}</h2><p class="muted">Her bor ${esc(c?.name ?? 'noen')}.</p><p>${status}</p>${close}`;
+}
+
+/** Lista over leide og ledige boder, gate for gate. */
+function boothList(s: GameState): string {
+  return (['hovedgate', 'sidegate', 'bakgate'] as const)
+    .map((street) => {
+      const all = s.slots.filter((sl) => sl.street === street);
+      const taken = all.filter((sl) => sl.stall);
+      const npcs = all.filter((sl) => sl.npc);
+      const free = all.filter((sl) => !sl.stall && !sl.npc);
+      const rows = [
+        ...taken.map((sl) => {
+          const mine = s.me.stalls.includes(sl.stall!.id);
+          return `<li><button type="button" class="booth-row${mine ? ' mine' : ''}" data-action="map-focus" data-slot="${sl.index}"><i class="mdot"></i><b>${esc(sl.stall!.name)}</b><span>${esc(sl.stall!.ownerName)}</span><code>${sl.code}</code></button></li>`;
+        }),
+        ...npcs.map(
+          (sl) =>
+            `<li><button type="button" class="booth-row npc" data-action="map-focus" data-slot="${sl.index}"><i class="mdot"></i><b>${esc(sl.npc!.name)}</b><span>${esc(sl.npc!.owner)} (NPC)</span><code>${sl.code}</code></button></li>`,
+        ),
+      ].join('');
+      return `<div class="booth-street">
+        <h3>${MAP_STREET_NAME[street]} <small>${taken.length} leid · ${free.length} ledige · ${kr(all[0].rent)}/dag</small></h3>
+        ${rows ? `<ul class="booth-rows">${rows}</ul>` : ''}
+        <div class="free-codes">${free.map((sl) => `<button type="button" class="${screen.kind === 'claim' && screen.slot === sl.index ? 'on' : ''}" data-action="pick" data-slot="${sl.index}" title="Ledig – trykk for å leie">${sl.code}</button>`).join('')}</div>
+      </div>`;
+    })
+    .join('');
+}
 
 function mapScreen(s: GameState): string {
-  const streets = ['hovedgate', 'sidegate', 'bakgate'] as const;
-  const map = streets
-    .map(
-      (street) => `
-      <div class="street">
-        <div class="street-label">${street[0].toUpperCase() + street.slice(1)}</div>
-        <div class="stalls">${s.slots.filter((sl) => sl.street === street).map((sl) => slotButton(s, sl)).join('')}</div>
-      </div>`,
-    )
-    .join('');
-
   let side = '';
   if (screen.kind === 'claim' && !s.slots[screen.slot].stall) {
-    const sl = s.slots[screen.slot];
+    const sl = { ...s.slots[screen.slot], price: slotPrice(s.slots[screen.slot].price, s.me.stallId !== null) };
     const facts = `<ul class="slot-facts">
-        <li><span>Gate</span><b>${sl.street[0].toUpperCase() + sl.street.slice(1)}</b></li>
+        <li><span>Gate</span><b>${MAP_STREET_NAME[sl.street]}</b></li>
         <li><span>Trafikk</span><b>${Math.round(sl.traffic * 100)} %</b></li>
         <li><span>Fast leie</span><b>${kr(sl.rent)} per dag</b></li>
         <li><span>Risikotillegg</span><b>${Math.round(sl.risk * 100)} %</b></li>
         <li><span>Engangspris</span><b>${sl.price ? kr(sl.price) : 'Gratis'}</b></li>
-      </ul>`;
+      </ul>${sl.npc ? `<p class="muted">${esc(sl.npc.owner)} pakker sammen «${esc(sl.npc.name)}» og gir deg plassen.</p>` : ''}`;
     const cancel = `<button type="button" class="ghost" data-action="map">Avbryt</button>`;
     if (s.me.stallId === null) {
       side =
         sl.price > START_CASH
-          ? `<h2>Plass #${sl.index + 1}</h2>${facts}
+          ? `<h2>Plass ${sl.code}</h2>${facts}
             <p class="muted">Du starter med ${kr(START_CASH)} og har ikke råd til denne plassen ennå. Start i bakgata og flytt hit når kassa tåler det.</p>
             <div class="row">${cancel}</div>`
-          : `<h2>Lei plass #${sl.index + 1}</h2>${facts}
+          : `<h2>Lei plass ${sl.code}</h2>${facts}
             <form data-form="claim" class="stack-form">
               <label>Navn på boden <input name="stallName" required minlength="2" maxlength="32" placeholder="F.eks. Honning-Hans" data-autofocus></label>
               <div class="row"><button>Lei boden</button>${cancel}</div>
             </form>`;
     } else {
       const afford = s.me.cash >= sl.price;
-      side = `<h2>Kjøp plass #${sl.index + 1}</h2>${facts}
+      side = `<h2>Kjøp plass ${sl.code}</h2>${facts}
         <p class="muted">Du får en bod til, i tillegg til den du har. Den nye er tom (bare sikringsboks) og har samme kasse som de andre. Kjør dit med bilen (${driveMinutes(myStreet(s), sl.street)} min) – bilen med bagasjerommet og det du bærer, blir med.${afford ? '' : ` Du har ${kr(s.me.cash)} og mangler ${kr(sl.price - s.me.cash)}.`}</p>
         <form data-form="claim" class="stack-form">
           <label>Navn på den nye boden <input name="stallName" required minlength="2" maxlength="32" value="${esc(myStall(s)?.name ?? '')}" data-autofocus></label>
           <div class="row"><button ${afford ? '' : 'disabled'}>Kjøp plassen${sl.price ? ` for ${kr(sl.price)}` : ''}</button>${cancel}</div>
         </form>`;
     }
-  } else if (s.me.stallId === null) {
-    side = `<h2>Velkommen, ${esc(s.me.name)}!</h2>
+  } else if (mapInfo) {
+    side = mapInfoView(s);
+  }
+  if (!side) {
+    const welcome =
+      s.me.stallId === null
+        ? `<h2>Velkommen, ${esc(s.me.name)}!</h2>
       <div class="welcome-look"><img src="${avatarFor(playerSeed(s.me.playerId, s.me.name), s.me.look)}" alt="" draggable="false">
         <div><b>Slik ser du ut bak disken</b><button class="small" data-action="look-open">🪞 Lag figuren din</button></div></div>
-      <p>Velg en ledig plass for å leie en bod. Du starter med ${kr(START_CASH)}. Bakgata er gratis å flytte inn i. Sidegata (${kr(s.slots.find((x) => x.street === 'sidegate')!.price)}) og hovedgata (${kr(s.slots.find((x) => x.street === 'hovedgate')!.price)}) koster en engangspris – flere kunder, men høyere leie og risikotillegg.</p>`;
-  } else {
-    side = `<h2>Hendelser</h2>${eventList(s)}`;
+      <p>Velg en ledig plass på kartet for å leie en bod. Du starter med ${kr(START_CASH)}. Bakgata er gratis å flytte inn i. Sidegata (${kr(s.slots.find((x) => x.street === 'sidegate')!.price)}) og hovedgata (${kr(s.slots.find((x) => x.street === 'hovedgate')!.price)}) koster en engangspris – flere kunder, men høyere leie og risikotillegg.</p>`
+        : '';
+    const tab = mapTab ?? (s.me.stallId === null ? 'boder' : 'events');
+    side = `${welcome}<nav class="map-tabs">
+        <button type="button" class="${tab === 'events' ? 'on' : ''}" data-action="map-tab" data-tab="events">Hendelser</button>
+        <button type="button" class="${tab === 'boder' ? 'on' : ''}" data-action="map-tab" data-tab="boder">Boder <small>${s.slots.filter((x) => x.stall).length}/${s.slots.length}</small></button>
+      </nav>${tab === 'events' ? eventList(s) : `<div class="booth-list">${boothList(s)}</div>`}`;
   }
 
   return `
@@ -2798,28 +3140,12 @@ function mapScreen(s: GameState): string {
       ${myStall(s) ? `<span>💰 ${kr(s.me.cash)}</span><span>⭐ ${s.me.reputation}</span><button class="small" data-action="home">🏠 Til boden</button>` : ''}
     </div>
   </header>
-  <div class="layout">
-    <section class="map card"><h2>Markedet</h2>${map}</section>
+  <div class="layout market-layout">
+    <section class="map card"><div class="map-host"></div></section>
     <section class="panel card">${side}</section>
   </div>`;
 }
 
-function slotButton(s: GameState, sl: MarketSlot): string {
-  if (!sl.stall) {
-    const picked = screen.kind === 'claim' && screen.slot === sl.index;
-    return `<button class="slot free ${picked ? 'picked' : ''}" data-action="pick" data-slot="${sl.index}">
-      <span class="slot-no">#${sl.index + 1}</span><span>Ledig</span><small>${sl.rent} kr/dag</small>
-      <small class="slot-price">${sl.price ? `Kjøp: ${kr(sl.price)}` : 'Ingen engangspris'}</small></button>`;
-  }
-  const mine = sl.stall.id === s.me.stallId;
-  const other = !mine && s.me.stalls.includes(sl.stall.id); // en annen av dine boder
-  // Bare salgsvarer (en kjele på bordet er ikke en vare).
-  const goods = [...new Set(sl.stall.counter.filter((c) => PRODUCT_BY_ID[c.typeId]).map((c) => c.typeId))].map((id) => icon(PRODUCT_BY_ID[id])).join('');
-  return `<button class="slot taken ${mine ? 'mine' : ''} ${other ? 'mine other' : ''}" data-action="${mine ? 'home' : 'visit'}" data-stall="${sl.stall.id}" ${other ? 'title="Din bod – trykk for å se den og kjøre dit"' : ''}>
-    <span class="slot-no">#${sl.index + 1}</span>
-    <span class="slot-name"><i class="sign-dot ${sl.stall.serving}" title="${sl.stall.serving === 'away' ? 'Straks tilbake' : SIGN_LABEL[sl.stall.sign]}"></i>${esc(sl.stall.name)}</span>
-    <small>${goods || '—'}</small></button>`;
-}
 
 function eventList(s: GameState): string {
   return `<ul class="events">${s.events
@@ -4775,7 +5101,45 @@ app.addEventListener('click', (e) => {
     })();
     return;
   }
-  if (action === 'pick') screen = { kind: 'claim', slot: Number(el.dataset.slot) };
+  if (action === 'pick') {
+    screen = { kind: 'claim', slot: Number(el.dataset.slot) };
+    mapInfo = null;
+  }
+  if (action === 'map-info') {
+    mapInfo = el.dataset.slot ? { kind: 'npc', slot: Number(el.dataset.slot) } : { kind: 'bygg', i: Number(el.dataset.building) };
+    if (screen.kind === 'claim') screen = { kind: 'map' };
+  }
+  if (action === 'map-info-close') mapInfo = null;
+  if (action === 'map-tab') mapTab = el.dataset.tab === 'boder' ? 'boder' : 'events';
+  if (action === 'map-focus') {
+    mapFocusSlot(Number(el.dataset.slot));
+    return;
+  }
+  if (action === 'map-fit') {
+    mapFit();
+    return;
+  }
+  if (action === 'map-find' && state) {
+    // Først boden du står i, så de andre bodene dine ved nye trykk.
+    const own = [state.me.stallId, ...state.me.stalls.filter((id) => id !== state!.me.stallId)];
+    const fresh = Date.now() - mapFindAt > 8000;
+    mapFindAt = Date.now();
+    mapFindIdx = fresh ? 0 : (mapFindIdx + 1) % own.length;
+    const sl = state.slots.find((x) => x.stall && x.stall.id === own[mapFindIdx]);
+    if (sl) {
+      mapFocusSlot(sl.index);
+      if (own.length > 1) toast(`📍 ${mapFindIdx === 0 ? 'Her er du' : 'Din bod'}: «${sl.stall!.name}» (${sl.code}). Trykk igjen for neste.`);
+    }
+    return;
+  }
+  if (action === 'map-shop') {
+    shopTab = el.dataset.tab as ShopTab;
+    modal = { kind: 'wholesale' };
+  }
+  if (action === 'map-dealer') {
+    phoneOpen = true;
+    phonePage = 'meldinger';
+  }
   if (action === 'insurer') modal = { kind: 'insurer' };
   if (action === 'insurer-no' && state) {
     const day = state.paper?.edition ?? 0;

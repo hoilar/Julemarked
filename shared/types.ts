@@ -165,14 +165,17 @@ export interface StallPublic {
 
 export interface MarketSlot {
   index: number;
+  code: string; // H01–H24, S01–S48, B01–B48 (som på kartet)
   street: 'hovedgate' | 'sidegate' | 'bakgate';
-  x: number;
+  x: number; // midtpunktet på kartet (kartpiksler, shared/marketmap.ts)
   y: number;
   traffic: number;
   rent: number; // fast leie per dag
   price: number; // engangspris for å ta plassen
   risk: number; // andel av risikotillegget (1 = fullt, 0 = ingen)
   stall: StallPublic | null;
+  /** En enkel NPC-bod (bare i bakgata, shared/marketmap.ts) når ingen spiller har plassen. */
+  npc: { name: string; owner: string; open: boolean; goods: { productId: string; price: number }[]; claimable: boolean } | null;
 }
 
 export interface InventoryRow {

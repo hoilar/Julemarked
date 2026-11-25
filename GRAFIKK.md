@@ -1,5 +1,75 @@
 # Grafikk – stilguide og prompter (ChatGPT)
 
+## Markedskart med 120 boder – valgt oppsett 1 med nye detaljer
+
+Nyeste grafikkleveranse ligger i `GFX_assets/kart-120-boder-3x3-med-detaljer-v3/`, med butikkhusene under.
+V4 er koblet inn i spillet (25.11.2026), bygget av `tools/kart-120-v4.py` fra v3: containeren med Fyren 40 %
+mindre der det høyre lageret sto, villaen (Direktøren) dobbelt så stor, Fru Kvist og Line Berg i større
+hjørnehus, Rolf Rask i Direktørens gamle hus (litt mindre), og Natt-Nora, Per Penn og Lille Emma (samme hus
+som Rolf) 80 % større nede ved Leveringsveien. Rolf Rasks gamle hus og strøm/avfall øst er fjernet.
+Det første, mer symmetriske kartoppsettet er beholdt, med samme 120 bodplasser
+og fordeling 24/48/48. Nye husvarianter, bjørk, furu, gran, busker og benk/gjerde
+brukes som miljødetaljer. Veikryssene har lokale åpninger i brøytekantene.
+Samme 3 × 3 ruter, 4608 × 3072 samlet, og eget flyttbart lag for hver bod.
+Zoomvisning og redigerbar OpenRaster-fil ligger i mappen.
+Tidligere utgaver er beholdt i sine egne mapper.
+
+**Lagt inn i spillet 25.11.2026:** `py tools/kart-til-spill.py` lager `client/public/art/kart/` (oversikt i
+1/3 oppløsning + ni skarpe ruter, 2,5 MB i webp) og `shared/marketmap-slots.ts` fra v4-mappen. Kjør skriptet
+på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `shared/marketmap.ts`):
+butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
+Garasjene venter.
+
+## Butikkhusene på markedskartet – grafikk klar og lagt inn (25.11.2026)
+
+Alle sju PNG-filer er levert i v2- og v3-mappenes `elementer/`. Kart v3, ni ruter,
+zoomvisning og OpenRaster med egne lag er klare. Alle 120 bodplassene er uendret
+(24/48/48). Mobilgløden ligger også i et eget skjult nattlag. Se
+`GFX_assets/kart-120-boder-3x3-med-detaljer-v3/LEVERANSE.md` og varelisten.
+**Lagt inn i spillet 25.11.2026:** `tools/kart-til-spill.py` peker på v3. Mobillyset til Fyren er et eget lag
+på kartet (`art/kart/fyren-glod.webp`, plassering i `MAP_GLOW`) som lyser om natta. Klikkområdet til containeren
+er 220×200.
+
+Seks bygninger som erstatter husene på disse plassene i kartet. Spillet åpner nettbutikken
+(eller SMS-en til Fyren) når man trykker på dem, så de må kjennes igjen på avstand.
+
+**Stil:** samme som miljøelementene i `GFX_assets/kart-120-boder-3x3-med-detaljer-v2/elementer/`
+(f.eks. `trehus-rodt-380x285.png`, `langhus-420x280.png`, `kirke-510x285.png`): sett litt ovenfra,
+snø på taket, mørk kontur, varm palett, lys fra øvre venstre. Gjennomsiktig PNG, uten skygge
+utenfor fotavtrykket. Butikkene er norske småbyforretninger i tre eller mur, ikke kjøpesentre.
+
+**Skiltet:** hver butikk har et skilt over døra med spillets egen logo fra
+`client/public/art/butikker/<id>-logo.png` (spillets versjon, ikke kjedens ekte logo). Fargene i fasaden
+kan spille på logoen: KIWI grønn, REMA 1000 blå, Extra rød og gul, Klas Olsen blå og hvit,
+Dekoringen gull og rødt. Skiltet må kunne leses når kartet er zoomet ut (ca. 25 %), så det bør være stort.
+
+| # | Fil | Hva | Midtpunkt i kartet | Størrelse | Merknad |
+|---|---|---|---|---|---|
+| K1 | `butikk-kiwi.png` | KIWI: lav dagligvarebutikk med grønt skilt, handlekurver ved døra, juletrær til salgs ute | (700, 160) | 380×285 | Erstatter det røde trehuset øverst til venstre |
+| K2 | `butikk-extra.png` | Extra: rød og gul fasade, tilbudsplakater i vinduene | (1360, 160) | 350×270 | Erstatter hjørnehuset |
+| K3 | `butikk-rema.png` | REMA 1000: hvit og blå fasade, enkel og firkantet | (3260, 160) | 380×285 | Erstatter det lille hvite huset |
+| K4 | `butikk-klas.png` | Klas Olsen: jernvarehandel med verktøy, lyslenker og skjøteledninger i vinduet | (3950, 160) | 420×280 | Erstatter langhuset øverst til høyre |
+| K5 | `butikk-dekoringen.png` | Dekoringen: pyntebutikk, full av lys, kranser og julekuler i vinduene | (450, 1570) | 330×250 | Erstatter hjørnehuset midt til venstre |
+| K6 | `container-fyren.png` | Grønn avfallscontainer med en fyr i mørk hettegenser som står bak den og kikker frem | (4400, 1595) | 220×200 | Erstatter strøm- og avfallsområdet til høyre. Ansiktet skjult i hetta. Lyssky, men morsom, ikke skummel |
+| K6b | `container-fyren-glod.png` | Gløden fra mobilskjermen hans | (samme) | 220×200 | Eget lag, samme lerret, vises om natta |
+
+Til sammen 7 filer. Leveres som elementer (`GFX_assets/kart-120-boder-3x3-med-detaljer-v2/elementer/`)
+og lagt inn i kartet med samme byggeskript, så kommer det en v3 av `kart-samlet.png`. Plasseringene
+over er midtpunktene fra `tools/kart-120-3x3.py`. Bodplassene må ikke flyttes. V3 er nå klar som grafikkleveranse.
+En senere spillkobling gjøres ved å peke `tools/kart-til-spill.py` på v3 og kjøre det.
+
+```text
+Map building for the top-down market map in "Julemarked Simulator". Match the attached map
+elements (trehus-rodt, langhus, kirke) exactly: same slightly-from-above view, same pixel size,
+snow on the roof, dark outline, warm palette, light from the upper left. Fully transparent PNG,
+one building, no ground shadow outside its footprint.
+A small-town Norwegian shop, not a mall. Large readable shop sign above the door using the
+attached logo (it must be readable when the map is zoomed out to 25 %).
+Fit inside [W]×[H] px. Make: [K-motiv].
+```
+
+
+
 ## Stiltilpasning av ny grafikk (`tools/stilmatch.py`)
 
 Generert grafikk glir ofte bort fra stilen (skarpere, mer kontrast og metning enn bodgrafikken). Paletten tvinges

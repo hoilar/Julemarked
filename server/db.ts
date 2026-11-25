@@ -165,6 +165,14 @@ if (!hasColumn('stalls', 'bags_binned')) db.exec('ALTER TABLE stalls ADD COLUMN 
 // Etiketten på salgsvarer: NULL = butikkjøpt, 'home' = laget i kjelen, 'forged' = skrevet om med penn.
 if (!hasColumn('items', 'label')) db.exec('ALTER TABLE items ADD COLUMN label TEXT');
 // Dagen (avisutgave ÅÅÅÅMMDD) tyven ble angitt og tatt i markedet.
+// Kartet med 120 plasser (shared/marketmap.ts): de gamle 12 (4 per gate) blir H01–H04, S01–S04 og B01–B04.
+if (!hasColumn('markets', 'map120')) {
+  db.exec('BEGIN');
+  db.exec('UPDATE stalls SET slot_index = slot_index + 64 WHERE slot_index BETWEEN 8 AND 11'); // bakgata → 72–75
+  db.exec('UPDATE stalls SET slot_index = slot_index + 20 WHERE slot_index BETWEEN 4 AND 7'); // sidegata → 24–27
+  db.exec('ALTER TABLE markets ADD COLUMN map120 INTEGER NOT NULL DEFAULT 1');
+  db.exec('COMMIT');
+}
 if (!hasColumn('markets', 'thief_caught')) db.exec('ALTER TABLE markets ADD COLUMN thief_caught INTEGER NOT NULL DEFAULT 0');
 // Feil tips til politiet: dagen (dato ÅÅÅÅMMDD) det gir færre kunder, og hvor mange feil tips.
 if (!hasColumn('stalls', 'tip_day')) {

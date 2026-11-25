@@ -288,6 +288,10 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- KART-120-START -->[\s\S]*?<!-- KART-120-SLUTT -->', '', html)
+    if (ROOT/'GFX_assets/kart-120-boder-3x3/plasseringer.json').exists():
+        panel = (ROOT/'tools/kart-120-panel.html').read_text(encoding='utf-8')
+        html = html.replace('<div class="table-wrap">', '<!-- KART-120-START -->'+panel+'<!-- KART-120-SLUTT --><div class="table-wrap">')
     logo_manifest = ROOT/'GFX_assets/planlagte/logoer/leveranse.json'
     if logo_manifest.exists():
         stores = json.loads(logo_manifest.read_text(encoding='utf-8'))['items']

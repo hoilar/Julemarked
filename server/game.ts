@@ -233,6 +233,7 @@ import type { Module } from '../shared/products.ts';
 import { CASSETTE_PLAYER, SPEAKERS, TAPE_BY_ID, TAPE_SALAD } from '../shared/products.ts';
 import { EAT_CHANCE, NEIGHBOUR_HIT, PIRATE_FINE, PIRATE_REP_HIT, musicBoost, playerReady, songOf, tapeIn } from '../shared/music.ts';
 import { hash01 } from '../shared/hash.ts';
+import { MAP_SLOTS, slotPrice, NPCS, NPC_BY_CODE, NPC_OPEN, neighbourSlots, npcCounter, slotCode } from '../shared/marketmap.ts';
 import { DECOR_BY_ID, DECOR_SLOTS, DEKORINGEN, decorBoost, decorDemand, decorOfPack, decorPackOf, decorPrice, isDarkHour } from '../shared/decor.ts';
 import { STORIES, STORY_BY_ID, STORY_OF_CHAR, STORY_RETRY_DAYS, stepNeed, type StoryView } from '../shared/stories.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
@@ -263,28 +264,26 @@ const pickLine = (lines: string[]) => lines[Math.floor(Math.random() * lines.len
 
 // ---------- Kartoppsett ----------
 
-type SlotDef = Omit<MarketSlot, 'stall'>;
+type SlotDef = Omit<MarketSlot, 'stall' | 'npc'>;
 
 // price = engangspris for å ta plassen (betales ved leie eller flytting),
 // risk = hvor stor del av risikotillegget på leia som gjelder i gata.
 const STREETS = [
-  { street: 'hovedgate', traffic: 1.4, rent: 350, price: 50_000, risk: 1, y: 1 },
-  { street: 'sidegate', traffic: 1.0, rent: 220, price: 10_000, risk: 0.5, y: 2 },
-  { street: 'bakgate', traffic: 0.65, rent: 120, price: 0, risk: 0, y: 3 },
+  { street: 'hovedgate', traffic: 1.4, rent: 350, price: 50_000, risk: 1 },
+  { street: 'sidegate', traffic: 1.0, rent: 220, price: 10_000, risk: 0.5 },
+  { street: 'bakgate', traffic: 0.65, rent: 120, price: 0, risk: 0 },
 ] as const;
 
-export const LAYOUT: SlotDef[] = STREETS.flatMap((s, row) =>
-  [0, 1, 2, 3].map((col) => ({
-    index: row * 4 + col,
-    street: s.street,
-    x: col,
-    y: s.y,
-    traffic: s.traffic,
-    rent: s.rent,
-    price: s.price,
-    risk: s.risk,
-  })),
-);
+/** De 120 plassene på kartet (shared/marketmap.ts). Indeksen er slot_index i databasen. */
+export const LAYOUT: SlotDef[] = MAP_SLOTS.map((m, index) => {
+  const s = STREETS.find((x) => x.street === m.street)!;
+  return { index, code: m.code, street: m.street, x: m.x, y: m.y, traffic: s.traffic, rent: s.rent, price: s.price, risk: s.risk };
+});
+const NEIGHBOURS = LAYOUT.map((d) => neighbourSlots(d.index));
+
+/** NPC-boden på en plass (når ingen spiller har den). */
+const npcAt = (index: number) => NPC_BY_CODE[LAYOUT[index]?.code ?? ''] ?? null;
+const NPC_INDEXES = new Set(NPCS.map((n) => LAYOUT.findIndex((d) => d.code === n.code)));
 
 // ---------- Typer fra databasen ----------
 
@@ -1055,7 +1054,7 @@ function giveStarterCar(stallId: number) {
 /** Ledige plasser en ny spiller har råd til å starte på (bakgata, med startkassa). */
 export function freeStartSlots(marketId: number): number {
   const taken = new Set(all<{ slot_index: number }>(db.prepare('SELECT slot_index FROM stalls WHERE market_id = ?'), marketId).map((r) => r.slot_index));
-  return LAYOUT.filter((s) => s.price <= START_CASH && !taken.has(s.index)).length;
+  return LAYOUT.filter((s) => s.price <= START_CASH && !taken.has(s.index)).length; // NPC-plassene kan også tas, når gata er full
 }
 
 /** Spillerne i et marked med dette navnet (store og små bokstaver er likt). */
@@ -1294,12 +1293,29 @@ function int(n: number, what: string) {
   return n;
 }
 
+/** En NPC-plass kan leies når alle de andre plassene i samme gate er tatt av spillere. */
+function npcClaimable(marketId: number, slotIndex: number): boolean {
+  const street = LAYOUT[slotIndex].street;
+  const taken = new Set(all<{ slot_index: number }>(db.prepare('SELECT slot_index FROM stalls WHERE market_id = ?'), marketId).map((r) => r.slot_index));
+  return !LAYOUT.some((d) => d.street === street && d.index !== slotIndex && !taken.has(d.index) && !NPC_INDEXES.has(d.index));
+}
+
+function npcLeaves(market: MarketRow, slotIndex: number, by: string) {
+  const npc = npcAt(slotIndex);
+  if (npc) event(market, null, nowFor(market), `${npc.owner} pakker sammen «${npc.name}» og gir plass ${npc.code} til ${by}.`);
+}
+
 export function claimStall(player: PlayerRow, slotIndex: number, stallName: string) {
   const market = marketOf(player);
-  const def = LAYOUT.find((s) => s.index === slotIndex);
-  if (!def) throw new GameError('Ukjent bodplass.');
+  const base = LAYOUT.find((s) => s.index === slotIndex);
+  if (!base) throw new GameError('Ukjent bodplass.');
+  // En ekstra bod i bakgata er ikke gratis (bare den første).
+  const def = { ...base, price: slotPrice(base.price, !!currentStall(player)) };
   stallName = stallName.trim().slice(0, 32);
   if (stallName.length < 2) throw new GameError('Boden trenger et navn.');
+  const npc = npcAt(slotIndex);
+  if (npc && !npcClaimable(market.id, slotIndex))
+    throw new GameError(`${npc.owner} har den plassen. Det er ledige plasser i ${def.street}n – NPC-plassene kan bare leies når gata ellers er full.`);
   const current = currentStall(player);
   if (!current && def.price > START_CASH)
     throw new GameError(`Plassen koster ${def.price} kr å ta over. Start i bakgata og kjøp deg opp senere.`);
@@ -1323,7 +1339,8 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
     giveStarterFusebox(id);
     db.prepare('UPDATE players SET started_at = COALESCE(started_at, ?) WHERE id = ?').run(nowFor(market), player.id);
     deliverPapers(market, nowFor(market));
-    event(market, null, nowFor(market), `${player.name} har leid plass ${slotIndex + 1} i ${def.street}n og åpnet «${stallName}».`);
+    npcLeaves(market, slotIndex, player.name);
+    event(market, null, nowFor(market), `${player.name} har leid plass ${def.code} i ${def.street}n og åpnet «${stallName}».`);
   });
 }
 
@@ -1353,7 +1370,8 @@ function buyAnotherStall(market: MarketRow, player: PlayerRow, current: StallRow
     giveStarterFusebox(id);
     // Første gang du har flere boder: husk hvor du er.
     db.prepare('UPDATE players SET stall_at = COALESCE(stall_at, ?) WHERE id = ?').run(current.id, player.id);
-    event(market, null, t, `${player.name} har kjøpt plass ${def.index + 1} i ${def.street}n og åpnet «${stallName}».`);
+    npcLeaves(market, def.index, player.name);
+    event(market, null, t, `${player.name} har kjøpt plass ${def.code} i ${def.street}n og åpnet «${stallName}».`);
   });
 }
 
@@ -2770,9 +2788,23 @@ export function getState(player: PlayerRow): GameState {
   const stalls = all<StallRow & { owner_name: string; owner_look: string }>(q.stallsInMarket, market.id);
   const bySlot = new Map(stalls.map((s) => [s.slot_index, s]));
 
+  const npcHour = Math.floor(t / 3_600_000);
+  const npcOpen = parts.hour >= NPC_OPEN.from && parts.hour < NPC_OPEN.to;
   const slots: MarketSlot[] = LAYOUT.map((def) => {
     const s = bySlot.get(def.index);
-    if (!s) return { ...def, stall: null };
+    if (!s) {
+      const n = npcAt(def.index);
+      const npc = n
+        ? {
+            name: n.name,
+            owner: n.owner,
+            open: npcOpen,
+            goods: npcOpen ? npcCounter(n, market.id, npcHour, (id) => PRODUCT_BY_ID[id]?.basePrice ?? 20) : [],
+            claimable: npcClaimable(market.id, def.index),
+          }
+        : null;
+      return { ...def, stall: null, npc };
+    }
     // Andre ser bare hva etiketten sier – ikke om den er skrevet om.
     const own = s.owner_id === player.id;
     const shown = presentItems(itemsOf(s.id), own);
@@ -2803,6 +2835,7 @@ export function getState(player: PlayerRow): GameState {
         music: musicPublic(market, s, t),
         decor: decorOf(s),
       },
+      npc: null,
     };
   });
 
@@ -5824,8 +5857,7 @@ function processHour(market: MarketRow, hour: number) {
   const loudAt = new Map(stalls.filter((s) => music.get(s.id)!.speakers).map((s) => [s.slot_index, s]));
   const neighbourFactor = (s: StallRow) => {
     if (music.get(s.id)!.speakers) return 1; // lydkrig: du hører ikke naboen over din egen musikk
-    const { street, x } = LAYOUT[s.slot_index];
-    const loud = LAYOUT.filter((d) => d.street === street && Math.abs(d.x - x) === 1 && loudAt.has(d.index)).length;
+    const loud = (NEIGHBOURS[s.slot_index] ?? []).filter((i) => loudAt.has(i)).length;
     return Math.pow(1 - NEIGHBOUR_HIT, loud);
   };
 

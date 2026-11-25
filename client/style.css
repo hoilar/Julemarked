@@ -1259,28 +1259,122 @@ body.night .top { background: #0c1020; }
 @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
 .panel .events { max-height: 60dvh; overflow-y: auto; }
 
-.street { margin-bottom: 0.8rem; }
-.street-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.3rem; }
-.stalls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
-.slot {
+.panel .booth-list { max-height: calc(100dvh - 200px); overflow-y: auto; }
+
+/* Markedskartet: fast element med zoom og panorering (client/main.ts, mountMap). */
+.market-layout { max-width: none; grid-template-columns: minmax(0, 1fr) 360px; }
+@media (max-width: 900px) { .market-layout { grid-template-columns: 1fr; } }
+.map.card { padding: 0; overflow: hidden; }
+.mapview {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - 120px); /* kartet dekker hele ruten (mapMinZoom), så det blir aldri tomrom */
+  min-height: 320px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  background: #e8ecf6;
+  border-radius: inherit;
+  user-select: none;
+}
+@media (max-width: 900px) { .mapview { height: 70dvh; } }
+body.night .mapview { background: #5d6380; }
+.mapview.panning { cursor: grabbing; }
+.map-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; --k: 0.25; }
+.map-base, .map-tiles img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.map-tiles img { width: auto; height: auto; }
+.map-veil { position: absolute; inset: 0; background: rgba(12, 18, 48, 0.55); opacity: 0; transition: opacity 1s; pointer-events: none; }
+body.night .map-veil { opacity: 1; }
+/* Mobillyset til Fyren bak containeren lyser gjennom mørket om natta. */
+.map-glow { position: absolute; pointer-events: none; opacity: 0; transition: opacity 1s; mix-blend-mode: screen; }
+body.night .map-glow { opacity: 1; }
+.map-marks { position: absolute; inset: 0; }
+.mslot, .mhouse {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.mslot:hover, .mhouse:hover { background: rgba(255, 236, 170, 0.28); outline: 6px solid rgba(217, 164, 65, 0.85); }
+.mslot.free:hover { outline-style: dashed; }
+.mslot.picked { outline: 8px solid var(--gold); background: rgba(217, 164, 65, 0.25); }
+.mslot.pulse { animation: map-pulse 0.8s ease-in-out 3; }
+@keyframes map-pulse { 50% { outline: 14px solid var(--gold); background: rgba(217, 164, 65, 0.4); } }
+/* Lys i bodene om natta. */
+body.night .mslot.lit { background: radial-gradient(closest-side, rgba(255, 214, 120, 0.75), rgba(255, 190, 90, 0.2) 70%, transparent); }
+body.night .mhouse.juletre { background: radial-gradient(closest-side, rgba(255, 220, 140, 0.6), transparent); }
+/* Merket over taket: grønn prikk = leid av en spiller, og navneskiltet når du har zoomet inn. Fast størrelse på skjermen. */
+.mtag {
+  position: absolute;
+  left: 50%;
+  top: 6%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  min-height: 74px;
-  padding: 0.4rem 0.25rem;
+  gap: 4px;
+  transform: translate(-50%, -100%) scale(calc(1 / var(--k)));
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.mdot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #2fbf5b; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); flex: none; }
+.mslot.mine .mdot, .booth-row.mine .mdot { background: var(--gold); }
+.mhere { font-size: 16px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)); }
+.mslot.npc .mdot, .booth-row.npc .mdot { background: #b9a58c; }
+.mlabel { display: none; font: 600 12px/1.2 system-ui, sans-serif; color: #2a1c10; background: #fffaf2; border: 1px solid #c08a5a; border-radius: 4px; padding: 1px 6px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.mapview.zoomed .mlabel { display: inline-block; }
+.mslot.mine .mlabel { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+.mslot.npc .mlabel { color: #5b4d3f; font-weight: 500; }
+.map-tools { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; }
+.map-tools button { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.map-tip {
+  position: absolute;
+  z-index: 3;
+  max-width: 240px;
+  padding: 6px 9px;
   font-size: 0.8rem;
-  text-align: center;
-  background: var(--card);
+  line-height: 1.35;
+  white-space: pre-line;
+  color: #fffaf2;
+  background: rgba(20, 26, 43, 0.92);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.map-tip::first-line { font-weight: 700; }
+
+/* Sidepanelet: hendelser eller lista over boder. */
+.map-tabs { display: flex; gap: 4px; margin-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
+.map-tabs button { background: transparent; color: var(--muted); border: 0; border-bottom: 3px solid transparent; border-radius: 0; box-shadow: none; padding: 0.35rem 0.7rem; font-weight: 600; }
+.map-tabs button.on { color: var(--ink); border-bottom-color: var(--gold); }
+.booth-street h3 { font-size: 0.85rem; margin: 0.8rem 0 0.3rem; }
+.booth-street h3 small { font-weight: 400; color: var(--muted); }
+.booth-rows { list-style: none; margin: 0 0 0.4rem; padding: 0; }
+.booth-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.82rem;
+  text-align: left;
+  background: transparent;
   color: var(--ink);
-  border: 2px dashed var(--line);
+  border: 0;
+  border-bottom: 1px dotted var(--line);
+  border-radius: 0;
   box-shadow: none;
 }
-.slot.taken { border: 2px solid #c08a5a; background: linear-gradient(var(--red) 0 10px, var(--card) 10px); padding-top: 0.8rem; }
-.slot.mine { border-color: var(--gold); outline: 2px solid var(--gold); }
-.slot-no { font-size: 0.7rem; color: var(--muted); }
-.slot.picked { border-style: solid; border-color: var(--gold); }
-.slot-price { font-size: 0.68rem; color: var(--muted); }
+.booth-row:hover { background: rgba(217, 164, 65, 0.15); }
+.booth-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.booth-row span { color: var(--muted); font-size: 0.75rem; }
+.booth-row code, .free-codes button { font: 600 0.72rem ui-monospace, monospace; }
+.free-codes { display: flex; flex-wrap: wrap; gap: 3px; }
+.free-codes button { padding: 2px 5px; background: transparent; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; box-shadow: none; }
+.free-codes button:hover, .free-codes button.on { color: var(--ink); border-color: var(--gold); border-style: solid; }
 .slot-facts { list-style: none; padding: 0; margin: 0 0 0.8rem; display: grid; gap: 0.25rem; }
 .slot-facts li { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dotted var(--line); padding: 0.15rem 0; }
 .slot-facts span { color: var(--muted); }
