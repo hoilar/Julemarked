@@ -120,6 +120,7 @@ import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
 import spillbilder from './spillbilder.json';
+import { hideLoader, imagesIn, preloadInBackground, preloadWithBar, setLoader } from './loader.ts';
 import {
   batteryIn,
   chargingIn,
@@ -339,8 +340,27 @@ function myPrice(s: GameState, productId: string): number {
 
 // ---------- Data og sanntid ----------
 
+// Telefonen er lukket ved oppstart, men skal være klar med en gang den åpnes.
+const PHONE_ART = ['ramme.png', 'bakgrunn.jpg', 'telefon.png', ...['bank', 'kommunen', 'markedet', 'meldinger', 'minbod', 'nettbutikk', 'toppliste', 'varsler'].map((a) => `app-${a}.png`)].map(
+  (f) => `/art/telefon/${f}`,
+);
+let loaderRunning = false;
+
+/** Første skjermbilde etter innlogging: vent på bildene det bruker (med lastestolpe), og hent resten i bakgrunnen. */
+async function finishFirstLoad() {
+  await preloadWithBar([...imagesIn(app), ...PHONE_ART], 'Setter opp boden');
+  hideLoader();
+  loaderRunning = false;
+  preloadInBackground([...SPILL].map(spill));
+}
+
 async function refresh() {
   if (!token) return render();
+  const first = !state && !loaderRunning;
+  if (first) {
+    loaderRunning = true;
+    setLoader('Henter boden …');
+  }
   try {
     state = await api<GameState>('/api/state');
     clockBase = { game: state.clock.gameTime, real: Date.now(), speed: state.clock.speed };
@@ -355,6 +375,14 @@ async function refresh() {
   }
   updateDevPanel(state, clockBase);
   render();
+  if (first) {
+    if (state) void finishFirstLoad();
+    else {
+      hideLoader();
+      loaderRunning = false;
+      render(); // tilbake til påmeldingen (eller tom side til neste forsøk)
+    }
+  }
 }
 
 function connectSocket() {
@@ -488,8 +516,10 @@ function render() {
   pendingRender = false;
   shownStall = null;
   if (screen.kind !== 'stall') ownFront = false; // tilbake til boden: bak disken igjen
-  if (!token || !state) {
+  if (!token) {
     app.innerHTML = joinView();
+  } else if (!state) {
+    app.innerHTML = ''; // innlogget, men boden er ikke hentet ennå: lastestolpen vises
   } else {
     const s = state;
     let body: string;
@@ -625,9 +655,9 @@ function ordersWidget(s: GameState): string {
 
 // ---------- Topplisten (telefonen) ----------
 
-// Grafikken er bestilt i GFX_assets/planlagte/toppliste/BESTILLING.md. Sett til true når filene ligger i
-// client/public/art/toppliste/ og client/public/art/telefon/app-toppliste.png. Til da: emoji og CSS.
-const TOPLIST_ART = false;
+// Grafikken (GFX_assets/planlagte/toppliste/LEVERANSE.md) ligger i client/public/art/toppliste/ og
+// client/public/art/telefon/app-toppliste.png. false: emoji og CSS i stedet (f.eks. for å prøve ny grafikk).
+const TOPLIST_ART = true;
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 /** Plassen din (1 = best) i dag eller totalt, eller null uten bod. Lik omsetning gir lik plass. */
