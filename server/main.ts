@@ -171,20 +171,20 @@ const routes: Record<string, Handler> = {
   'POST /api/claim': action((p, b) => claimStall(p, Number(b.slotIndex), String(b.stallName ?? ''))),
   'POST /api/stall/drive': action((p, b) => driveToStall(p, Number(b.stallId))),
   'POST /api/insurance/sign': action((p, b) => signPolicy(p, String(b.kind ?? ''))),
-  'POST /api/klas/order': action((p, b) => placeKlasOrder(p, b.lines, b.mode === 'car' ? 'car' : b.mode === 'express' ? 'express' : 'standard')),
+  'POST /api/klas/order': action((p, b) => placeKlasOrder(p, b.lines, b.mode === 'car' ? 'car' : b.mode === 'express' ? 'express' : 'standard', b.useShipCoupon !== false)),
   'POST /api/item/move': action((p, b) =>
     moveItem(p, Number(b.itemId), String(b.place) as Place, b.boxId == null ? null : Number(b.boxId), Number(b.x), Number(b.y)),
   ),
   'POST /api/paper/fetch': action((p) => fetchPaper(p)),
   'POST /api/bill/pay': action((p, b) => (b.all ? payAllBills(p) : payBill(p, Number(b.billId)))),
   'POST /api/device/hang': action((p, b) => hangDevice(p, Number(b.itemId ?? b.boxId))),
-  'POST /api/decor/order': action((p, b) => placeDecorOrder(p, b.lines, b.mode === 'express' ? 'express' : 'standard')),
+  'POST /api/decor/order': action((p, b) => placeDecorOrder(p, b.lines, b.mode === 'express' ? 'express' : 'standard', b.useShipCoupon !== false)),
   'POST /api/decor/hang': action((p, b) => hangDecor(p, Number(b.itemId))),
   'POST /api/decor/down': action((p, b) => takeDownDecor(p, String(b.slot ?? ''))),
   'POST /api/power/switch': action((p) => togglePower(p)),
   'POST /api/clock/set': action((p) => setClock(p)),
   'POST /api/shop/order': action((p, b) =>
-    placeOrder(p, String(b.store), Array.isArray(b.lines) ? b.lines : [], b.mode === 'car' ? 'car' : b.mode === 'express' || b.express === true ? 'express' : 'standard', b.useCards !== false),
+    placeOrder(p, String(b.store), Array.isArray(b.lines) ? b.lines : [], b.mode === 'car' ? 'car' : b.mode === 'express' || b.express === true ? 'express' : 'standard', b.useCards !== false, b.useShipCoupon !== false),
   ),
   'POST /api/box/unpack': action((p, b) =>
     unpackBox(

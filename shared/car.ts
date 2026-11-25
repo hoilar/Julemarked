@@ -15,10 +15,10 @@ export interface CarSpec {
 }
 
 export const CARS: CarSpec[] = [
-  { id: 'bil_tennis', name: 'WV Tennis 1995', price: 0, minutes: 60, fuel: 'bensin', liters: 3, trunkNote: '1 plastkasse', blurb: 'Rusten, men den starter. Som regel.' },
-  { id: 'bil_toforr', name: 'Volvo Toførr 2004', price: 2000, minutes: 40, fuel: 'bensin', liters: 3, trunkNote: '2 pappkartonger', blurb: 'Lang og lav. Kjører fort, ingen vet hvorfor.' },
-  { id: 'bil_highass', name: 'Toyota HighAss 2014', price: 4000, minutes: 60, fuel: 'bensin', liters: 5, trunkNote: '2 plastkasser', blurb: 'Høy, bred og tørst.' },
-  { id: 'bil_fuzz', name: 'ID Fuzz', price: 6000, minutes: 50, fuel: 'batteri', liters: 0, trunkNote: '2 plastkasser', blurb: 'Elbil. Går på ett fulladet batteri per tur.' },
+  { id: 'bil_tennis', name: 'WV Tennis 1995', price: 0, minutes: 15, fuel: 'bensin', liters: 3, trunkNote: '1 plastkasse', blurb: 'Rusten, men den starter. Som regel.' },
+  { id: 'bil_toforr', name: 'Volvo Toførr 2004', price: 2000, minutes: 10, fuel: 'bensin', liters: 3, trunkNote: '2 pappkartonger', blurb: 'Lang og lav. Kjører fort, ingen vet hvorfor.' },
+  { id: 'bil_highass', name: 'Toyota HighAss 2014', price: 4000, minutes: 15, fuel: 'bensin', liters: 5, trunkNote: '2 plastkasser', blurb: 'Høy, bred og tørst.' },
+  { id: 'bil_fuzz', name: 'ID Fuzz', price: 6000, minutes: 12, fuel: 'batteri', liters: 0, trunkNote: '2 plastkasser', blurb: 'Elbil. Går på ett fulladet batteri per tur.' },
 ];
 export const CAR_BY_ID: Record<string, CarSpec> = Object.fromEntries(CARS.map((c) => [c.id, c]));
 export const START_CAR = 'bil_tennis';

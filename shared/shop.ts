@@ -4,7 +4,7 @@
 // og selge noe. Sjeldne varer har felles lager for hele markedet (kappløp) og kommer inn på et tilfeldig tidspunkt
 // i løpet av dagen. Dagens tilbud har en felles kvote til tilbudspris, med tak per spiller; etterpå koster varen
 // vanlig pris fra ditt eget lager.
-// Varene pakkes i butikkens poser (4×4) og leveres ved boden – neste morgen eller ekspress.
+// Varene pakkes i butikkens poser (4×4) og leveres ved boden – hver hele time, eller ekspress på 5 minutter.
 import { DEKORINGEN } from './decor.ts';
 import { findFree } from './grid.ts';
 import { hash01 } from './hash.ts';
@@ -28,10 +28,19 @@ export const STORES: Store[] = [
 ];
 export const STORE_BY_ID: Record<string, Store> = Object.fromEntries(STORES.map((s) => [s.id, s]));
 
-export const SHIPPING = { standard: 20, express: 150 };
-/** Gratis ekspress de første så mange spilltimene etter at spilleren leide sin første bod. */
+// Levering (bestemt 25.11.2026): standard kommer ved neste hele time, ekspress etter 5 spillminutter.
+export const SHIPPING = { standard: 100, express: 500 };
+export const EXPRESS_MINUTES = 5;
+/** Gratis ekspress den første spilledagen (24 spilltimer) etter at spilleren leide sin første bod. */
 export const FREE_EXPRESS_HOURS = 24;
 export const expressPrice = (free: boolean) => (free ? 0 : SHIPPING.express);
+/** Når en bestilling kommer fram (spilltid, ms). Standard: neste hele time. */
+export const arrivesAt = (t: number, express: boolean) => (express ? t + EXPRESS_MINUTES * 60_000 : (Math.floor(t / 3_600_000) + 1) * 3_600_000);
+
+/** Fraktkupong: dukker opp i postkassa nå og da og gjør én levering gratis (standard eller ekspress). */
+export const SHIP_COUPON = 'fraktkupong';
+/** Sjansen per spilltime for at en fraktkupong kommer i postkassa (når du ikke har en fra før): ca. annenhver dag. */
+export const SHIP_COUPON_CHANCE = 0.02;
 export const BAG_PRICE = 1;
 /** Klas Olsen (esker, verktøy og elektrisk): samme leveringsmåter som nettbutikkene, men tingene kommer løst, ikke i poser. */
 export const KLAS = { id: 'klas', name: 'Klas Olsen' };

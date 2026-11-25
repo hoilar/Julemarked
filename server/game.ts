@@ -249,7 +249,7 @@ import {
   policyItemId,
   type InsuranceKind,
 } from '../shared/insurance.ts';
-import { BAG_PRICE, FREE_EXPRESS_HOURS, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, lineCost, packBags, rareArrived, type ShopItem } from '../shared/shop.ts';
+import { BAG_PRICE, FREE_EXPRESS_HOURS, KLAS, SHIP_COUPON, SHIP_COUPON_CHANCE, arrivesAt, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, lineCost, packBags, rareArrived, type ShopItem } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 import { WEATHER, forceWeather, forcedWeather, weatherDemand, weatherFor, type WeatherKind } from '../shared/weather.ts';
 import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
@@ -856,6 +856,30 @@ const freeExpress = (playerId: number, t: number) => {
   const until = freeExpressUntil(playerId);
   return until !== null && t < until;
 };
+
+/** Fraktkupongen du kan bruke (ikke i søpla, ikke på vei). */
+const shipCouponOf = (items: Item[]) => items.find((i) => i.typeId === SHIP_COUPON && !isTrashed(items, i) && !isUndelivered(items, i)) ?? null;
+
+/** Frakten for en bestilling: gratis ekspress den første spilledagen, ellers kan en fraktkupong gjøre den gratis. */
+function shippingFor(player: PlayerRow, items: Item[], mode: 'standard' | 'express', t: number, useCoupon: boolean): { shipping: number; coupon: Item | null } {
+  const base = mode === 'express' ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
+  const coupon = base > 0 && useCoupon ? shipCouponOf(items) : null;
+  return { shipping: coupon ? 0 : base, coupon };
+}
+
+/** Legger en fraktkupong i postkassa nå og da (bare når boden ikke har en fra før, og det er plass). */
+function deliverShipCoupons(market: MarketRow, hour: number, t: number) {
+  for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ?'), market.id)) {
+    if (hash01('fraktkupong', market.id, s.id, hour) >= SHIP_COUPON_CHANCE) continue;
+    const items = itemsOf(s.id);
+    if (shipCouponOf(items)) continue;
+    const size = sizeOf(SHIP_COUPON);
+    const spot = findFree(size.w, size.h, items.filter((i) => i.place === 'mail'), MAIL_GRID);
+    if (!spot) continue;
+    q.insertItem.run(s.id, SHIP_COUPON, 'mail', null, spot.x, spot.y, null);
+    event(market, s.owner_id, t, '📬 Det ligger en fraktkupong i postkassa: neste levering er gratis (standard eller ekspress).');
+  }
+}
 
 export function ensureMarket(): MarketRow {
   const code = (process.env.INVITE_CODE ?? 'GLOGG').toUpperCase();
@@ -1481,11 +1505,11 @@ function klasUnits(stall: StallRow, lines: KlasLine[]): KlasUnit[] {
 }
 
 /**
- * Bestiller fra Klas Olsen, med samme leveringsmåter som nettbutikkene: standard (kl. 07), ekspress (innen en time)
+ * Bestiller fra Klas Olsen, med samme leveringsmåter som nettbutikkene: standard (neste hele time), ekspress (5 minutter)
  * eller hent selv med bilen. Tingene kommer løst (ikke i poser) og settes ved boden; maskiner, lyslenker og
  * alarmer kommer i en pappkartong.
  */
-export function placeKlasOrder(player: PlayerRow, lines: unknown, mode: 'standard' | 'express' | 'car') {
+export function placeKlasOrder(player: PlayerRow, lines: unknown, mode: 'standard' | 'express' | 'car', useShipCoupon = true) {
   const clean = (Array.isArray(lines) ? lines : [])
     .map((l) => ({ id: String((l as KlasLine).id ?? ''), qty: Number((l as KlasLine).qty) }))
     .filter((l) => l.qty > 0);
@@ -1497,14 +1521,15 @@ export function placeKlasOrder(player: PlayerRow, lines: unknown, mode: 'standar
     const units = klasUnits(stall, clean);
     const goods = units.reduce((n, u) => n + u.price, 0);
     const trip = mode === 'car' ? planKlasTrip(market, stall, itemsOf(stall.id), units, t) : null;
-    const shipping = trip ? 0 : mode === 'express' ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
+    const { shipping, coupon } = trip ? { shipping: 0, coupon: null } : shippingFor(player, itemsOf(stall.id), mode === 'express' ? 'express' : 'standard', t, useShipCoupon);
     const fuel = trip?.fuel ?? 0;
     const pay = goods + shipping + fuel;
     if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr${fuel ? ` (med ${fuel} kr i bensin)` : ''}.`);
     q.setCash.run(stall.cash - pay, stall.id);
+    if (coupon) q.deleteItem.run(coupon.id);
     if (trip) startTrip(market, stall, trip, t);
     else {
-      const arrives = mode === 'express' || instantDelivery.has(market.id) ? t : currentEdition(t).time + 24 * HOUR;
+      const arrives = instantDelivery.has(market.id) ? t : arrivesAt(t, mode === 'express');
       for (const box of packKlas(units)) {
         const id = Number(q.insertItem.run(stall.id, MACHINE_BOX, 'transit', null, 0, 0, null).lastInsertRowid);
         saveState(id, { arrives, from: KLAS.id });
@@ -1513,7 +1538,7 @@ export function placeKlasOrder(player: PlayerRow, lines: unknown, mode: 'standar
       if (instantDelivery.has(market.id)) deliverArrived(market, t); // dev: står ved boden med en gang
     }
     q.insertTx.run(market.id, t, 'wholesale', stall.id, null, KLAS.id, units.length, pay);
-    return { pay, count: units.length, back: trip?.plan.until ?? null };
+    return { pay, count: units.length, back: trip?.plan.until ?? null, shipCoupon: !!coupon };
   });
 }
 
@@ -1553,7 +1578,7 @@ function saveDecor(stallId: number, decor: Record<string, string>) {
  * Bestiller pynt fra Dekoringen (lines: [{ id: pynt-id, qty }]). Samme frakt som nettbutikkene (standard eller
  * ekspress, ikke hent selv); pynten kommer innpakket i pappkartonger.
  */
-export function placeDecorOrder(player: PlayerRow, lines: unknown, mode: 'standard' | 'express') {
+export function placeDecorOrder(player: PlayerRow, lines: unknown, mode: 'standard' | 'express', useShipCoupon = true) {
   const clean = (Array.isArray(lines) ? lines : [])
     .map((l) => ({ id: String((l as KlasLine).id ?? ''), qty: Number((l as KlasLine).qty) }))
     .filter((l) => l.qty > 0);
@@ -1571,11 +1596,12 @@ export function placeDecorOrder(player: PlayerRow, lines: unknown, mode: 'standa
       for (let n = 0; n < l.qty; n++) units.push({ typeId: decorPackOf(d.id), price: d.price });
     }
     const goods = units.reduce((n, u) => n + u.price, 0);
-    const shipping = mode === 'express' ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
+    const { shipping, coupon } = shippingFor(player, itemsOf(stall.id), mode, t, useShipCoupon);
     const pay = goods + shipping;
     if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr.`);
     q.setCash.run(stall.cash - pay, stall.id);
-    const arrives = mode === 'express' || instantDelivery.has(market.id) ? t : currentEdition(t).time + 24 * HOUR;
+    if (coupon) q.deleteItem.run(coupon.id);
+    const arrives = instantDelivery.has(market.id) ? t : arrivesAt(t, mode === 'express');
     for (const box of packKlas(units)) {
       const id = Number(q.insertItem.run(stall.id, MACHINE_BOX, 'transit', null, 0, 0, null).lastInsertRowid);
       saveState(id, { arrives, from: DEKORINGEN.id });
@@ -1583,7 +1609,7 @@ export function placeDecorOrder(player: PlayerRow, lines: unknown, mode: 'standa
     }
     if (instantDelivery.has(market.id)) deliverArrived(market, t); // dev: står ved boden med en gang
     q.insertTx.run(market.id, t, 'wholesale', stall.id, null, DEKORINGEN.id, units.length, pay);
-    return { pay, count: units.length };
+    return { pay, count: units.length, shipCoupon: !!coupon };
   });
 }
 
@@ -2784,6 +2810,7 @@ export function getState(player: PlayerRow): GameState {
   // En tur som er ferdig (også kjøring til en annen bod), avsluttes før bodene listes, så «betjent» stemmer.
   const here = currentStall(player);
   if (here?.car_trip) finishTrip(market, here, t);
+  tx(() => deliverArrived(market, t)); // ekspress kommer etter 5 minutter, ikke bare ved hele timer
 
   const stalls = all<StallRow & { owner_name: string; owner_look: string }>(q.stallsInMarket, market.id);
   const bySlot = new Map(stalls.map((s) => [s.slot_index, s]));
@@ -3496,9 +3523,10 @@ function shopsFor(market: MarketRow, player: PlayerRow, t: number): ShopView[] {
 
 /**
  * Bestiller fra en nettbutikk. Varene pakkes i butikkens poser (1 kr per pose) og sendes:
- * standard (20 kr) kommer kl. 07 neste morgen, ekspress (150 kr, gratis de første 24 spilltimene) innen en time.
+ * standard (100 kr) kommer ved neste hele time, ekspress (500 kr, gratis den første spilledagen) etter 5 minutter.
+ * En fraktkupong fra postkassa gjør én levering gratis.
  */
-export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: string; qty: number }[], mode: 'standard' | 'express' | 'car', useCards = true) {
+export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: string; qty: number }[], mode: 'standard' | 'express' | 'car', useCards = true, useShipCoupon = true) {
   const express = mode === 'express';
   const store = STORE_BY_ID[storeId];
   if (!store) throw new GameError('Ukjent butikk.');
@@ -3536,7 +3564,7 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
   // Med bilen: varene pakkes i eskene i bagasjerommet først, resten i poser i bagasjerommet. Ingen frakt, men bensin.
   const trip = mode === 'car' ? planTrip(market, myStall(player), held, store.id, clean, t) : null;
   const bags = trip ? trip.plan.bags : packBags(clean);
-  const shipping = trip ? 0 : express ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
+  const { shipping, coupon: shipCoupon } = trip ? { shipping: 0, coupon: null } : shippingFor(player, held, express ? 'express' : 'standard', t, useShipCoupon);
   const total = goods + bags.length * BAG_PRICE + shipping;
   // Rabattkuponger (gyldige i dag, for denne butikken): den beste per vare, gjelder hele linja.
   const usable = (i: Item) => !isTrashed(held, i) && !isUndelivered(held, i);
@@ -3563,13 +3591,14 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
   }
   const fuel = trip?.fuel ?? 0; // bensinen betales på stasjonen (ikke med gavekort)
   const pay = afterCoupons - cardUsed + fuel;
-  const arrives = express || instantDelivery.has(market.id) ? t : currentEdition(t).time + 24 * HOUR;
+  const arrives = instantDelivery.has(market.id) ? t : arrivesAt(t, express);
 
   tx(() => {
     const stall = myStall(player);
     if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr${fuel ? ` (med ${fuel} kr i bensin)` : ''}.`);
     q.setCash.run(stall.cash - pay, stall.id);
     for (const c of coupons) q.deleteItem.run(c.item.id); // kupongen er brukt
+    if (shipCoupon) q.deleteItem.run(shipCoupon.id); // fraktkupongen er brukt
     for (const [id, left] of cardLeft) {
       if (left <= 0) q.deleteItem.run(id);
       else q.setState.run(JSON.stringify({ store: store.id, value: left }), id);
@@ -3606,7 +3635,7 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
     if (instantDelivery.has(market.id)) deliverArrived(market, t); // dev: står ved boden med en gang
     q.insertTx.run(market.id, t, 'shop', stall.id, null, store.id, bags.length, pay);
   });
-  return { total, pay, couponSaved, cardUsed, bags: bags.length, express, fuel, back: trip?.plan.until ?? null };
+  return { total, pay, couponSaved, cardUsed, bags: bags.length, express, fuel, back: trip?.plan.until ?? null, shipCoupon: !!shipCoupon };
 }
 
 // ---------- Bilen ----------
@@ -5743,8 +5772,9 @@ function processHour(market: MarketRow, hour: number) {
   stalls = all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ?'), market.id);
   for (const s of stalls) checkClock(market, s, t); // strømbrudd i gata eller en sikring som har gått
 
-  // Leveranser fra nettbutikkene som har kommet fram.
+  // Leveranser fra nettbutikkene som har kommet fram, og en og annen fraktkupong i postkassa.
   deliverArrived(market, t);
+  deliverShipCoupons(market, hour, t);
   expireOrders(market, t); // bestillinger som ikke ble hentet
 
   // Kjelene koker og posebrettere bretter døgnet rundt så lenge de står på.

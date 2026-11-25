@@ -107,7 +107,7 @@ import { setWeatherFx } from './weatherfx.ts';
 import { mountSky, setSky, type Vaer } from './sky.ts';
 import { initDevPanel, updateDevPanel } from './devpanel.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
-import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, lineCost, packBags } from '../shared/shop.ts';
+import { BAG_PRICE, EXPRESS_MINUTES, KLAS, SHIPPING, SHIP_COUPON, STORES, STORE_BY_ID, arrivesAt, expressPrice, isRare, lineCost, packBags } from '../shared/shop.ts';
 import { DECOR_BY_ID, DECOR_CAP, DECOR_FOR_SALE, DECOR_SLOTS, DECOR_SLOT_BY_ID, DEKORINGEN, SPOT_LABEL, TORCH_FLAME, boostLines, decorBoost, decorBox, decorPrice, decorSize, decorOfPack, decorPackOf, effectText, isDarkHour, type Decor, type DecorBoost, type DecorSpot } from '../shared/decor.ts';
 import { STORIES, STORY_OF_CHAR, stepNeed, type Story, type StoryView } from '../shared/stories.ts';
 import type { Category } from '../shared/categories.ts';
@@ -3163,6 +3163,7 @@ const carts: Record<string, Record<string, number>> = {}; // butikk → vare →
 let shipMode: 'standard' | 'express' | 'car' = 'standard';
 
 let useCards = true; // trekk gavekort i kassen
+let useShipCoupon = true; // bruk fraktkupongen (gratis levering) hvis du har en
 
 /** Beste gyldige kupong du har for en vare i en butikk i dag. */
 function bestCoupon(s: GameState, storeId: string, typeId: string) {
@@ -3236,17 +3237,25 @@ function shipChoice(s: GameState, car = true): { html: string; cost: number; lab
   const fuelCost = carSpec ? tripFuelCost(carSpec, s.me.car.fuelPrice) : 0;
   if (shipMode === 'car' && (!carSpec || s.me.car.trip)) shipMode = 'standard';
   const express = shipMode === 'express';
-  // Før kl. 07 kommer standardleveransen samme morgen.
-  const standardWhen = osloParts(state!.clock.gameTime).hour < 7 ? 'i dag kl. 07' : 'i morgen kl. 07';
+  // Standard kommer ved neste hele time, ekspress etter noen minutter.
+  const standardWhen = `kl. ${formatClock(osloParts(arrivesAt(s.clock.gameTime, false))).replace(/^.* kl\. /, '')}`;
+  // Fraktkupongen fra postkassa gjør én levering gratis (ikke når ekspressen alt er gratis).
+  const coupon = s.me.items.some((i) => i.typeId === SHIP_COUPON && i.place !== 'trash');
+  const base = shipMode === 'car' ? 0 : express ? expressCost : SHIPPING.standard;
+  const couponOn = coupon && useShipCoupon && base > 0;
   const html = `<div class="ship-choice">
-         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
-         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : `<b>GRATIS</b> til ${esc(formatClock(osloParts(freeUntil!)))}`} – innen 1 time</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen} (hver hele time)</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : `<b>GRATIS</b> til ${esc(formatClock(osloParts(freeUntil!)))}`} – om ${EXPRESS_MINUTES} min</label>
          ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}" title="${esc(carSpec.name)}: ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin` : '1 fulladet batteri'}. Boden stenges i ${carSpec.minutes} min, og varene legges i bagasjerommet."><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}> 🚗 Hent selv</label>` : ''}
-       </div>`;
+       </div>${
+         coupon && shipMode !== 'car'
+           ? `<label class="card-toggle"><input type="checkbox" data-action="use-ship-coupon" ${useShipCoupon ? 'checked' : ''}> 🚚 Bruk fraktkupongen (gratis levering${base > 0 ? `, spar ${kr(base)}` : ''})</label>`
+           : ''
+       }`;
   return {
     html,
-    cost: shipMode === 'car' ? fuelCost : express ? expressCost : SHIPPING.standard,
-    label: shipMode === 'car' ? 'hent selv' : express ? 'ekspress' : `levering ${standardWhen.replace(' kl. 07', '')}`,
+    cost: shipMode === 'car' ? fuelCost : couponOn ? 0 : base,
+    label: shipMode === 'car' ? 'hent selv' : `${express ? 'ekspress' : `levering ${standardWhen}`}${couponOn ? ' (fraktkupong)' : ''}`,
   };
 }
 
@@ -5548,6 +5557,7 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'ship') shipMode = el.dataset.mode === 'car' ? 'car' : el.dataset.express === '1' ? 'express' : 'standard';
   if (action === 'use-cards') useCards = !useCards;
+  if (action === 'use-ship-coupon') useShipCoupon = !useShipCoupon;
   if (action === 'shop-order') {
     const store = el.dataset.store!;
     const entries = Object.entries(cartOf(store)).filter(([, n]) => n > 0);
@@ -5559,13 +5569,13 @@ app.addEventListener('click', (e) => {
       shipMode === 'car'
         ? `🚗 Du kjører til ${name}. ${klas ? 'Tingene' : 'Varene'} ligger i bagasjerommet når du er tilbake.`
         : shipMode === 'express'
-          ? `🚚 Ekspress fra ${name} – kommer innen en time.`
-          : `📦 Bestilt fra ${name} – kommer ${osloParts(state!.clock.gameTime).hour < 7 ? 'i dag' : 'i morgen'} kl. 07.`;
+          ? `🚚 Ekspress fra ${name} – kommer om ${EXPRESS_MINUTES} minutter.`
+          : `📦 Bestilt fra ${name} – kommer kl. ${formatClock(osloParts(arrivesAt(state!.clock.gameTime, false))).replace(/^.* kl\. /, '')}.`;
     const order = pynt
-      ? act('/api/decor/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode }, okMsg)
+      ? act('/api/decor/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode, useShipCoupon }, okMsg)
       : klas
-      ? act('/api/klas/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode }, okMsg)
-      : act('/api/shop/order', { store, lines: entries.map(([typeId, qty]) => ({ typeId, qty })), mode: shipMode, useCards }, okMsg);
+      ? act('/api/klas/order', { lines: entries.map(([id, qty]) => ({ id, qty })), mode: shipMode, useShipCoupon }, okMsg)
+      : act('/api/shop/order', { store, lines: entries.map(([typeId, qty]) => ({ typeId, qty })), mode: shipMode, useCards, useShipCoupon }, okMsg);
     order.then(
       (ok) => {
         if (ok) {
