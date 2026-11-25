@@ -1,7 +1,7 @@
 // Maskinmodulene: kretskort (2×2) som settes i modulplassen på en maskin. Én modul per maskin, så turbo og
 // strømsparing kan aldri stå sammen. Tallene er per grad (Enkel, Utvidet, Fullutstyrt) og ment å være lette å justere.
 import { FOLDER_BY_ID, FOLD_OUTPUT, ITEM_TYPES, MAKER_BY_ID, MODULE_BY_ID, type Module, type ModuleEffect } from './products.ts';
-import { cookPlan } from './recipes.ts';
+import { cookPlan, knownRecipes } from './recipes.ts';
 import type { Item } from './types.ts';
 
 /** Hvilke maskiner en modul passer i. 'fold' = brettemaskinen, 'shred' = makuleringsmaskinen. */
@@ -123,7 +123,7 @@ export function machineWaiting(items: Item[], m: Item): boolean {
   if (k === 'kettle') {
     const counts = new Map<string, number>();
     for (const i of inside) counts.set(i.typeId, (counts.get(i.typeId) ?? 0) + 1);
-    return !cookPlan(counts, m.kettle?.level ?? 1);
+    return !cookPlan(counts, m.kettle?.level ?? 1, knownRecipes(items));
   }
   return false;
 }

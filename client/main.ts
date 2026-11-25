@@ -2,7 +2,7 @@ import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { moduleEffectText, moduleFitsText, moduleIn } from '../shared/modules.ts';
 import { FATIGUE, fatigue, tapeIn } from '../shared/music.ts';
 import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, STALL_AREA, type Spot, type StashTo, type Street } from '../shared/items.ts';
-import { CARRY_SLOTS, CARS, CAR_BY_ID, driveMinutes, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
+import { BACKPACK, CARRY_SLOTS, CARS, CAR_BY_ID, driveMinutes, TRADE_IN, tripFuelCost, tripPlaceName } from '../shared/car.ts';
 import {
   CONTAINERS,
   LOUPE,
@@ -32,6 +32,7 @@ import {
   ITEM_TYPES,
   PRODUCTS,
   PRODUCT_BY_ID,
+  isDecorGood,
   START_CASH,
   STORAGE_GRID,
   artScale,
@@ -75,7 +76,9 @@ import {
   type Label,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
-import { LOOK_CHOICES, type Look } from '../shared/look.ts';
+import { LOOK_CHOICES, type Look, type LookKey } from '../shared/look.ts';
+import { BALACLAVA_CROWD, BALACLAVA_RISK } from '../shared/balaclava.ts';
+import { DECOR_THEFT_CATCH, DECOR_THEFT_CATCH_ALARM, DECOR_THEFT_FINE } from '../shared/crime.ts';
 import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS, disguisesFor, leaveRisk } from '../shared/snoop.ts';
 import {
   avatarFor,
@@ -86,6 +89,8 @@ import {
   mountCustomers,
   setCrowd,
   setShut,
+  setAttended,
+  setClockHour,
   setLeads,
   leadResult,
   showInspector,
@@ -102,10 +107,12 @@ import { setWeatherFx } from './weatherfx.ts';
 import { mountSky, setSky, type Vaer } from './sky.ts';
 import { initDevPanel, updateDevPanel } from './devpanel.ts';
 import { INSURANCES, INSURANCE_BY_KIND, INSURER, INSURER_VISITS, insurerVisit } from '../shared/insurance.ts';
-import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, packBags } from '../shared/shop.ts';
-import { DECOR, DECOR_BY_ID, DECOR_SLOTS, DECOR_SLOT_BY_ID, DEKORINGEN, SPOT_LABEL, TORCH_FLAME, decorBox, decorSize, decorOfPack, decorPackOf, type DecorSpot } from '../shared/decor.ts';
+import { BAG_PRICE, KLAS, SHIPPING, STORES, STORE_BY_ID, expressPrice, isRare, lineCost, packBags } from '../shared/shop.ts';
+import { DECOR_BY_ID, DECOR_CAP, DECOR_FOR_SALE, DECOR_SLOTS, DECOR_SLOT_BY_ID, DEKORINGEN, SPOT_LABEL, TORCH_FLAME, boostLines, decorBoost, decorBox, decorPrice, decorSize, decorOfPack, decorPackOf, effectText, isDarkHour, type Decor, type DecorBoost, type DecorSpot } from '../shared/decor.ts';
+import { STORIES, STORY_OF_CHAR, stepNeed, type Story, type StoryView } from '../shared/stories.ts';
+import type { Category } from '../shared/categories.ts';
 import { expectedPrice, moodFor, reputationCrowd, reputationPrice, type Mood } from '../shared/mood.ts';
-import { INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
+import { DUMP_FINE, INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/crime.ts';
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
@@ -169,6 +176,7 @@ type Modal =
   | { kind: 'plug'; strip: number | null; index: number }
   | { kind: 'safe'; itemId: number }
   | { kind: 'othertrash'; stallId: number }
+  | { kind: 'dumped'; itemId: number }
   | { kind: 'snoop'; view: SnoopView | null; caught?: string }
   | { kind: 'tampered'; itemId: number };
 
@@ -191,7 +199,7 @@ let modalBack: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: alltid nede i høyre hjørne (spillerens, ikke en ting i lageret), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' | 'historier' = 'home';
 // Topplisten: omsetning i dag eller hele sesongen.
 let toplistTab: 'today' | 'total' = 'today';
 let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
@@ -420,6 +428,7 @@ function tickClock() {
   showRegular(home ? state.me.regular : null);
   showThief(home ? state.me.visitors.thief : null, phaseOf(parts.hour) === 'night');
   setCrowd(state.me.crowd);
+  setClockHour(parts.hour);
   // Torget høres i bakgrunnen bare mens det kan selges (dagtid), etter været og tid på dagen.
   // Kundene ved disken mumler.
   const kind = wx?.kind;
@@ -438,6 +447,21 @@ setInterval(tickClock, 500);
 
 // ---------- Tegning ----------
 
+/** Samlet virkning av pynten på en bod akkurat nå (mørkt/lyst og dagens vær), som på serveren. */
+function boostOf(decor: Record<string, string> | undefined): DecorBoost {
+  const kind = state?.paper?.weather?.today.kind ?? 'pent';
+  const hour = state ? osloParts(state.clock.gameTime).hour : 12;
+  return decorBoost(Object.values(decor ?? {}), { dark: isDarkHour(hour), weather: kind });
+}
+
+/** Det kundene forventer å betale hos deg: omdømme, etikett og pynten på boden. */
+function expectedHere(s: GameState, p: { basePrice: number; category: Category }, homemade: boolean): number {
+  return Math.round(expectedPrice(p.basePrice, s.me.reputation, homemade) * decorPrice(boostOf(myStall(s)?.decor), p.category));
+}
+
+/** Virkningen til en pynt som tekst: «+5 % kunder · +8 % salg av 🍪 kaker». */
+const decorFxText = (d: Decor) => d.fx.map(effectText).join(' · ');
+
 /**
  * Varene på bordet slik kundene ser dem: hver vare og prisen i forhold til det de forventer
  * (omdømmet til boden og om det står «Hjemmelaget» på den fremste).
@@ -446,7 +470,7 @@ function offersOf(stall: StallPublic): Offer[] {
   return [...new Set(stall.counter.map((i) => i.typeId))].filter((id) => PRODUCT_BY_ID[id]).map((id) => {
     const p = PRODUCT_BY_ID[id];
     const front = stall.counter.filter((i) => i.typeId === id).sort((a, b) => b.y - a.y)[0];
-    const expected = expectedPrice(p.basePrice, stall.reputation, isHomemade(front?.label));
+    const expected = Math.round(expectedPrice(p.basePrice, stall.reputation, isHomemade(front?.label)) * decorPrice(boostOf(stall.decor), p.category));
     return { productId: id, icon: icon(p), ratio: (stall.prices[id] ?? p.basePrice) / expected };
   });
 }
@@ -535,7 +559,7 @@ function render() {
     const scroll = app.querySelector('.modal-backdrop .modal')?.scrollTop ?? 0;
     const shopScroll = app.querySelector('.shop-body')?.scrollTop ?? 0;
     const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
-    app.innerHTML = body + paperWindow(s) + phoneWindow(s) + modalView(s) + passwordView(s);
+    app.innerHTML = s.me.bankrupt ? bankruptView(s) : body + paperWindow(s) + phoneWindow(s) + modalView(s) + passwordView(s);
     syncMusic(shownStall?.music ?? null);
     if (shownStall && shownStall.id === s.me.stallId) checkOutage(shownStall, s.me.items);
     if (phoneOpen) markPhoneSeen(s); // varslene er sett når telefonen er åpen
@@ -551,6 +575,7 @@ function render() {
   const shut = !!shownStall && (shownStall.serving === 'closed' || shownStall.serving === 'away');
   const ownView = !!shownStall && !!state && shownStall.id === state.me.stallId;
   setShut(shut);
+  setAttended(!!shownStall && shownStall.serving === 'open');
   mountCustomers(app.querySelector('.scene'), shownStall && ownView && !ownFront ? String(shownStall.id) : null, () =>
     shownStall && !shut ? offersOf(shownStall) : [],
   );
@@ -704,6 +729,41 @@ function toplistPage(s: GameState): string {
     ${mine ? `<p class="phone-empty">Du er nr. ${mine} av ${rows.length}. Omsetning er alt du selger: til kunder, stamkunder, andre boder og Fyren.</p>` : ''}`;
 }
 
+// ---------- Historiene (telefonen) ----------
+
+/** Én historie: figuren, trinnet du er på (med hint), pynten du får, og knappen for å utsette eller ta den opp igjen. */
+function storyRow(s: GameState, st: Story, v: StoryView | undefined): string {
+  const c = CHARACTER_BY_ID[st.charId];
+  const d = DECOR_BY_ID[st.reward];
+  const steps = st.steps.length;
+  const step = v?.step ?? 0;
+  const cur = st.steps[step];
+  let status: string;
+  if (v?.done) status = `✅ Fullført – ${d.emoji} ${esc(d.name)} er din.`;
+  else if (v?.paused) status = `⏸️ Utsatt. Ta den opp igjen når ${esc(c?.name ?? 'figuren')} kommer innom disken.`;
+  else if (v?.retryDay) status = `⏳ På vent etter at noe gikk galt. Ny sjanse ${esc(dayName(v.retryDay))}.`;
+  else status = `Trinn ${step + 1} av ${steps}${cur && stepNeed(cur) > 1 ? ` (${v?.count ?? 0} av ${stepNeed(cur)})` : ''}: ${esc(cur?.hint ?? '')}`;
+  return `<li class="story ${v?.done ? 'done' : v?.paused ? 'paused' : ''}">
+    <img src="${c ? characterUrl(c) : ''}" alt="">
+    <span><b>${esc(st.title)}</b><small class="story-who">${esc(c?.name ?? '')}</small>
+      <small>${status}</small>
+      <small class="decor-fx">${d.emoji} ${esc(d.name)}: ${esc(decorFxText(d))}</small>
+      ${st.recipe ? `<small class="story-recipe">📜 Hemmelig oppskrift: ${esc(BOOK_BY_ID[st.recipe]?.name ?? '')}${v?.done ? '' : ' (står ikke i avisa)'}</small>` : ''}
+</span>
+  </li>`;
+}
+
+function storiesPage(s: GameState): string {
+  const view = (id: string) => s.me.stories.find((v) => v.id === id);
+  const rows = STORIES.map((st) => ({ st, v: view(st.id) }))
+    .sort((a, b) => Number(!!a.v?.done) - Number(!!b.v?.done) || Number(!a.v?.started) - Number(!b.v?.started))
+    .map(({ st, v }) => storyRow(s, st, v))
+    .join('');
+  return `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('historier').replace('<img ', '<img class="title-icon" ')} Historier</b></div>
+    <p class="phone-empty">Stamkundene har hver sin historie. Fullfører du den, får du historiepynt som ikke kan kjøpes, og noen gir deg en hemmelig oppskrift. Går noe galt, får du en ny sjanse etter et par dager. Ingenting du har klart, går tapt. Vil du ikke nå, kan du utsette historien når figuren står ved disken.</p>
+    <ul class="phone-orders stories">${rows}</ul>`;
+}
+
 function phoneWindow(s: GameState): string {
   if (!phoneOpen) return '';
   const mine = myStall(s);
@@ -812,6 +872,8 @@ function phoneWindow(s: GameState): string {
       ? bank
       : phonePage === 'toppliste'
       ? toplistPage(s)
+      : phonePage === 'historier'
+      ? storiesPage(s)
       : phonePage === 'events'
       ? `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>Varsler</b></div>
          <ul class="phone-notes all">${list(60) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`
@@ -837,6 +899,7 @@ function phoneWindow(s: GameState): string {
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
            ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length + s.me.dealer.sales.length) : ''}
+           ${mine ? app('phone-page', appIcon('historier'), 'Historier', 'data-page="historier"') : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -917,7 +980,9 @@ function sellerView(stall: StallPublic): string {
   return `<div class="seller" title="${esc(stall.ownerName)} står bak disken"><img src="${avatarFor(sellerSeed(stall), stall.ownerLook)}" alt="" draggable="false"><span>${esc(stall.ownerName)}</span></div>`;
 }
 /** Figuren til eieren lages av navnet; valgene fra speilet på bilen legges oppå. */
-const sellerSeed = (stall: StallPublic) => `eier-${stall.id}-${stall.ownerName}`;
+const sellerSeed = (stall: StallPublic) => playerSeed(stall.ownerId, stall.ownerName);
+/** Grunnfiguren til en spiller (samme før og etter at hen har leid bod). */
+const playerSeed = (playerId: number, name: string) => `spiller-${playerId}-${name}`;
 
 // --- Skiltet: Åpent / Selvbetjent / Stengt ---
 
@@ -1150,13 +1215,17 @@ function clockView(running: boolean, blink: boolean, own: boolean): string {
 const NAIL = { x: 1341.5, y: 372 }; // spikerhodet i bildepiksler (1536×1024): på høyre stolpe, som plakaten i Ny Layout
 
 /** Plakaten med tyvens ansikt (avisa, spikeren og nærbildet bruker samme). */
-function posterHtml(w: { seed: string; alias: string; caught?: boolean }, reward = true): string {
-  return `<div class="poster-art ${w.caught ? 'caught' : ''}">
-    <div class="poster-head">${w.caught ? 'PÅGREPET' : 'ETTERLYST'}</div>
+function posterHtml(w: { seed: string; alias: string; caught?: boolean; reward?: number }, reward = true): string {
+  // Dusøren vokser for hver dag tyven er på frifot: plakaten viser dagens beløp når det er samme tyv.
+  const today = state?.paper?.wanted;
+  const amount = today && today.seed === w.seed ? today.reward : (w.reward ?? THIEF_REWARD);
+  const caught = w.caught || (!!today && today.seed === w.seed && today.caught);
+  return `<div class="poster-art ${caught ? 'caught' : ''}">
+    <div class="poster-head">${caught ? 'PÅGREPET' : 'ETTERLYST'}</div>
     <img class="poster-face" src="${avatarFor(w.seed)}" alt="" draggable="false">
-    ${w.caught ? '<img class="poster-x" src="/art/verktoy/etterlyst-kryss.png" alt="" draggable="false">' : ''}
+    ${caught ? '<img class="poster-x" src="/art/verktoy/etterlyst-kryss.png" alt="" draggable="false">' : ''}
     <div class="poster-name">${esc(w.alias)}</div>
-    ${reward && !w.caught ? `<div class="poster-reward">Dusør ${kr(THIEF_REWARD)}</div>` : ''}
+    ${reward && !caught ? `<div class="poster-reward">Dusør ${kr(amount)}</div>` : ''}
   </div>`;
 }
 
@@ -1344,7 +1413,7 @@ function counterView(stall: StallPublic, own: boolean, shop = !own): string {
       // Bak disken: dra varene. Hos andre: trykk for å kjøpe. Din egen bod forfra: bare se.
       const attrs = own
         ? `data-drag="${i.id}"`
-        : shop
+        : shop && !isDecorGood(p.id)
           ? `data-action="buy" data-stall="${stall.id}" data-product="${p.id}"`
           : '';
       const style = `left:${left(i)}%;width:${i.w * CW}%;top:${rowFoot(front) - 12}%;height:12%;--sp:${p.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
@@ -1576,11 +1645,29 @@ function mirrorButton(typeId: string): string {
     style="left:${(m.x / CAR_ART.w) * 100}%;top:${(m.y / CAR_ART.h) * 100}%;width:${(m.w / CAR_ART.w) * 100}%;height:${(m.h / CAR_ART.h) * 100}%"></button>`;
 }
 
+/** Konkurs: namsmannen har ingenting mer å ta. Bare «Start på nytt» videre. */
+function bankruptView(s: GameState): string {
+  const b = s.me.bankrupt!;
+  const names = s.slots.filter((sl) => sl.stall && s.me.stalls.includes(sl.stall.id)).map((sl) => `«${esc(sl.stall!.name)}»`).join(' og ');
+  return `<div class="bankrupt">
+    <div class="bankrupt-card card">
+      <div class="bankrupt-stamp">KONKURS!</div>
+      <h1>${names || 'Boden din'} er slått konkurs</h1>
+      <p>Namsmannen har tømt kassa og tatt det som var verdt noe. Det er ingen varer igjen å selge, og gjelda står fortsatt.</p>
+      <dl class="bankrupt-stats">
+        <dt>Gjeld igjen</dt><dd>${kr(b.debt)}</dd>
+        <dt>Solgt til kunder</dt><dd>${kr(b.revenue)}</dd>
+        <dt>Dager i drift</dt><dd>${b.days}</dd>
+      </dl>
+      <p class="muted">Starter du på nytt, gis plassen fra deg og gjelda slettes. Du velger en ny plass og får startkapitalen på ${kr(START_CASH)}. Figuren din blir med.</p>
+      <button class="bankrupt-restart" data-action="restart">🌱 Start på nytt</button>
+    </div>
+  </div>`;
+}
+
 /** Figurredigeringen: forhåndsvisning og et valg per del av figuren. */
 function lookView(s: GameState, draft: Look): string {
-  const stall = myStall(s);
-  if (!stall) return '';
-  const seed = sellerSeed(stall);
+  const seed = playerSeed(s.me.playerId, s.me.name);
   const rows = LOOK_CHOICES.map((c) => {
     const opts = c.options
       .map((o) => {
@@ -1593,18 +1680,29 @@ function lookView(s: GameState, draft: Look): string {
       .join('');
     return `<div class="look-row"><div class="look-label">${esc(c.label)}</div><div class="look-opts ${c.color ? 'colors' : ''}">${opts}</div></div>`;
   }).join('');
-  const changed = JSON.stringify(draft) !== JSON.stringify(stall.ownerLook ?? {});
+  // Finlandshetta: bare når du har en (fra Fyren bak containeren).
+  const hood = s.me.hasBalaclava
+    ? `<div class="look-row"><div class="look-label">Finlandshette</div><div class="look-opts">
+        ${[['0', 'Av'], ['1', 'På']]
+          .map(([v, name]) => {
+            const on = (v === '1') === !!draft.balaclava;
+            return `<button class="look-opt ${on ? 'on' : ''}" data-action="look-pick" data-key="balaclava" data-val="${v}" aria-pressed="${on}"><img src="${avatarFor(seed, { ...draft, balaclava: v === '1' || undefined })}" alt="" draggable="false"><small>${name}</small></button>`;
+          })
+          .join('')}</div>
+        <p class="muted">Ingen kjenner deg igjen: risikoen for å bli tatt når du snoker eller stjeler pynt halveres (×${BALACLAVA_RISK}), og blir du tatt, får ingen vite hvem det var. Men står du bak disken med hetta på, blir kundene skremt (×${BALACLAVA_CROWD} kunder).</p></div>`
+    : '';
+  const changed = JSON.stringify(draft) !== JSON.stringify(s.me.look ?? {});
   return `<h2>🪞 Speilet</h2>
-    <p class="muted">Slik ser kundene og de andre bodeierne deg når du står bak disken.</p>
+    <p class="muted">Slik ser kundene og de andre bodeierne deg når du står bak disken. Du kan endre det når som helst i speilet på bilen.</p>
     <div class="look-editor">
-      <div class="look-preview"><img src="${avatarFor(seed, draft)}" alt="" draggable="false"><b>${esc(stall.ownerName)}</b>
+      <div class="look-preview"><img src="${avatarFor(seed, draft)}" alt="" draggable="false"><b>${esc(s.me.name)}</b>
         <div class="look-actions">
           <button class="small ghost" data-action="look-random">🎲 Tilfeldig</button>
           <button class="small ghost" data-action="look-reset" title="Slik du så ut fra starten">↺ Som fra start</button>
           <button data-action="look-save" ${changed ? '' : 'disabled'}>Lagre</button>
         </div>
       </div>
-      <div class="look-choices">${rows}</div>
+      <div class="look-choices">${hood}${rows}</div>
     </div>`;
 }
 
@@ -2207,6 +2305,9 @@ function folderPanel(s: GameState, m: Item, n: number): string {
   </div>`;
 }
 
+/** Ting andre har kastet i søppelkassa di, som du allerede har fått beskjed om (denne økten). */
+const dumpSeen = new Set<number>();
+
 // Søppelkassa: tom tegning til den er halvfull, så den fulle (med søppel som stikker opp).
 const TRASH = { emoji: '🗑️', image: '/art/soppelkasse-tom.png' };
 const TRASH_FULL = { emoji: '🗑️', image: '/art/soppelkasse-full.png' };
@@ -2683,6 +2784,8 @@ function mapScreen(s: GameState): string {
     }
   } else if (s.me.stallId === null) {
     side = `<h2>Velkommen, ${esc(s.me.name)}!</h2>
+      <div class="welcome-look"><img src="${avatarFor(playerSeed(s.me.playerId, s.me.name), s.me.look)}" alt="" draggable="false">
+        <div><b>Slik ser du ut bak disken</b><button class="small" data-action="look-open">🪞 Lag figuren din</button></div></div>
       <p>Velg en ledig plass for å leie en bod. Du starter med ${kr(START_CASH)}. Bakgata er gratis å flytte inn i. Sidegata (${kr(s.slots.find((x) => x.street === 'sidegate')!.price)}) og hovedgata (${kr(s.slots.find((x) => x.street === 'hovedgate')!.price)}) koster en engangspris – flere kunder, men høyere leie og risikotillegg.</p>`;
   } else {
     side = `<h2>Hendelser</h2>${eventList(s)}`;
@@ -2800,7 +2903,8 @@ function carShopView(s: GameState): string {
 
 /** Leveringsmåtene (nettbutikkene og Klas Olsen): standard, ekspress eller hent selv med bilen. */
 function shipChoice(s: GameState, car = true): { html: string; cost: number; label: string } {
-  const expressCost = expressPrice(state!.clock.firstDay);
+  const freeUntil = s.me.freeExpressUntil;
+  const expressCost = expressPrice(freeUntil !== null);
   const myCar = car ? s.me.items.find((i) => i.place === 'car') : undefined;
   const carSpec = myCar ? CAR_BY_ID[myCar.typeId] : undefined;
   const fuelCost = carSpec ? tripFuelCost(carSpec, s.me.car.fuelPrice) : 0;
@@ -2810,7 +2914,7 @@ function shipChoice(s: GameState, car = true): { html: string; cost: number; lab
   const standardWhen = osloParts(state!.clock.gameTime).hour < 7 ? 'i dag kl. 07' : 'i morgen kl. 07';
   const html = `<div class="ship-choice">
          <label><input type="radio" name="ship" data-action="ship" data-express="0" ${shipMode === 'standard' ? 'checked' : ''}> Standard ${kr(SHIPPING.standard)} – ${standardWhen}</label>
-         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : '<b>GRATIS i dag</b>'} – innen 1 time</label>
+         <label><input type="radio" name="ship" data-action="ship" data-express="1" ${express ? 'checked' : ''}> Ekspress ${expressCost ? kr(expressCost) : `<b>GRATIS</b> til ${esc(formatClock(osloParts(freeUntil!)))}`} – innen 1 time</label>
          ${carSpec ? `<label class="${s.me.car.trip ? 'muted' : ''}" title="${esc(carSpec.name)}: ${carSpec.fuel === 'bensin' ? `${kr(fuelCost)} i bensin` : '1 fulladet batteri'}. Boden stenges i ${carSpec.minutes} min, og varene legges i bagasjerommet."><input type="radio" name="ship" data-action="ship" data-mode="car" ${shipMode === 'car' ? 'checked' : ''} ${s.me.car.trip ? 'disabled' : ''}> 🚗 Hent selv</label>` : ''}
        </div>`;
   return {
@@ -2818,6 +2922,22 @@ function shipChoice(s: GameState, car = true): { html: string; cost: number; lab
     cost: shipMode === 'car' ? fuelCost : express ? expressCost : SHIPPING.standard,
     label: shipMode === 'car' ? 'hent selv' : express ? 'ekspress' : `levering ${standardWhen.replace(' kl. 07', '')}`,
   };
+}
+
+/** Lagerlinja på butikkortet: felles lager for sjeldne varer, tilbudskvoten, ellers ditt eget lager. */
+function stockText(it: ShopView['items'][number], inCart: number): string {
+  if (it.marketLeft !== undefined) {
+    if (it.got && it.left === 0) return `✅ Du fikk ${it.got === 1 ? 'en' : it.got}${it.marketLeft ? ` (maks ${it.cap})` : ' – nå er de utsolgt'}`;
+    if (it.marketLeft === 0) return 'Utsolgt – noen var raskere';
+    return `<b>${it.marketLeft} igjen i markedet</b> · maks ${it.cap} per kunde`;
+  }
+  if (it.deal !== undefined) {
+    const deal = Math.max(0, (it.dealLeft ?? 0) - inCart);
+    const tail = `, så ${kr(it.was ?? it.price)}`;
+    if (it.dealLeft) return `${deal} til tilbudspris (${it.dealMarket} igjen i markedet)${tail}`;
+    return it.dealMarket === 0 ? `Tilbudet er utsolgt – noen var raskere. ${it.left} igjen` : `Du har brukt tilbudet ditt. ${it.left} igjen`;
+  }
+  return it.left === 0 ? 'Utsolgt i dag' : `${it.left - inCart} igjen`;
 }
 
 function storeView(s: GameState, storeId: string): string {
@@ -2831,7 +2951,7 @@ function storeView(s: GameState, storeId: string): string {
     const n = cart[it.typeId] ?? 0;
     const art = t.image ? `<img src="${t.image}" alt="" draggable="false">` : `<span class="shop-emoji">${t.emoji}</span>`;
     const p = PRODUCT_BY_ID[it.typeId];
-    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare';
+    const sub = p ? `${it.deal ? `${categoryLabel(p.category)} · ` : ''}Kunder forventer ~${kr(expectedHere(s, p, false))} · har ${inv.get(p.id) ?? 0}` : 'Råvare';
     const coupon = bestCoupon(s, storeId, it.typeId);
     return `<div class="shop-card ${it.deal ? 'deal' : ''} ${isRare(it.typeId) ? 'rare' : ''} ${it.left === 0 ? 'soldout' : ''} ${n > 0 ? 'incart' : ''}">
       <div class="shop-art">${art}<span class="shop-size">${t.size.w}×${t.size.h}</span>
@@ -2840,8 +2960,8 @@ function storeView(s: GameState, storeId: string): string {
         ${coupon ? `<span class="coupon-flag" title="Du har en kupong: ${coupon.pct} % på denne varen">🎟️ −${coupon.pct} %</span>` : ''}</div>
       <div class="shop-name">${esc(t.name)}</div>
       <div class="shop-sub">${sub}</div>
-      <div class="shop-price">${it.was ? `<s>${kr(it.was)}</s> ` : ''}${kr(it.price)}</div>
-      <div class="shop-stock">${it.left === 0 ? 'Utsolgt i dag' : `${it.left - n} igjen`}</div>
+      <div class="shop-price">${it.was && it.dealLeft ? `<s>${kr(it.was)}</s> ` : ''}${kr(it.price)}</div>
+      <div class="shop-stock">${stockText(it, n)}</div>
       <div class="shop-qty">
         <button class="ghost small" data-action="cart" data-store="${storeId}" data-type="${it.typeId}" data-delta="-1" ${n === 0 ? 'disabled' : ''} aria-label="Færre">−</button>
         <span>${n}</span>
@@ -2856,8 +2976,11 @@ function storeView(s: GameState, storeId: string): string {
   // Handlekurven
   const lines = Object.entries(cart)
     .filter(([, n]) => n > 0)
-    .map(([typeId, qty]) => ({ typeId, qty, price: shop.items.find((i) => i.typeId === typeId)?.price ?? 0 }));
-  const goodsSum = lines.reduce((n, l) => n + l.qty * l.price, 0);
+    .map(([typeId, qty]) => {
+      const it = shop.items.find((i) => i.typeId === typeId);
+      return { typeId, qty, price: it?.price ?? 0, cost: it ? lineCost(it, qty) : 0 };
+    });
+  const goodsSum = lines.reduce((n, l) => n + l.cost, 0);
   const bags = lines.length ? packBags(lines).length : 0;
   const shipping = shipChoice(s);
   const ship = shipping.cost;
@@ -3049,16 +3172,23 @@ function decorView(stall: StallPublic, own: boolean): string {
       const size = decorSize(d);
       const box = `left:${pct(x, 1536)};top:${pct(y, 1024)};width:${pct(size.w, 1536)};height:${pct(size.h, 1024)}`;
       // Bakkepynt: skygge av selve bildet, lagt ned på bakken bak motivet.
-      const shadow = d.spot === 'bakke' ? `<img class="decor-shadow" src="/art/bodfront/${d.file}" alt="" draggable="false">` : '';
+      const shadow = d.spot === 'bakke' && d.file ? `<img class="decor-shadow" src="/art/bodfront/${d.file}" alt="" draggable="false">` : '';
       const glow = d.glow ? `<img class="decor-glow" src="/art/bodfront/${d.glow}" alt="" draggable="false">` : '';
       const f = TORCH_FLAME;
       const flame = d.flame
         ? `<span class="decor-flame" style="left:${pct(f.dx, d.w)};top:${pct(f.dy, d.h)};width:${pct(f.w, d.w)};height:${pct(f.h, d.h)}"></span>`
         : '';
-      const inner = `${shadow}<img class="decor-art" src="/art/bodfront/${d.file}" alt="" draggable="false">${glow}${flame}`;
+      // Historiepynt uten tegning ennå: emojien i et lite skilt.
+      const art = d.file ? `<img class="decor-art" src="/art/bodfront/${d.file}" alt="" draggable="false">` : `<span class="decor-emoji">${d.emoji}</span>`;
+      const inner = `${shadow}${art}${glow}${flame}`;
+      const fx = `${d.name}${d.story ? ' (historiepynt)' : ''}: ${decorFxText(d)}`;
+      // Om natta kan du stjele pynten hos andre (ikke historiepynt).
+      const night = !!state && phaseOf(osloParts(state.clock.gameTime).hour) === 'night';
+      if (!own && night && !d.story && state?.me.stallId && stall.ownerId !== state.me.playerId)
+        return `<button class="decor decor-${d.spot} decor-steal" data-action="decor-steal" data-stall="${stall.id}" data-slot="${slotId}" data-name="${esc(d.name)}" data-price="${d.price}" style="${box}" title="${esc(fx)} – trykk for å stjele den" aria-label="Stjel ${esc(d.name.toLowerCase())}">${inner}</button>`;
       return own
-        ? `<button class="decor decor-${d.spot}" data-action="decor-down" data-slot="${slotId}" style="${box}" title="${esc(d.name)} – trykk for å ta den ned" aria-label="Ta ned ${esc(d.name.toLowerCase())}">${inner}</button>`
-        : `<div class="decor decor-${d.spot}" style="${box}" title="${esc(d.name)}">${inner}</div>`;
+        ? `<button class="decor decor-${d.spot} ${d.story ? 'decor-story' : ''}" data-action="decor-down" data-slot="${slotId}" style="${box}" title="${esc(fx)} – trykk for å ta den ned" aria-label="Ta ned ${esc(d.name.toLowerCase())}">${inner}</button>`
+        : `<div class="decor decor-${d.spot} ${d.story ? 'decor-story' : ''}" style="${box}" title="${esc(fx)}">${inner}</div>`;
     })
     .join('');
 }
@@ -3079,16 +3209,16 @@ function decorShopView(s: GameState): string {
   };
   const places = (spot: DecorSpot) => DECOR_SLOTS.filter((x) => x.spot === spot).length;
   const sections = (Object.keys(SPOT_LABEL) as DecorSpot[]).map((spot) => {
-    const cards = DECOR.filter((d) => d.spot === spot).map((d) => {
+    const cards = DECOR_FOR_SALE.filter((d) => d.spot === spot).map((d) => {
       const up = hung.filter((x) => x === d.id).length;
       const box = packed(d.id);
       const note = [up ? `${up} henger på boden` : '', box ? `${box} innpakket` : ''].filter(Boolean).join(' · ');
       return klasCard({
         name: d.name,
-        image: `/art/bodfront/${d.file}`,
+        image: d.file ? `/art/bodfront/${d.file}` : undefined,
         emoji: d.emoji,
         price: d.price,
-        sub: `${esc(d.blurb)}${note ? `<br><span class="muted">${note}</span>` : ''}`,
+        sub: `<span class="decor-fx">${esc(decorFxText(d))}</span><br>${esc(d.blurb)}${note ? `<br><span class="muted">${note}</span>` : ''}`,
         buy: qty(d.id),
         incart: !!cart[d.id],
       });
@@ -3096,6 +3226,26 @@ function decorShopView(s: GameState): string {
     const n = places(spot);
     return `<h3>${SPOT_LABEL[spot]}</h3><p class="muted">${n === 1 ? 'Én plass' : `${n} plasser`}.</p><div class="shop-grid">${cards.join('')}</div>`;
   });
+  // Det pynten på boden din gir akkurat nå, og historiepynten (kan ikke kjøpes).
+  const now = boostLines(boostOf(mine?.decor));
+  const summary = `<div class="decor-summary"><b>Pynten på boden din nå</b>${
+    now.length ? `<ul>${now.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="muted">Ingen virkning ennå. Heng opp pynt foran på boden.</p>'
+  }<p class="muted">Samme pynt to ganger teller én gang. Vanlig pynt gir til sammen høyst +${DECOR_CAP.kunder} % kunder, +${DECOR_CAP.salg} % salg og +${DECOR_CAP.pris} % pris per kategori. Historiepynt kommer i tillegg.</p></div>`;
+  const storyCards = STORIES.map((st) => {
+    const d = DECOR_BY_ID[st.reward];
+    const v = s.me.stories.find((x) => x.id === st.id);
+    const c = CHARACTER_BY_ID[st.charId];
+    const have = hung.includes(d.id) || packed(d.id) > 0;
+    return `<div class="shop-card klas-card story-card ${have ? 'owned' : 'locked'}">
+      <div class="shop-art"><span class="shop-emoji">${d.emoji}</span>${have ? '' : '<span class="story-lock">🔒</span>'}</div>
+      <div class="shop-name">${esc(d.name)}</div>
+      <div class="shop-sub"><span class="decor-fx">${esc(decorFxText(d))}</span><br>${esc(d.blurb)}</div>
+      <div class="shop-price">${have ? '✅ Din' : `Fra ${esc(c?.name ?? '')}`}</div>
+      <div class="shop-stock">${v?.done ? 'Historien er fullført' : `«${esc(st.title)}»`}</div>
+    </div>`;
+  });
+  sections.unshift(summary);
+  sections.push(`<h3>Historiepynt</h3><p class="muted">Kan ikke kjøpes. Du får den av stamkundene når historien deres er fullført (se Historier på telefonen). Sterkere enn vanlig pynt, og kommer i tillegg til taket.</p><div class="shop-grid">${storyCards.join('')}</div>`);
   const lines = Object.entries(cart)
     .filter(([, n]) => n > 0)
     .map(([id, n]) => ({ id, qty: n, d: DECOR_BY_ID[id] }))
@@ -3111,7 +3261,7 @@ function decorShopView(s: GameState): string {
     : '<p class="muted">Handlekurven er tom.</p>';
   return `
     <header class="store-banner pynt"><b>${shopLogo(DEKORINGEN.id, 'logo', DEKORINGEN.name)}</b><span>Pynt som synes fra hele torget.</span></header>
-    <p class="muted">Pynten kommer innpakket i pappkartonger. Trykk på pakken under disken, så henges den opp på første ledige plass foran på boden. Er alle plassene av det slaget tatt, byttes pynten på den første plassen ut og settes innpakket ved boden. Trykk på pynten når du ser boden forfra for å ta den ned.</p>
+    <p class="muted">Pynten kommer innpakket i pappkartonger. Legger du pakken på bordet, kan kundene kjøpe den (bare når du står bak disken, ikke selvbetjent). Trykk på pakken under disken, så henges den opp på første ledige plass foran på boden. Er alle plassene av det slaget tatt, byttes pynten på den første plassen ut og settes innpakket ved boden. Trykk på pynten når du ser boden forfra for å ta den ned.</p>
     ${sections.join('')}
     <div class="cart" id="cart">
       <h3>🛒 Handlekurv</h3>
@@ -3154,7 +3304,7 @@ function priceFeedback(price: number, cost: number, base: number): string {
     <span>${MOOD_TEXT[moodFor(price / base, 1)]}</span>`;
 }
 
-const PAPER_PAGES = ['Forside', 'Økonomi', 'Eivblås Halvstrøms hjørne', 'Kriminalitet', 'Kuponger'];
+const PAPER_PAGES = ['Forside', 'Økonomi', 'Eivblås Halvstrøms hjørne', 'Kriminalitet', 'Kuponger', 'Søppelsaker'];
 
 /** En utgave av morgenavisa, én side om gangen. */
 function paperView(s: GameState, p: Paper | undefined, page: number): string {
@@ -3303,7 +3453,20 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
       })
       .join('')}</div>
     ${held && !scissors ? '<p class="paper-small">Du trenger en saks for å klippe ut kupongene. Klas Olsen har.</p>' : ''}`;
-  const body = [front, economy, recipe, crime, coupons][n];
+  // «Søppelsaker»: tystingene fra i går.
+  const dumps = p.dumps ?? [];
+  const trashPage = `
+    <div class="paper-kicker">🗑️ Søppelsaker</div>
+    <h3 class="paper-h">${dumps.length ? `${dumps.length} ${dumps.length === 1 ? 'bod' : 'boder'} tatt i å kaste i andres søppel` : 'Ingen søppelsaker i går'}</h3>
+    ${
+      dumps.length
+        ? `<ul class="paper-dumps">${dumps
+            .map((x) => `<li class="${x.mine ? 'mine' : ''}"><b>«${esc(x.offender)}»</b> kastet ${esc(x.what.toLowerCase())} i søppelkassa til «${esc(x.victim)}». Bot: ${kr(x.fine)}.${x.mine ? ' <b>(Det er deg!)</b>' : ''}</li>`)
+            .join('')}</ul>`
+        : '<p>Markedet holdt seg ryddig. Eller så var det ingen som tystet.</p>'
+    }
+    <p class="paper-small">Har noen kastet noe i søppelkassa di? Trykk på det i søpla for å se hvem, og tyst til avisa.</p>`;
+  const body = [front, economy, recipe, crime, coupons, trashPage][n];
   return `
   <article class="paper">
     <header class="paper-mast" data-paper-head title="Dra for å flytte avisa">
@@ -3516,7 +3679,7 @@ function customerView(s: GameState, seed: string): string {
     <div class="cust-section"><div class="cust-kicker">Ser på</div>${looking}</div>
     ${offer}
     <div class="cust-police"><button class="small ghost" data-action="tip" data-seed="${esc(seed)}"><img src="${characterUrl(police)}" alt="">🫐 Meld til Tyttebærpolitiet</button>
-      <small>Dusør ${kr(THIEF_REWARD)} hvis det er dagens etterlyste. Feil tips gir ${factor} % færre kunder neste dag.</small></div>`;
+      <small>Dusør ${kr(s.paper?.wanted.reward ?? THIEF_REWARD)} til den som først tar den etterlyste. Feil tips gir ${factor} % færre kunder neste dag.</small></div>`;
 }
 
 /** Varene på bordet ditt slik stamkundene ser dem: pris og om det finnes en hjemmelaget. */
@@ -3576,7 +3739,28 @@ function regularView(s: GameState, visitId: string, charId: string): string {
       <div class="cust-section"><div class="haggle-row">${steps}</div>${gift}
       <p class="cust-hint">Prosenten er sjansen for ja. Fornøyde stamkunder gir omdømme, og mer jo rausere du er. Én sjanse per besøk.</p></div>`;
   }
-  return regularHead(c, tags, here?.ask && c.order ? c.order.ask : c.quote) + deal;
+  return regularHead(c, tags, here?.ask && c.order ? c.order.ask : c.quote) + deal + storyAtCounter(s, c);
+}
+
+/**
+ * Historien til stamkunden ved disken: hvor du er, og valget om å utsette den (som «Nei takk» til
+ * forsikringsselgeren) eller ta den opp igjen. Utsatt: hen spør ikke om bestillinger, og trinnene teller ikke.
+ */
+function storyAtCounter(s: GameState, c: Character): string {
+  const st = STORY_OF_CHAR[c.id];
+  const v = st && s.me.stories.find((x) => x.id === st.id);
+  if (!st || !v || v.done) return '';
+  const cur = st.steps[v.step];
+  const line = v.paused
+    ? `Du har utsatt historien. ${esc(c.name)} spør ikke om bestillinger, og ingenting teller før du tar den opp igjen.`
+    : v.retryDay
+      ? `${esc(c.name)} trenger litt tid etter sist. Ny sjanse ${esc(dayName(v.retryDay))}.`
+      : `Trinn ${v.step + 1} av ${st.steps.length}: ${esc(cur?.hint ?? '')}`;
+  const btn = v.paused
+    ? `<button data-action="story-pause" data-story="${st.id}" data-paused="0">▶️ Ta opp historien igjen</button>`
+    : `<button class="ghost" data-action="story-pause" data-story="${st.id}" data-paused="1">⏸️ Ikke nå – utsett historien</button>`;
+  return `<div class="cust-section cust-story"><div class="cust-kicker">📖 «${esc(st.title)}»</div>
+    <p class="cust-hint">${line}</p><div class="row">${btn}</div></div>`;
 }
 
 function regularHead(c: Character, tags: string, quote: string): string {
@@ -3809,7 +3993,37 @@ function modalView(s: GameState): string {
           })
           .join('')}</ul>`
       : '<p class="muted">Søppelkassa er tom.</p>';
-    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, bærer du – én ting i hver hånd, eller i ryggsekken.</p>${list}`;
+    // Det du bærer (i hendene eller i ryggsekken), og som er tomt, kan kastes her.
+    const carried = s.me.items.filter((i) => {
+      const parent = i.place === 'box' ? s.me.items.find((b) => b.id === i.boxId) : undefined;
+      const onMe = i.place === 'carry' || parent?.place === 'carry';
+      return onMe && i.typeId !== BACKPACK && !s.me.items.some((c) => c.boxId === i.id);
+    });
+    const dump = carried.length
+      ? `<h3>Kast noe du bærer</h3><ul class="trash-list">${carried
+          .map((i) => {
+            const tt = ITEM_TYPES[i.typeId];
+            return `<li><span class="trash-thing">${icon(tt)} ${esc(tt.name)}</span><button class="small ghost" data-action="put-trash" data-stall="${id}" data-item="${i.id}">Kast her</button></li>`;
+          })
+          .join('')}</ul>
+        <p class="cust-hint">Eieren kan se hvem som la det der, og kan tyste. Da står du i avisa og får ${kr(DUMP_FINE)} i bot.</p>`
+      : '';
+    inner = `<h2>🗑️ Søpla til «${esc(st.name)}»</h2><p class="muted">Søppelkassene på markedet er åpne. Det du tar med, bærer du – én ting i hver hånd, eller i ryggsekken.</p>${list}${dump}`;
+  }
+
+  if (modal.kind === 'dumped') {
+    const it = s.me.items.find((i) => i.id === (modal as { itemId: number }).itemId);
+    const by = it?.dumpedBy;
+    if (!it || !by) return '';
+    const tt = ITEM_TYPES[it.typeId];
+    inner = `<h2>🗑️ ${icon(tt)} ${esc(tt.name)}</h2>
+      <p>Den lå ikke der fra før. Det var <b>«${esc(by.name)}»</b> som kastet den i søppelkassa di (${esc(formatClock(osloParts(by.at)))}).</p>
+      ${
+        by.reported
+          ? '<p class="muted">🗣️ Du har tystet. Det står i avisa i morgen.</p>'
+          : `<div class="row"><button data-action="report-dump" data-item="${it.id}">🗣️ Tyst til avisa</button><button class="ghost" data-action="close">La det ligge</button></div>
+             <p class="cust-hint">Tyster du, får «${esc(by.name)}» ${kr(DUMP_FINE)} i bot, og saken står under «Søppelsaker» i avisa i morgen. Alle får vite at det var du som tystet.</p>`
+      }`;
   }
 
   if (modal.kind === 'look') inner = lookView(s, modal.draft);
@@ -3857,7 +4071,7 @@ function modalView(s: GameState): string {
     const thisRow = thisItem?.label
       ? `<div class="label-head">Produsent</div>
          <ul class="label-list"><li class="label-row ${thisItem.label}"><div><b>${esc(labelText(p.id, thisItem.label, stallName))}</b>${thisItem.label === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
-           <small>kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, thisItem.label !== 'store'))}</small></div>
+           <small>kunder forventer ~${kr(expectedHere(s, p, thisItem.label !== 'store'))}</small></div>
            ${canRewrite ? `<button class="small ghost" data-action="relabel" title="${thisItem.label === 'store' ? 'Skriv «Hjemmelaget» på etiketten med penn' : 'Skriv riktig produsent igjen'}">✏️ Skriv om</button>` : ''}</li></ul>`
       : '';
     // Pepperkakehuset: et navn med penn (bestillinger). Et hus med navn selges ikke til andre.
@@ -3872,12 +4086,12 @@ function modalView(s: GameState): string {
       .filter((l) => count(l) > 0)
       .map(
         (l) => `<li class="label-row ${l}"><div><b>${esc(labelText(p.id, l, stallName))}</b>${l === 'forged' ? ' <span class="forged-tag">skrevet om</span>' : ''}
-            <small>${count(l)} stk · kunder forventer ~${kr(expectedPrice(p.basePrice, s.me.reputation, l !== 'store'))}</small></div></li>`,
+            <small>${count(l)} stk · kunder forventer ~${kr(expectedHere(s, p, l !== 'store'))}</small></div></li>`,
       )
       .join('');
     // Prisreaksjonen regnes mot etiketten på flest av varene.
     const main: Label = count('store') >= count('home') + count('forged') ? 'store' : 'home';
-    const base = expectedPrice(p.basePrice, s.me.reputation, main !== 'store');
+    const base = expectedHere(s, p, main !== 'store');
     inner = itemCard(
       p,
       `<h2>${esc(p.name)}</h2>
@@ -3898,7 +4112,12 @@ function modalView(s: GameState): string {
         <div class="price-feedback">${priceFeedback(price, inv.avgCost, base)}</div>
         <button>Lagre pris</button>
       </form>
-      ${stashMenu(s, p.id, true)}`,
+      ${
+        isDecorGood(p.id)
+          ? `<p class="muted">🎄 Pynt fra ${esc(DEKORINGEN.name)}. Selges fra bordet bare når du står bak disken, ikke når skiltet står på selvbetjent.</p>
+             ${modal.itemId !== undefined ? `<button data-action="decor-hang" data-item="${modal.itemId}">🎄 Heng den opp på boden i stedet</button>` : ''}`
+          : stashMenu(s, p.id, true)
+      }`,
     );
   }
 
@@ -4212,6 +4431,10 @@ function endDrag(cancelled = false) {
     modal = { kind: 'tampered', itemId: d.item.id };
     return render();
   }
+  if (!d.moved && d.item.place === 'trash' && d.item.dumpedBy) {
+    modal = { kind: 'dumped', itemId: d.item.id };
+    return render();
+  }
   if (!d.moved) {
     // Avisa: dobbeltklikk (to trykk på samme avis innen 0,4 s) for å lese.
     if (t.kind === 'paper') {
@@ -4225,6 +4448,8 @@ function endDrag(cancelled = false) {
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
     // Innpakket apparat fra Klas Olsen (lyslenke, alarm …): heng det opp på boden.
     if (t.kind === 'electric' && t.hangs) act('/api/device/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger på boden.`);
+    // Pynt på bordet er til salgs: trykk åpner varekortet (pris og «Heng opp»). Under disken henges den opp.
+    else if (t.kind === 'tool' && t.decor && d.item.place === 'counter' && PRODUCT_BY_ID[t.id]) modal = { kind: 'product', productId: t.id, itemId: d.item.id };
     else if (t.kind === 'tool' && t.decor) act('/api/decor/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger foran på boden. Se fronten for å se den.`);
     else if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
     else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') togglePanel(d.item.id);
@@ -4505,17 +4730,19 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'look-open') {
-    const stall = state && myStall(state);
-    if (stall) modal = { kind: 'look', draft: { ...(stall.ownerLook ?? {}) } };
+    if (state) modal = { kind: 'look', draft: { ...(state.me.look ?? {}) } };
     render();
     return;
   }
   if (modal?.kind === 'look' && action?.startsWith('look-')) {
     const d = modal.draft;
-    if (action === 'look-pick') d[el.dataset.key as keyof Look] = el.dataset.val;
-    if (action === 'look-reset') modal.draft = {};
+    if (action === 'look-pick' && el.dataset.key === 'balaclava') {
+      if (el.dataset.val === '1') d.balaclava = true;
+      else delete d.balaclava;
+    } else if (action === 'look-pick') d[el.dataset.key as LookKey] = el.dataset.val;
+    if (action === 'look-reset') modal.draft = d.balaclava ? { balaclava: true } : {};
     if (action === 'look-random')
-      modal.draft = Object.fromEntries(LOOK_CHOICES.map((c) => [c.key, c.options[Math.floor(Math.random() * c.options.length)].id])) as Look;
+      modal.draft = { ...(Object.fromEntries(LOOK_CHOICES.map((c) => [c.key, c.options[Math.floor(Math.random() * c.options.length)].id])) as Look), ...(d.balaclava ? { balaclava: true } : {}) };
     if (action === 'look-save') {
       const look = modal.draft;
       void act('/api/look', { look }, '🪞 Slik ser du ut nå.').then((ok) => {
@@ -4643,9 +4870,48 @@ app.addEventListener('click', (e) => {
     void act('/api/note/tickets', {}, '🎟️ To «billetter» ligger under disken. Selg dem om natta.');
     return;
   }
+  if (action === 'decor-steal') {
+    const fine = Math.round(Number(el.dataset.price) * DECOR_THEFT_FINE);
+    const pct = (n: number) => `${Math.round(n * 100)} %`;
+    const masked = !!state?.me.look.balaclava && state.me.hasBalaclava;
+    const k = masked ? BALACLAVA_RISK : 1;
+    const ask = `Stjele ${el.dataset.name?.toLowerCase()}? ${pct(DECOR_THEFT_CATCH * k)} sjanse for at Tyttebærpolitiet tar deg (${pct(DECOR_THEFT_CATCH_ALARM * k)} hvis boden har alarm på). Tatt: bot på ${fine} kr.${masked ? ' Du har finlandshetta på.' : ''}`;
+    if (!confirm(ask)) return;
+    void (async () => {
+      try {
+        const r = await api<{ caught: boolean; text: string }>('/api/decor/steal', { stallId: Number(el.dataset.stall), slot: el.dataset.slot });
+        toast(r.text, r.caught);
+      } catch (err) {
+        toast((err as Error).message, true);
+      } finally {
+        await refresh();
+      }
+    })();
+    return;
+  }
+  if (action === 'restart') {
+    if (!confirm('Starte på nytt? Bodene og alt i dem forsvinner, og du velger en ny plass med startkapital.')) return;
+    void act('/api/restart', {}, '🌱 Ny start! Velg en ledig plass på kartet.').then(() => {
+      screen = { kind: 'map' };
+      render();
+    });
+    return;
+  }
+  if (action === 'decor-hang') {
+    const it = state?.me.items.find((i) => i.id === Number(el.dataset.item));
+    const d = it ? decorOfPack(it.typeId) : undefined;
+    modal = null;
+    void act('/api/decor/hang', { itemId: Number(el.dataset.item) }, `${d?.emoji ?? '🎄'} ${d?.name ?? 'Pynten'} henger foran på boden. Se fronten for å se den.`);
+    return;
+  }
+  if (action === 'story-pause') {
+    const paused = el.dataset.paused === '1';
+    void act('/api/story/pause', { id: el.dataset.story, paused }, paused ? '⏸️ Historien er utsatt. Ta den opp igjen når du vil.' : '▶️ Historien er tatt opp igjen.');
+    return;
+  }
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' || p === 'historier' ? p : 'home';
   }
   if (action === 'toplist-tab') {
     toplistTab = el.dataset.tab === 'total' ? 'total' : 'today';
@@ -4665,7 +4931,19 @@ app.addEventListener('click', (e) => {
     const k = el.dataset.panelKey!;
     closePanel(panelKeyOf(k));
   }
-  if (action === 'toggle-trash') togglePanel('trash');
+  if (action === 'toggle-trash') {
+    togglePanel('trash');
+    // Først når du åpner søppelkassa, oppdager du det andre har kastet der (én gang per ting).
+    if (isOpen('trash') && state) {
+      const found = state.me.items.filter((i) => i.place === 'trash' && i.dumpedBy && !i.dumpedBy.reported && !dumpSeen.has(i.id));
+      for (const i of found) dumpSeen.add(i.id);
+      if (found.length) {
+        const names = [...new Set(found.map((i) => `«${i.dumpedBy!.name}»`))].join(' og ');
+        const what = found.map((i) => ITEM_TYPES[i.typeId].name.toLowerCase()).join(', ');
+        toast(`🗑️ Dette har ikke du kastet: ${what}. Det var ${names}. Trykk på det i søpla for å tyste.`);
+      }
+    }
+  }
   if (action === 'mail') togglePanel('mail');
   if (action === 'paper-page' && paperWin) paperWin = { ...paperWin, page: Number(el.dataset.page) };
   if (action === 'close-paper') paperWin = null;
@@ -4781,6 +5059,14 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'other-trash') modal = { kind: 'othertrash', stallId: Number(el.dataset.stall) };
+  if (action === 'put-trash') {
+    act('/api/trash/put', { stallId: Number(el.dataset.stall), itemId: Number(el.dataset.item) }, '🗑️ Kastet.');
+    return;
+  }
+  if (action === 'report-dump') {
+    act('/api/trash/report', { itemId: Number(el.dataset.item) }, `🗣️ Tystet. Bot ${DUMP_FINE} kr, og det står i avisa i morgen.`);
+    return;
+  }
   if (action === 'take-trash') {
     act('/api/trash/take', { stallId: Number(el.dataset.stall), itemId: Number(el.dataset.item) }, '🗑️ Tatt med – du bærer den.');
     return;

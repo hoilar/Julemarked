@@ -204,6 +204,9 @@ export function placementError(items: Item[], street: Street, item: { id?: numbe
       if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du bretter den sammen.`;
     } else if (intoTrunk) {
       if (t.safe) return 'Safen er for tung for bagasjerommet.';
+    } else if (spot.place === 'box' && parent?.typeId === BACKPACK && t.id === 'kartong') {
+      // En tom pappkartong kan bæres i ryggsekken (for å ta den med til en annen bod).
+      if (item.id && contentsOf(items, item.id).length > 0) return 'Tøm pappkartongen før du legger den i ryggsekken.';
     } else if (intoFolder && shredder && t.shopBag) {
       if (item.id && contentsOf(items, item.id).length > 0) return `Tøm ${t.name} før du makulerer den.`;
     } else if (spot.place !== 'storage' && spot.place !== 'trash') {
@@ -254,6 +257,8 @@ export function placementError(items: Item[], street: Street, item: { id?: numbe
   if (t.kind === 'tape' && (spot.place === 'counter' || ((spot.place === 'pot_in' || spot.place === 'pot_out') && boxKind(spot.boxId) !== 'player')))
     return spot.place === 'counter' ? 'Kassetten er ikke til salgs.' : 'Kassetten går i kassettspilleren.';
   if (t.kind === 'folded' && spot.place === 'counter') return 'Sammenbretta poser er ikke til salgs.';
+  if (spot.place === 'box' && parent?.typeId === 'kartong' && items.find((b) => b.id === parent.boxId)?.typeId === BACKPACK)
+    return 'Kartongen ligger i ryggsekken. Ta den ut først.';
   if (isTwoHanded(t.id) && spot.place === 'box' && parent?.typeId === BACKPACK) return 'Maskiner får ikke plass i ryggsekken.';
   if ((t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') && NESTED.has(spot.place))
     return spot.place === 'box' ? 'En utpakket maskin går ikke inn i esken igjen.' : 'Maskinen får ikke plass der.';

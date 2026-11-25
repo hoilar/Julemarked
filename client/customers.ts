@@ -5,10 +5,12 @@ import { createAvatar } from '@dicebear/core';
 import { micah } from '@dicebear/collection';
 import { moodFor, randomTolerance, type Mood } from '../shared/mood.ts';
 import type { Look } from '../shared/look.ts';
+import { withBalaclava } from '../shared/balaclava.ts';
 import { styleOfSeed, type FaceStyle } from '../shared/names.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { PRODUCT_BY_ID } from '../shared/products.ts';
+import { NIGHT_CUSTOMERS_MAX, nightCurve, sellsNow } from '../shared/dealer.ts';
 import { playVoice, type Voice } from './sound.ts';
 
 /** En vare på bordet slik kundene ser den. */
@@ -80,6 +82,11 @@ function svgFor(seed: string, mood: Mood, look: Look = {}): string {
   if (look.glasses) Object.assign(opts, look.glasses === 'none' ? { glassesProbability: 0 } : { glasses: [look.glasses], glassesProbability: 100 });
   if (look.facialHair) Object.assign(opts, look.facialHair === 'none' ? { facialHairProbability: 0 } : { facialHair: [look.facialHair], facialHairProbability: 100 });
   if (look.earrings) Object.assign(opts, look.earrings === 'none' ? { earringsProbability: 0 } : { earrings: [look.earrings], earringsProbability: 100 });
+  // Finlandshette: håret og øredobbene forsvinner under hetta.
+  if (look.balaclava) {
+    Object.assign(opts, { hairProbability: 0, earringsProbability: 0 });
+    return withBalaclava(createAvatar(micah, opts as never).toString());
+  }
   return createAvatar(micah, opts as never).toString();
 }
 
@@ -110,6 +117,7 @@ interface Customer {
   buying: boolean; // har betalt og er på vei bort
   lead: ClientLead | null; // en kunde du kan selge til selv (ivrig «!» eller interessert «?»)
   held?: boolean; // kundevinduet er åpent: kunden venter og blir ikke brukt til andre salg
+  night?: boolean; // nattkunde (kommer bare for det som selges om natta)
   mood: Mood | null;
   el: HTMLDivElement;
   img: HTMLImageElement;
@@ -226,11 +234,11 @@ function freeSpots(): number[] {
   return SPOTS.filter((x) => taken.every((t) => Math.abs(t - x) > 12));
 }
 
-function arrive(): Customer | null {
+function arrive(night = false): Customer | null {
   const free = freeSpots();
   if (free.length === 0) return null;
   const el = document.createElement('div');
-  el.className = 'customer enter';
+  el.className = `customer enter${night ? ' night-customer' : ''}`;
   el.dataset.action = 'customer'; // trykk: kundevinduet
   const x = free[Math.floor(Math.random() * free.length)] + (Math.random() * 4 - 2);
   el.style.left = `${x}%`;
@@ -246,7 +254,8 @@ function arrive(): Customer | null {
   bob.append(img, bubble);
   el.appendChild(bob);
   const c: Customer = {
-    seed: `kunde-${Math.random().toString(36).slice(2, 9)}`,
+    seed: `${night ? 'natt' : 'kunde'}-${Math.random().toString(36).slice(2, 9)}`,
+    night,
     tolerance: randomTolerance(),
     want: null,
     x,
@@ -278,21 +287,36 @@ function leave(c: Customer) {
 
 function tick() {
   if (!layer.isConnected) return;
-  const list = offers();
+  const night = isNight();
+  // Kundene ser bare etter det som selges nå: om natta det luguberte (og litt drikke og mat om kvelden).
+  const list = offers().filter((o) => sellsNow(o.productId, night, hour));
   const now = Date.now();
-  const night = isNight() || shut;
+  // Nattkunder kommer bare når du står bak disken og har noe de vil ha.
+  const nightOpen = night && attended && !shut && list.length > 0;
   for (const c of [...customers]) {
-    // Om natta går kundene hjem (én og én, ikke alle på en gang).
+    // Om natta går dagkundene hjem (én og én, ikke alle på en gang); nattkundene blir til de er ferdige.
+    const goHome = (shut || (night && (!c.night || !nightOpen)) || (!night && c.night)) && !c.buying && Math.random() < 0.3;
     if (c.held && !c.buying) update(c, list); // venter i kundevinduet
-    else if (now >= c.leaveAt || (night && !c.buying && Math.random() < 0.3)) leave(c);
+    else if (now >= c.leaveAt || goHome) leave(c);
     else update(c, list);
   }
-  if (!night) placeLeads(now);
-  if (!night && customers.length < 4 && Math.random() < 0.35 * crowd) arrive();
+  if (!night && !shut) placeLeads(now);
+  if (!night && !shut && customers.length < 4 && Math.random() < 0.35 * crowd) arrive();
+  if (nightOpen && customers.filter((c) => c.night).length < NIGHT_CUSTOMERS_MAX && Math.random() < 0.12 * crowd * nightCurve(hour)) arrive(true);
 }
 
 let crowd = 1;
 let shut = false;
+let attended = false; // eieren står bak disken (Åpent)
+let hour = 12; // spilltimen (0–23)
+/** Står eieren bak disken? Nattkundene kommer bare da. */
+export function setAttended(v: boolean) {
+  attended = v;
+}
+/** Spilltimen nå (nattkurven og kveldstrafikken). */
+export function setClockHour(h: number) {
+  hour = h;
+}
 /** Boden er stengt (eller ingen står bak disken): kundene går, og nye kommer ikke. */
 export function setShut(v: boolean) {
   shut = v;

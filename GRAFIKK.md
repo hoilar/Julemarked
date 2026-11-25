@@ -12,6 +12,131 @@ ikke, siden heller ikke bodgrafikken har ekte pikselpalett. I stedet måles refe
 - Kontrollark og liste over motiver som fortsatt avviker mye. Legg til flere referanser, eller overstyr
   `korn`/`styrke` per fil, i `stilreferanser.json`.
 
+## App-ikon «Historier» på telefonen – grafikk klar og lagt inn (25.11.2026)
+
+`app-historier.png` er levert i 128 × 128 med transparent ytterområde. Ikonet er
+kontrollert ved siden av de andre i 128, 64 og 32 piksler. Original, prompter og
+kontrollbilder ligger i `GFX_assets/planlagte/historier-ikon/`. Vises i varelisten.
+**Lagt inn 25.11.2026:** `appIcon('historier')` på hjemskjermen og i tittellinja på Historier-siden.
+
+Telefonen har fått appen **Historier** (stamkundenes historier, `storiesPage` i `client/main.ts`), som i dag
+bruker emojien 📖. Det trengs ett ikon i samme sett som de andre appene.
+
+| Fil | Størrelse | Symbol |
+|---|---|---|
+| `client/public/art/telefon/app-historier.png` | 128×128 | Oppslått, litt slitt bok med et rødt bokmerkebånd, og en liten gullstjerne over sidene |
+
+Samme form som de andre app-ikonene (`app-bank.png`, `app-varsler.png`, `app-toppliste.png`): lys kremfarget,
+avrundet firkant med samme hjørneform og mørk kontur, ett tydelig sentrert piktogram, ingen tekst eller tall.
+Gjennomsiktig utenfor ikonflaten. Kontroller at det leses i 64 og 32 px ved siden av de andre.
+
+```text
+Phone app icon for "Julemarked Simulator". Match the attached app icons (app-bank, app-varsler,
+app-toppliste) exactly: same cream rounded square, same corner radius, same dark outline, same pixel size,
+one centered pictogram, no text. Transparent outside the icon.
+Make: an open, slightly worn storybook with a red ribbon bookmark and a tiny gold star above the pages.
+```
+
+Når filen ligger der, byttes `'<span class="app-emoji">📖</span>'` med `appIcon('historier')` i `phoneWindow`.
+
+## Historiepynt til bodfronten – grafikk klar og lagt inn (25.11.2026)
+
+Alle åtte motiver og begge lyslag er levert i `client/public/art/bodfront/`.
+Størrelser og festekanter følger tabellen under. Originaler, prompter, filoversikt,
+leveransebeskrivelse og kontrollbilder ligger i `GFX_assets/planlagte/historiepynt/`.
+De ti filene og forhåndsvisningene er lagt i `vareliste.html`.
+**Lagt inn i spillet 25.11.2026:** `file` og `glow` er satt på linjene med `story:` i `shared/decor.ts`.
+Lyslagene til lykta og ringlyset gløder når det er mørkt, som den vanlige pynten.
+
+Åtte pyntegjenstander som stamkundene gir deg når historien deres er fullført (`shared/stories.ts`).
+De kan ikke kjøpes i Dekoringen, og de er de sterkeste pyntene i spillet.
+
+**Stil:** samme som den ferdige pynten (`client/public/art/bodfront/`, se `GFX_assets/planlagte/bodfront/LEVERANSE.md`).
+Bruk `goods/trenisse.png`, `d06-trehjerte.png` og `d13-krans-kongler.png` som referanse: tydelige pikselflater,
+mørk kontur, varm felles palett og lys fra øvre venstre. Rett forfra, uten perspektiv. Gjennomsiktig PNG
+med ett motiv, uten skygge på bakken (spillet lager den) og uten tekst, bortsett fra der det står under.
+
+**Det skal synes at de er spesielle:** de er hjemmelaget eller personlige, ikke butikkvare.
+Hver av dem har en liten gullstjerne eller et lite gullbånd et sted på motivet, gjerne i et hjørne,
+så man kjenner igjen historiepynt på boden.
+
+| # | Fil | Hva | Plass | Størrelse | Feste | Merknad |
+|---|---|---|---|---|---|---|
+| H1 | `h01-kvist-engel.png` | Heklet engel i hvitt garn med lite gullbånd. Fru Kvists | Takbjelken | 60×110 | Oppheng i øvre kant | Synlig heklemønster, litt skjev og håndlaget |
+| H2 | `h02-emma-tegning.png` | Barnetegning med fargestifter av en julebod, en jente, en mamma og en snøkule, festet med tape i hjørnene | Sidepanel | 180×140 | Midtstilt | Ekte barnestrek, men pikselert som resten. Ingen bokstaver, eller bare «EMMA» med barneskrift |
+| H3 | `h03-direktor-skilt.png` | Lite blankt messingskilt med gravert krone eller våpenskjold, i messingkjede | Stolpe | 90×120 | Kjedet i øvre kant | Fornemt og overdrevent. Ingen lesbar tekst, bare graverte linjer |
+| H4 | `h04-berg-hjerte.png` | Stort pepperkakehjerte med hvit glasur, pyntet av barn (skjeve prikker, ett navnetrekk), i rødt bånd | Takbjelken | 60×110 | Bånd i øvre kant | Skal se barnepyntet ut, ikke som D4 |
+| H5 | `h05-penn-forside.png` | Innrammet avisforside fra Markedsposten med stor overskrift og bilde av en bod, i enkel treramme | Sidepanel | 180×150 | Midtstilt | Samme avishode som `art/avis.png`. Overskriften kan være ulesbare streker |
+| H6 | `h06-rask-skilt.png` | Håndskrevet pappskilt med en tegnet pappkrus og en tommel opp, i hyssing | Stolpe | 90×120 | Hyssing i øvre kant | Ingen tekst, eller bare «ROLF ✓». Litt sjusket, laget i farta |
+| H7 | `h07-nora-lykt.png` | Gammel lykt av svart jern med blått glass | Bakken | 70×110 | Foten i nedre kant | Diskret og litt lyssky |
+| H7b | `h07b-nora-lykt-glod.png` | Blått lysskjær fra lykta | (samme) | 70×110 | Samme lerret som H7 | Eget lag, vises når det er mørkt (som `d25b`) |
+| H8 | `h08-vibe-ringlys.png` | Ringlys på et lite stativ, rosa og hvitt, klemt fast i stolpen | Stolpe | 90×120 | Klemme i øvre kant | Moderne ting, i samme pikselstil |
+| H8b | `h08b-vibe-ringlys-glod.png` | Hvitt lys fra ringen | (samme) | 90×120 | Samme lerret som H8 | Eget lag, vises når det er mørkt |
+
+Til sammen 10 filer: 8 motiver og 2 lyslag.
+
+```text
+Decoration layer for a Christmas market stall front in "Julemarked Simulator". Match the attached
+decor pieces (trenisse, trehjerte, krans-kongler) exactly: same pixel size, clear pixel clusters, dark
+outline, the same warm palette, light from the upper left. Straight-on front view, no perspective.
+Fully transparent PNG, one object, no ground shadow, no readable text unless stated.
+This is a special personal gift, not a shop item: handmade or personal, with a small gold star or
+gold ribbon accent somewhere on it.
+The object must fit inside [W]×[H] px and touch the edge it hangs from or stands on:
+[top edge for hanging items | bottom edge for standing items | centered for panel items].
+Make: [H-motiv].
+```
+
+Lys (H7b, H8b): samme lerret og koordinater som grunnbildet, bare lyset med myk alfa, slik som
+`d25b-bakkelykt-glod.png`.
+
+Lever originaler til `GFX_assets/planlagte/historiepynt/originaler/` og ferdige bilder til
+`client/public/art/bodfront/`. Lag gjerne et kontrollark med alle åtte på en bodfront
+(`GFX_assets/planlagte/historiepynt/kontroll/`), som `boder-med-dekor.png` for den vanlige pynten.
+
+## Hemmelige oppskrifter, fem nye varer – grafikk klar og lagt inn (25.11.2026)
+
+Alle fem varer er levert i `client/public/art/goods/` med de bestilte størrelsene.
+Originaler, prompter, små kopier og kontrollbilder ligger i
+`GFX_assets/planlagte/hemmelige-oppskrifter/`. Leveransen vises i `vareliste.html`.
+**Lagt inn 25.11.2026:** `noArt` er fjernet, så varene bruker `art/goods/<id>.png`. `py tools/spillbilder.py` er kjørt.
+
+Fem varer som bare kan lages med en hemmelig oppskrift. Oppskriften får man av en stamkunde når historien er
+fullført (`shared/stories.ts`, `shared/recipes.ts` med `secret`). Varene står på bordet og under disken som
+alle andre varer.
+
+**Stil:** som de andre varene i `client/public/art/goods/`. Bruk `sirupssnipp.png`, `kakao.png`, `brente-mandler.png`
+og `hjemmebrent.png` som referanse, med samme pikselstørrelse, kontur, varme palett og lys fra øvre venstre.
+Varen sett litt ovenfra og forfra, som de andre. Gjennomsiktig bakgrunn, ingen skygge på bakken.
+
+**Det skal synes at de er spesielle:** hver vare har en liten brun papirlapp med hyssing og en bitte liten
+gullstjerne, som et hjemmelaget merke. Ingen lesbar tekst på lappen, bare et par streker. Ellers ser varen
+hjemmelaget ut, ikke som butikkvare.
+
+| # | Fil | Vare | Rute | Størrelse | Motiv |
+|---|---|---|---|---|---|
+| O1 | `fattigmann.png` | Fru Kvists fattigmann | 1×1 | 128×128 | Tre-fire fattigmannsbakkels (rombeformet, vridd gjennom en spalte, gyllenbrune, melis på) på en liten heklet duk |
+| O2 | `bergs-knekk.png` | Bergs nøtteknekk | 1×1 | 128×128 | Biter av blank karamellknekk med hele mandler, i en liten cellofanpose med rødt bånd |
+| O3 | `rolfs-kakao.png` | Rolfs pendlerkakao | 2×2 | 128×128 | Stor termoskopp med lokk og drikkehull, damp som stiger, en strek sirup nedover siden. Pendler i farta, ikke kosekopp |
+| O4 | `direktorpunsj.png` | Direktørens julepunsj | 2×2 | 128×128 | Fin krystallkaraffel med mørkerød punsj, epleskiver og kanelstang inni, liten messingbrikke rundt halsen |
+| O5 | `noras-snaps.png` | Noras nattsnaps | 1×2 | 128×256 | Høy, smal flaske i mørkeblått glass med korkpropp og voks, bær inni, uten etikett, bare papirlappen. Lyssky, som `hjemmebrent.png` |
+
+Fem filer. 1×1 og 2×2 tegnes på 128×128 som de andre varene (spillet skalerer 2×2-varene opp på bordet).
+Den høye flaska tegnes på 128×256.
+
+```text
+Pixel art item for "Julemarked Simulator". Match the attached item images (sirupssnipp, kakao,
+brente-mandler, hjemmebrent) exactly: same pixel size, dark outline, warm palette, light from the
+upper left, seen slightly from above and in front. Transparent background, no ground shadow, no text.
+This is a homemade product from a secret family recipe: add a tiny brown paper tag on a string with a
+very small gold star (no readable writing).
+Canvas: [128×128 | 128×256]. Make: [O-motiv].
+```
+
+Lever originaler til `GFX_assets/planlagte/hemmelige-oppskrifter/originaler/` og ferdige bilder til
+`client/public/art/goods/` (filnavnene i tabellen). Kjør så `py tools/spillbilder.py` for spillstørrelsen,
+og `py tools/oppdater-varekatalog.py` for varelisten.
+
 ## Topplisten – grafikk klar og lagt inn (25.11.2026)
 
 App-ikon, bakgrunn, banner, tre medaljer og en tom-illustrasjon til «Toppliste»-appen på telefonen:
@@ -59,7 +184,7 @@ Data og plasser: `shared/decor.ts`. 13 plasser: møne, fem på takbjelken, to st
 diskkanten og to på bakken til venstre. Til høyre står telefonen og søppelkassa.
 Venstre stolpeplass er flyttet ned under «Åpent»-skiltet. Pynten tegnes i `decorView` i `client/main.ts`.
 Lyslagene gløder når det ikke er dag, og fakkelflammen er animert. Trykk på pynten forfra for å ta den ned.
-Pynten har ingen virkning på salget ennå.
+Pynten har virkning på salget (prosentene står i Dekoringen), og kan selges fra bordet når du står bak disken. Se konseptet 12.8.
 
 ## Himmel, skyer, måne, lykteglød og røyk – grafikk klar (24.11.2026)
 

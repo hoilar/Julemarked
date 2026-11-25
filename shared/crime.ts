@@ -2,12 +2,31 @@
 // Alle tallene her er ment å være lette å justere.
 import { hash01 } from './hash.ts';
 
+// ---------- Søppel i andres søppelkasse ----------
+// Du kan kaste det du bærer i andres søppelkasse. Eieren ser hvem som la det der og kan tyste:
+// da står det i avisa dagen etter (egen side), og den som kastet får bot.
+export const DUMP_FINE = 200;
+
+// ---------- Pyntetyveri ----------
+// Om natta kan andre spillere ta med seg pynten som henger foran på boden din (ikke historiepynt).
+// Tyttebærpolitiet tar tyven med denne sjansen (høyere med alarm på boden), og boten er 2 × prisen på pynten.
+export const DECOR_THEFT_CATCH = 0.25;
+export const DECOR_THEFT_CATCH_ALARM = 0.6;
+export const DECOR_THEFT_FINE = 2;
+
 // ---------- Tyven ----------
-// Hver dag etterlyses én tyv i avisa. Han speider på boder et par timer om dagen (står blant kundene)
+// Tyven er felles for hele markedet: samme etterlyste person dag etter dag, til noen tar ham (førstemann
+// som tipser riktig får dusøren, som vokser for hver dag han er på frifot). Dagen etter kommer en ny.
+// Tidligere: hver dag etterlyses én tyv i avisa. Han speider på boder et par timer om dagen (står blant kundene)
 // og kommer tilbake et par timer om natta for å stjele fra bordet. Angir du ham mens han står der,
 // får du dusør, og han er tatt: ingen tyverier fra ham den natta.
 
-export const THIEF_REWARD = 300; // dusør for riktig tips
+export const THIEF_REWARD = 300; // grunndusør for riktig tips …
+export const THIEF_REWARD_PER_DAY = 100; // … pluss så mye per dag tyven har vært på frifot
+/** Står eieren bak disken (Åpent) når tyven kommer om natta, stjeler han bare så mye. */
+export const THIEF_GUARD_FACTOR = 0.5;
+/** Dusøren for tyven som har vært etterlyst i `days` dager (0 = første dag). */
+export const thiefReward = (days: number) => THIEF_REWARD + THIEF_REWARD_PER_DAY * Math.max(0, days);
 export const THIEF_NIGHT_CHANCE = 0.6; // sjanse for at tyven kommer til en gitt bod om natta
 export const THIEF_STEAL_CHANCE = 0.2; // per vare på bordet per time han står der
 export const THIEF_SMASH_CHANCE = 0.35; // per pepperkakehus på bordet per time: for stort å bære, så han knuser det

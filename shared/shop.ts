@@ -1,9 +1,14 @@
 // Nettbutikkene (KIWI, REMA 1000, Extra). Alle har alle råvarene; resten av utvalget,
-// prisene og hvor mye de har på lager varierer fra dag til dag. Lageret gjelder per spiller.
+// prisene og hvor mye de har på lager varierer fra dag til dag.
+// Lageret (bestemt 25.11.2026): råvarer og vanlige ferdigvarer har eget lager per spiller, så alle alltid kan lage
+// og selge noe. Sjeldne varer har felles lager for hele markedet (kappløp) og kommer inn på et tilfeldig tidspunkt
+// i løpet av dagen. Dagens tilbud har en felles kvote til tilbudspris, med tak per spiller; etterpå koster varen
+// vanlig pris fra ditt eget lager.
 // Varene pakkes i butikkens poser (4×4) og leveres ved boden – neste morgen eller ekspress.
 import { DEKORINGEN } from './decor.ts';
 import { findFree } from './grid.ts';
 import { hash01 } from './hash.ts';
+import type { ShopView } from './types.ts';
 import { INGREDIENTS, ITEM_TYPES, PRODUCTS } from './products.ts';
 
 export interface Store {
@@ -24,8 +29,9 @@ export const STORES: Store[] = [
 export const STORE_BY_ID: Record<string, Store> = Object.fromEntries(STORES.map((s) => [s.id, s]));
 
 export const SHIPPING = { standard: 20, express: 150 };
-/** Ekspressfrakt koster ingenting den første markedsdagen, så man kommer i gang. */
-export const expressPrice = (firstDay: boolean) => (firstDay ? 0 : SHIPPING.express);
+/** Gratis ekspress de første så mange spilltimene etter at spilleren leide sin første bod. */
+export const FREE_EXPRESS_HOURS = 24;
+export const expressPrice = (free: boolean) => (free ? 0 : SHIPPING.express);
 export const BAG_PRICE = 1;
 /** Klas Olsen (esker, verktøy og elektrisk): samme leveringsmåter som nettbutikkene, men tingene kommer løst, ikke i poser. */
 export const KLAS = { id: 'klas', name: 'Klas Olsen' };
@@ -37,9 +43,35 @@ export const BAG_GRID = (ITEM_TYPES.kiwipose as unknown as { inner: { cols: numb
 export interface ShopItem {
   typeId: string;
   price: number; // kr per stk i dag
-  stock: number; // hvor mange butikken har til deg i dag (før det du har kjøpt)
+  stock: number; // sjelden: felles lager i markedet. Ellers: hvor mange butikken har til deg i dag (før det du har kjøpt)
   was?: number; // på tilbud: prisen før rabatten
   deal?: number; // på tilbud: rabatten i prosent
+  dealStock?: number; // på tilbud: felles kvote til tilbudspris i markedet
+  dealCap?: number; // på tilbud: maks per spiller til tilbudspris
+  rare?: { at: number; cap: number }; // sjelden: kommer inn kl. `at` (spilltime), maks `cap` per spiller
+}
+
+/** Sjeldne varer kommer inn i butikken en gang mellom disse timene (avisa hinter om når). */
+export const RARE_FROM = 9;
+export const RARE_TO = 19;
+/** Maks per spiller av en sjelden vare / sjelden råvare. */
+export const RARE_CAP_PRODUCT = 1;
+export const RARE_CAP_INGREDIENT = 2;
+/** Tilbudskvoten i markedet er så mange ganger det vanlige lageret, og hver spiller får maks halvparten av sitt vanlige lager til tilbudspris. */
+export const DEAL_MARKET_FACTOR = 3;
+export const DEAL_CAP_SHARE = 0.5;
+
+/** Timen en sjelden vare kommer inn i butikken (samme for alle). */
+export const rareHour = (marketId: number, storeId: string, day: number, typeId: string) =>
+  RARE_FROM + Math.floor(hash01('sjelden-tid', marketId, storeId, day, typeId) * (RARE_TO - RARE_FROM + 1));
+
+/** Er den sjeldne varen kommet inn nå? Avisdagen går fra kl. 07 til kl. 07, så natta etterpå hører med. */
+export const rareArrived = (at: number, hour: number) => hour >= at || hour < 7;
+
+/** Hva `qty` stk av en vare koster i dag: først det du får til tilbudspris, så vanlig pris. */
+export function lineCost(it: ShopView['items'][number], qty: number): number {
+  const deal = Math.min(qty, it.dealLeft ?? 0);
+  return deal * it.price + (qty - deal) * (it.was ?? it.price);
 }
 
 /** Dagens tilbud: så mange varer i hver butikk, med 20–40 % rabatt. */
@@ -58,16 +90,26 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
     if (g.rare !== undefined) {
       // Sjelden råvare: bare noen dager, og bare noen få.
       if (hash01('sjelden', marketId, storeId, day, g.id) >= g.rare) continue;
-      items.push({ typeId: g.id, price: price(g.price, g.id), stock: 2 + Math.floor(hash01('lager', marketId, storeId, day, g.id) * 3) });
+      items.push({
+        typeId: g.id,
+        price: price(g.price, g.id),
+        stock: 3 + Math.floor(hash01('lager', marketId, storeId, day, g.id) * 4), // felles: 3–6 i markedet
+        rare: { at: rareHour(marketId, storeId, day, g.id), cap: RARE_CAP_INGREDIENT },
+      });
       continue;
     }
     items.push({ typeId: g.id, price: price(g.price, g.id), stock: 10 + Math.floor(hash01('lager', marketId, storeId, day, g.id) * 21) });
   }
-  // Sjeldne varer: bare noen dager, 1–2 stk.
+  // Sjeldne varer: bare noen dager, 1–3 stk i hele markedet.
   for (const p of PRODUCTS) {
     if (p.rare === undefined || p.craftedOnly) continue;
     if (hash01('sjelden', marketId, storeId, day, p.id) >= p.rare) continue;
-    items.push({ typeId: p.id, price: price(p.wholesale, p.id), stock: 1 + Math.floor(hash01('lager', marketId, storeId, day, p.id) * 2) });
+    items.push({
+      typeId: p.id,
+      price: price(p.wholesale, p.id),
+      stock: 1 + Math.floor(hash01('lager', marketId, storeId, day, p.id) * 3),
+      rare: { at: rareHour(marketId, storeId, day, p.id), cap: RARE_CAP_PRODUCT },
+    });
   }
   const goods = PRODUCTS.filter((p) => !p.craftedOnly && p.rare === undefined && p.category !== 'lugubert');
   let picked = goods.filter((p) => hash01('utvalg', marketId, storeId, day, p.id) < 0.6);
@@ -86,7 +128,8 @@ export function catalog(marketId: number, storeId: string, day: number): ShopIte
     const pct = Math.round((DEAL_MIN + hash01('tilbud-pst', marketId, storeId, day, it.typeId) * (DEAL_MAX - DEAL_MIN)) / 5) * 5;
     const was = it.price;
     const now = Math.max(1, Math.round(was * (1 - pct / 100)));
-    if (now < was) Object.assign(it, { was, deal: pct, price: now });
+    if (now < was)
+      Object.assign(it, { was, deal: pct, price: now, dealStock: it.stock * DEAL_MARKET_FACTOR, dealCap: Math.max(1, Math.ceil(it.stock * DEAL_CAP_SHARE)) });
   }
   return items;
 }

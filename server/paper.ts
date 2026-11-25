@@ -3,6 +3,7 @@
 import { HOUR, TIME_ZONE, osloParts } from '../shared/clock.ts';
 import type { Paper } from '../shared/types.ts';
 import { RECIPES } from '../shared/recipes.ts';
+import { STORES, catalog } from '../shared/shop.ts';
 import { couponsFor } from '../shared/deals.ts';
 import { MACHINE_BOOK } from '../shared/cookbook.ts';
 import { MAKER_BY_ID } from '../shared/products.ts';
@@ -10,7 +11,6 @@ import { hash01 } from '../shared/hash.ts';
 import { forecastFor, weatherFor } from '../shared/weather.ts';
 import { addDays } from '../shared/deals.ts';
 import { ITEM_TYPES } from '../shared/products.ts';
-import { THIEF_REWARD, thiefOf } from '../shared/crime.ts';
 
 export const PAPER_HOUR = 7;
 
@@ -121,6 +121,19 @@ export interface Yesterday {
   mine: number | null;
 }
 
+/** Ryktebørsen: hvilke butikker som får inn noe sjeldent i dag, og omtrent når (felles lager, først til mølla). */
+function rareRumours(marketId: number, key: number): string[] {
+  const out: string[] = [];
+  for (const store of STORES) {
+    const rare = catalog(marketId, store.id, key).filter((i) => i.rare);
+    if (!rare.length) continue;
+    const at = Math.min(...rare.map((i) => i.rare!.at));
+    const when = at < 12 ? 'i løpet av formiddagen' : at < 17 ? 'i løpet av ettermiddagen' : 'i kveld';
+    out.push(`Ryktebørsen: ${store.name} skal visstnok få inn noe sjeldent ${when}. Først til mølla.`);
+  }
+  return out;
+}
+
 /**
  * Bygger en utgave. `yesterday` er salget i markedet dagen før (null den første dagen),
  * `thefts` det som ble stjålet fra bordene natta før utgaven.
@@ -131,7 +144,7 @@ export function buildPaper(
   yesterday: Yesterday | null,
   readKey: number,
   thefts: Paper['crime']['thefts'],
-  thiefCaught: boolean,
+  wanted: Paper['wanted'],
 ): Paper {
   const ed = { key, time: editionTime(key) };
   const price = powerPrice(marketId, ed.key);
@@ -143,10 +156,10 @@ export function buildPaper(
   // Dagens oppskrift: tilfeldig, men samme for alle i markedet den dagen.
   // Luguberte oppskrifter står ikke i avisa (dem får du av Fyren).
   const legal = (o: Record<string, number>) => Object.keys(o).every((id) => (ITEM_TYPES[id] as { category?: string }).category !== 'lugubert');
-  const r = pick(RECIPES.filter((x) => legal(x.outputs)), hash('oppskrift', marketId, ed.key));
+  const r = pick(RECIPES.filter((x) => !x.secret && legal(x.outputs)), hash('oppskrift', marketId, ed.key));
   const list = (m: Record<string, number>) => Object.entries(m).map(([id, n]) => ({ id, n }));
   return {
-    wanted: { ...thiefOf(marketId, ed.key), reward: THIEF_REWARD, caught: thiefCaught },
+    wanted,
     recipe: {
       id: r.id,
       name: r.name,
@@ -166,7 +179,7 @@ export function buildPaper(
     date: date[0].toUpperCase() + date.slice(1),
     price,
     headline,
-    notices: [NOTICES[n1], NOTICES[n2]],
+    notices: [NOTICES[n1], NOTICES[n2], ...rareRumours(marketId, ed.key)],
     yesterday,
     unread: readKey < ed.key,
   };

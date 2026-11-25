@@ -1,4 +1,5 @@
-import { DECOR, decorPackOf } from './decor.ts';
+import { DECOR, DECOR_FOR_SALE, decorOfPack, decorPackOf } from './decor.ts';
+import { BALACLAVA_ICON, BALACLAVA_ID } from './balaclava.ts';
 import type { Category } from './categories.ts';
 import type { GridSize } from './grid.ts';
 import { INSURANCES, policyItemId, type InsuranceKind } from './insurance.ts';
@@ -303,6 +304,7 @@ export type ItemType = Battery | Charger | Product | Container | Newspaper | Ing
 
 // Kontorrekvisita hos Klas Olsen.
 export const TOOLS: Tool[] = [
+  { kind: 'tool', id: BALACLAVA_ID, name: 'Finlandshette', emoji: '🥷', image: BALACLAVA_ICON, price: 149, size: { w: 2, h: 2 }, blurb: 'Svart strikk med én sprekk til øynene. Tas på i speilet på bilen.', dealerOnly: true },
   { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.png', price: 29, size: { w: 2, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
   { kind: 'tool', id: 'papirblokk', name: 'Papirblokk', emoji: '📒', image: '/art/verktoy/papirblokk.png', price: 49, size: { w: 2, h: 2 }, blurb: 'Ti blanke ark. Linjerte.', sheets: 10 },
   { kind: 'tool', id: 'skrutrekker', name: 'Skrutrekker', emoji: '🪛', image: '/art/elektro/skrutrekker.png', price: 89, size: { w: 2, h: 1 }, blurb: 'Stjerne og flat. Passer til det meste med skruer i.' },
@@ -978,6 +980,16 @@ export const PRODUCTS: Product[] = [
     ...shady(['Logoen på «merkevottene» fra {stall} er sydd på opp-ned.'], 0.05, 4),
   }),
   vare('eplemost_varm', 'Varm eplemost', '🍵', 1, 1, 4, 35, 1.6, 'Hjemmelaget', 'drikke', crafted),
+  // Hemmelige oppskrifter fra historiene (shared/stories.ts): bare den som har lappen, kan lage dem.
+  // Grafikk: GFX_assets/planlagte/hemmelige-oppskrifter/LEVERANSE.md.
+  vare('fattigmann', 'Fru Kvists fattigmann', '🥨', 1, 1, 5, 39, 1.6, 'Hjemmelaget', 'kaker', crafted),
+  vare('bergs_knekk', 'Bergs nøtteknekk', '🥜', 1, 1, 8, 49, 1.4, 'Hjemmelaget', 'godteri', crafted),
+  vare('rolfs_kakao', 'Rolfs pendlerkakao', '☕', 2, 2, 6, 55, 1.8, 'Hjemmelaget', 'drikke', crafted),
+  vare('direktorpunsj', 'Direktørens julepunsj', '🥃', 2, 2, 40, 129, 1.0, 'Hjemmelaget', 'alkohol', crafted),
+  vare('noras_snaps', 'Noras nattsnaps', '🌙', 1, 2, 30, 349, 0.5, 'Hjemmelaget', 'lugubert', {
+    ...crafted,
+    ...shady(['Noen våknet med hodepine etter «bærsaften» fra {stall}.'], 0.04, 4),
+  }),
   // Risikovarer: legg til `shady: { exposeChance, reputationHit, lines }` på en vare
   // (se Product over) for høy margin med fare for avsløring. Ingen varer bruker det nå.
 ];
@@ -1183,17 +1195,41 @@ export const SOCKETS = 4;
 export const DARK_FROM = 15; // desember: mørkt fra ca. kl. 15
 export const LIGHT_BOOST = 1.3;
 
-export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
+/**
+ * Pynt fra Dekoringen kan også selges: legg pakken på bordet, så kan kundene kjøpe den (kategori dekor).
+ * Bare når du står bak disken, ikke selvbetjent (se isDecorGood). Kundene forventer litt over Dekoringens pris,
+ * og dyr pynt selges sjeldnere. Historiepynt selges ikke. Gjenstanden er fortsatt pakken (ITEM_TYPES: tool),
+ * så den kan henges opp; denne varen finnes bare i PRODUCT_BY_ID, ikke i PRODUCTS (ikke i nettbutikkene).
+ */
+export const DECOR_GOODS: Product[] = DECOR_FOR_SALE.map((d) => ({
+  kind: 'product',
+  id: decorPackOf(d.id),
+  name: d.name,
+  emoji: d.emoji,
+  wholesale: d.price,
+  basePrice: Math.round(d.price * 1.6),
+  baseDemand: Math.max(0.12, Math.min(0.6, 30 / d.price)),
+  image: d.packFile || d.file ? `/art/bodfront/${d.packFile ?? d.file}` : undefined,
+  size: d.pack,
+  sprite: 1,
+  brand: 'Dekoringen',
+  category: 'dekor',
+}));
+
+/** Er varen pynt fra Dekoringen (selges bare når du står bak disken)? */
+export const isDecorGood = (id: string) => !!decorOfPack(id) && !decorOfPack(id)?.story;
+
+export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries([...PRODUCTS, ...DECOR_GOODS].map((p) => [p.id, p]));
 /** Pynt fra Dekoringen kommer innpakket (pynt_<id>) i pappkartongen. Trykk på en, så henges den opp på bodfronten. */
 export const DECOR_PACKS: Tool[] = DECOR.map((d) => ({
   kind: 'tool',
   id: decorPackOf(d.id),
   name: d.name,
   emoji: d.emoji,
-  image: `/art/bodfront/${d.packFile ?? d.file}`,
+  image: d.packFile || d.file ? `/art/bodfront/${d.packFile ?? d.file}` : undefined,
   price: d.price,
   size: d.pack,
-  blurb: 'Trykk på den for å henge den opp på fronten av boden.',
+  blurb: d.story ? 'Historiepynt. Trykk på den for å henge den opp på fronten av boden.' : 'Trykk på den for å henge den opp på fronten av boden.',
   decor: d.id,
 }));
 

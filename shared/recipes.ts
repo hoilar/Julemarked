@@ -8,9 +8,18 @@ export interface Recipe {
   inputs: Record<string, number>; // vare-/råvare-id → antall
   outputs: Record<string, number>;
   level: number; // styrke 1–4
+  /** Hemmelig oppskrift fra en historie (shared/stories.ts): står aldri i avisa, og kjelen lager den bare når lappen ligger i boden. */
+  secret?: string;
 }
 
 export const RECIPES: Recipe[] = [
+  // Hemmelige oppskrifter (historiene). Står først: kjenner du dem, vinner de over avisoppskrifter med færre råvarer.
+  // Uten lappen blir de samme råvarene på styrke 3 bare rømmegrøt (egget blir liggende).
+  { id: 'fattigmann', name: 'Fru Kvists fattigmann', inputs: { mel: 1, egg: 1, flote: 1 }, outputs: { fattigmann: 6 }, level: 3, secret: 'kvist-kakeboks' },
+  { id: 'bergs_knekk', name: 'Bergs nøtteknekk', inputs: { mandler: 1, sukker: 1, smor: 1 }, outputs: { bergs_knekk: 4 }, level: 3, secret: 'berg-pepperkakehus' },
+  { id: 'rolfs_kakao', name: 'Rolfs pendlerkakao', inputs: { kakaopulver: 1, melk: 1, sirup: 1 }, outputs: { rolfs_kakao: 5 }, level: 2, secret: 'rask-julebord' },
+  { id: 'direktorpunsj', name: 'Direktørens julepunsj', inputs: { rodvin: 1, vodka: 1, epler: 1 }, outputs: { direktorpunsj: 8 }, level: 2, secret: 'direktor-kvalitet' },
+  { id: 'noras_snaps', name: 'Noras nattsnaps', inputs: { baer: 1, sukker: 1, gjaer: 1 }, outputs: { noras_snaps: 3 }, level: 4, secret: 'nora-kinaputter' },
   // Gløggene står før den vanlige: samme flaske pluss alkohol, så den mest spesifikke vinner.
   { id: 'koseglogg', name: 'Kosegløgg', inputs: { gloggflaske: 1, rodvin: 1 }, outputs: { koseglogg: 6 }, level: 1 },
   { id: 'styrkeglogg', name: 'Styrkegløgg', inputs: { gloggflaske: 1, rodvin: 1, vodka: 1 }, outputs: { styrkeglogg: 8 }, level: 2 },
@@ -42,11 +51,16 @@ export function hasInputs(r: Recipe, counts: Map<string, number>): boolean {
  * Hva skjer i kjelen denne timen? Riktig styrke vinner; finnes bare oppskrifter som krever
  * mer varme, venter vi; finnes bare oppskrifter som krever mindre, brenner den første seg.
  */
-export function cookPlan(counts: Map<string, number>, level: number): { recipe: Recipe; burn: boolean } | null {
-  const ready = RECIPES.filter((r) => hasInputs(r, counts));
+export function cookPlan(counts: Map<string, number>, level: number, known: ReadonlySet<string> = new Set()): { recipe: Recipe; burn: boolean } | null {
+  const ready = RECIPES.filter((r) => (!r.secret || known.has(r.id)) && hasInputs(r, counts));
   const exact = ready.find((r) => r.level === level);
   if (exact) return { recipe: exact, burn: false };
   const tooHot = ready.find((r) => r.level < level);
   if (tooHot && !ready.some((r) => r.level > level)) return { recipe: tooHot, burn: true };
   return null;
+}
+
+/** Oppskriftslappene en bod har (ikke i søpla): hemmelige oppskrifter virker bare når lappen er der. */
+export function knownRecipes(items: { typeId: string; recipe?: string; place: string }[]): Set<string> {
+  return new Set(items.filter((i) => i.typeId === 'oppskrift' && i.recipe && i.place !== 'trash').map((i) => i.recipe!));
 }

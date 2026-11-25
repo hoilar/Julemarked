@@ -1,3 +1,4 @@
+import type { StoryView } from './stories.ts';
 import type { Weather } from './weather.ts';
 import type { CustomerOrder } from './orders.ts';
 import type { Phase } from './clock.ts';
@@ -28,7 +29,24 @@ export type Place = 'storage' | 'counter' | 'box' | 'trash' | 'pot_in' | 'pot_ou
 /** Dagens tilbud i en nettbutikk, med hvor mange du kan kjøpe til (lageret er per spiller). */
 export interface ShopView {
   id: string;
-  items: { typeId: string; price: number; left: number; was?: number; deal?: number }[];
+  /**
+   * left = hvor mange du kan kjøpe nå. price = prisen på den neste (tilbudspris så lenge du har dealLeft, ellers vanlig).
+   * Tilbud: dealLeft = til tilbudspris til deg nå, dealMarket = igjen av kvoten i markedet, dealCap = maks per spiller.
+   * Sjelden (felles lager): marketLeft = igjen i markedet, cap = maks per spiller, got = det du har kjøpt.
+   */
+  items: {
+    typeId: string;
+    price: number;
+    left: number;
+    was?: number;
+    deal?: number;
+    dealLeft?: number;
+    dealMarket?: number;
+    dealCap?: number;
+    marketLeft?: number;
+    cap?: number;
+    got?: number; // sjelden: hvor mange du selv har kjøpt i dag
+  }[];
 }
 
 /** Innstillingene på en kjele. */
@@ -63,6 +81,8 @@ export interface Item {
   sheets?: number; // bare papirblokka: ark igjen
   recipe?: string; // bare avskrevne oppskrifter: oppskriftens id
   wanted?: { seed: string; alias: string; edition: number }; // bare utklipte etterlysninger
+  /** Lagt i søppelkassa di av en annen bod (bare i din egen søpla). reported = du har tystet. */
+  dumpedBy?: { name: string; at: number; reported: boolean };
   cut?: boolean; // bare aviser: etterlysningen er klippet ut
   safe?: { locked: boolean }; // bare safer (koden sendes aldri til nettleseren)
   note?: { kind: 'code' | 'text'; text: string }; // bare kodelapper og notater
@@ -133,6 +153,7 @@ export interface StallPublic {
   id: number;
   name: string;
   ownerName: string;
+  ownerId: number;
   ownerLook: import('./look.ts').Look; // figuren bak disken (tomt = laget av navnet)
   reputation: number;
   counter: Item[]; // varene på bordet
@@ -192,6 +213,8 @@ export interface Paper {
   /** Kriminalitet: boder som mistet varer fra bordet i natt (23–06), og en notis fra politiloggen. */
   /** Ros fra kunder som fikk bestillingen sin levert dagen før (konseptet 12.4). */
   praise?: { stall: string; mine: boolean; text: string; bad?: boolean }[];
+  /** «Søppelsaker»: boder som kastet søppel i andres søppelkasse og ble tystet på dagen før. */
+  dumps?: { offender: string; victim: string; what: string; mine: boolean; fine: number }[];
   crime: {
     thefts: { stall: string; mine: boolean; lines: string[]; value: number }[];
     log: string;
@@ -208,7 +231,7 @@ export interface GameState {
   paper: Paper | null; // dagens utgave (null før første)
   papers: Record<number, Paper>; // innholdet i avisene spilleren har (etter utgave)
   shops: ShopView[]; // dagens nettbutikker
-  clock: { gameTime: number; phase: Phase; speed: number; label: string; firstDay: boolean }; // firstDay: gratis ekspress
+  clock: { gameTime: number; phase: Phase; speed: number; label: string };
   market: { id: number; name: string };
   /** De siste salgene til NPC-kunder i hele markedet (nyeste først). Klienten viser dem som kunder som betaler. */
   sales: { id: number; stallId: number; productId: string; qty: number; amount: number }[];
@@ -237,6 +260,16 @@ export interface GameState {
     } | null;
     /** Åpne bestillinger fra kunder, og de som ble avgjort de siste dagene. */
     orders: CustomerOrder[];
+    /** Gratis ekspress til denne spilltida (de første 24 spilltimene etter første bod), ellers null. */
+    freeExpressUntil: number | null;
+    /** Figuren din (speilet på bilen). Kan endres før du har bod. */
+    look: import('./look.ts').Look;
+    /** Du har en finlandshette (kan tas på i speilet). */
+    hasBalaclava: boolean;
+    /** Konkurs: namsmannen har ingenting å ta, og gjelda står igjen. null = alt i orden. */
+    bankrupt: { debt: number; revenue: number; days: number } | null;
+    /** Historiene til stamkundene (shared/stories.ts): trinnet, pauser og om de er fullført. */
+    stories: StoryView[];
     /** Andelen kunder i dag etter feil tips til politiet i går (1 = som vanlig). */
     crowd: number;
     /** Strømmåleren (vises i sikringsboksen). kwh = målerstanden, sinceBill/cost = siden forrige regning. */

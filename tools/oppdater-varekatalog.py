@@ -276,6 +276,18 @@ def main():
     if (ROOT/'GFX_assets/planlagte/toppliste/leveranse.json').exists():
         panel = (ROOT/'tools/toppliste-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- TOPPLISTE-START -->'+panel+'<!-- TOPPLISTE-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- HISTORIEPYNT-START -->[\s\S]*?<!-- HISTORIEPYNT-SLUTT -->', '', html)
+    story_manifest = ROOT/'GFX_assets/planlagte/historiepynt/leveranse.json'
+    if story_manifest.exists():
+        story_items = json.loads(story_manifest.read_text(encoding='utf-8'))['items']
+        panel = (ROOT/'tools/historiepynt-panel.html').read_text(encoding='utf-8')
+        links = ''.join(f'<li><a href="{escape(item["file"], quote=True)}">{escape(item["id"])}</a> · {item["size"][0]} × {item["size"][1]} px</li>' for item in story_items)
+        panel = panel.replace('<!-- HISTORIEPYNT-FILER -->', f'<details><summary>Alle {len(story_items)} filer</summary><ul>{links}</ul></details>')
+        html = html.replace('<div class="table-wrap">', '<!-- HISTORIEPYNT-START -->'+panel+'<!-- HISTORIEPYNT-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- HEMMELIGE-VARER-START -->[\s\S]*?<!-- HEMMELIGE-VARER-SLUTT -->', '', html)
+    if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
+        panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
+        html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
     logo_manifest = ROOT/'GFX_assets/planlagte/logoer/leveranse.json'
     if logo_manifest.exists():
         stores = json.loads(logo_manifest.read_text(encoding='utf-8'))['items']

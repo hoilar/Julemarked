@@ -2,7 +2,7 @@
 // og sjansen for at de sier ja. Bestemt av marked + avisdag + bod, så serveren og nettleseren er enige.
 import { hash01 } from './hash.ts';
 import { CHARACTERS, type Character } from './characters.ts';
-import { PRODUCT_BY_ID } from './products.ts';
+import { PRODUCT_BY_ID, isDecorGood } from './products.ts';
 
 export interface RegularVisit {
   id: string; // figuren (characters.ts)
@@ -47,6 +47,7 @@ export interface CounterOffer {
 /** Kan figuren tenke seg varen? (kategorien hen liker, og bare hjemmelaget for den som krever det) */
 export function regularLikes(c: Character, o: CounterOffer): boolean {
   const p = PRODUCT_BY_ID[o.productId];
+  if (isDecorGood(o.productId)) return false; // pynten er for vanlige kunder
   if (!p || !(c.likes ?? []).includes(p.category)) return false;
   if (c.buy?.homemadeOnly && !o.homemade) return false;
   return true;

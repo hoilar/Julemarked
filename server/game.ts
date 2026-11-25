@@ -71,6 +71,7 @@ import {
   type Device,
   PAYMENT_FEE,
   PRODUCT_BY_ID,
+  isDecorGood,
   START_CASH,
   TRASH_EMPTY_HOUR,
   THEFT_FROM,
@@ -135,7 +136,8 @@ import {
   METER_FINE,
   METER_FINE_PER_KWH,
   METER_REP_HIT,
-  THIEF_REWARD,
+  THIEF_GUARD_FACTOR,
+  thiefReward,
   THIEF_STEAL_CHANCE,
   THIEF_SMASH_CHANCE,
   inspectorHour,
@@ -222,17 +224,20 @@ import {
   type BillKind,
 } from '../shared/bills.ts';
 import { START_REPUTATION, expectedPrice, priceAppeal, reputationCrowd } from '../shared/mood.ts';
-import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, NIGHT_CURVE, dealerOffer, isLuguber } from '../shared/dealer.ts';
+import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, dealerOffer, eveningSale, EVENING_SHARE, isLuguber, nightCurve } from '../shared/dealer.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
-import { BURNT, cookPlan } from '../shared/recipes.ts';
+import { BURNT, cookPlan, knownRecipes } from '../shared/recipes.ts';
 import { findFree, fits, type GridSize } from '../shared/grid.ts';
 import { LANGTID, TERMOSTAT, TURBO, machineWaiting, moduleIn, moduleSpeed, workUnits } from '../shared/modules.ts';
 import type { Module } from '../shared/products.ts';
 import { CASSETTE_PLAYER, SPEAKERS, TAPE_BY_ID, TAPE_SALAD } from '../shared/products.ts';
 import { EAT_CHANCE, NEIGHBOUR_HIT, PIRATE_FINE, PIRATE_REP_HIT, musicBoost, playerReady, songOf, tapeIn } from '../shared/music.ts';
 import { hash01 } from '../shared/hash.ts';
-import { DECOR_BY_ID, DECOR_SLOTS, DEKORINGEN, decorOfPack, decorPackOf } from '../shared/decor.ts';
+import { DECOR_BY_ID, DECOR_SLOTS, DEKORINGEN, decorBoost, decorDemand, decorOfPack, decorPackOf, decorPrice, isDarkHour } from '../shared/decor.ts';
+import { STORIES, STORY_BY_ID, STORY_OF_CHAR, STORY_RETRY_DAYS, stepNeed, type StoryView } from '../shared/stories.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
+import { BALACLAVA_CROWD, BALACLAVA_ID, BALACLAVA_RISK } from '../shared/balaclava.ts';
+import { DECOR_THEFT_CATCH, DECOR_THEFT_CATCH_ALARM, DECOR_THEFT_FINE, DUMP_FINE } from '../shared/crime.ts';
 import {
   INSURANCE_BY_KIND,
   INSURER,
@@ -243,7 +248,7 @@ import {
   policyItemId,
   type InsuranceKind,
 } from '../shared/insurance.ts';
-import { BAG_PRICE, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, packBags } from '../shared/shop.ts';
+import { BAG_PRICE, FREE_EXPRESS_HOURS, KLAS, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, lineCost, packBags, rareArrived, type ShopItem } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 import { WEATHER, forceWeather, forcedWeather, weatherDemand, weatherFor, type WeatherKind } from '../shared/weather.ts';
 import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
@@ -843,12 +848,15 @@ function priceOf(prices: Record<string, number>, productId: string) {
 
 // ---------- Oppsett ----------
 
-/** Er spilltiden `t` på samme (norske) dato som markedet startet? */
-function isFirstDay(market: MarketRow, t: number): boolean {
-  const a = osloParts(t);
-  const b = osloParts(market.game_start);
-  return a.year === b.year && a.month === b.month && a.day === b.day;
+/** Gratis ekspress til denne spilltida: de første FREE_EXPRESS_HOURS etter at spilleren leide sin første bod. */
+function freeExpressUntil(playerId: number): number | null {
+  const at = one<{ started_at: number | null }>(db.prepare('SELECT started_at FROM players WHERE id = ?'), playerId)?.started_at;
+  return at ? at + FREE_EXPRESS_HOURS * HOUR : null;
 }
+const freeExpress = (playerId: number, t: number) => {
+  const until = freeExpressUntil(playerId);
+  return until !== null && t < until;
+};
 
 export function ensureMarket(): MarketRow {
   const code = (process.env.INVITE_CODE ?? 'GLOGG').toUpperCase();
@@ -1313,6 +1321,7 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
     db.prepare('UPDATE stalls SET storage_26 = 1, counter_20 = 1, grid_v2 = 1, counter_31 = 1 WHERE id = ?').run(id);
     giveStarterCar(id);
     giveStarterFusebox(id);
+    db.prepare('UPDATE players SET started_at = COALESCE(started_at, ?) WHERE id = ?').run(nowFor(market), player.id);
     deliverPapers(market, nowFor(market));
     event(market, null, nowFor(market), `${player.name} har leid plass ${slotIndex + 1} i ${def.street}n og åpnet «${stallName}».`);
   });
@@ -1470,7 +1479,7 @@ export function placeKlasOrder(player: PlayerRow, lines: unknown, mode: 'standar
     const units = klasUnits(stall, clean);
     const goods = units.reduce((n, u) => n + u.price, 0);
     const trip = mode === 'car' ? planKlasTrip(market, stall, itemsOf(stall.id), units, t) : null;
-    const shipping = trip ? 0 : mode === 'express' ? expressPrice(isFirstDay(market, t)) : SHIPPING.standard;
+    const shipping = trip ? 0 : mode === 'express' ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
     const fuel = trip?.fuel ?? 0;
     const pay = goods + shipping + fuel;
     if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr${fuel ? ` (med ${fuel} kr i bensin)` : ''}.`);
@@ -1539,11 +1548,12 @@ export function placeDecorOrder(player: PlayerRow, lines: unknown, mode: 'standa
     for (const l of clean) {
       const d = DECOR_BY_ID[l.id];
       if (!d) throw new GameError('Ukjent pynt.');
+      if (d.story) throw new GameError(`${d.name} kan ikke kjøpes. Den får du gjennom en historie.`);
       if (!Number.isInteger(l.qty) || l.qty > 10) throw new GameError('Ugyldig antall.');
       for (let n = 0; n < l.qty; n++) units.push({ typeId: decorPackOf(d.id), price: d.price });
     }
     const goods = units.reduce((n, u) => n + u.price, 0);
-    const shipping = mode === 'express' ? expressPrice(isFirstDay(market, t)) : SHIPPING.standard;
+    const shipping = mode === 'express' ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
     const pay = goods + shipping;
     if (stall.cash < pay) throw new GameError(`Du har ikke råd. Du må betale ${pay} kr.`);
     q.setCash.run(stall.cash - pay, stall.id);
@@ -1583,6 +1593,51 @@ export function hangDecor(player: PlayerRow, itemId: number) {
     const where = d.spot === 'bakke' ? 'står foran boden' : 'henger på boden';
     event(market, player.id, nowFor(market), `${d.emoji} ${d.name} ${where}.${old ? ` ${DECOR_BY_ID[old].name} er tatt bort og står innpakket ved boden.` : ''}`);
     return { name: d.name, replaced: old ?? null };
+  });
+}
+
+/**
+ * Stjeler pynten på en plass foran en annens bod om natta. Tyttebærpolitiet kan ta deg (oftere med alarm, sjeldnere
+ * med finlandshette): da blir pynten hengende, du får bot på 2 × prisen og må holde deg unna en stund. Ellers står
+ * pynten innpakket ved din egen bod. Historiepynt er skrudd fast.
+ */
+export function stealDecor(player: PlayerRow, stallId: number, slotId: string) {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  notAway(mine, t);
+  if (phaseOf(osloParts(t).hour) !== 'night') throw new GameError('Det er for mange folk på torget nå. Kom tilbake når det er natt.');
+  return tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other || other.market_id !== market.id) throw new GameError('Fant ikke boden.');
+    if (other.owner_id === player.id) throw new GameError('Det er din egen pynt.');
+    const ban = snoopBans.get(`${player.id}:${other.id}`);
+    if (ban && ban > t) throw new GameError(`${POLICE.name} har øye med deg. Hold deg unna den boden en stund.`);
+    const decor = decorOf(other);
+    const d = DECOR_BY_ID[decor[slotId] ?? ''];
+    if (!d) throw new GameError('Det henger ingen pynt der lenger.');
+    if (d.story) throw new GameError(`${d.name} er skrudd godt fast. Den lar du være.`);
+    const alarm = alarmOn(market, other, t);
+    const masked = wearsBalaclava(player.id);
+    const risk = (alarm ? DECOR_THEFT_CATCH_ALARM : DECOR_THEFT_CATCH) * (masked ? BALACLAVA_RISK : 1);
+    if (Math.random() < risk) {
+      const fine = Math.round(d.price * DECOR_THEFT_FINE);
+      issueBill(market, mine, t, 'bot', currentEdition(t).key, fine);
+      snoopBans.set(`${player.id}:${other.id}`, t + SNOOP_BAN_HOURS * HOUR);
+      const who = masked ? 'en person i finlandshette' : `«${mine.name}»`;
+      const text = `🫐 ${POLICE.name} tok deg med ${d.name.toLowerCase()} i hendene${alarm ? ' – alarmen gikk' : ''}. Pynten henger der den hang, og du får bot på ${fine} kr (2 × prisen).`;
+      event(market, player.id, t, text);
+      event(market, other.owner_id, t, `🫐 ${POLICE.name} tok ${who} i å stjele ${d.emoji} ${d.name.toLowerCase()} fra fronten din. Pynten henger der fortsatt.`);
+      event(market, null, t, `🫐 ${POLICE.name} tok ${who} i å stjele pynt fra «${other.name}» i natt.`);
+      return { caught: true, text };
+    }
+    delete decor[slotId];
+    saveDecor(other.id, decor);
+    q.insertItem.run(mine.id, decorPackOf(d.id), 'ground', null, 0, 0, null);
+    const text = `🌙 Du tok med deg ${d.emoji} ${d.name.toLowerCase()} fra «${other.name}». Den står innpakket ved boden din.`;
+    event(market, player.id, t, text);
+    event(market, other.owner_id, t, `🌙 Noen har stjålet ${d.emoji} ${d.name.toLowerCase()} fra fronten din i natt.`);
+    return { caught: false, text };
   });
 }
 
@@ -1765,6 +1820,95 @@ export function takeFromTrash(player: PlayerRow, stallId: number, itemId: number
     db.prepare('UPDATE items SET stall_id = ?, place = ?, box_id = ?, x = ?, y = ? WHERE id = ?').run(mine.id, spot.place, spot.boxId, spot.x, spot.y, item.id);
     event(market, player.id, nowFor(market), `🗑️ Du tok ${t.name.toLowerCase()} fra søpla til «${other.name}». ${carriedWhere(spot, item.typeId)}`);
   });
+}
+
+// ---------- Søppel i andres søppelkasse (shared/crime.ts) ----------
+
+interface DumpRow {
+  id: number;
+  market_id: number;
+  item_id: number;
+  type_id: string;
+  by_stall: number;
+  by_name: string;
+  to_stall: number;
+  at: number;
+  reported_at: number | null;
+}
+
+/** Kaster noe du bærer (eller som ligger i det du bærer) i en annens søppelkasse. Eieren kan se at det var deg. */
+export function dumpInOthersTrash(player: PlayerRow, stallId: number, itemId: number) {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  notAway(mine, t);
+  if (stallId === mine.id) throw new GameError('Det er din egen søppelkasse.');
+  return tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other || other.market_id !== market.id) throw new GameError('Fant ikke boden.');
+    if (other.owner_id === player.id) throw new GameError('Det er din egen søppelkasse.');
+    const myItems = itemsOf(mine.id);
+    const it = myItems.find((i) => i.id === itemId);
+    const carried = it && (it.place === 'carry' || (it.place === 'box' && myItems.find((b) => b.id === it.boxId)?.place === 'carry'));
+    if (!it || !carried) throw new GameError('Du må bære det du vil kaste.');
+    const tt = ITEM_TYPES[it.typeId];
+    if (tt.id === PHONE) throw new GameError('Telefonen kaster du ikke.');
+    if (contentsOf(myItems, it.id).length > 0) throw new GameError(`Tøm ${tt.name.toLowerCase()} først.`);
+    const spot = findTrashSpot(itemsOf(other.id), it.typeId);
+    if (!spot) throw new GameError(`Søppelkassa til «${other.name}» er full.`);
+    moveToStall(myItems, it, other.id, spot);
+    db.prepare('INSERT INTO dumpings (market_id, item_id, type_id, by_stall, by_name, to_stall, at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      market.id, it.id, it.typeId, mine.id, mine.name, other.id, t,
+    );
+    event(market, player.id, t, `🗑️ Du kastet ${tt.name.toLowerCase()} i søppelkassa til «${other.name}». Eieren kan se hvem som la det der.`);
+    // Eieren får ikke beskjed: hen oppdager det først når hen åpner søppelkassa.
+    return { name: tt.name };
+  });
+}
+
+/** Gjenstander i din egen søpla som noen andre har kastet der: hvem, og om du har tystet. */
+function markDumped(stallId: number, items: Item[]): Item[] {
+  const inTrash = items.filter((i) => i.place === 'trash');
+  if (!inTrash.length) return items;
+  const rows = all<DumpRow>(db.prepare('SELECT * FROM dumpings WHERE to_stall = ? ORDER BY id DESC'), stallId);
+  for (const i of inTrash) {
+    const r = rows.find((x) => x.item_id === i.id);
+    if (r) i.dumpedBy = { name: r.by_name, at: r.at, reported: r.reported_at !== null };
+  }
+  return items;
+}
+
+/** Tyst på den som kastet noe i søppelkassa di: bot til dem, og det står i avisa i morgen. */
+export function reportDumping(player: PlayerRow, itemId: number) {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const it = itemsOf(mine.id).find((i) => i.id === itemId && i.place === 'trash');
+    const r = it && one<DumpRow>(db.prepare('SELECT * FROM dumpings WHERE to_stall = ? AND item_id = ? ORDER BY id DESC LIMIT 1'), mine.id, it.id);
+    if (!it || !r) throw new GameError('Det var du selv som kastet den.');
+    if (r.reported_at !== null) throw new GameError('Du har allerede tystet på den.');
+    db.prepare('UPDATE dumpings SET reported_at = ? WHERE id = ?').run(t, r.id);
+    const offender = one<StallRow>(q.stallById, r.by_stall);
+    if (offender) {
+      issueBill(market, offender, t, 'bot', currentEdition(t).key, DUMP_FINE);
+      event(market, offender.owner_id, t, `🗣️ «${mine.name}» tystet: du kastet ${ITEM_TYPES[r.type_id].name.toLowerCase()} i søppelkassa deres. Bot ${DUMP_FINE} kr, og det står i avisa i morgen.`);
+    }
+    event(market, player.id, t, `🗣️ Du tystet på «${r.by_name}». De får ${DUMP_FINE} kr i bot, og det står i avisa i morgen.`);
+    return { name: r.by_name, fine: DUMP_FINE };
+  });
+}
+
+/** «Søppelsaker» i avisa: tystingene døgnet før utgaven. */
+function dumpsFor(market: MarketRow, time: number, myStallId: number | null): NonNullable<Paper['dumps']> {
+  return all<DumpRow & { victim: string }>(
+    db.prepare(
+      'SELECT d.*, s.name AS victim FROM dumpings d JOIN stalls s ON s.id = d.to_stall WHERE d.market_id = ? AND d.reported_at >= ? AND d.reported_at < ? ORDER BY d.reported_at',
+    ),
+    market.id,
+    time - 24 * HOUR,
+    time,
+  ).map((r) => ({ offender: r.by_name, victim: r.victim, what: ITEM_TYPES[r.type_id]?.name ?? 'noe', mine: r.by_stall === myStallId, fine: DUMP_FINE }));
 }
 
 /**
@@ -1987,7 +2131,8 @@ function snoopCaught(market: MarketRow, player: PlayerRow, mine: StallRow, other
   const text = `🫐 ${POLICE.name} tok deg da du kom ut fra disken til «${other.name}». Det du hadde tatt, er levert tilbake.${fixNote} Bot ${fine} kr og omdømme −${SNOOP_REP_HIT}.${keyNote}`;
   event(market, player.id, t, text);
   event(market, other.owner_id, t, `🫐 ${POLICE.name} tok noen som snoket bak disken din. Det de hadde tatt, ligger under disken igjen${fixed ? ', og det de tuklet med, er rettet opp' : ''}.`);
-  event(market, null, t, `🫐 ${POLICE.name} tok «${mine.name}» i å snoke bak disken hos «${other.name}».`);
+  const who = wearsBalaclava(player.id) ? 'en person i finlandshette' : `«${mine.name}»`;
+  event(market, null, t, `🫐 ${POLICE.name} tok ${who} i å snoke bak disken hos «${other.name}».`);
   return { caught: text };
 }
 
@@ -2271,7 +2416,7 @@ export function snoopLeave(player: PlayerRow): SnoopResult {
     const other = one<StallRow>(q.stallById, sess.stallId);
     if (!other) return {};
     const minutes = (Math.min(Date.now(), sess.lastAt + SNOOP_IDLE_MINUTES * 60_000) - sess.since) / 60_000;
-    const risk = leaveRisk(minutes, sess.big, alarmOn(market, other, t));
+    const risk = leaveRisk(minutes, sess.big, alarmOn(market, other, t)) * (wearsBalaclava(player.id) ? BALACLAVA_RISK : 1);
     if (Math.random() < risk) return snoopCaught(market, player, mine, other, sess, t);
     const text = `🕵️ Du kom deg ut fra disken hos «${other.name}» uten at noen så deg.`;
     event(market, player.id, t, text);
@@ -2377,9 +2522,31 @@ function parseLook(json: string | null | undefined): Look {
   }
 }
 
+/** Har spilleren en finlandshette (i en av bodene sine, ikke i søpla)? */
+function ownsBalaclava(playerId: number): boolean {
+  return all<StallRow>(q.stallsByOwner, playerId).some((st) => {
+    const items = itemsOf(st.id);
+    return items.some((i) => i.typeId === BALACLAVA_ID && !isTrashed(items, i));
+  });
+}
+
+/** Figuren slik den vises: hetta bare så lenge spilleren fortsatt har den. */
+function shownLook(playerId: number, json: string | null | undefined): Look {
+  const look = parseLook(json);
+  if (look.balaclava && !ownsBalaclava(playerId)) delete look.balaclava;
+  return look;
+}
+
+/** Har spilleren finlandshetta på akkurat nå? */
+function wearsBalaclava(playerId: number): boolean {
+  const row = one<{ look: string | null }>(db.prepare('SELECT look FROM players WHERE id = ?'), playerId);
+  return !!shownLook(playerId, row?.look).balaclava;
+}
+
 /** Speilet på bilen: lagrer hvordan figuren din ser ut bak disken. */
 export function setLook(player: PlayerRow, raw: unknown): { look: Look } {
   const look = cleanLook(raw);
+  if (look.balaclava && !ownsBalaclava(player.id)) throw new GameError('Du har ingen finlandshette. Fyren bak containeren kan skaffe en.');
   db.prepare('UPDATE players SET look = ? WHERE id = ?').run(JSON.stringify(look), player.id);
   return { look };
 }
@@ -2523,6 +2690,7 @@ export function buyFromStall(player: PlayerRow, sellerStallId: number, productId
     const seller = one<StallRow>(q.stallById, sellerStallId);
     if (!seller || seller.market_id !== market.id) throw new GameError('Fant ikke boden.');
     if (seller.id === buyer.id) throw new GameError('Du kan ikke handle i din egen bod.');
+    if (isDecorGood(productId)) throw new GameError('Pynten er bare til salgs for kundene.');
     const price = priceOf(pricesOf(seller.id), productId);
     const total = price * qty;
     if (buyer.cash < total) throw new GameError(`Du har ikke råd. Det koster ${total} kr.`);
@@ -2623,7 +2791,8 @@ export function getState(player: PlayerRow): GameState {
         id: s.id,
         name: s.name,
         ownerName: s.owner_name,
-        ownerLook: parseLook(s.owner_look),
+        ownerId: s.owner_id,
+        ownerLook: shownLook(s.owner_id, s.owner_look),
         reputation: Math.round(s.reputation),
         counter,
         trash,
@@ -2644,7 +2813,7 @@ export function getState(player: PlayerRow): GameState {
   }
   if (mine) finishKeyJobs(market, mine, t);
   leaveIdleSnoops();
-  const items = mine ? presentItems(itemsOf(mine.id), true) : [];
+  const items = mine ? markDumped(mine.id, presentItems(itemsOf(mine.id), true)) : [];
   const trip = mine ? tripOf(mine) : null;
   const costs = new Map(
     mine ? all<{ product_id: string; avg_cost: number }>(q.costs, mine.id).map((c) => [c.product_id, c.avg_cost]) : [],
@@ -2677,7 +2846,7 @@ export function getState(player: PlayerRow): GameState {
     .map((r) => ({ id: r.id, stallId: r.from_stall, productId: r.product_id, qty: r.qty, amount: r.amount }));
 
   return {
-    clock: { gameTime: t, phase: phaseOf(parts.hour), speed: market.speed, label: formatClock(parts), firstDay: isFirstDay(market, t) },
+    clock: { gameTime: t, phase: phaseOf(parts.hour), speed: market.speed, label: formatClock(parts) },
     paper: paperFor(market, player, currentEdition(t).key, mine?.id ?? null),
     shops: shopsFor(market, player, t),
     papers: Object.fromEntries(
@@ -2705,6 +2874,14 @@ export function getState(player: PlayerRow): GameState {
       gift: mine ? giftFor(market, mine, t) : null,
       regular: mine ? regularAt(market, mine, t) : null,
       orders: mine ? ordersOf(mine.id, currentEdition(t).key) : [],
+      stories: mine ? storiesOf(mine, currentEdition(t).key) : [],
+      freeExpressUntil: (() => {
+        const until = freeExpressUntil(player.id);
+        return until !== null && t < until ? until : null;
+      })(),
+      look: parseLook(one<{ look: string | null }>(db.prepare('SELECT look FROM players WHERE id = ?'), player.id)?.look),
+      hasBalaclava: ownsBalaclava(player.id),
+      bankrupt: bankruptcyOf(player, t),
       autogiro: !!mine?.autogiro,
       dealer: mine ? dealerView(market, mine, t) : { offer: [], orders: [], buys: [], sales: [] },
       license: { has: hasLicense(items), pending: !!mine?.liquor_order, bannedUntil: mine && mine.liquor_ban > t ? mine.liquor_ban : null },
@@ -2737,13 +2914,45 @@ function dateKey(t: number): number {
   return p.year * 10000 + p.month * 100 + p.day;
 }
 
+// ---------- Den etterlyste tyven (felles for markedet, shared/crime.ts) ----------
+
+interface ThiefRun {
+  market_id: number;
+  start_day: number;
+  caught_day: number | null;
+  caught_by: number | null;
+}
+
+/** Tyven som er etterlyst på avisdagen `key`: samme person til noen tar ham, så kommer en ny dagen etter. */
+function thiefRun(market: MarketRow, key: number): ThiefRun {
+  const run = one<ThiefRun>(db.prepare('SELECT * FROM thieves WHERE market_id = ? AND start_day <= ? ORDER BY start_day DESC LIMIT 1'), market.id, key);
+  if (!run) {
+    const caught = market.thief_caught === key ? key : null; // tatt i dag før tyven ble felles
+    db.prepare('INSERT OR IGNORE INTO thieves (market_id, start_day, caught_day) VALUES (?, ?, ?)').run(market.id, key, caught);
+    return { market_id: market.id, start_day: key, caught_day: caught, caught_by: null };
+  }
+  if (run.caught_day !== null && key > run.caught_day) {
+    db.prepare('INSERT OR IGNORE INTO thieves (market_id, start_day) VALUES (?, ?)').run(market.id, addDays(run.caught_day, 1));
+    return thiefRun(market, key);
+  }
+  return run;
+}
+
+/** Etterlysningen slik avisa og plakaten viser den: ansikt, navn, dusør (vokser per dag) og om han er tatt. */
+function wantedFor(market: MarketRow, key: number): Paper['wanted'] {
+  const run = thiefRun(market, key);
+  const days = Math.round((editionTime(key) - editionTime(run.start_day)) / (24 * HOUR));
+  return { ...thiefOf(market.id, run.start_day), reward: thiefReward(days), caught: run.caught_day === key };
+}
+
 /** Står tyven eller Tilsynsmannen ved boden akkurat nå? */
 function visitorsAt(market: MarketRow, s: StallRow, t: number): GameState['me']['visitors'] {
   const key = currentEdition(t).key;
   const hour = osloParts(t).hour;
   const plan = thiefVisits(market.id, key, s.id);
-  const thiefHere = market.thief_caught !== key && (plan.day.includes(hour) || plan.night.includes(hour));
-  return { thief: thiefHere ? thiefOf(market.id, key).seed : null, inspector: inspectorHour(market.id, key, s.id) === hour };
+  const run = thiefRun(market, key);
+  const thiefHere = run.caught_day !== key && (plan.day.includes(hour) || plan.night.includes(hour));
+  return { thief: thiefHere ? thiefOf(market.id, run.start_day).seed : null, inspector: inspectorHour(market.id, key, s.id) === hour };
 }
 
 // ---------- Strøm: grenuttak og apparater ----------
@@ -3194,36 +3403,67 @@ export function unpackBox(
 
 // ---------- Nettbutikkene (KIWI, REMA 1000, Extra) ----------
 
-function boughtToday(playerId: number, store: string, day: number): Map<string, number> {
-  const rows = all<{ type_id: string; qty: number }>(
-    db.prepare('SELECT type_id, qty FROM shop_purchases WHERE player_id = ? AND store = ? AND day = ?'),
+type Bought = Map<string, { qty: number; deal: number }>;
+
+/** Det spilleren har kjøpt i butikken i dag (qty i alt, deal av dem til tilbudspris). */
+function boughtToday(playerId: number, store: string, day: number): Bought {
+  const rows = all<{ type_id: string; qty: number; deal_qty: number }>(
+    db.prepare('SELECT type_id, qty, deal_qty FROM shop_purchases WHERE player_id = ? AND store = ? AND day = ?'),
     playerId,
     store,
     day,
   );
-  return new Map(rows.map((r) => [r.type_id, r.qty]));
+  return new Map(rows.map((r) => [r.type_id, { qty: r.qty, deal: r.deal_qty }]));
+}
+
+/** Det hele markedet har kjøpt fra felles lager i dag (sjeldne varer: qty, tilbudskvoten: deal). */
+function marketBought(marketId: number, store: string, day: number): Bought {
+  const rows = all<{ type_id: string; qty: number; deal_qty: number }>(
+    db.prepare('SELECT type_id, qty, deal_qty FROM shop_shared WHERE market_id = ? AND store = ? AND day = ?'),
+    marketId,
+    store,
+    day,
+  );
+  return new Map(rows.map((r) => [r.type_id, { qty: r.qty, deal: r.deal_qty }]));
+}
+
+/** En vare slik spilleren ser den nå, med felles lager og tilbudskvote regnet inn. Null = ikke kommet inn ennå. */
+function shopItemFor(i: ShopItem, mine: Bought, shared: Bought, hour: number): ShopView['items'][number] | null {
+  const me = mine.get(i.typeId) ?? { qty: 0, deal: 0 };
+  const all = shared.get(i.typeId) ?? { qty: 0, deal: 0 };
+  if (i.rare) {
+    if (!rareArrived(i.rare.at, hour)) return null;
+    const marketLeft = Math.max(0, i.stock - all.qty);
+    return { typeId: i.typeId, price: i.price, left: Math.max(0, Math.min(marketLeft, i.rare.cap - me.qty)), marketLeft, cap: i.rare.cap, got: me.qty };
+  }
+  if (i.deal && i.was !== undefined) {
+    const dealMarket = Math.max(0, (i.dealStock ?? 0) - all.deal);
+    const dealLeft = Math.max(0, Math.min(dealMarket, (i.dealCap ?? 0) - me.deal));
+    const normal = Math.max(0, i.stock - (me.qty - me.deal));
+    return { typeId: i.typeId, price: dealLeft > 0 ? i.price : i.was, left: dealLeft + normal, was: i.was, deal: i.deal, dealLeft, dealMarket, dealCap: i.dealCap };
+  }
+  return { typeId: i.typeId, price: i.price, left: Math.max(0, i.stock - me.qty) };
 }
 
 /** Dagens butikker for en spiller: sortiment, pris og hvor mange som er igjen til deg. */
 function shopsFor(market: MarketRow, player: PlayerRow, t: number): ShopView[] {
   const day = currentEdition(t).key;
+  const hour = osloParts(t).hour;
   return STORES.map((store) => {
-    const bought = boughtToday(player.id, store.id, day);
+    const mine = boughtToday(player.id, store.id, day);
+    const shared = marketBought(market.id, store.id, day);
     return {
       id: store.id,
-      items: catalog(market.id, store.id, day).map((i) => ({
-        typeId: i.typeId,
-        price: i.price,
-        left: Math.max(0, i.stock - (bought.get(i.typeId) ?? 0)),
-        ...(i.deal ? { was: i.was, deal: i.deal } : {}),
-      })),
+      items: catalog(market.id, store.id, day)
+        .map((i) => shopItemFor(i, mine, shared, hour))
+        .filter((x): x is ShopView['items'][number] => !!x),
     };
   });
 }
 
 /**
  * Bestiller fra en nettbutikk. Varene pakkes i butikkens poser (1 kr per pose) og sendes:
- * standard (20 kr) kommer kl. 07 neste morgen, ekspress (150 kr, gratis første dag) innen en time.
+ * standard (20 kr) kommer kl. 07 neste morgen, ekspress (150 kr, gratis de første 24 spilltimene) innen en time.
  */
 export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: string; qty: number }[], mode: 'standard' | 'express' | 'car', useCards = true) {
   const express = mode === 'express';
@@ -3236,21 +3476,34 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
   const market = marketOf(player);
   const t = nowFor(market);
   const day = currentEdition(t).key;
-  const offer = new Map(catalog(market.id, store.id, day).map((i) => [i.typeId, i]));
-  const bought = boughtToday(player.id, store.id, day);
+  const hour = osloParts(t).hour;
+  const mine = boughtToday(player.id, store.id, day);
+  const shared = marketBought(market.id, store.id, day);
+  const offer = new Map(
+    catalog(market.id, store.id, day)
+      .map((i) => shopItemFor(i, mine, shared, hour))
+      .filter((x): x is ShopView['items'][number] => !!x)
+      .map((i) => [i.typeId, i]),
+  );
+  const rareIds = new Set(catalog(market.id, store.id, day).filter((i) => i.rare).map((i) => i.typeId));
   let goods = 0;
+  const lineSum = new Map<string, number>();
   for (const l of clean) {
     const o = offer.get(l.typeId);
     if (!o) throw new GameError(`${store.name} har ikke ${ITEM_TYPES[l.typeId]?.name.toLowerCase() ?? 'den varen'} i dag.`);
-    const left = o.stock - (bought.get(l.typeId) ?? 0);
-    if (l.qty > left) throw new GameError(`${store.name} har bare ${left} ${ITEM_TYPES[l.typeId].name.toLowerCase()} igjen til deg i dag.`);
-    goods += o.price * l.qty;
+    if (l.qty > o.left) {
+      const why = o.marketLeft === 0 ? (o.got ? ' Nå er de utsolgt i markedet.' : ' Noen var raskere.') : o.cap !== undefined ? ` Maks ${o.cap} per kunde.` : '';
+      throw new GameError(`${store.name} har bare ${o.left} ${ITEM_TYPES[l.typeId].name.toLowerCase()} igjen til deg i dag.${why}`);
+    }
+    const sum = lineCost(o, l.qty);
+    lineSum.set(l.typeId, sum);
+    goods += sum;
   }
   const held = itemsOf(myStall(player).id);
   // Med bilen: varene pakkes i eskene i bagasjerommet først, resten i poser i bagasjerommet. Ingen frakt, men bensin.
   const trip = mode === 'car' ? planTrip(market, myStall(player), held, store.id, clean, t) : null;
   const bags = trip ? trip.plan.bags : packBags(clean);
-  const shipping = trip ? 0 : express ? expressPrice(isFirstDay(market, t)) : SHIPPING.standard;
+  const shipping = trip ? 0 : express ? expressPrice(freeExpress(player.id, t)) : SHIPPING.standard;
   const total = goods + bags.length * BAG_PRICE + shipping;
   // Rabattkuponger (gyldige i dag, for denne butikken): den beste per vare, gjelder hele linja.
   const usable = (i: Item) => !isTrashed(held, i) && !isUndelivered(held, i);
@@ -3259,7 +3512,7 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
     const best = held
       .filter((i) => i.coupon && usable(i) && i.coupon.store === store.id && i.coupon.productId === l.typeId && couponValid(i.coupon, day))
       .sort((a, b) => b.coupon!.pct - a.coupon!.pct)[0];
-    if (best) coupons.push({ item: best, saved: Math.round((offer.get(l.typeId)!.price * l.qty * best.coupon!.pct) / 100) });
+    if (best) coupons.push({ item: best, saved: Math.round((lineSum.get(l.typeId)! * best.coupon!.pct) / 100) });
   }
   const couponSaved = coupons.reduce((n, c) => n + c.saved, 0);
   const afterCoupons = total - couponSaved;
@@ -3290,11 +3543,20 @@ export function placeOrder(player: PlayerRow, storeId: string, lines: { typeId: 
     }
     // Snittkost: varene koster det de kostet, frakt og poser fordeles ikke (det er «driftskostnader»).
     for (const l of clean) {
-      if (PRODUCT_BY_ID[l.typeId]) addCost(stall.id, l.typeId, l.qty, offer.get(l.typeId)!.price);
+      const o = offer.get(l.typeId)!;
+      if (PRODUCT_BY_ID[l.typeId]) addCost(stall.id, l.typeId, l.qty, lineSum.get(l.typeId)! / l.qty);
+      const dealQty = Math.min(l.qty, o.dealLeft ?? 0);
       db.prepare(
-        `INSERT INTO shop_purchases (player_id, store, day, type_id, qty) VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT (player_id, store, day, type_id) DO UPDATE SET qty = qty + excluded.qty`,
-      ).run(player.id, store.id, day, l.typeId, l.qty);
+        `INSERT INTO shop_purchases (player_id, store, day, type_id, qty, deal_qty) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (player_id, store, day, type_id) DO UPDATE SET qty = qty + excluded.qty, deal_qty = deal_qty + excluded.deal_qty`,
+      ).run(player.id, store.id, day, l.typeId, l.qty, dealQty);
+      // Felles lager: sjeldne varer og tilbudskvoten.
+      const sharedQty = rareIds.has(l.typeId) ? l.qty : 0;
+      if (sharedQty || dealQty)
+        db.prepare(
+          `INSERT INTO shop_shared (market_id, store, day, type_id, qty, deal_qty) VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT (market_id, store, day, type_id) DO UPDATE SET qty = qty + excluded.qty, deal_qty = deal_qty + excluded.deal_qty`,
+        ).run(market.id, store.id, day, l.typeId, sharedQty, dealQty);
     }
     if (trip) {
       startTrip(market, stall, trip, t);
@@ -3886,7 +4148,7 @@ function cookOne(market: MarketRow, s: StallRow, t: number, items: Item[], k: It
   const inside = itemsIn(items, 'pot_in', k.id);
   const counts = new Map<string, number>();
   for (const i of inside) counts.set(i.typeId, (counts.get(i.typeId) ?? 0) + 1);
-  let plan = cookPlan(counts, k.kettle!.level);
+  let plan = cookPlan(counts, k.kettle!.level, knownRecipes(items));
   if (!plan) return;
   const mod = moduleIn(items, k);
   // Termostaten skrur ned varmen før det svir seg (Fullutstyrt alltid).
@@ -3941,8 +4203,9 @@ function paperFor(market: MarketRow, player: PlayerRow, key: number, myStallId: 
       mine: myStallId === null ? null : (rows.find((r) => r.from_stall === myStallId)?.amount ?? 0),
     };
   }
-  const paper = buildPaper(market.id, key, yesterday, player.paper_read, nightThefts(market, time, myStallId), market.thief_caught === key);
+  const paper = buildPaper(market.id, key, yesterday, player.paper_read, nightThefts(market, time, myStallId), wantedFor(market, key));
   paper.praise = praiseFor(market, time, myStallId);
+  paper.dumps = dumpsFor(market, time, myStallId);
   return paper;
 }
 
@@ -4089,7 +4352,8 @@ export function cutWanted(player: PlayerRow, edition: number) {
     if (!holds(items, SCISSORS)) throw new GameError('Du har ingenting å klippe med.');
     const spot = findStorageSpot(items, streetOf(stall.id), WANTED);
     if (!spot) throw new GameError('Det er ikke plass til utklippet under disken.');
-    const thief = thiefOf(market.id, edition);
+    const w = wantedFor(market, edition);
+    const thief = { seed: w.seed, alias: w.alias };
     const res = q.insertItem.run(stall.id, WANTED, spot.place, spot.boxId, spot.x, spot.y, edition);
     q.setState.run(JSON.stringify(thief), Number(res.lastInsertRowid));
     q.setState.run(JSON.stringify({ cut: true, coupons: paper.cutCoupons ?? [] }), paper.id);
@@ -4170,6 +4434,7 @@ function regularAt(market: MarketRow, s: StallRow, t: number): RegularHere | nul
 function orderAsk(s: StallRow, charId: string, visitId: string, day: number): RegularHere['ask'] {
   const c = CHARACTER_BY_ID[charId];
   if (!c?.order) return undefined;
+  if (storyHolds(s.id, c.id, day)) return undefined; // historien er utsatt, eller figuren tar en pause etter en feil
   if (hash01('bestilling', visitId, s.id) >= c.order.chance) return undefined;
   const dueDay = orderDueDay(c, day);
   if (dueDay === null) return undefined;
@@ -4261,6 +4526,7 @@ export function deliverOrder(player: PlayerRow, visitId: string) {
       if (pk.deposit > 0) q.addCash.run(-pk.deposit, stall.id);
       const line = c.order.caught ?? c.order.sad;
       event(market, player.id, t, `🔍 ${c.name} så under etiketten: ${line}${pk.deposit ? ` Du betalte tilbake ${pk.deposit} kr i forskudd.` : ''} Omdømmet stuper.`);
+      storyFailed(market, stall, c.id, t);
       return { amount: 0, txId: 0, line, caught: true };
     }
     for (const i of given) q.deleteItem.run(i.id);
@@ -4270,6 +4536,7 @@ export function deliverOrder(player: PlayerRow, visitId: string) {
     q.setReputation.run(Math.max(0, Math.min(100, stall.reputation + ORDER_REP_DONE)), stall.id);
     db.prepare("UPDATE customer_orders SET status = 'done', done_at = ? WHERE id = ?").run(t, pk.orderId);
     event(market, player.id, t, `🎁 ${c.name} hentet ${what} og betalte ${rest} kr${pk.deposit ? ` (pluss ${pk.deposit} kr i forskudd)` : ''}. ${c.order.happy}`);
+    storyProgress(market, stall, c.id, { kind: 'levert' }, t);
     return { amount: rest, txId: Number(res.lastInsertRowid), line: c.order.happy, caught: false };
   });
 }
@@ -4295,6 +4562,8 @@ function expireOrders(market: MarketRow, t: number) {
       t,
       `😞 ${c?.name ?? 'Kunden'} kom for å hente ${orderWhat(o.product_id, o.qty)}, men den var ikke klar. ${c?.order?.sad ?? ''}${o.deposit ? ` Du betalte tilbake ${o.deposit} kr i forskudd.` : ''} Omdømmet faller.`,
     );
+    const st = one<StallRow>(db.prepare('SELECT * FROM stalls WHERE id = ?'), o.stall_id);
+    if (st && c) storyFailed(market, st, c.id, t);
   }
 }
 
@@ -4347,7 +4616,218 @@ export function sellToRegular(player: PlayerRow, visitId: string, productId: str
     const rep = regularReputation(price, amount) + (pct > 0 ? haggleReputation(pct, true) : 0);
     q.setReputation.run(Math.max(0, Math.min(100, stall.reputation + rep)), stall.id);
     event(market, player.id, t, `😊 ${c.name} kjøpte ${p.emoji} ${p.name.toLowerCase()} for ${amount} kr. ${c.lines?.yes ?? ''}`);
+    storyProgress(market, stall, c.id, { kind: 'kjop', productId: p.id, raus: amount < price }, t);
     return { sold: true, amount, txId: Number(res.lastInsertRowid), line: c.lines?.yes ?? '' };
+  });
+}
+
+// ---------- Konkurs ----------
+
+/**
+ * Er spilleren konkurs? Namsmannen har vært der (regning på namsmannstadiet), kassa er tom, og det finnes ingen
+ * varer igjen å selge eller ta beslag i. Da er det ingen vei tilbake: konkurssiden og «Start på nytt».
+ */
+function bankruptcyOf(player: PlayerRow, t: number): GameState['me']['bankrupt'] {
+  const stalls = all<StallRow>(q.stallsByOwner, player.id);
+  if (!stalls.length) return null;
+  let debt = 0;
+  for (const st of stalls) for (const b of all<BillRow>(q.billsForStall, st.id)) if (b.stage >= 3) debt += b.amount + b.surcharge;
+  if (debt <= 0) return null;
+  if (stalls.some((st) => st.cash > 0)) return null;
+  for (const st of stalls) {
+    const items = itemsOf(st.id);
+    if (items.some((i) => PRODUCT_BY_ID[i.typeId] && !isTrashed(items, i))) return null;
+  }
+  const ids = stalls.map((st) => st.id);
+  const marks = ids.map(() => '?').join(',');
+  const revenue =
+    one<{ n: number | null }>(db.prepare(`SELECT SUM(amount) AS n FROM transactions WHERE kind = 'npc_sale' AND from_stall IN (${marks})`), ...ids)?.n ?? 0;
+  const first = one<{ t: number | null }>(db.prepare(`SELECT MIN(game_time) AS t FROM transactions WHERE from_stall IN (${marks}) OR to_stall IN (${marks})`), ...ids, ...ids)?.t ?? t;
+  return { debt, revenue, days: Math.max(1, Math.ceil((t - first) / (24 * HOUR))) };
+}
+
+/** Start på nytt etter konkurs: bodene (og alt i dem) gis fra seg, så velger du en ny plass med startkapital. */
+export function restartAfterBankruptcy(player: PlayerRow) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  if (!bankruptcyOf(player, t)) throw new GameError('Du er ikke konkurs.');
+  return tx(() => {
+    const stalls = all<StallRow>(q.stallsByOwner, player.id);
+    for (const st of stalls) {
+      for (const table of ['inventory', 'counter', 'items', 'prices', 'costs', 'bills', 'dealer_sales', 'dealer_orders', 'customer_orders', 'leads_used', 'story_progress'])
+        db.prepare(`DELETE FROM ${table} WHERE stall_id = ?`).run(st.id);
+      db.prepare('DELETE FROM snoop_traces WHERE stall_id = ? OR snooper_stall_id = ?').run(st.id, st.id);
+      db.prepare('DELETE FROM stalls WHERE id = ?').run(st.id);
+    }
+    db.prepare('UPDATE players SET stall_at = NULL WHERE id = ?').run(player.id);
+    snoops.delete(player.id);
+    const names = stalls.map((st) => `«${st.name}»`).join(' og ');
+    event(market, null, t, `📉 ${names} er slått konkurs. Namsmannen fant ingenting mer å ta, og plassen${stalls.length > 1 ? 'ene' : ''} står ledig.`);
+    return { ok: true };
+  });
+}
+
+// ---------- Historiene (shared/stories.ts) ----------
+
+interface StoryRow {
+  stall_id: number;
+  story_id: string;
+  step: number;
+  count: number;
+  paused: number;
+  retry_day: number | null;
+  done_day: number | null;
+}
+
+function storyRow(stallId: number, storyId: string): StoryRow | undefined {
+  return one<StoryRow>(db.prepare('SELECT * FROM story_progress WHERE stall_id = ? AND story_id = ?'), stallId, storyId);
+}
+
+function saveStory(r: StoryRow) {
+  db.prepare(
+    'INSERT INTO story_progress (stall_id, story_id, step, count, paused, retry_day, done_day) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (stall_id, story_id) DO UPDATE SET step = excluded.step, count = excluded.count, paused = excluded.paused, retry_day = excluded.retry_day, done_day = excluded.done_day',
+  ).run(r.stall_id, r.story_id, r.step, r.count, r.paused, r.retry_day, r.done_day);
+}
+
+const freshStory = (stallId: number, storyId: string): StoryRow => ({ stall_id: stallId, story_id: storyId, step: 0, count: 0, paused: 0, retry_day: null, done_day: null });
+
+/** Har boden historiepynten (hengt opp, innpakket eller i en kartong)? Ikke i søpla. */
+function hasStoryDecor(s: StallRow, decorId: string): boolean {
+  if (Object.values(decorOf(s)).includes(decorId)) return true;
+  const items = itemsOf(s.id);
+  return items.some((i) => i.typeId === decorPackOf(decorId) && !isTrashed(items, i));
+}
+
+/** Har boden lappen med den hemmelige oppskriften (ikke i søpla)? */
+function hasRecipeNote(s: StallRow, recipeId: string): boolean {
+  const items = itemsOf(s.id);
+  return items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === recipeId && !isTrashed(items, i));
+}
+
+/** Har boden alt historien gir (pynten, og lappen hvis det følger en oppskrift med)? */
+const hasStoryReward = (s: StallRow, story: { reward: string; recipe?: string }) =>
+  hasStoryDecor(s, story.reward) && (!story.recipe || hasRecipeNote(s, story.recipe));
+
+/**
+ * Raden for historien, klar til bruk. Fullført, men pynten er kastet: historien starter på nytt (ny sjanse
+ * til å få den tilbake). Pausen etter en feil er over når dagen er kommet.
+ */
+function liveStory(s: StallRow, storyId: string, day: number): StoryRow {
+  const story = STORY_BY_ID[storyId];
+  const saved = storyRow(s.id, storyId);
+  const r = saved ?? freshStory(s.id, storyId);
+  if (!saved) return r;
+  let changed = false;
+  if (r.done_day !== null && !hasStoryReward(s, story)) {
+    Object.assign(r, { step: 0, count: 0, done_day: null, retry_day: null });
+    changed = true;
+  }
+  if (r.retry_day !== null && r.retry_day <= day) {
+    r.retry_day = null;
+    changed = true;
+  }
+  if (changed) saveStory(r);
+  return r;
+}
+
+/** Holder figuren igjen bestillinger fordi historien er utsatt eller i pause etter en feil? */
+function storyHolds(stallId: number, charId: string, day: number): boolean {
+  const story = STORY_OF_CHAR[charId];
+  if (!story) return false;
+  const r = storyRow(stallId, story.id);
+  if (!r || r.done_day !== null) return false;
+  return !!r.paused || (r.retry_day !== null && r.retry_day > day);
+}
+
+type StoryHit = { kind: 'kjop'; productId: string; raus: boolean } | { kind: 'levert' };
+
+/** Noe skjedde med figuren ved disken: teller det for trinnet du er på? Siste trinn gir historiepynten. */
+function storyProgress(market: MarketRow, s: StallRow, charId: string, hit: StoryHit, t: number) {
+  const story = STORY_OF_CHAR[charId];
+  if (!story) return;
+  const day = currentEdition(t).key;
+  const r = liveStory(s, story.id, day);
+  if (r.done_day !== null || r.paused || r.retry_day !== null) return;
+  const step = story.steps[r.step];
+  if (!step || step.on.kind !== hit.kind) return;
+  if (step.on.kind === 'kjop' && hit.kind === 'kjop') {
+    if (step.on.productId && step.on.productId !== hit.productId) return;
+    if (step.on.raus && !hit.raus) return;
+  }
+  r.count++;
+  if (r.count < stepNeed(step)) {
+    saveStory(r);
+    event(market, s.owner_id, t, `📖 «${story.title}»: ${r.count} av ${stepNeed(step)}.`);
+    return;
+  }
+  r.step++;
+  r.count = 0;
+  const c = CHARACTER_BY_ID[charId];
+  if (r.step < story.steps.length) {
+    saveStory(r);
+    event(market, s.owner_id, t, `📖 «${story.title}», trinn ${r.step} av ${story.steps.length} klart. ${c?.name ?? ''}: ${step.line}`);
+    return;
+  }
+  r.done_day = day;
+  saveStory(r);
+  const d = DECOR_BY_ID[story.reward];
+  // Bare det som mangler (spilles historien på nytt fordi noe ble kastet, får du ikke dobbelt).
+  const gaveDecor = !hasStoryDecor(s, d.id);
+  if (gaveDecor) q.insertItem.run(s.id, decorPackOf(d.id), 'ground', null, 0, 0, null); // innpakket ved boden
+  const recipe = story.recipe ? BOOK_BY_ID[story.recipe] : undefined;
+  const gaveRecipe = !!recipe && !hasRecipeNote(s, recipe.id);
+  if (gaveRecipe) {
+    const note = Number(q.insertItem.run(s.id, RECIPE_NOTE, 'ground', null, 0, 0, null).lastInsertRowid);
+    q.setState.run(JSON.stringify({ recipe: recipe!.id }), note);
+  }
+  const gifts = [
+    gaveDecor ? `${d.emoji} ${d.name} står innpakket ved boden` : '',
+    gaveRecipe ? `📜 den hemmelige oppskriften på «${recipe!.name}» ligger på en lapp ved boden` : '',
+  ].filter(Boolean);
+  event(
+    market,
+    s.owner_id,
+    t,
+    `🌟 Historien «${story.title}» er fullført! ${c?.name ?? ''}: ${story.finale} ${gifts.join(', og ')}. Ta ${gifts.length > 1 ? 'dem' : 'den'} inn under disken.${gaveDecor ? ' Trykk på pynten for å henge den opp.' : ''}`,
+  );
+}
+
+/** Noe gikk galt (bestillingen ikke klar, jukset avslørt): figuren tar en pause, så får du en ny sjanse. */
+function storyFailed(market: MarketRow, s: StallRow, charId: string, t: number) {
+  const story = STORY_OF_CHAR[charId];
+  if (!story) return;
+  const day = currentEdition(t).key;
+  const r = liveStory(s, story.id, day);
+  if (r.done_day !== null || r.paused) return;
+  r.count = 0;
+  r.retry_day = addDays(day, STORY_RETRY_DAYS);
+  saveStory(r);
+  const c = CHARACTER_BY_ID[charId];
+  event(market, s.owner_id, t, `📖 «${story.title}» står på vent. ${c?.name ?? ''}: ${story.retry} Du får en ny sjanse ${dayName(r.retry_day)}`);
+}
+
+/** Historiene til boden, slik telefonen viser dem. */
+function storiesOf(s: StallRow, day: number): StoryView[] {
+  return STORIES.map((story) => {
+    const started = !!storyRow(s.id, story.id);
+    const r = liveStory(s, story.id, day);
+    return { id: story.id, step: r.step, count: r.count, done: r.done_day !== null, paused: !!r.paused, retryDay: r.retry_day, started };
+  });
+}
+
+/** Utsett en historie (figuren spør ikke om bestillinger, trinnene teller ikke), eller ta den opp igjen. */
+export function pauseStory(player: PlayerRow, storyId: string, paused: boolean) {
+  const story = STORY_BY_ID[storyId];
+  if (!story) throw new GameError('Ukjent historie.');
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    const r = liveStory(stall, story.id, currentEdition(t).key);
+    if (r.done_day !== null) throw new GameError('Historien er alt fullført.');
+    r.paused = paused ? 1 : 0;
+    saveStory(r);
+    return { paused };
   });
 }
 
@@ -4368,7 +4848,7 @@ function giftHere(market: MarketRow, s: StallRow, t: number) {
 function productsHeld(items: Item[]): Map<string, number> {
   const have = new Map<string, number>();
   for (const i of items)
-    if (PRODUCT_BY_ID[i.typeId] && !isTrashed(items, i) && !isUndelivered(items, i)) have.set(i.typeId, (have.get(i.typeId) ?? 0) + 1);
+    if (PRODUCT_BY_ID[i.typeId] && !isDecorGood(i.typeId) && !isTrashed(items, i) && !isUndelivered(items, i)) have.set(i.typeId, (have.get(i.typeId) ?? 0) + 1);
   return have;
 }
 
@@ -4437,25 +4917,33 @@ export function relabel(player: PlayerRow, itemId: number): Label {
 }
 
 /**
- * Tips til politiet om en person ved boden. Riktig (dagens etterlyste tyv, mens han står der):
- * dusør, og tyven er tatt – han stjeler ingenting i natt. Feil: ryktet sprer seg, og det kommer
- * 40 % færre kunder i morgen (ganges for hvert feil tips).
+ * Tips til politiet om en person ved boden. Riktig (den etterlyste tyven, mens han står der): førstemann får
+ * dusøren (grunndusør + 100 kr per dag han har vært på frifot), og tyven er tatt – han stjeler ingenting i natt,
+ * og i morgen etterlyses en ny. Feil: ryktet sprer seg, og det kommer 40 % færre kunder i morgen (ganges for
+ * hvert feil tips). Tipser du om tyven etter at noen andre tok ham, er du bare for sent ute.
  */
 export function tipPolice(player: PlayerRow, seed: string): { correct: boolean; reward: number; alias: string } {
   const market = marketOf(player);
   const stall = myStall(player);
   const t = nowFor(market);
   const key = currentEdition(t).key;
-  const thief = thiefOf(market.id, key);
   return tx(() => {
+    const run = thiefRun(market, key);
+    const thief = thiefOf(market.id, run.start_day);
+    if (seed === thief.seed && run.caught_day === key) {
+      const by = run.caught_by ? one<StallRow>(q.stallById, run.caught_by) : undefined;
+      throw new GameError(`${thief.alias} er allerede tatt${by ? ` etter tips fra «${by.name}»` : ''}. Du kom for sent.`);
+    }
     const here = visitorsAt(market, stall, t).thief;
     if (here && seed === here && seed === thief.seed) {
+      const reward = wantedFor(market, key).reward;
+      db.prepare('UPDATE thieves SET caught_day = ?, caught_by = ? WHERE market_id = ? AND start_day = ?').run(key, stall.id, market.id, run.start_day);
       db.prepare('UPDATE markets SET thief_caught = ? WHERE id = ?').run(key, market.id);
-      q.addCash.run(THIEF_REWARD, stall.id);
-      q.insertTx.run(market.id, t, 'dusor', null, stall.id, null, null, THIEF_REWARD);
-      event(market, player.id, t, `🚔 Riktig! ${thief.alias} er tatt. Dusør: +${THIEF_REWARD} kr.`);
-      event(market, null, t, `🚔 ${thief.alias} er pågrepet etter tips fra «${stall.name}». Natta blir rolig.`);
-      return { correct: true, reward: THIEF_REWARD, alias: thief.alias };
+      q.addCash.run(reward, stall.id);
+      q.insertTx.run(market.id, t, 'dusor', null, stall.id, null, null, reward);
+      event(market, player.id, t, `🚔 Riktig! ${thief.alias} er tatt. Dusør: +${reward} kr.`);
+      event(market, null, t, `🚔 ${thief.alias} er pågrepet etter tips fra «${stall.name}», som får ${reward} kr i dusør. Natta blir rolig.`);
+      return { correct: true, reward, alias: thief.alias };
     }
     // Neste markedsdag: i dag hvis markedet ikke har åpnet ennå (tips om natta), ellers i morgen.
     const tomorrow = osloParts(t).hour < 8 ? dateKey(t) : dateKey(t + 24 * HOUR);
@@ -4954,19 +5442,21 @@ export function payAllBills(player: PlayerRow) {
  */
 function stealHour(market: MarketRow, t: number, hour: number, stalls: StallRow[]) {
   const key = currentEdition(t - HOUR / 2).key;
-  if (market.thief_caught === key) return;
+  if (thiefRun(market, key).caught_day === key) return;
   for (const s of stalls) {
     if (!thiefVisits(market.id, key, s.id).night.includes(hour)) continue;
     const prices = pricesOf(s.id);
     const stolen: string[] = [];
     const smashed: string[] = [];
     const alarm = alarmOn(market, s, t - HOUR / 2);
-    const chance = THIEF_STEAL_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1);
+    // Står eieren bak disken, får tyven mindre gjort.
+    const guard = servingOf(s) === 'open' ? THIEF_GUARD_FACTOR : 1;
+    const chance = THIEF_STEAL_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1) * guard;
     for (const i of itemsOf(s.id)) {
       if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
       // Pepperkakehuset er for stort å stikke av med: han knuser det, og bitene blir liggende (samme etikett).
       if (i.typeId === GINGER_HOUSE) {
-        if (Math.random() >= THIEF_SMASH_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1)) continue;
+        if (Math.random() >= THIEF_SMASH_CHANCE * (alarm ? ALARM_STEAL_FACTOR : 1) * guard) continue;
         q.deleteItem.run(i.id);
         const id = Number(q.insertItem.run(s.id, GINGER_RUBBLE, 'counter', null, i.x, i.y, null).lastInsertRowid);
         if (i.label) q.setLabel.run(i.label, id);
@@ -5294,15 +5784,14 @@ function processHour(market: MarketRow, hour: number) {
   // Tilsynsmannen: kommer ved timens start og sjekker bordet når han går (timen etter).
   inspections(market, t, parts.hour, passed, stalls);
   if (parts.hour === THEFT_FROM) {
-    const key = currentEdition(t).key;
-    const caught = one<MarketRow>(q.marketById, market.id)!.thief_caught === key;
+    const w = wantedFor(one<MarketRow>(q.marketById, market.id)!, currentEdition(t).key);
     event(
       market,
       null,
       t,
-      caught
-        ? `🚔 Klokka er ${THEFT_FROM}. ${thiefOf(market.id, key).alias} sitter på glattcella – det blir en rolig natt.`
-        : `🦝 Klokka er ${THEFT_FROM}. ${thiefOf(market.id, key).alias} er på ferde: varer som står ute på bordet, kan bli stjålet før kl. 0${THEFT_TO}.`,
+      w.caught
+        ? `🚔 Klokka er ${THEFT_FROM}. ${w.alias} sitter på glattcella – det blir en rolig natt.`
+        : `🦝 Klokka er ${THEFT_FROM}. ${w.alias} er på ferde: varer som står ute på bordet, kan bli stjålet før kl. 0${THEFT_TO}. Dusøren er nå ${w.reward} kr.`,
     );
   }
 
@@ -5350,7 +5839,10 @@ function processHour(market: MarketRow, hour: number) {
     let revenue = 0;
     let shrink = 0;
     const sold: string[] = [];
-    const modeFactor = serving === 'self' ? SELF_CROWD : SERVICE_BOOST;
+    // Selger i finlandshette: kundene blir skremt.
+    const modeFactor = (serving === 'self' ? SELF_CROWD : SERVICE_BOOST) * (serving === 'open' && wearsBalaclava(s.owner_id) ? BALACLAVA_CROWD : 1);
+    // Pynten på fronten (shared/decor.ts): flere kunder, mer salg og høyere forventet pris i kategoriene.
+    const boost = decorBoost(Object.values(decorOf(s)), { dark: isDarkHour(parts.hour), weather: weather.kind });
     // Åpen bod med (nesten) tomt bord: kundene blir skuffet.
     const shown = [...onCounter.get(s.id)!.values()].reduce((n, c) => n + c.home + c.store, 0);
     if (shown <= EMPTY_LIMIT && !night) {
@@ -5374,7 +5866,10 @@ function processHour(market: MarketRow, hour: number) {
 
     for (const [pid, groups] of onCounter.get(s.id)!) {
       const p = PRODUCT_BY_ID[pid];
-      if (isLuguber(pid) !== night) continue; // luguberte varer om natta, alt annet om dagen
+      // Luguberte varer om natta, alt annet om dagen. Kveldstrafikk: litt drikke og mat de første nattetimene.
+      const evening = night && !isLuguber(pid) && eveningSale(p.category, parts.hour);
+      if (isLuguber(pid) !== night && !evening) continue;
+      if (serving === 'self' && isDecorGood(pid)) continue; // pynt selges bare når noen står bak disken
       const price = priceOf(prices, pid);
       const total = groups.home + groups.store;
       for (const homemade of [true, false]) {
@@ -5382,17 +5877,17 @@ function processHour(market: MarketRow, hour: number) {
         if (count === 0) continue;
         // Samme humørmodell som ansiktene på skjermen (shared/mood.ts). «Hjemmelaget» og godt omdømme
         // gjør at kundene forventer mer; omdømmet styrer også hvor mange som kommer.
-        const expected = expectedPrice(p.basePrice, reputation, homemade);
+        const expected = Math.round(expectedPrice(p.basePrice, reputation, homemade) * decorPrice(boost, p.category));
         const priceFactor = priceAppeal(price / expected);
         const repFactor = reputationCrowd(reputation);
         const competition = 1 / Math.sqrt(sellers.get(pid) ?? 1);
         // Et fullt bord trekker litt flere kunder enn én ensom vare. Etterspørselen deles på etikettene.
         const display = Math.min(1.25, 0.85 + total * 0.04) * (count / total);
         const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
-        const hourCurve = night ? NIGHT_CURVE : curve;
+        const hourCurve = evening ? EVENING_SHARE : night ? nightCurve(parts.hour) : curve;
         const wx = weatherDemand(weather, p.category);
         const shy = p.divisive ? 1 : avoid; // fansen kommer uansett; de andre varene merker lukta
-        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx * sound * shy;
+        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
         const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count), homemade);
         if (units <= 0) continue;
 

@@ -129,6 +129,16 @@ db.exec(`CREATE TABLE IF NOT EXISTS shop_purchases (
   qty INTEGER NOT NULL,
   PRIMARY KEY (player_id, store, day, type_id)
 )`);
+// Felles lager i markedet: sjeldne varer (qty) og tilbudskvoten (deal_qty) per butikk og dag.
+db.exec(`CREATE TABLE IF NOT EXISTS shop_shared (
+  market_id INTEGER NOT NULL,
+  store TEXT NOT NULL,
+  day INTEGER NOT NULL,
+  type_id TEXT NOT NULL,
+  qty INTEGER NOT NULL DEFAULT 0,
+  deal_qty INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (market_id, store, day, type_id)
+)`);
 
 // Nye kolonner på eksisterende tabeller.
 const hasColumn = (table: string, col: string) =>
@@ -161,6 +171,11 @@ if (!hasColumn('stalls', 'tip_day')) {
   db.exec(`ALTER TABLE stalls ADD COLUMN tip_day INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE stalls ADD COLUMN tip_wrong INTEGER NOT NULL DEFAULT 0;`);
 }
+// Spilltida da spilleren leide sin første bod (gratis ekspress de første FREE_EXPRESS_HOURS). Eldre spillere: markedsstarten.
+if (!hasColumn('players', 'started_at')) {
+  db.exec('ALTER TABLE players ADD COLUMN started_at INTEGER');
+  db.exec('UPDATE players SET started_at = (SELECT game_start FROM markets WHERE markets.id = players.market_id) WHERE id IN (SELECT owner_id FROM stalls)');
+}
 // Pynten på bodfronten (shared/decor.ts): JSON { plass-id: pynt-id }.
 if (!hasColumn('stalls', 'decor')) db.exec("ALTER TABLE stalls ADD COLUMN decor TEXT NOT NULL DEFAULT '{}'");
 // Kunder du har solgt til selv (eller som sa nei), så samme kunde ikke kan brukes to ganger.
@@ -170,6 +185,14 @@ db.exec('CREATE TABLE IF NOT EXISTS dealer_sales (id INTEGER PRIMARY KEY, stall_
 db.exec('CREATE TABLE IF NOT EXISTS dealer_orders (id INTEGER PRIMARY KEY, stall_id INTEGER NOT NULL, day INTEGER NOT NULL, lines TEXT NOT NULL, ordered TEXT NOT NULL, deliver_at INTEGER NOT NULL, delivered INTEGER NOT NULL DEFAULT 0)');
 // Spor etter snoking under disken (steg 5). taken = gjenstandene som ble tatt [{id, typeId}].
 db.exec('CREATE TABLE IF NOT EXISTS snoop_traces (id INTEGER PRIMARY KEY, market_id INTEGER NOT NULL, stall_id INTEGER NOT NULL, snooper_stall_id INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, created_at INTEGER NOT NULL, taken TEXT NOT NULL DEFAULT \'[]\', resolved INTEGER NOT NULL DEFAULT 0)');
+// Hvor mange av qty som ble kjøpt til tilbudspris (felles tilbudskvote).
+if (!hasColumn('shop_purchases', 'deal_qty')) db.exec('ALTER TABLE shop_purchases ADD COLUMN deal_qty INTEGER NOT NULL DEFAULT 0');
+// Den etterlyste tyven (felles for markedet): samme person fra start_day til noen tar ham (caught_day, caught_by = boden).
+db.exec('CREATE TABLE IF NOT EXISTS thieves (market_id INTEGER NOT NULL, start_day INTEGER NOT NULL, caught_day INTEGER, caught_by INTEGER, PRIMARY KEY (market_id, start_day))');
+// Søppel lagt i andres søppelkasse (item_id er gjenstanden). reported_at = eieren tystet (avisa dagen etter, bot).
+db.exec('CREATE TABLE IF NOT EXISTS dumpings (id INTEGER PRIMARY KEY, market_id INTEGER NOT NULL, item_id INTEGER NOT NULL, type_id TEXT NOT NULL, by_stall INTEGER NOT NULL, by_name TEXT NOT NULL, to_stall INTEGER NOT NULL, at INTEGER NOT NULL, reported_at INTEGER)');
+// Historiene (shared/stories.ts): trinnet per bod. paused = utsatt av spilleren; retry_day = ny sjanse fra denne avisdagen etter en feil.
+db.exec('CREATE TABLE IF NOT EXISTS story_progress (stall_id INTEGER NOT NULL, story_id TEXT NOT NULL, step INTEGER NOT NULL DEFAULT 0, count INTEGER NOT NULL DEFAULT 0, paused INTEGER NOT NULL DEFAULT 0, retry_day INTEGER, done_day INTEGER, PRIMARY KEY (stall_id, story_id))');
 // Kundebestillinger (konseptet 12.4): figuren henter varen på due_day (ÅÅÅÅMMDD). status: open, done eller failed.
 db.exec("CREATE TABLE IF NOT EXISTS customer_orders (id INTEGER PRIMARY KEY, stall_id INTEGER NOT NULL, char_id TEXT NOT NULL, product_id TEXT NOT NULL, price INTEGER NOT NULL, ordered_day INTEGER NOT NULL, due_day INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'open', created_at INTEGER NOT NULL)");
 if (!hasColumn('customer_orders', 'qty')) {

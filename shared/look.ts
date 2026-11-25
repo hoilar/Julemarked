@@ -14,9 +14,11 @@ export interface Look {
   earrings?: string; // 'none' = uten øredobber
   shirt?: string;
   shirtColor?: string;
+  /** Finlandshetta fra Fyren (shared/balaclava.ts). Bare når du har en; serveren sjekker. */
+  balaclava?: boolean;
 }
 
-export type LookKey = keyof Look;
+export type LookKey = Exclude<keyof Look, 'balaclava'>;
 
 interface Choice {
   key: LookKey;
@@ -176,5 +178,6 @@ export function cleanLook(raw: unknown): Look {
     const v = (raw as Record<string, unknown>)[c.key];
     if (typeof v === 'string' && c.options.some((o) => o.id === v)) out[c.key] = v;
   }
+  if ((raw as Record<string, unknown>).balaclava === true) out.balaclava = true;
   return out;
 }
