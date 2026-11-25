@@ -12,11 +12,16 @@ ikke, siden heller ikke bodgrafikken har ekte pikselpalett. I stedet måles refe
 - Kontrollark og liste over motiver som fortsatt avviker mye. Legg til flere referanser, eller overstyr
   `korn`/`styrke` per fil, i `stilreferanser.json`.
 
-## Topplisten – bestilt (25.11.2026)
+## Topplisten – grafikk klar og lagt inn (25.11.2026)
 
 App-ikon, bakgrunn, banner, tre medaljer og en tom-illustrasjon til «Toppliste»-appen på telefonen:
-`GFX_assets/planlagte/toppliste/BESTILLING.md`. Appen virker allerede med emoji og CSS. Når filene er levert,
-settes `TOPLIST_ART = true` i `client/main.ts`.
+`GFX_assets/planlagte/toppliste/BESTILLING.md`. **Lagt inn i spillet:** `TOPLIST_ART = true` i `client/main.ts`
+(settes til false for å gå tilbake til emoji og CSS).
+
+Alle syv filer er levert i de bestilte mappene og størrelsene. UI-bildene bruker
+Julemarked-256 og telefonikonene som referanse. Bakgrunnen har myk kveldshimmel
+og pyntet trepall nederst. Originaler, prompter, oversikt og leveransebeskrivelse
+ligger i `GFX_assets/planlagte/toppliste/`. Leveransen vises i `vareliste.html`.
 
 ## Logoer til nettbutikkene – grafikk klar (24.11.2026)
 

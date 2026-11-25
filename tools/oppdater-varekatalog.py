@@ -268,6 +268,10 @@ def main():
         panel = panel.replace('<!-- BODFRONT-FILER -->', files)
         html = html.replace('<div class="table-wrap">', '<!-- BODFRONT-START -->'+panel+'<!-- BODFRONT-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- LOGOER-START -->[\s\S]*?<!-- LOGOER-SLUTT -->', '', html)
+    html = re.sub(r'<!-- TOPPLISTE-START -->[\s\S]*?<!-- TOPPLISTE-SLUTT -->', '', html)
+    if (ROOT/'GFX_assets/planlagte/toppliste/leveranse.json').exists():
+        panel = (ROOT/'tools/toppliste-panel.html').read_text(encoding='utf-8')
+        html = html.replace('<div class="table-wrap">', '<!-- TOPPLISTE-START -->'+panel+'<!-- TOPPLISTE-SLUTT --><div class="table-wrap">')
     logo_manifest = ROOT/'GFX_assets/planlagte/logoer/leveranse.json'
     if logo_manifest.exists():
         stores = json.loads(logo_manifest.read_text(encoding='utf-8'))['items']
