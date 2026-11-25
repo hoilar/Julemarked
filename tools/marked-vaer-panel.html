@@ -1,17 +1,25 @@
 <section id="marked-vaer-panel" aria-labelledby="marked-vaer-heading">
-  <p class="eyebrow">NY GRAFIKK KLAR / PLANLAGT VÆRSYSTEM</p>
   <h2 id="marked-vaer-heading">Torget i all slags vær</h2>
-  <p>Tre værtyper × fire tider på døgnet. Værbildene er klare; været er foreløpig ikke koblet inn i spillet.</p>
+  <p>Ny leveranse fra 24. november med tolv værbakgrunner uten fallende nedbør og 72 separate lagfiler.</p>
   <div class="weather-controls">
     <label>Tid på døgnet <select id="weather-time"><option value="morgen">Morgen · 07–10</option><option value="dag" selected>Dag · 10–15</option><option value="kveld">Kveld · 15–21</option><option value="natt">Natt · 21–07</option></select></label>
     <label>Vær <select id="weather-kind"><option value="sno">Snøvær</option><option value="sludd">Sludd</option><option value="storm">Storm</option></select></label>
   </div>
   <div class="weather-comparison">
-    <figure><img id="weather-original" src="client/public/art/bg/marked-dag.jpg" width="1672" height="941" alt="Dagens torgbakgrunn i dagslys"><figcaption>Eksisterende bakgrunn · i spillet</figcaption></figure>
-    <figure><a id="weather-link" href="client/public/art/bg/marked-sno-dag.jpg"><img id="weather-preview" src="client/public/art/bg/marked-sno-dag.jpg" width="1672" height="941" alt="Torget i snøvær på dagtid"></a><figcaption id="weather-caption">Snøvær · dag · grafikk klar</figcaption></figure>
+    <figure><img id="weather-original" src="client/public/art/bg/marked-sno-dag.jpg" width="1672" height="941" alt="Snøvær med innbakt nedbør på dagtid"><figcaption>Eksisterende værbilde med innbakt nedbør</figcaption></figure>
+    <figure><a id="weather-link" href="GFX_assets/planlagte/marked-vaer/uten-nedbor/marked-sno-dag.png"><img id="weather-preview" src="GFX_assets/planlagte/marked-vaer/uten-nedbor/marked-sno-dag.png" width="1672" height="941" alt="Snøvær uten fallende nedbør på dagtid"></a><figcaption id="weather-caption">Snøvær · dag · uten fallende nedbør</figcaption></figure>
   </div>
-  <p><a href="GFX_assets/planlagte/marked-vaer/oversikt.jpg">Se alle tolv værbildene sammen med originalene</a> · <a href="GRAFIKK.md">Grafikkføringen</a></p>
+  <p><a href="GFX_assets/planlagte/marked-vaer/uten-nedbor/oversikt.png">Alle tolv nye værbakgrunner</a> · <a href="GFX_assets/planlagte/himmel/LEVERANSE.md">Leveransebeskrivelsen</a></p>
+  <div class="weather-comparison">
+    <figure><a href="GFX_assets/planlagte/himmel/kontroll/skyer-oversikt.png"><img src="GFX_assets/planlagte/himmel/kontroll/skyer-oversikt.png" alt="Åtte klarværsskyer, seks gråværsskyer og stormlag" loading="lazy"></a><figcaption>Skyer og sømløse stormbånd</figcaption></figure>
+    <figure><a href="GFX_assets/planlagte/himmel/kontroll/lys-og-animasjon.png"><img src="GFX_assets/planlagte/himmel/kontroll/lys-og-animasjon.png" alt="Månefaser, stjerner, lysglød og røykark" loading="lazy"></a><figcaption>Måne, stjerner, lys og røyk</figcaption></figure>
+    <figure><a href="GFX_assets/planlagte/himmel/kontroll/lykter-for-og-etter.png"><img src="GFX_assets/planlagte/himmel/kontroll/lykter-for-og-etter.png" alt="De ni lyktene før og etter slukking" loading="lazy"></a><figcaption>Ni slukkede lyktehoder med plasseringsdata</figcaption></figure>
+    <figure><a href="GFX_assets/planlagte/himmel/kontroll/scener/natt-med-nye-lag.png"><img src="GFX_assets/planlagte/himmel/kontroll/scener/natt-med-nye-lag.png" alt="Nattprøve med nye himmellag" loading="lazy"></a><figcaption>Samlet nattprøve</figcaption></figure>
+    <figure><img class="weather-smoke" src="GFX_assets/planlagte/himmel/kontroll/royk-1.gif" alt="Første røykvariant animert" loading="lazy"><figcaption>Røykvariant 1</figcaption></figure>
+    <figure><img class="weather-smoke" src="GFX_assets/planlagte/himmel/kontroll/royk-2.gif" alt="Andre røykvariant animert" loading="lazy"><figcaption>Røykvariant 2</figcaption></figure>
+  </div>
+  <!-- HIMMELLAG-FILER -->
 </section>
 <style>
-#marked-vaer-panel{margin:24px 0;padding:24px;border:1px solid #475448;border-radius:12px;background:#1a2720}.weather-controls{display:flex;gap:18px;flex-wrap:wrap;margin:20px 0}.weather-controls label{display:grid;gap:6px;color:var(--muted);font-size:13px}.weather-comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px}.weather-comparison figure{margin:0;min-width:0}.weather-comparison img{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}.weather-comparison figcaption{margin-top:8px;color:var(--muted);font-size:13px}@media(max-width:720px){.weather-comparison{grid-template-columns:1fr}#marked-vaer-panel{padding:16px}}
+#marked-vaer-panel{margin:24px 0;padding:24px;border:1px solid #475448;border-radius:12px;background:#1a2720}.weather-controls{display:flex;gap:18px;flex-wrap:wrap;margin:20px 0}.weather-controls label{display:grid;gap:6px;color:var(--muted);font-size:13px}.weather-comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px}.weather-comparison figure{margin:0;min-width:0}.weather-comparison img{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}.weather-comparison figcaption{margin-top:8px;color:var(--muted);font-size:13px}.weather-comparison img.weather-smoke{width:auto;max-height:180px;margin:auto}@media(max-width:720px){.weather-comparison{grid-template-columns:1fr}#marked-vaer-panel{padding:16px}}
 </style>

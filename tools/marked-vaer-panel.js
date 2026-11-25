@@ -6,13 +6,13 @@
   function updateWeather() {
     const time = get('weather-time').value;
     const kind = get('weather-kind').value;
-    const path = 'client/public/art/bg/marked-'+kind+'-'+time+'.jpg';
-    get('weather-original').src = 'client/public/art/bg/marked-'+time+'.jpg';
-    get('weather-original').alt = 'Eksisterende torgbakgrunn · '+times[time];
+    const path = 'GFX_assets/planlagte/marked-vaer/uten-nedbor/marked-'+kind+'-'+time+'.png';
+    get('weather-original').src = 'client/public/art/bg/marked-'+kind+'-'+time+'.jpg';
+    get('weather-original').alt = kinds[kind]+' med innbakt nedbør · '+times[time];
     get('weather-preview').src = path;
     get('weather-preview').alt = kinds[kind]+' · '+times[time];
     get('weather-link').href = path;
-    get('weather-caption').textContent = kinds[kind]+' · '+times[time]+' · grafikk klar, ikke koblet inn i spillet';
+    get('weather-caption').textContent = kinds[kind]+' · '+times[time]+' · uten fallende nedbør';
   }
   get('weather-time').addEventListener('change',updateWeather);
   get('weather-kind').addEventListener('change',updateWeather);

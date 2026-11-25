@@ -1,5 +1,6 @@
 """Oppdater den frittstående HTML-katalogen fra varelisten og idémanifestet."""
 import json
+from html import escape
 import re
 from pathlib import Path
 
@@ -245,7 +246,43 @@ def main():
     html=re.sub(r'<!-- MARKEDVAER-START -->[\s\S]*?<!-- MARKEDVAER-SLUTT -->','',html)
     weatherpanel=ROOT/'tools/marked-vaer-panel.html'
     if weatherpanel.exists():
-        html=html.replace('<div class="table-wrap">','<!-- MARKEDVAER-START -->'+weatherpanel.read_text(encoding='utf-8')+'<!-- MARKEDVAER-SLUTT --><div class="table-wrap">')
+        panel = weatherpanel.read_text(encoding='utf-8')
+        sky_manifest = ROOT/'GFX_assets/planlagte/himmel/leveranse.json'
+        if sky_manifest.exists():
+            layers = json.loads(sky_manifest.read_text(encoding='utf-8'))['layers']
+            links = ''.join(f'<li><a href="GFX_assets/planlagte/himmel/{escape(layer["file"], quote=True)}">{escape(layer["file"])}</a> · {layer["size"][0]} × {layer["size"][1]} px</li>' for layer in layers)
+            panel = panel.replace('<!-- HIMMELLAG-FILER -->', f'<details><summary>Alle {len(layers)} lagfiler</summary><ul>{links}</ul></details>')
+        html=html.replace('<div class="table-wrap">','<!-- MARKEDVAER-START -->'+panel+'<!-- MARKEDVAER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- BODFRONT-START -->[\s\S]*?<!-- BODFRONT-SLUTT -->', '', html)
+    front_manifest = ROOT/'GFX_assets/planlagte/bodfront/leveranse.json'
+    if front_manifest.exists():
+        front_items = json.loads(front_manifest.read_text(encoding='utf-8'))['items']
+        panel = (ROOT/'tools/bodfront-panel.html').read_text(encoding='utf-8')
+        links = []
+        for item in front_items:
+            path = escape(item['path'], quote=True)
+            label = escape(item['id'])
+            width, height = item['size']
+            links.append(f'<li><a href="{path}">{label}</a> · {width} × {height} px</li>')
+        files = f'<details><summary>Alle {len(front_items)} filer</summary><ul>{"".join(links)}</ul></details>'
+        panel = panel.replace('<!-- BODFRONT-FILER -->', files)
+        html = html.replace('<div class="table-wrap">', '<!-- BODFRONT-START -->'+panel+'<!-- BODFRONT-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- LOGOER-START -->[\s\S]*?<!-- LOGOER-SLUTT -->', '', html)
+    logo_manifest = ROOT/'GFX_assets/planlagte/logoer/leveranse.json'
+    if logo_manifest.exists():
+        stores = json.loads(logo_manifest.read_text(encoding='utf-8'))['items']
+        cards = []
+        for store in stores:
+            name = escape(store['name'], quote=True)
+            brand = escape(store['brand'], quote=True)
+            logo = escape(store['logo']['path'], quote=True)
+            tab = escape(store['fane']['path'], quote=True)
+            samples = []
+            for css, label in [('catalog-logo-brand', 'Butikkfarge'), ('catalog-logo-dark', 'Mørk bakgrunn')]:
+                samples.append(f'<figure class="{css}"><a href="{logo}"><img class="catalog-wordmark" src="{logo}" width="480" height="120" alt="{name} · toppstripe" loading="lazy"></a><a href="{tab}"><img class="catalog-tab" src="{tab}" width="160" height="40" alt="{name} · fane" loading="lazy"></a><figcaption>{label}</figcaption></figure>')
+            cards.append(f'<article class="catalog-logo-card" aria-label="{name}" style="--logo-brand:{brand}">{"".join(samples)}</article>')
+        panel = (ROOT/'tools/logo-panel.html').read_text(encoding='utf-8').replace('<!-- LOGO-KORT -->', ''.join(cards))
+        html = html.replace('<div class="table-wrap">', '<!-- LOGOER-START -->'+panel+'<!-- LOGOER-SLUTT --><div class="table-wrap">')
     html=re.sub(r'Se grafikkoversikten: \d+ nye ideer',f'Se grafikkoversikten: {len(manifest)} nye ideer',html)
     if cratefile.exists():
         html=html.replace('Ny grafikk til kuponger, flatpakket papp og grenuttak:', 'Ny grafikk til kuponger, flatpakket papp, grenuttak og plastkasse:')
@@ -265,7 +302,6 @@ def main():
         html=html.replace('<div class="table-wrap">','<!-- KOKEPLATE-START -->'+panel+'<!-- KOKEPLATE-SLUTT --><div class="table-wrap">')
     html=re.sub(r'<!-- MENYIKONER-START -->[\s\S]*?<!-- MENYIKONER-SLUTT -->','',html)
     if menuicons:
-        from html import escape
         cards=''.join('<figure class="menu-icon-card"><img class="menu-icon-main" src="client/public/art/'+escape(i['path'])+'" alt="'+escape(i['label'])+'"><figcaption><h3>'+escape(i['label'])+'</h3><p>'+escape(i['description'])+'</p><div class="menu-icon-sizes"><img width="32" height="32" src="client/public/art/'+escape(i['path'])+'" alt="32 piksler"><img width="48" height="48" src="client/public/art/'+escape(i['path'])+'" alt="48 piksler"><span>32 / 48 px</span></div><a href="client/public/art/'+escape(i['path'])+'">'+escape(i['path'])+'</a></figcaption></figure>' for i in menuicons)
         panel='''<section class="menu-icon-panel" aria-labelledby="menu-icon-heading"><p class="eyebrow">I SPILLET / VAREMENYEN</p><h2 id="menu-icon-heading">Ikoner til varemenyen</h2><p>Tre handlingsikoner i pixelart, med transparent ytterkant og felles lerret på 128 × 128 px. Brukt i varemenyen i spillet fra 17.11.2026 (vist i 40 px).</p><div class="menu-icon-grid">'''+cards+'''</div><p><a href="GFX_assets/planlagte/varemeny-ikoner/oversikt.jpg">Se ikonoversikten</a> · <a href="GRAFIKK.md">Grafikkføringen</a></p></section>'''
         html=html.replace('<div class="table-wrap">','<!-- MENYIKONER-START -->'+panel+'<!-- MENYIKONER-SLUTT --><div class="table-wrap">')
