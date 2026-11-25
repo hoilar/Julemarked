@@ -1,13 +1,13 @@
-# Drift: Julemarkedet på julemarket.bagel.no
+# Drift: Julemarkedet på julemarked.bagel.no
 
-Serveren kjører på denne PC-en, og Cloudflare-tunnelen gjør den tilgjengelig på **https://julemarket.bagel.no**.
+Serveren kjører på denne PC-en, og Cloudflare-tunnelen gjør den tilgjengelig på **https://julemarked.bagel.no**.
 PC-en må stå på (og ikke gå i dvale) hele desember.
 
 ## Oppsett
 
 | Hva | Verdi |
 |---|---|
-| Adresse | https://julemarket.bagel.no |
+| Adresse | https://julemarked.bagel.no |
 | Invitasjonskode | `GLOGG` |
 | Marked | Julemarkedet |
 | Fart | 1× (ekte tid), fra det øyeblikket serveren startes første gang |
@@ -21,7 +21,7 @@ første gang**, så ikke start `npm run prod` før alt er klart.
 
 ## Tunnelen (satt opp 26.11.2026)
 
-- Tunnel `julemarked`, ID `556af4b0-1c29-4973-bbb7-3b9e4d4d780c`. DNS: `julemarket.bagel.no` → tunnelen.
+- Tunnel `julemarked`, ID `556af4b0-1c29-4973-bbb7-3b9e4d4d780c`. DNS: `julemarked.bagel.no` → tunnelen.
 - Konfigurasjonen ligger i en **egen fil**, `%USERPROFILE%\.cloudflared\julemarked.yml` (kopi i
   `tools/cloudflared-config.yml`), så de andre tunnelene på PC-en ikke påvirkes. Alt går til `localhost:8080`.
 - `cloudflared` er installert med winget (mappa er lagt i bruker-PATH; startskriptet finner den uansett).
@@ -31,7 +31,7 @@ Slik ble den laget, hvis den må lages på nytt:
 ```powershell
 cloudflared tunnel login                     # åpner nettleseren: velg bagel.no
 cloudflared tunnel create julemarked         # lager tunnelen og en .json med nøkkelen i %USERPROFILE%\.cloudflared
-cloudflared tunnel route dns julemarked julemarket.bagel.no
+cloudflared tunnel route dns julemarked julemarked.bagel.no
 ```
 
 ## Start

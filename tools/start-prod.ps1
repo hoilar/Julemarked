@@ -1,4 +1,4 @@
-# Starter produksjonsserveren og Cloudflare-tunnelen (julemarket.bagel.no) i hvert sitt vindu.
+# Starter produksjonsserveren og Cloudflare-tunnelen (julemarked.bagel.no) i hvert sitt vindu.
 # Bruk:  powershell -ExecutionPolicy Bypass -File tools\start-prod.ps1
 # Se DRIFT.md. Serveren bruker prod.env (port 8080, data/prod/julemarked.db).
 $root = Split-Path -Parent $PSScriptRoot
@@ -15,4 +15,4 @@ if (-not $cf) { throw 'Fant ikke cloudflared. Installer med: winget install Clou
 Write-Host 'Starter Cloudflare-tunnelen (julemarked) ...'
 Start-Process powershell -ArgumentList '-NoExit', '-Command', "& '$cf' tunnel --config '$env:USERPROFILE\.cloudflared\julemarked.yml' run julemarked" -WindowStyle Normal
 
-Write-Host 'Ferdig. Spillet er på https://julemarket.bagel.no når begge vinduene har startet.'
+Write-Host 'Ferdig. Spillet er på https://julemarked.bagel.no når begge vinduene har startet.'

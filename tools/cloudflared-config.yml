@@ -5,6 +5,6 @@ tunnel: 556af4b0-1c29-4973-bbb7-3b9e4d4d780c
 credentials-file: C:\Users\Lars\.cloudflared\556af4b0-1c29-4973-bbb7-3b9e4d4d780c.json
 
 ingress:
-  - hostname: julemarket.bagel.no
+  - hostname: julemarked.bagel.no
     service: http://localhost:8080
   - service: http_status:404
