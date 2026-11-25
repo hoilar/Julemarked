@@ -1921,3 +1921,30 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 #dev-panel .dev-body button:hover { background: #57402f; }
 #dev-panel .dev-body button.on { background: #b3262d; border-color: #e0767b; }
 #dev-panel input[type='time'] { padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(245, 217, 176, 0.3); background: #2a1d16; color: inherit; font: inherit; }
+
+/* Topplisten i telefonen. Grafikken (TOPLIST_ART i client/main.ts) legges oppå når den er levert. */
+.phone-screen.toppliste.art { background-image: url('/art/toppliste/bakgrunn.jpg'), url('/art/telefon/bakgrunn.jpg'); }
+.tl-banner { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 0 0 8px; text-align: center; }
+.tl-banner > span { padding: 4px 14px; border-radius: 6px; background: #a8262b; border: 2px solid #5c1316; color: #fff3d6; font: 700 1rem/1.2 'Pixelify Sans', system-ui, sans-serif; box-shadow: 0 2px 0 #5c1316; }
+.tl-banner img { width: 100%; max-width: 240px; image-rendering: pixelated; }
+.tl-banner small { font-size: 0.7rem; opacity: 0.85; }
+.tl-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; padding: 3px; border-radius: 99px; background: rgba(0, 0, 0, 0.25); }
+.tl-tabs button { padding: 4px 6px; border: 0; border-radius: 99px; background: none; box-shadow: none; color: #f3f5f9; font-size: 0.75rem; cursor: pointer; }
+.tl-tabs button.on { background: #ffd76a; color: #3a2a10; font-weight: 700; }
+.tl-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.tl-list li { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 6px 10px 6px 6px; border-radius: 12px; background: rgba(255, 255, 255, 0.14); font-size: 0.78rem; }
+.tl-list li.top-1 { background: rgba(255, 215, 106, 0.3); box-shadow: inset 0 0 0 1px rgba(255, 215, 106, 0.6); }
+.tl-list li.top-2 { background: rgba(214, 222, 235, 0.24); }
+.tl-list li.top-3 { background: rgba(214, 150, 92, 0.26); }
+.tl-list li.me { box-shadow: inset 3px 0 0 #7fe0a0; }
+.tl-rank { display: grid; place-items: center; width: 28px; height: 28px; font-weight: 700; font-variant-numeric: tabular-nums; opacity: 0.85; }
+.tl-rank.medal { font-size: 1.3rem; opacity: 1; }
+.tl-medal { width: 28px; height: 28px; image-rendering: pixelated; }
+.tl-who { display: flex; flex-direction: column; min-width: 0; }
+.tl-who b, .tl-who small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-who small { font-size: 0.68rem; opacity: 0.75; }
+.tl-sum { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tl-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; text-align: center; font-size: 0.8rem; }
+.tl-empty > span { font-size: 2rem; }
+.tl-empty img { width: 96px; image-rendering: pixelated; }
+.tl-empty p { margin: 0; opacity: 0.85; }

@@ -185,7 +185,7 @@ import {
   stripSockets,
   totalKw,
 } from '../shared/power.ts';
-import type { BillView, GameState, Item, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
+import type { BillView, GameState, Item, LeaderRow, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
 import type { SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
 import {
   BLANK_KEY,
@@ -2511,6 +2511,53 @@ export function buyFromStall(player: PlayerRow, sellerStallId: number, productId
 
 // ---------- Tilstand til klienten ----------
 
+// ---------- Topplisten ----------
+
+/** Transaksjonene som teller som omsetning for boden i from_stall. */
+const REVENUE_KINDS = ['npc_sale', 'p2p', 'dealer_sale'] as const;
+const LEADER_CACHE_MS = 10_000; // getState kalles ofte; topplisten regnes ut på nytt høyst hvert tiende sekund
+const leaderCache = new Map<number, { at: number; dayStart: number; rows: LeaderRow[] }>();
+
+/** Midnatt (norsk tid) i dag, i spilltid. */
+function dayStartOf(t: number): number {
+  const p = osloParts(t);
+  return t - (p.hour * HOUR + p.minute * 60_000) - (t % 60_000);
+}
+
+export function leaderboard(market: MarketRow, t: number): LeaderRow[] {
+  const dayStart = dayStartOf(t);
+  const hit = leaderCache.get(market.id);
+  if (hit && hit.dayStart === dayStart && Date.now() - hit.at < LEADER_CACHE_MS) return hit.rows;
+  const kinds = REVENUE_KINDS.map(() => '?').join(', ');
+  const sums = all<{ owner_id: number; today: number; total: number }>(
+    db.prepare(
+      `SELECT s.owner_id, SUM(CASE WHEN tx.game_time >= ? THEN tx.amount ELSE 0 END) AS today, SUM(tx.amount) AS total
+       FROM transactions tx JOIN stalls s ON s.id = tx.from_stall
+       WHERE tx.market_id = ? AND tx.kind IN (${kinds}) GROUP BY s.owner_id`,
+    ),
+    dayStart,
+    market.id,
+    ...REVENUE_KINDS,
+  );
+  const owners = all<{ id: number; name: string; stall: string }>(
+    db.prepare('SELECT p.id, p.name, s.name AS stall FROM players p JOIN stalls s ON s.owner_id = p.id WHERE p.market_id = ? ORDER BY s.id'),
+    market.id,
+  );
+  const rows = new Map<number, LeaderRow>();
+  for (const o of owners) {
+    const r = rows.get(o.id) ?? { playerId: o.id, name: o.name, stalls: [], today: 0, total: 0 };
+    r.stalls.push(o.stall);
+    rows.set(o.id, r);
+  }
+  for (const x of sums) {
+    const r = rows.get(x.owner_id);
+    if (r) Object.assign(r, { today: x.today ?? 0, total: x.total ?? 0 });
+  }
+  const list = [...rows.values()];
+  leaderCache.set(market.id, { at: Date.now(), dayStart, rows: list });
+  return list;
+}
+
 export function getState(player: PlayerRow): GameState {
   const market = marketOf(player);
   const t = nowFor(market);
@@ -2608,6 +2655,7 @@ export function getState(player: PlayerRow): GameState {
     ) as Record<number, Paper>,
     sales,
     market: { id: market.id, name: market.name },
+    leaderboard: leaderboard(market, t),
     slots,
     me: {
       playerId: player.id,

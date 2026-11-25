@@ -263,4 +263,15 @@ export interface GameState {
     car: { fuelPrice: number; fuelExpensive: boolean; trip: { store: string; until: number } | null };
   };
   events: GameEvent[];
+  /** Topplisten: alle spillere med bod, med omsetning i dag (spilldøgnet) og hele sesongen. Usortert. */
+  leaderboard: LeaderRow[];
+}
+
+/** Én rad i topplisten. Omsetning = salg til kunder og stamkunder, salg til andre boder og til Fyren. */
+export interface LeaderRow {
+  playerId: number;
+  name: string;
+  stalls: string[]; // navnene på bodene spilleren eier
+  today: number;
+  total: number;
 }

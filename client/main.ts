@@ -190,7 +190,9 @@ let modalBack: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: alltid nede i høyre hjørne (spillerens, ikke en ting i lageret), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' = 'home';
+// Topplisten: omsetning i dag eller hele sesongen.
+let toplistTab: 'today' | 'total' = 'today';
 let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
 let phonePos: { x: number; y: number } | null = null;
 let phoneDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
@@ -621,6 +623,57 @@ function ordersWidget(s: GameState): string {
   return `<div class="phone-kicker">Bestillinger</div><ul class="phone-orders">${rows.join('')}</ul>`;
 }
 
+// ---------- Topplisten (telefonen) ----------
+
+// Grafikken er bestilt i GFX_assets/planlagte/toppliste/BESTILLING.md. Sett til true når filene ligger i
+// client/public/art/toppliste/ og client/public/art/telefon/app-toppliste.png. Til da: emoji og CSS.
+const TOPLIST_ART = false;
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+/** Plassen din (1 = best) i dag eller totalt, eller null uten bod. Lik omsetning gir lik plass. */
+function myRank(s: GameState, tab: 'today' | 'total'): number | null {
+  const me = s.leaderboard.find((r) => r.playerId === s.me.playerId);
+  return me ? 1 + s.leaderboard.filter((r) => r[tab] > me[tab]).length : null;
+}
+
+function toplistPage(s: GameState): string {
+  const tab = toplistTab;
+  const rows = [...s.leaderboard].sort((a, b) => b[tab] - a[tab] || a.name.localeCompare(b.name, 'nb'));
+  const medal = (rank: number) =>
+    rank > 3
+      ? `<span class="tl-rank">${rank}</span>`
+      : TOPLIST_ART
+        ? `<img class="tl-medal" src="/art/toppliste/medalje-${rank}.png" alt="${rank}. plass" draggable="false">`
+        : `<span class="tl-rank medal">${MEDALS[rank - 1]}</span>`;
+  let rank = 0;
+  let prev = Number.NaN;
+  const items = rows
+    .map((r, i) => {
+      if (r[tab] !== prev) rank = i + 1; // lik omsetning, lik plass
+      prev = r[tab];
+      const me = r.playerId === s.me.playerId;
+      return `<li class="${me ? 'me' : ''} ${rank <= 3 && r[tab] > 0 ? `top top-${rank}` : ''}">
+        ${r[tab] > 0 ? medal(rank) : '<span class="tl-rank">–</span>'}
+        <span class="tl-who"><b>${esc(r.stalls.join(' · '))}</b><small>${esc(r.name)}${me ? ' (deg)' : ''}</small></span>
+        <span class="tl-sum">${kr(r[tab])}</span>
+      </li>`;
+    })
+    .join('');
+  const tabBtn = (t: 'today' | 'total', label: string) =>
+    `<button class="${tab === t ? 'on' : ''}" data-action="toplist-tab" data-tab="${t}" aria-pressed="${tab === t}">${label}</button>`;
+  const meRow = s.leaderboard.find((r) => r.playerId === s.me.playerId);
+  const mine = meRow && meRow[tab] > 0 ? myRank(s, tab) : null; // ingen plass før du har solgt noe
+  return `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>Toppliste</b></div>
+    <div class="tl-banner">${TOPLIST_ART ? '<img src="/art/toppliste/banner.png" alt="Toppliste" draggable="false">' : '<span>🏆 Toppliste</span>'}<small>Høyest omsetning på ${esc(s.market.name)}</small></div>
+    <div class="tl-tabs" role="group" aria-label="Periode">${tabBtn('today', 'I dag')}${tabBtn('total', 'Hele sesongen')}</div>
+    ${
+      rows.some((r) => r[tab] > 0)
+        ? `<ol class="tl-list">${items}</ol>`
+        : `<div class="tl-empty">${TOPLIST_ART ? '<img src="/art/toppliste/tom.png" alt="" draggable="false">' : '<span>🧾</span>'}<p>Ingen har solgt noe ${tab === 'today' ? 'i dag' : 'ennå'}. Første salg tar ledelsen!</p></div>`
+    }
+    ${mine ? `<p class="phone-empty">Du er nr. ${mine} av ${rows.length}. Omsetning er alt du selger: til kunder, stamkunder, andre boder og Fyren.</p>` : ''}`;
+}
+
 function phoneWindow(s: GameState): string {
   if (!phoneOpen) return '';
   const mine = myStall(s);
@@ -727,6 +780,8 @@ function phoneWindow(s: GameState): string {
       ? kommunen
       : phonePage === 'bank'
       ? bank
+      : phonePage === 'toppliste'
+      ? toplistPage(s)
       : phonePage === 'events'
       ? `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>Varsler</b></div>
          <ul class="phone-notes all">${list(60) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`
@@ -748,6 +803,7 @@ function phoneWindow(s: GameState): string {
            ${mine ? app('modal', appIcon('nettbutikk'), 'Nettbutikk', 'data-modal="wholesale"') : ''}
            ${home ? app('map', appIcon('markedet'), 'Markedet') : mine ? app('home', appIcon('minbod'), 'Min bod') : app('map', appIcon('markedet'), 'Markedet')}
            ${app('phone-page', appIcon('varsler'), 'Varsler', 'data-page="events"', unreadCount(s))}
+           ${app('phone-page', TOPLIST_ART ? appIcon('toppliste') : '🏆', 'Toppliste', 'data-page="toppliste"')}
            ${mine ? app('phone-page', appIcon('bank'), 'Bank', 'data-page="bank"', bills) : ''}
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
            ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length + s.me.dealer.sales.length) : ''}
@@ -759,7 +815,7 @@ function phoneWindow(s: GameState): string {
       <div class="phone-head" data-phone-head title="Dra for å flytte telefonen">
         <button class="phone-close" data-action="phone-close" aria-label="Legg fra deg telefonen">✕</button>
       </div>
-      <div class="phone-screen">
+      <div class="phone-screen ${phonePage === 'toppliste' ? `toppliste${TOPLIST_ART ? ' art' : ''}` : ''}">
         <div class="phone-status"><span class="phone-clock-small">${esc(time.replace(/^.* kl\. /, ''))}</span><span>📶 🔋</span></div>
         ${body}
       </div>
@@ -4550,7 +4606,12 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' ? p : 'home';
+  }
+  if (action === 'toplist-tab') {
+    toplistTab = el.dataset.tab === 'total' ? 'total' : 'today';
+    render();
+    return;
   }
   if (action === 'autogiro' && state) {
     const on = !state.me.autogiro;

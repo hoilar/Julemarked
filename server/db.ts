@@ -254,4 +254,6 @@ if (!hasColumn('stalls', 'clock_blink')) db.exec('ALTER TABLE stalls ADD COLUMN 
   }
 }
 db.exec('CREATE INDEX IF NOT EXISTS stalls_owner ON stalls (owner_id)');
+// Topplisten summerer omsetning per bod (se leaderboard i server/game.ts).
+db.exec('CREATE INDEX IF NOT EXISTS transactions_revenue ON transactions (market_id, kind, from_stall)');
 if (!hasColumn('players', 'stall_at')) db.exec('ALTER TABLE players ADD COLUMN stall_at INTEGER');

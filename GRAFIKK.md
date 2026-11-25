@@ -12,6 +12,12 @@ ikke, siden heller ikke bodgrafikken har ekte pikselpalett. I stedet måles refe
 - Kontrollark og liste over motiver som fortsatt avviker mye. Legg til flere referanser, eller overstyr
   `korn`/`styrke` per fil, i `stilreferanser.json`.
 
+## Topplisten – bestilt (25.11.2026)
+
+App-ikon, bakgrunn, banner, tre medaljer og en tom-illustrasjon til «Toppliste»-appen på telefonen:
+`GFX_assets/planlagte/toppliste/BESTILLING.md`. Appen virker allerede med emoji og CSS. Når filene er levert,
+settes `TOPLIST_ART = true` i `client/main.ts`.
+
 ## Logoer til nettbutikkene – grafikk klar (24.11.2026)
 
 Ordbilder til KIWI, REMA 1000, Extra, Klas Olsen, Dekoringen og Bilbutikken, til fanene og toppstripene i
