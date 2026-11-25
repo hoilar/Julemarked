@@ -4,9 +4,9 @@
 
 Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/`. ⚠️ = bildefila mangler (emoji brukes). ↓ = har nedskalert kopi i `art/spill/` (`py tools/spillbilder.py`).
 
-## Salgsvarer (70)
+## Salgsvarer (72)
 
-### 🎄 Dekor (10)
+### 🎄 Dekor (11)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -20,6 +20,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🟡 Gullkule | `gullkule` | 1×1 | 25 kr | 199 kr | 0.35 | Hjemmelaget | Lages: Dekormaskin (Gullkuler, 2 stk) | kan bare lages | `goods/gullkule.png` ↓ |
 | 🌟 Toppstjerne | `toppstjerne` | 1×2 | 55 kr | 249 kr | 0.3 | Hjemmelaget | Lages: Dekormaskin (Toppstjerne, 1 stk) | kan bare lages | `goods/toppstjerne.png` ↓ |
 | 🌺 Julestjerne i potte | `julestjerne` | 2×2 | 60 kr | 179 kr | 0.45 | Gartneriet | Nettbutikkene |  | `goods/julestjerne.png` ↓ |
+| 🌿 Julekrans | `julekrans` | 2×2 | 28 kr | 199 kr | 0.6 | Hjemmelaget | Lages: Dekormaskin (Julekrans, 1 stk) | kan bare lages | `goods/julekrans.png` ↓ |
 
 ### 🧤 Klær (7)
 
@@ -110,7 +111,7 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🍷 Kosegløgg | `koseglogg` | 2×2 | 24 kr | 69 kr | 1.6 | Hjemmelaget | Lages: Kokeplate med kjele (Kosegløgg, 6 stk) | kan bare lages | `goods/koseglogg.png` |
 | 🔥 Styrkegløgg | `styrkeglogg` | 2×2 | 40 kr | 89 kr | 1.3 | Hjemmelaget | Lages: Kokeplate med kjele (Styrkegløgg, 8 stk) | kan bare lages | `goods/styrkeglogg.png` |
 
-### 🕶️ Lugubert (6)
+### 🕶️ Lugubert (7)
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -118,10 +119,11 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 📀 Piratkopierte julefilmer | `piratfilm` | 1×1 | 15 kr | 79 kr | 0.9 | Kopisentralen | Fyren bak containeren | kan avsløres | `goods/piratfilm.png` ↓ |
 | 🧨 Kinaputter | `kinaputter` | 1×1 | 60 kr | 249 kr | 0.8 | Ukjent | Fyren bak containeren | kan avsløres | `goods/kinaputter.png` ↓ |
 | 🎄 Juletre uten kvittering | `juletre_tyv` | 2×3 | 120 kr | 599 kr | 0.25 | Torget | Fyren bak containeren | kan avsløres | `goods/juletre-tyv.png` ↓ |
+| 🎟️ «Billetter til julekonserten» | `konsertbillett` | 1×1 | 0 kr | 149 kr | 0.7 | Hjemmelaget | Lages: Penn + papirblokk (1 ark, 2 stk) | kan bare lages, kan avsløres | `goods/konsertbillett.png` ↓ |
 | 🫙 Hjemmebrent | `hjemmebrent` | 2×3 | 20 kr | 299 kr | 0.5 | Hjemmelaget | Lages: Kokeplate med kjele (Hjemmebrent, 2 stk) | kan bare lages, kan avsløres | `goods/hjemmebrent.png` ↓ |
 | 🧤 «Merkevotter» | `merkevotter` | 2×2 | 80 kr | 799 kr | 0.2 | Hjemmelaget | Lages: Strikkemaskin («Merkevotter», 1 stk) | kan bare lages, kan avsløres | `goods/merkevotter.png` ↓ |
 
-## Råvarer (28)
+## Råvarer (30)
 
 | Råvare | id | Str. | Pris | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -144,6 +146,8 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 | 🧃 Eplemost | `eplemost` | 2×2 | 15 kr | Nettbutikkene |  | `ravarer/eplemost.png` |
 | 🌭 Pølser (pakke) | `polser` | 2×2 | 35 kr | Nettbutikkene |  | `ravarer/polser.png` |
 | 🫓 Lomper (pakke) | `lomper` | 2×2 | 12 kr | Nettbutikkene |  | `ravarer/lomper.png` |
+| 🌲 Granbar | `granbar` | 2×2 | 9 kr | Nettbutikkene |  | `ravarer/granbar.png` |
+| 🌰 Kongler | `kongler` | 2×2 | 6 kr | Nettbutikkene |  | `ravarer/kongler.png` |
 | ☁️ Fyllvatt | `fyll` | 2×2 | 5 kr | Nettbutikkene |  | `ravarer/fyll.png` |
 | ✨ Bladgull | `bladgull` | 2×2 | 40 kr | Nettbutikkene, sjelden (15 % av dagene) | sjelden | `ravarer/bladgull.png` |
 | 🌼 Safran | `safran` | 2×2 | 35 kr | Nettbutikkene, sjelden (20 % av dagene) | sjelden | `ravarer/safran.png` |
@@ -168,8 +172,8 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🧻 Makuleringsmaskin | `makulator` | 249 kr | 0.2 | Makulerer aviser, lapper og plastposer, så de ikke havner i søpla. Plast kan bli mikroplast… | `makulator` (se Maskiner) | `maskiner/makulator.png` ↓<br>`maskiner/makulator-pa.png` ↓ |
 | 🥮 Bakemaskin | `bakemaskin` | 699 kr | 1.5 | Pepperkakestjerner, Pepperkakehjerter, Pose med pepperkaker, Krumkaker, Sirupssnipper, Lussekatter, Kransekake, Lefser, Sandkaker, Serinakaker, Berlinerkranser, Pepperkakehus – hjemmelaget | `bakemaskin` (se Maskiner) | `maskiner/bakemaskin.png` ↓<br>`maskiner/bakemaskin-pa.png` ↓ |
 | 🧶 Strikkemaskin | `strikkemaskin` | 899 kr | 0.4 | Votter, Nisselue, Julestrømpe, Skjerf, Pulsvarmere, Alpakkaskjerf, Strikket bamse, «Merkevotter» – hjemmelaget | `strikkemaskin` (se Maskiner) | `maskiner/strikkemaskin.png` ↓<br>`maskiner/strikkemaskin-pa.png` ↓ |
-| 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
-| 📻 Kassettspiller | `kassettspiller` | 199 kr | 0.05 | Spiller én kassett. Litt flere kunder, mest nær jul. Samme sang hele dagen blir slitsomt. Kan spise båndet | `kassettspiller` (se Maskiner) | `maskiner/kassettspiller-av.png`<br>`maskiner/kassettspiller-pa.png` |
+| 🎨 Dekormaskin | `dekormaskin` | 549 kr | 0.8 | Julekuler, Glasshjerter, Malte trenisser, Gullkuler, Toppstjerne, Snurrebasser, Tretog, Julekrans – hjemmelaget | `dekormaskin` (se Maskiner) | `maskiner/dekormaskin.png` ↓<br>`maskiner/dekormaskin-pa.png` ↓ |
+| 📻 Kassettspiller | `kassettspiller` | 199 kr | 0.05 | Spiller én kassett. Litt flere kunder, mest nær jul. Samme sang hele dagen blir slitsomt. Kan spise båndet | `kassettspiller` (se Maskiner) | `maskiner/kassettspiller-av.png` ↓<br>`maskiner/kassettspiller-pa.png` ↓ |
 | 🔌 Ladestasjon | `ladestasjon` | 299 kr | 2 | Lader fire batterier. Maskiner med batteri går videre når strømmen går | `ladestasjon` (se Maskiner) | `elektro/ladestasjon-0.png` ↓ |
 | 🚨 Alarmsystem | `alarm` | 349 kr | 0.1 | Skremmer bort nattetyven – men bare når det har strøm | henger på boden | `devices/ikon-alarm.png`<br>`devices/alarm-av.png`<br>`devices/alarm-pa.png` |
 | 🔊 Høyttaleranlegg | `hoyttaleranlegg` | 899 kr | 0.3 | Kobles til kassettspilleren: høy lyd og flere kunder. Naboene hører det også – og liker det ikke | henger på boden | `maskiner/hoyttaleranlegg-av.png` |
@@ -194,7 +198,7 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🚙 Toyota HighAss 2014 | `bil_highass` | 4×4 | 0 kr | rommer 12×6 · 60 min per tur, bensin | Bilbutikken | `biler/bil-highass.png`<br>`biler/bil-highass-apen.png` |
 | 🚘 ID Fuzz | `bil_fuzz` | 4×4 | 0 kr | rommer 12×6 · 50 min per tur, batteri | Bilbutikken | `biler/bil-fuzz.png`<br>`biler/bil-fuzz-apen.png` |
 
-## Verktøy (10)
+## Verktøy (38)
 
 | Ting | id | Str. | Pris | Info | Skaffes | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -208,8 +212,36 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🧼 Såpestykke | `sapestykke` | 2×2 | 19 kr | Myk, hvit såpe i en blokk. Lukter rent. | Klas Olsen | `verktoy/sapestykke.png` |
 | 🛠️ Nøkkelmaskin | `nokkelmaskin` | 3×3 | 900 kr | Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk. | Fyren bak containeren | `verktoy/nokkelmaskin.png` ↓ |
 | 🗝️ Blank nøkkel | `blank_nokkel` | 2×2 | 30 kr | Et nøkkelemne uten tagger. | Fyren bak containeren | `verktoy/blank-nokkel.png` |
+| ⭐ Halmstjerne på mønet | `pynt_stjerne_halm` | 2×2 | 149 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d01-stjerne-halm.png` |
+| 🌟 Messingstjerne på mønet | `pynt_stjerne_messing` | 2×2 | 299 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d02-stjerne-messing.png` |
+| 🔴 Julekuler i snor | `pynt_julekuler` | 1×2 | 69 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d03-julekuler.png` |
+| 🤎 Pepperkakehjerter | `pynt_pepperkakehjerter` | 1×2 | 49 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d04-pepperkakehjerter.png` |
+| ✨ Liten halmstjerne | `pynt_halmstjerne_1` | 1×2 | 39 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d05-halmstjerne-1.png` |
+| ✨ Halmstjerne, mønstret | `pynt_halmstjerne_2` | 1×2 | 39 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d05-halmstjerne-2.png` |
+| ❤️ Hjerte i tre | `pynt_trehjerte` | 1×2 | 59 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d06-trehjerte.png` |
+| 🌿 Misteltein | `pynt_misteltein` | 1×2 | 79 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d07-misteltein.png` |
+| 🔔 Små bjeller | `pynt_bjeller` | 1×2 | 59 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d08-bjeller.png` |
+| ⭐ Adventsstjerne | `pynt_adventsstjerne` | 2×2 | 199 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d09-adventsstjerne.png` |
+| 🎄 Grankrans på stolpen | `pynt_grankrans` | 2×2 | 149 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d10-grankrans.png` |
+| 🌾 Julenek | `pynt_julenek` | 1×3 | 99 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d11-julenek.png` |
+| 🌲 Granbar rundt stolpen (v.) | `pynt_granbar_venstre` | 1×3 | 89 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d12-granbar-venstre.png` |
+| 🌲 Granbar rundt stolpen (h.) | `pynt_granbar_hoyre` | 1×3 | 89 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d12-granbar-hoyre.png` |
+| 🎄 Stor krans med kongler | `pynt_krans_kongler` | 3×3 | 249 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d13-krans-kongler.png` |
+| 🌸 Rosemalt plate | `pynt_rosemalt_plate` | 3×2 | 229 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d14-rosemalt-plate.png` |
+| 🧶 Strikket løper | `pynt_strikket_loper` | 2×6 | 299 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d15-strikket-loper-pakke.png` |
+| 🇳🇴 Flagg i snor | `pynt_flagg` | 2×6 | 129 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d16-flagg-pakke.png` |
+| 🐑 Skinnfell | `pynt_skinnfell` | 2×2 | 199 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d17-skinnfell.png` |
+| 🎄 Juletre i bøtte | `pynt_juletre_botte` | 2×4 | 349 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d18-juletre-botte.png` |
+| 🐐 Julebukk i halm | `pynt_halmbukk` | 3×3 | 299 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d19-halmbukk.png` |
+| 🎅 Trenisse | `pynt_trenisse` | 2×3 | 279 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d20-trenisse.png` |
+| 🛷 Kjelke med pakker | `pynt_kjelke_pakker` | 3×2 | 329 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d21-kjelke-pakker.png` |
+| ⛄ Snømann | `pynt_snomann` | 2×3 | 199 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d22-snomann.png` |
+| 🥛 Melkespann med granbar | `pynt_melkespann` | 2×2 | 149 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d23-melkespann.png` |
+| 🔥 Utefakkel | `pynt_utefakkel` | 1×3 | 129 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d24-utefakkel.png` |
+| 🏮 Lykt på bakken | `pynt_bakkelykt` | 1×2 | 179 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d25-bakkelykt.png` |
+| 🪵 Vedstabel | `pynt_vedstabel` | 3×2 | 159 kr | Trykk på den for å henge den opp på fronten av boden. | Klas Olsen | `bodfront/d26-vedstabel.png` |
 
-## Elektrisk (8)
+## Elektrisk (14)
 
 | Ting | id | Str. | Pris | Info | Skaffes | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -220,6 +252,12 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 | 🎛️ Sikringsboks, forbikoblet | `sikringsboks_bypass` | 3×3 | 700 kr | maks 1 · Koblet forbi både sikringene og måleren. Gratis strøm, ingenting ryker – helt til Tilsynsmannen ser den. | Fyren bak containeren | `elektro/sikringsboks-bypass.png` ↓ |
 | 💳 Bipps-terminal | `bippsterminal` | 2×2 | 199 kr | maks 1 · Kundene betaler selv med kort når du ikke er der. Gir «Selvbetjent» på skiltet. 25 kr/dag i avtale. | Klas Olsen | `elektro/bippsterminal.png` |
 | 🔩 Skrusikring | `skrusikring` | 1×1 | 29 kr | Reservesikring. Ryker en sikring, skrur du inn en ny. | Klas Olsen | `elektro/skrusikring.png` ↓ |
+| 💡 Lyslenke, gulhvit | `apparat_lyslenke` | 2×1 | 249 kr | Trykk på den for å henge den opp på boden. | Klas Olsen | `devices/ikon-lys-standard.png` |
+| ⭐ Lyslenke, stjerner | `apparat_lyslenke_stjerner` | 2×1 | 299 kr | Trykk på den for å henge den opp på boden. | Klas Olsen | `devices/ikon-lys-stjerner.png` |
+| 🌈 Lyslenke, flerfarget | `apparat_lyslenke_farger` | 2×1 | 349 kr | Trykk på den for å henge den opp på boden. | Klas Olsen | `devices/ikon-lys-farger.png` |
+| 🚨 Alarmsystem | `apparat_alarm` | 1×1 | 349 kr | Trykk på den for å henge den opp på boden. | Klas Olsen | `devices/ikon-alarm.png` |
+| 🔊 Høyttaleranlegg | `apparat_hoyttaleranlegg` | 2×2 | 899 kr | Trykk på den for å henge den opp på boden. | Klas Olsen | `maskiner/hoyttaleranlegg-av.png` |
+| 🕰️ Digitalklokke | `apparat_klokke` | 1×1 | 149 kr | Trykk på den for å henge den opp på boden. | Klas Olsen | `devices/ikon-klokke.png` |
 | 💥 Røket sikring | `sikring_roket` | 1×1 | 0 kr | Svidd. Hører hjemme i søpla. | Klas Olsen | `elektro/sikring-roket.png` ↓ |
 
 ## Batterier (3)
@@ -260,22 +298,22 @@ Kjøpes hos Klas Olsen og trekker strøm fra grenuttaket.
 
 | Ting | id | Str. | Pris | Info | Skaffes | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
-| 📻 Kassettspiller | `kassettspiller` | 2×1 | 199 kr | inn 1×1 · 0.05 kW | Klas Olsen | `maskiner/kassettspiller-av.png`<br>`maskiner/kassettspiller-pa.png` |
+| 📻 Kassettspiller | `kassettspiller` | 2×1 | 199 kr | inn 1×1 · 0.05 kW | Klas Olsen | `maskiner/kassettspiller-av.png` ↓<br>`maskiner/kassettspiller-pa.png` ↓ |
 
 ## Kassetter (10)
 
 | Ting | id | Str. | Pris | Info | Skaffes | Bilde |
 | --- | --- | --- | --- | --- | --- | --- |
-| 📼 Kassett: Glade jul | `kassett_glade_jul` | 1×1 | 79 kr | «Glade jul» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: Jingle Bells | `kassett_jingle_bells` | 1×1 | 79 kr | «Jingle Bells» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: O Tannenbaum | `kassett_o_tannenbaum` | 1×1 | 79 kr | «O Tannenbaum» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: Deck the Halls | `kassett_deck_the_halls` | 1×1 | 79 kr | «Deck the Halls» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: Å kom nå med lovsang | `kassett_a_kom_na_med_lovsang` | 1×1 | 79 kr | «Å kom nå med lovsang» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: Joy to the World | `kassett_joy_to_the_world` | 1×1 | 79 kr | «Joy to the World» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: Hark! The Herald Angels Sing | `kassett_hark_the_herald_angels_sing` | 1×1 | 79 kr | «Hark! The Herald Angels Sing» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 📼 Kassett: God Rest Ye Merry, Gentlemen | `kassett_god_rest_ye_merry_gentlemen` | 1×1 | 79 kr | «God Rest Ye Merry, Gentlemen» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` |
-| 🏴‍☠️ Piratkassett | `piratkassett` | 1×1 | 25 kr | Julemusikk tatt opp fra radioen. Skurrete, spiser båndet, og Tilsynsmannen liker den ikke. | Fyren bak containeren | `goods/piratkassett.png` |
-| 🍝 Kassett med båndsalat | `bandsalat` | 1×1 | 0 kr | Kassettspilleren spiste båndet. Den spiller ikke mer. | Klas Olsen | `goods/kassett.png` |
+| 📼 Kassett: Glade jul | `kassett_glade_jul` | 1×1 | 79 kr | «Glade jul» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: Jingle Bells | `kassett_jingle_bells` | 1×1 | 79 kr | «Jingle Bells» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: O Tannenbaum | `kassett_o_tannenbaum` | 1×1 | 79 kr | «O Tannenbaum» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: Deck the Halls | `kassett_deck_the_halls` | 1×1 | 79 kr | «Deck the Halls» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: Å kom nå med lovsang | `kassett_a_kom_na_med_lovsang` | 1×1 | 79 kr | «Å kom nå med lovsang» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: Joy to the World | `kassett_joy_to_the_world` | 1×1 | 79 kr | «Joy to the World» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: Hark! The Herald Angels Sing | `kassett_hark_the_herald_angels_sing` | 1×1 | 79 kr | «Hark! The Herald Angels Sing» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 📼 Kassett: God Rest Ye Merry, Gentlemen | `kassett_god_rest_ye_merry_gentlemen` | 1×1 | 79 kr | «God Rest Ye Merry, Gentlemen» på kassett. Sett den i kassettspilleren. | Klas Olsen | `goods/kassett.png` ↓ |
+| 🏴‍☠️ Piratkassett | `piratkassett` | 1×1 | 25 kr | Julemusikk tatt opp fra radioen. Skurrete, spiser båndet, og Tilsynsmannen liker den ikke. | Fyren bak containeren | `goods/piratkassett.png` ↓ |
+| 🍝 Kassett med båndsalat | `bandsalat` | 1×1 | 0 kr | Kassettspilleren spiste båndet. Den spiller ikke mer. | Klas Olsen | `goods/kassett.png` ↓ |
 
 ## Kjele (1)
 

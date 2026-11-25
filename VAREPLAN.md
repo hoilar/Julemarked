@@ -393,6 +393,20 @@ Varer som gir ny mekanikk, ikke bare flere rader i tabellen. Favorittene er merk
 
 Nye råvarer disse trenger: ris, melk, olje, egg, brunost, granbar, kongler, anis. Nye maskiner: frityrgryte og vaffeljern.
 
+**✅ Bygd fra før:** risengrynsgrøt (kjele: 1 ris + 2 melk, styrke 2, gir 3), julekalender, lutefisk (★) og anisdrops.
+
+**✅ Bygd 25.11.2026:**
+
+- **Delte meninger** (`divisive` i `shared/products.ts`) på lutefisk og anisdrops. Mens varen står på bordet,
+  kommer færre kunder til resten av varene (lutefisk −12 %, anisdrops −3 %). Hver time er det en sjanse for at noen
+  klager høylytt (omdømme −1 / −0,5, offentlig hendelse), og hver solgte enhet har en sjanse for at en fan skryter
+  (omdømme +1 / +0,5). Varen selv selges til fansen som før.
+- **«Billetter til julekonserten»** (`konsertbillett`, 1×1, kundepris 149 kr): trykk på papirblokka og velg
+  «🎟️ Tegn 2 billetter». Krever penn og bruker ett ark. Luguber vare: selges bare om natta, Tilsynsmannen
+  beslaglegger dem, og kundene sladrer av og til (6 %, omdømme −4).
+- **Julekrans** (2×2, kundepris 199 kr): dekormaskinen, 2 granbar + 1 kongler, 2 timer. Granbar (9 kr) og
+  kongler (6 kr) selges i dagligvarebutikkene. Å hente granbar i skogen med bilen eller «låne» fra torget er ikke bygd.
+
 ### Syv slag (trengs for kundebestillinger, se konseptet 12.4)
 
 En ekte kakeboks med «syv slag» krever sju ulike småkaker. I dag finnes pepperkaker (stjerne og hjerte), krumkaker og sirupssnipper. Det mangler minst fire:

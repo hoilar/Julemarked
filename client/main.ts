@@ -3699,7 +3699,11 @@ function itemView(s: GameState, it: Item): string {
           <label>Skriv på et ark <select name="kind"><option value="text">Notat</option><option value="code">Kodelapp (fire siffer)</option></select></label>
           <input name="text" maxlength="${NOTE_MAX}" placeholder="Hva skal stå på lappen?" required>
           <button ${hasTool(s, PEN) ? '' : 'disabled title="Du trenger en penn"'}>✏️ Skriv lapp</button>
-        </form>`
+        </form>
+        <div class="ticket-write">
+          <button class="ghost" data-action="write-tickets" ${hasTool(s, PEN) ? '' : 'disabled title="Du trenger en penn"'}>🎟️ Tegn 2 «billetter til julekonserten» (1 ark)</button>
+          <small class="muted">🕶️ Luguber vare: selges bare om natta, og ${esc(INSPECTOR.name)} beslaglegger dem.</small>
+        </div>`
       : '';
   return itemCard(
     t,
@@ -3879,6 +3883,7 @@ function modalView(s: GameState): string {
       `<h2>${esc(p.name)}</h2>
       <p class="cat-pill">${categoryLabel(p.category)}</p>
       ${isLuguber(p.id) ? `<p class="liquor-note warn">🕶️ Lugubert: selges bare om natta (kl. 21–08). ${esc(INSPECTOR.name)} leter under disken – en låst safe ser han ikke inn i.</p>` : ''}
+      ${p.divisive ? `<p class="liquor-note warn">😬 Delte meninger: noen elsker den og skryter av boden, andre klager. Mens den står på bordet, kommer ${Math.round(p.divisive.avoid * 100)} % færre kunder til resten av varene.</p>` : ''}
       ${isAlcohol(p.id) ? `<p class="liquor-note ${s.me.license.has ? '' : 'warn'}">${s.me.license.has ? '🏛️ Du har skjenkebevilling.' : '⚠️ Du har ikke skjenkebevilling – kjøp den i Kommunen-appen.'} Alkohol er bare lov å selge etter kl. ${LIQUOR_FROM_HOUR}.</p>` : ''}
       <dl class="item-stats">
         <dt>På bordet</dt><dd>${inv.onCounter}</dd>
@@ -4632,6 +4637,10 @@ app.addEventListener('click', (e) => {
   if (action === 'buy-car') {
     const c = CAR_BY_ID[el.dataset.car ?? ''];
     if (c && confirm(`Kjøpe ${c.name}? Den gamle bilen tas i innbytte.`)) void act('/api/car/buy', { car: c.id }, `🚗 ${c.name} står parkert ved boden.`);
+    return;
+  }
+  if (action === 'write-tickets') {
+    void act('/api/note/tickets', {}, '🎟️ To «billetter» ligger under disken. Selg dem om natta.');
     return;
   }
   if (action === 'phone-page') {

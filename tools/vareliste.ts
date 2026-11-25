@@ -38,6 +38,7 @@ const made = new Map<string, string[]>();
 const addMade = (id: string, how: string) => made.set(id, [...(made.get(id) ?? []), how]);
 for (const r of RECIPES) for (const [id, n] of Object.entries(r.outputs)) addMade(id, `${KETTLE.name} (${r.name}, ${n} stk)`);
 for (const m of MAKERS) for (const p of m.programs) for (const [id, n] of Object.entries(p.outputs)) addMade(id, `${m.name} (${p.name}, ${n} stk)`);
+addMade('konsertbillett', 'Penn + papirblokk (1 ark, 2 stk)'); // writeTickets i server/game.ts
 const fromDealer = new Set(DEALER_GOODS.map((g) => g.typeId));
 /** Maskiner (kjelen, strikkemaskinen …) er gjenstander, men prisen står på apparatet hos Klas Olsen. */
 const deviceOf = new Map(DEVICES.filter((d) => d.item).map((d) => [d.item!, d]));

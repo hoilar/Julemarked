@@ -253,6 +253,9 @@ import { ORDER_REP_CAUGHT, ORDER_REP_DONE, ORDER_REP_FAILED, catchChance, orderH
 
 export class GameError extends Error {}
 
+/** En tilfeldig linje (hendelsestekster). */
+const pickLine = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
+
 // ---------- Kartoppsett ----------
 
 type SlotDef = Omit<MarketSlot, 'stall'>;
@@ -1695,6 +1698,35 @@ export function writeNote(player: PlayerRow, kind: 'code' | 'text', text: string
     if (left > 0) q.setState.run(JSON.stringify({ sheets: left }), pad.id);
     else q.deleteItem.run(pad.id);
     event(market, player.id, nowFor(market), `✏️ Du skrev ${kind === 'code' ? 'en kodelapp' : 'et notat'}.${left > 0 ? '' : ' Papirblokka er tom.'}`);
+  });
+}
+
+/** Falske billetter til julekonserten: ett ark fra papirblokka og penn gir TICKETS_PER_SHEET billetter (luguber vare). */
+const TICKET = 'konsertbillett';
+export const TICKETS_PER_SHEET = 2;
+export function writeTickets(player: PlayerRow) {
+  const market = marketOf(player);
+  const stall = myStall(player);
+  tx(() => {
+    const items = itemsOf(stall.id);
+    if (!holds(items, PEN)) throw new GameError('Du har ingenting å skrive med.');
+    const pad = items.find((i) => i.typeId === PAD && !isTrashed(items, i) && !isUndelivered(items, i) && (i.sheets ?? 0) > 0);
+    if (!pad) throw new GameError('Du har ikke noe papir å skrive på.');
+    for (let n = 0; n < TICKETS_PER_SHEET; n++) {
+      const spot = findStorageSpot(items, streetOf(stall.id), TICKET);
+      if (!spot) throw new GameError('Det er ikke plass til billettene under disken.');
+      insertItem(stall.id, items, TICKET, spot);
+      q.setLabel.run('home', items[items.length - 1].id);
+    }
+    const left = (pad.sheets ?? 1) - 1;
+    if (left > 0) q.setState.run(JSON.stringify({ sheets: left }), pad.id);
+    else q.deleteItem.run(pad.id);
+    event(
+      market,
+      player.id,
+      nowFor(market),
+      `🎟️ Du tegnet ${TICKETS_PER_SHEET} «billetter til julekonserten». De selges bare om natta, og ${INSPECTOR.name} ser etter dem.${left > 0 ? '' : ' Papirblokka er tom.'}`,
+    );
   });
 }
 
@@ -5328,6 +5360,17 @@ function processHour(market: MarketRow, hour: number) {
     }
     // Feil tips til politiet i går: ryktet holder folk unna i dag.
     const rumour = s.tip_day === today ? tipPenalty(s.tip_wrong) : 1;
+    // Delte meninger (lutefisk, anisdrops): noen går en omvei rundt boden, og noen klager høylytt.
+    let avoid = 1;
+    for (const pid of onCounter.get(s.id)!.keys()) {
+      const d = PRODUCT_BY_ID[pid]?.divisive;
+      if (!d || isLuguber(pid) !== night) continue;
+      avoid *= 1 - d.avoid;
+      if (Math.random() < d.hateChance) {
+        reputation -= d.rep;
+        event(market, null, t, `${PRODUCT_BY_ID[pid].emoji} ${pickLine(d.hate).replace('{stall}', `«${s.name}»`)}`);
+      }
+    }
 
     for (const [pid, groups] of onCounter.get(s.id)!) {
       const p = PRODUCT_BY_ID[pid];
@@ -5348,7 +5391,8 @@ function processHour(market: MarketRow, hour: number) {
         const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
         const hourCurve = night ? NIGHT_CURVE : curve;
         const wx = weatherDemand(weather, p.category);
-        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx * sound;
+        const shy = p.divisive ? 1 : avoid; // fansen kommer uansett; de andre varene merker lukta
+        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx * sound * shy;
         const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count), homemade);
         if (units <= 0) continue;
 
@@ -5368,6 +5412,16 @@ function processHour(market: MarketRow, hour: number) {
 
         if (price <= expected * 1.15) reputation += 0.3;
         if (price > expected * 1.6) reputation -= 0.4;
+
+        if (p.divisive) {
+          for (let i = 0; i < units; i++) {
+            if (Math.random() < p.divisive.loveChance) {
+              reputation += p.divisive.rep;
+              event(market, null, t, `${p.emoji} ${pickLine(p.divisive.love).replace('{stall}', `«${s.name}»`)}`);
+              break;
+            }
+          }
+        }
 
         if (p.shady) {
           for (let i = 0; i < units; i++) {

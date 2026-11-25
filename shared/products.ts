@@ -25,6 +25,23 @@ export interface Product {
   brand: string; // produsenten på etiketten når varen er kjøpt i butikk
   category: Category; // se shared/categories.ts
   shady?: { exposeChance: number; reputationHit: number; lines: string[] };
+  divisive?: Divisive;
+}
+
+/**
+ * Delte meninger (anisdrops, lutefisk): noen elsker varen, andre tåler den ikke.
+ * Mens den står på bordet (og boden er åpen), kommer `avoid` færre kunder til resten av varene,
+ * og hver time er det `hateChance` for at noen klager høylytt (omdømme −rep, offentlig hendelse).
+ * Hver solgte enhet har `loveChance` for at en fan skryter (omdømme +rep, offentlig hendelse).
+ * Linjene bruker {stall} for bodnavnet.
+ */
+export interface Divisive {
+  avoid: number;
+  hateChance: number;
+  loveChance: number;
+  rep: number;
+  hate: string[];
+  love: string[];
 }
 
 /**
@@ -367,6 +384,8 @@ export const INGREDIENTS: Ingredient[] = [
   { kind: 'ingredient', id: 'eplemost', name: 'Eplemost', emoji: '🧃', image: '/art/ravarer/eplemost.png', price: 15, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'polser', name: 'Pølser (pakke)', emoji: '🌭', image: '/art/ravarer/polser.png', price: 35, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'lomper', name: 'Lomper (pakke)', emoji: '🫓', image: '/art/ravarer/lomper.png', price: 12, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'granbar', name: 'Granbar', emoji: '🌲', image: '/art/ravarer/granbar.png', price: 9, size: { w: 2, h: 2 } },
+  { kind: 'ingredient', id: 'kongler', name: 'Kongler', emoji: '🌰', image: '/art/ravarer/kongler.png', price: 6, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'fyll', name: 'Fyllvatt', emoji: '☁️', image: '/art/ravarer/fyll.png', price: 5, size: { w: 2, h: 2 } },
   { kind: 'ingredient', id: 'bladgull', name: 'Bladgull', emoji: '✨', image: '/art/ravarer/bladgull.png', price: 40, size: { w: 2, h: 2 }, rare: 0.15 },
   { kind: 'ingredient', id: 'safran', name: 'Safran', emoji: '🌼', image: '/art/ravarer/safran.png', price: 35, size: { w: 2, h: 2 }, rare: 0.2 },
@@ -509,6 +528,7 @@ export const MAKERS: Maker[] = [
       { id: 'toppstjerne', name: 'Toppstjerne', inputs: { glassemne: 1, bladgull: 1, maling: 1 }, outputs: { toppstjerne: 1 }, hours: 2 },
       { id: 'snurrebasser', name: 'Snurrebasser', inputs: { treemne: 1, maling: 1 }, outputs: { snurrebass: 3 }, hours: 1 },
       { id: 'tretog', name: 'Tretog', inputs: { treemne: 3, maling: 1 }, outputs: { tretog: 1 }, hours: 3 },
+      { id: 'julekrans', name: 'Julekrans', inputs: { granbar: 2, kongler: 1 }, outputs: { julekrans: 1 }, hours: 2 },
     ],
   },
 ];
@@ -891,7 +911,17 @@ export const PRODUCTS: Product[] = [
   vare('fudge', 'Fudge', '🟫', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'godteri', crafted),
   vare('polkagris', 'Polkagrisstang', '🍭', 1, 2, 9, 35, 1.4, 'Søtt & Co', 'godteri'),
   vare('kandisert_eple', 'Kandisert eple', '🍎', 1, 1, 5, 39, 1.2, 'Hjemmelaget', 'godteri', crafted),
-  vare('anisdrops', 'Anisdrops', '🍬', 1, 1, 4, 15, 1.8, 'Søtt & Co', 'godteri'),
+  vare('anisdrops', 'Anisdrops', '🍬', 1, 1, 4, 15, 1.8, 'Søtt & Co', 'godteri', {
+    divisive: {
+      avoid: 0.03,
+      hateChance: 0.05,
+      loveChance: 0.03,
+      rep: 0.5,
+      hate: ['En kunde spyttet ut en anisdrops foran {stall}: «Det smaker hostesaft!»', 'Et barn begynte å gråte av anisdropsen fra {stall}.'],
+      love: ['En pensjonist kjøpte anisdrops hos {stall}: «Endelig noen som selger ordentlig godteri!»'],
+    },
+  }),
+  vare('julekrans', 'Julekrans', '🌿', 2, 2, 28, 199, 0.6, 'Hjemmelaget', 'dekor', crafted), // dekormaskinen: granbar + kongler
   vare('julekalender', 'Julekalender (24 luker)', '📅', 2, 2, 45, 129, 0.5, 'Kakaokompaniet', 'godteri'),
   // Mat
   vare('polse_lompe', 'Pølse i lompe', '🌭', 1, 1, 12, 45, 2.0, 'Hjemmelaget', 'mat', crafted),
@@ -899,7 +929,17 @@ export const PRODUCTS: Product[] = [
   vare('risengrynsgrot', 'Risengrynsgrøt', '🍚', 2, 2, 12, 69, 1.1, 'Hjemmelaget', 'mat', crafted), // i bolle med smør og kanel
   vare('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
   vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
-  vare('lutefisk', 'Lutefisk', '🐟', 1, 2, 70, 189, 0.25, 'Fiskemottaket', 'mat', rare(0.15)),
+  vare('lutefisk', 'Lutefisk', '🐟', 1, 2, 70, 189, 0.25, 'Fiskemottaket', 'mat', {
+    ...rare(0.15),
+    divisive: {
+      avoid: 0.12,
+      hateChance: 0.15,
+      loveChance: 0.2,
+      rep: 1,
+      hate: ['Det lukter lutefisk lang vei fra {stall}. Folk holder seg for nesen.', 'En kunde gikk en stor omvei rundt {stall}: «Lutefisk? Nei takk.»'],
+      love: ['En kunde ble rørt til tårer av lutefisken hos {stall}: «Akkurat som mor lagde den!»', 'Lutefiskklubben har funnet {stall}. De kommer igjen neste år.'],
+    },
+  }),
   // Drikke
   vare('kakao', 'Varm kakao', '☕', 2, 2, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
   vare('julebrus', 'Julebrus', '🥤', 2, 3, 12, 35, 1.6, 'Bryggeriet', 'drikke', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
@@ -922,6 +962,11 @@ export const PRODUCTS: Product[] = [
   }),
   vare('juletre_tyv', 'Juletre uten kvittering', '🎄', 2, 3, 120, 599, 0.25, 'Torget', 'lugubert', {
     ...shady(['Det mangler et tre på torget. Et påfallende likt tre står hos {stall}.'], 0.08, 5),
+  }),
+  // Skrives selv med penn på papirblokka (1 ark gir 2 billetter). Konserten er ekte, billettene er det ikke.
+  vare('konsertbillett', '«Billetter til julekonserten»', '🎟️', 1, 1, 0, 149, 0.7, 'Hjemmelaget', 'lugubert', {
+    ...crafted,
+    ...shady(['Noen ble avvist i døra på julekonserten med billetter fra {stall}.', 'Kirkevergen spør etter den som selger «billetter» ved {stall}.'], 0.06, 4),
   }),
   vare('hjemmebrent', 'Hjemmebrent', '🫙', 2, 3, 20, 299, 0.5, 'Hjemmelaget', 'lugubert', {
     sprite: 1.15, // bildet på bordet som før

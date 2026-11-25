@@ -212,6 +212,10 @@ def main():
         graphics+=json.loads(cratefile.read_text(encoding='utf-8')).get('catalog',[])
     iconfile=ROOT/'tools/varemeny-ikoner.json'
     menuicons=json.loads(iconfile.read_text(encoding='utf-8')).get('icons',[]) if iconfile.exists() else []
+    # Ideer som er bygd, står i VARELISTE.md og skal ikke vises som ideer i tillegg.
+    live_ids = set(re.findall(r'^\| [^|]+ \| `([a-z0-9_]+)` \|', (ROOT/'VARELISTE.md').read_text(encoding='utf-8'), re.M))
+    built_as = {'falske_konsertbilletter': 'konsertbillett'}  # arbeidsnavn i idélisten → id i spillet
+    manifest = [m for m in manifest if built_as.get(m['id'], m['id']) not in live_ids]
     for item in manifest:
         item['sizeStatus'] = item.get('sizeStatus') or ('Skisse – ikke bestemt' if item['category']=='Råvarer' or item['id'] in ['frityrgryte','vaffeljern','sandkakeform','gorojern','varmeovn','terrassevarmer'] else 'Foreslått i vareplanen')
         item['reference'] = item.get('reference') or ('julemarked_simulator_konsept.md §12.6' if item['id'] in ['varmeovn','terrassevarmer'] else 'VAREPLAN.md – Idéer / Syv slag')

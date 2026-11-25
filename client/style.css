@@ -1961,3 +1961,5 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 @keyframes loader-busy { from { transform: translateX(-10%); } to { transform: translateX(245%); } }
 .loader-text { margin: 10px 0 0; font: 400 0.95rem/1.3 'Pixelify Sans', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .loader-bar.busy span { animation: none; width: 100%; opacity: 0.5; } }
+
+.ticket-write { display: flex; flex-direction: column; gap: 4px; margin-top: 0.6rem; }
