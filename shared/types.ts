@@ -216,6 +216,7 @@ export interface GameState {
   me: {
     playerId: number;
     name: string;
+    hasPassword: boolean; // false: spilleren ble med før passordene og bør velge ett
     stallId: number | null; // boden du er i nå
     stalls: number[]; // alle bodene du eier (du er i én om gangen)
     cash: number;

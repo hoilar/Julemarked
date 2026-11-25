@@ -503,7 +503,7 @@ function render() {
     const scroll = app.querySelector('.modal-backdrop .modal')?.scrollTop ?? 0;
     const shopScroll = app.querySelector('.shop-body')?.scrollTop ?? 0;
     const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
-    app.innerHTML = body + paperWindow(s) + phoneWindow(s) + modalView(s);
+    app.innerHTML = body + paperWindow(s) + phoneWindow(s) + modalView(s) + passwordView(s);
     syncMusic(shownStall?.music ?? null);
     if (shownStall && shownStall.id === s.me.stallId) checkOutage(shownStall, s.me.items);
     if (phoneOpen) markPhoneSeen(s); // varslene er sett når telefonen er åpen
@@ -541,19 +541,53 @@ function render() {
 
 document.addEventListener('focusout', () => setTimeout(() => pendingRender && render(), 0));
 
+// Påmelding (ny spiller) eller innlogging (har spilt før, f.eks. på en annen enhet).
+let joinMode: 'new' | 'login' = 'new';
+// «Senere» på passordvalget: spør ikke igjen før siden lastes på nytt.
+let passwordLater = false;
+
+const NO_RESET = `<p class="pw-warning"><b>Husk navnet og passordet ditt selv.</b> Det finnes ingen måte å tilbakestille dem på.
+  Glemmer du dem, kommer du ikke inn i boden din igjen.</p>`;
+
 function joinView(): string {
+  const isNew = joinMode === 'new';
   return `
   <main class="join">
     <h1>🎄 Julemarked Simulator</h1>
     <p class="tagline">24 dager til konkurs.</p>
-    <form data-form="join" class="card">
-      <label>Navnet ditt <input name="name" required minlength="2" maxlength="24" autocomplete="nickname"></label>
+    <div class="join-tabs" role="tablist">
+      <button type="button" role="tab" class="${isNew ? 'active' : 'ghost'}" aria-selected="${isNew}" data-action="join-mode" data-mode="new">Ny spiller</button>
+      <button type="button" role="tab" class="${isNew ? 'ghost' : 'active'}" aria-selected="${!isNew}" data-action="join-mode" data-mode="login">Logg inn</button>
+    </div>
+    <form data-form="${isNew ? 'join' : 'login'}" class="card">
+      <label>${isNew ? 'Velg et brukernavn' : 'Brukernavn'} <input name="name" required minlength="2" maxlength="24" autocomplete="username" autocapitalize="off"></label>
+      <label>Passord <input name="password" type="password" required minlength="4" maxlength="64" autocomplete="${isNew ? 'new-password' : 'current-password'}"></label>
+      ${isNew ? '<label>Passord en gang til <input name="password2" type="password" required minlength="4" maxlength="64" autocomplete="new-password"></label>' : ''}
       <label>Invitasjonskode <input name="code" required value="GLOGG" autocapitalize="characters"></label>
-      <button>Gå inn på markedet</button>
+      ${isNew ? NO_RESET : '<p class="muted">Bruk samme navn og passord som da du startet. Da fortsetter du der du slapp, også på en annen mobil eller PC.</p>'}
+      <button>${isNew ? 'Gå inn på markedet' : 'Logg inn'}</button>
     </form>
     <p class="credits">Kundefigurer: «Avatar Illustration System» av Micah Lanier,
       <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, via DiceBear.</p>
   </main>`;
+}
+
+/** Spillere som ble med før det fantes passord: velg ett, ellers kommer de bare inn fra denne nettleseren. */
+function passwordView(s: GameState): string {
+  if (s.me.hasPassword || passwordLater) return '';
+  return `
+  <div class="modal-backdrop pw-nag">
+    <form data-form="set-password" class="modal card">
+      <h2>Velg passord</h2>
+      <p>Nå kan du logge inn med navnet ditt, <b>${esc(s.me.name)}</b>, og et passord. Da kan du fortsette der du slapp på en annen mobil eller PC.
+        Uten passord kommer du bare inn fra denne nettleseren.</p>
+      <input type="text" name="username" value="${esc(s.me.name)}" autocomplete="username" hidden>
+      <label>Passord <input name="password" type="password" required minlength="4" maxlength="64" autocomplete="new-password" data-autofocus></label>
+      <label>Passord en gang til <input name="password2" type="password" required minlength="4" maxlength="64" autocomplete="new-password"></label>
+      ${NO_RESET}
+      <div class="row"><button>Lagre passord</button><button type="button" class="ghost" data-action="password-later">Senere</button></div>
+    </form>
+  </div>`;
 }
 
 /** Hva omdømmet betyr akkurat nå (vises når man holder over stjerna). */
@@ -4288,6 +4322,16 @@ app.addEventListener('click', (e) => {
   }
   const el = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
   if (!el) return;
+  if (el.dataset.action === 'join-mode') {
+    joinMode = el.dataset.mode === 'login' ? 'login' : 'new';
+    render();
+    return;
+  }
+  if (el.dataset.action === 'password-later') {
+    passwordLater = true;
+    render();
+    return;
+  }
   const action = el.dataset.action;
   if (action === 'stash-toggle') {
     const typeId = el.dataset.type!;
@@ -4941,9 +4985,15 @@ app.addEventListener('submit', async (e) => {
   (document.activeElement as HTMLElement | null)?.blur();
 
   switch (form.dataset.form) {
+    case 'set-password':
+      if (data.password !== data.password2) return toast('Passordene er ikke like.', true);
+      if (await act('/api/password', { password: data.password }, '🔑 Passordet er lagret. Husk det – det kan ikke tilbakestilles.')) passwordLater = false;
+      break;
     case 'join':
+    case 'login':
+      if (form.dataset.form === 'join' && data.password !== data.password2) return toast('Passordene er ikke like.', true);
       try {
-        const res = await api<{ token: string }>('/api/join', data);
+        const res = await api<{ token: string }>(`/api/${form.dataset.form}`, { name: data.name, code: data.code, password: data.password });
         token = res.token;
         localStorage.setItem('jm_token', token);
         connectSocket();

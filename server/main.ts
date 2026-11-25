@@ -10,6 +10,8 @@ import {
   ensureMarket,
   getState,
   join as joinMarket,
+  login as loginPlayer,
+  setPassword,
   migrate,
   moveItem,
   driveToStall,
@@ -114,6 +116,11 @@ function tokenOf(req: IncomingMessage): string | undefined {
   return req.headers.authorization?.replace(/^Bearer /, '');
 }
 
+// Feil innloggingsforsøk per IP-adresse (tidspunkter), så ingen kan prøve seg fram med passord.
+const loginFails = new Map<string, number[]>();
+const LOGIN_WINDOW = 10 * 60_000;
+const LOGIN_MAX_FAILS = 10;
+
 type Handler = (body: Record<string, unknown>, req: IncomingMessage) => unknown;
 
 type Player = ReturnType<typeof playerFromToken>;
@@ -135,7 +142,25 @@ const action =
   };
 
 const routes: Record<string, Handler> = {
-  'POST /api/join': (b) => ({ token: joinMarket(String(b.name ?? ''), String(b.code ?? '')) }),
+  'POST /api/join': (b) => ({ token: joinMarket(String(b.name ?? ''), String(b.code ?? ''), String(b.password ?? '')) }),
+  'POST /api/login': (b, req) => {
+    const ip = req.socket.remoteAddress ?? '?';
+    const now = Date.now();
+    const f = (loginFails.get(ip) ?? []).filter((t) => now - t < LOGIN_WINDOW);
+    if (f.length >= LOGIN_MAX_FAILS) throw new GameError('For mange feil forsøk. Vent noen minutter og prøv igjen.');
+    try {
+      const token = loginPlayer(String(b.name ?? ''), String(b.code ?? ''), String(b.password ?? ''));
+      loginFails.delete(ip);
+      return { token };
+    } catch (err) {
+      loginFails.set(ip, [...f, now]);
+      throw err;
+    }
+  },
+  'POST /api/password': (b, req) => {
+    setPassword(playerFromToken(tokenOf(req)), String(b.password ?? ''), String(b.old ?? ''));
+    return {};
+  },
   'GET /api/state': (_b, req) => getState(playerFromToken(tokenOf(req))),
   'POST /api/claim': action((p, b) => claimStall(p, Number(b.slotIndex), String(b.stallName ?? ''))),
   'POST /api/stall/drive': action((p, b) => driveToStall(p, Number(b.stallId))),

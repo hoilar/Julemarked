@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { checkPassword, hashPassword, passwordProblem } from './auth.ts';
 import type { SQLInputValue, StatementSync } from 'node:sqlite';
 import { db, tx } from './db.ts';
 import {
@@ -294,6 +295,7 @@ interface PlayerRow {
   market_id: number;
   name: string;
   token: string;
+  pass_hash: string | null;
   paper_read: number; // siste avisutgave spilleren har lest (ÅÅÅÅMMDD)
   stall_at: number | null; // boden spilleren er i nå (eier hen flere); null = den første
 }
@@ -1045,11 +1047,22 @@ export function freeStartSlots(marketId: number): number {
   return LAYOUT.filter((s) => s.price <= START_CASH && !taken.has(s.index)).length;
 }
 
-export function join(name: string, code: string): string {
+/** Spillerne i et marked med dette navnet (store og små bokstaver er likt). */
+function playersNamed(marketId: number, name: string): PlayerRow[] {
+  const key = name.trim().toLocaleLowerCase('nb-NO');
+  return all<PlayerRow>(db.prepare('SELECT * FROM players WHERE market_id = ?'), marketId).filter(
+    (p) => p.name.trim().toLocaleLowerCase('nb-NO') === key,
+  );
+}
+
+export function join(name: string, code: string, password: string): string {
   name = name.trim().slice(0, 24);
   if (name.length < 2) throw new GameError('Navnet må ha minst to tegn.');
   const market = one<MarketRow>(q.marketByCode, code.trim().toUpperCase());
   if (!market) throw new GameError('Fant ikke noe marked med den koden.');
+  if (playersNamed(market.id, name).length) throw new GameError(`Noen heter allerede «${name}» her. Er det deg, så logg inn i stedet.`);
+  const problem = passwordProblem(password);
+  if (problem) throw new GameError(problem);
   if (freeStartSlots(market.id) === 0) {
     // Fullt: vis til et annet marked med ledig startplass, hvis det finnes.
     const other = all<MarketRow>(db.prepare('SELECT * FROM markets WHERE id != ? ORDER BY id'), market.id).find((m) => freeStartSlots(m.id) > 0);
@@ -1060,13 +1073,37 @@ export function join(name: string, code: string): string {
     );
   }
   const token = randomBytes(24).toString('base64url');
-  db.prepare('INSERT INTO players (market_id, name, token, created_at) VALUES (?, ?, ?, ?)').run(
+  db.prepare('INSERT INTO players (market_id, name, token, created_at, pass_hash) VALUES (?, ?, ?, ?, ?)').run(
     market.id,
     name,
     token,
     Date.now(),
+    hashPassword(password),
   );
   return token;
+}
+
+/**
+ * Innlogging med kode, navn og passord. Gir den samme tokenen som spilleren har fra før, så man kan være
+ * logget inn på mobilen og PC-en samtidig.
+ */
+export function login(name: string, code: string, password: string): string {
+  const market = one<MarketRow>(q.marketByCode, code.trim().toUpperCase());
+  if (!market) throw new GameError('Fant ikke noe marked med den koden.');
+  const named = playersNamed(market.id, name);
+  const hit = named.find((p) => checkPassword(password, p.pass_hash));
+  if (hit) return hit.token;
+  if (named.length && named.every((p) => !p.pass_hash))
+    throw new GameError('Denne spilleren har ikke valgt passord. Åpne spillet i nettleseren du startet i, og velg passord der.');
+  throw new GameError('Feil navn eller passord.');
+}
+
+/** Velg passord (første gang) eller bytt det (da må det gamle stemme). */
+export function setPassword(player: PlayerRow, password: string, old: string) {
+  if (player.pass_hash && !checkPassword(old, player.pass_hash)) throw new GameError('Det gamle passordet stemmer ikke.');
+  const problem = passwordProblem(password);
+  if (problem) throw new GameError(problem);
+  db.prepare('UPDATE players SET pass_hash = ? WHERE id = ?').run(hashPassword(password), player.id);
 }
 
 export function playerFromToken(token: string | undefined): PlayerRow {
@@ -2575,6 +2612,7 @@ export function getState(player: PlayerRow): GameState {
     me: {
       playerId: player.id,
       name: player.name,
+      hasPassword: !!player.pass_hash,
       stallId: mine?.id ?? null,
       stalls: all<StallRow>(q.stallsByOwner, player.id).map((x) => x.id),
       cash: mine?.cash ?? 0,

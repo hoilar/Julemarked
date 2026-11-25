@@ -100,6 +100,10 @@ label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
 .join h1 { font-size: 2rem; }
 .tagline { color: var(--muted); margin-top: -0.3rem; }
 .join form { display: flex; flex-direction: column; gap: 0.8rem; text-align: left; }
+.join-tabs { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.8rem; }
+.join-tabs button { flex: 1; }
+.pw-warning { margin: 0; padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #c0392b; background: rgba(192, 57, 43, 0.12); font-size: 0.9rem; }
+.pw-nag form { display: flex; flex-direction: column; gap: 0.7rem; max-width: 420px; text-align: left; }
 
 /* ---------- Bodscenen: fyller hele vinduet ---------- */
 

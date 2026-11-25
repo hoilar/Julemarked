@@ -6,7 +6,7 @@
 
 ## Med i testen
 
-- Påmelding med navn og invitasjonskode (ingen passord, bare en token i nettleseren)
+- Påmelding med brukernavn, passord og invitasjonskode. Innlogging fra hvilken som helst mobil eller PC fortsetter der man slapp. **Ingen tilbakestilling:** spilleren må huske navn og passord selv
 - Klikkbart markedskart med 12 bodplasser: hovedgate, sidegate og bakgate med ulik trafikk og leie
 - Selgervisning (bak disken): kjøp inn fra grossist, plasser varer på disken, sett pris
 - Kjøpervisning (foran disken): besøk andre boder og kjøp varer
