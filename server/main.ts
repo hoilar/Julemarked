@@ -4,6 +4,7 @@ import { extname, join, normalize } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
   GameError,
+  seasonOver,
   placeKlasOrder,
   buyFromStall,
   claimStall,
@@ -136,6 +137,7 @@ const action =
   (fn: (p: Player, b: Record<string, unknown>) => unknown): Handler =>
   (b, req) => {
     const p = playerFromToken(tokenOf(req));
+    if (seasonOver(p)) throw new GameError('Julemarkedet er over for i år. God jul! 🎄');
     noteClock(p); // fanger strøm som har gått før handlingen (f.eks. en sikring som nå byttes)
     let result: unknown;
     try {

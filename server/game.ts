@@ -4,6 +4,7 @@ import type { SQLInputValue, StatementSync } from 'node:sqlite';
 import { db, tx } from './db.ts';
 import {
   HOUR,
+  SEASON_END,
   type ClockConfig,
   formatClock,
   gameNow,
@@ -233,7 +234,7 @@ import type { Module } from '../shared/products.ts';
 import { CASSETTE_PLAYER, SPEAKERS, TAPE_BY_ID, TAPE_SALAD } from '../shared/products.ts';
 import { EAT_CHANCE, NEIGHBOUR_HIT, PIRATE_FINE, PIRATE_REP_HIT, musicBoost, playerReady, songOf, tapeIn } from '../shared/music.ts';
 import { hash01 } from '../shared/hash.ts';
-import { MAP_SLOTS, slotPrice, NPCS, NPC_BY_CODE, NPC_OPEN, neighbourSlots, npcCounter, slotCode } from '../shared/marketmap.ts';
+import { MAP_SLOTS, STALL_NAME_MAX, slotPrice, NPCS, NPC_BY_CODE, NPC_OPEN, neighbourSlots, npcCounter, slotCode } from '../shared/marketmap.ts';
 import { DECOR_BY_ID, DECOR_SLOTS, DEKORINGEN, decorBoost, decorDemand, decorOfPack, decorPackOf, decorPrice, isDarkHour } from '../shared/decor.ts';
 import { STORIES, STORY_BY_ID, STORY_OF_CHAR, STORY_RETRY_DAYS, stepNeed, type StoryView } from '../shared/stories.ts';
 import { cleanLook, type Look } from '../shared/look.ts';
@@ -450,8 +451,14 @@ function clockOf(m: MarketRow): ClockConfig {
   return { realStart: m.real_start, gameStart: m.game_start, speed: m.speed };
 }
 
+/** Spilltida i markedet. Den stopper julaften kl. 12 (SEASON_END): da er julemarkedet over. */
 function nowFor(m: MarketRow): number {
-  return Math.floor(gameNow(clockOf(m)));
+  return Math.min(Math.floor(gameNow(clockOf(m))), SEASON_END);
+}
+
+/** Er julemarkedet over (julaften kl. 12)? Da går ingen handlinger. */
+export function seasonOver(player: PlayerRow): boolean {
+  return nowFor(marketOf(player)) >= SEASON_END;
 }
 
 function event(m: MarketRow, playerId: number | null, gameTime: number, text: string) {
@@ -894,7 +901,7 @@ export function ensureMarket(): MarketRow {
 
   db.prepare(
     'INSERT INTO markets (name, invite_code, real_start, game_start, speed, last_hour) VALUES (?, ?, ?, ?, ?, ?)',
-  ).run('Testmarkedet', code, realStart, gameStart, speed, hourIndex(gameStart));
+  ).run(process.env.MARKET_NAME ?? 'Julemarkedet', code, realStart, gameStart, speed, hourIndex(gameStart));
   console.log(`Opprettet marked med kode ${code}, hastighet ${speed}x, start ${new Date(gameStart).toISOString()}`);
   return one<MarketRow>(q.marketByCode, code)!;
 }
@@ -1335,7 +1342,8 @@ export function claimStall(player: PlayerRow, slotIndex: number, stallName: stri
   if (!base) throw new GameError('Ukjent bodplass.');
   // En ekstra bod i bakgata er ikke gratis (bare den første).
   const def = { ...base, price: slotPrice(base.price, !!currentStall(player)) };
-  stallName = stallName.trim().slice(0, 32);
+  stallName = stallName.trim();
+  if (stallName.length > STALL_NAME_MAX) throw new GameError(`Navnet på boden kan ha maks ${STALL_NAME_MAX} tegn.`);
   if (stallName.length < 2) throw new GameError('Boden trenger et navn.');
   const npc = npcAt(slotIndex);
   if (npc && !npcClaimable(market.id, slotIndex))
@@ -2906,7 +2914,7 @@ export function getState(player: PlayerRow): GameState {
     .map((r) => ({ id: r.id, stallId: r.from_stall, productId: r.product_id, qty: r.qty, amount: r.amount }));
 
   return {
-    clock: { gameTime: t, phase: phaseOf(parts.hour), speed: market.speed, label: formatClock(parts) },
+    clock: { gameTime: t, phase: phaseOf(parts.hour), speed: t >= SEASON_END ? 0 : market.speed, label: formatClock(parts), ended: t >= SEASON_END },
     paper: paperFor(market, player, currentEdition(t).key, mine?.id ?? null),
     shops: shopsFor(market, player, t),
     papers: Object.fromEntries(

@@ -124,7 +124,7 @@ import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } fro
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
 import { catchChance, dayName, hoursText, orderHomemade, orderNameOk, orderWhat, pickupHours } from '../shared/orders.ts';
 import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
-import { BUILDINGS, EXTRA_BACKSTREET_PRICE, slotPrice, MAP_GLOW, MAP_H, MAP_SLOTS, MAP_TILE, MAP_W, NPC_OPEN, type Building } from '../shared/marketmap.ts';
+import { BUILDINGS, EXTRA_BACKSTREET_PRICE, STALL_NAME_MAX, slotPrice, MAP_GLOW, MAP_H, MAP_SLOTS, MAP_TILE, MAP_W, NPC_OPEN, type Building } from '../shared/marketmap.ts';
 import { characterUrl } from '../shared/portrait.ts';
 import { SIGN_LABEL, nextSign, type Serving } from '../shared/sign.ts';
 import spillbilder from './spillbilder.json';
@@ -560,11 +560,12 @@ function render() {
     const scroll = app.querySelector('.modal-backdrop .modal')?.scrollTop ?? 0;
     const shopScroll = app.querySelector('.shop-body')?.scrollTop ?? 0;
     const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
-    app.innerHTML = s.me.bankrupt ? bankruptView(s) : body + paperWindow(s) + phoneWindow(s) + modalView(s) + passwordView(s);
+    app.innerHTML = s.clock.ended ? winnerView(s) : s.me.bankrupt ? bankruptView(s) : body + paperWindow(s) + phoneWindow(s) + modalView(s) + passwordView(s);
     syncMusic(shownStall?.music ?? null);
     if (shownStall && shownStall.id === s.me.stallId) checkOutage(shownStall, s.me.items);
     if (phoneOpen) markPhoneSeen(s); // varslene er sett når telefonen er åpen
     mountMap(s);
+    fitSign();
     const m = app.querySelector('.modal-backdrop .modal');
     if (m) m.scrollTop = scroll;
     const sb = app.querySelector('.shop-body');
@@ -618,6 +619,7 @@ function joinView(): string {
       <button type="button" role="tab" class="${isNew ? 'active' : 'ghost'}" aria-selected="${isNew}" data-action="join-mode" data-mode="new">Ny spiller</button>
       <button type="button" role="tab" class="${isNew ? 'ghost' : 'active'}" aria-selected="${!isNew}" data-action="join-mode" data-mode="login">Logg inn</button>
     </div>
+    <p class="device-note ${matchMedia('(max-width: 760px)').matches ? 'small-screen' : ''}">💻 Spillet fungerer best på <b>PC eller nettbrett</b>. På mobil blir boden og lageret trangt.</p>
     <form data-form="${isNew ? 'join' : 'login'}" class="card">
       <label>${isNew ? 'Velg et brukernavn' : 'Brukernavn'} <input name="name" required minlength="2" maxlength="24" autocomplete="username" autocapitalize="off"></label>
       <label>Passord <input name="password" type="password" required minlength="4" maxlength="64" autocomplete="${isNew ? 'new-password' : 'current-password'}"></label>
@@ -946,7 +948,7 @@ function stallScene(s: GameState, stall: StallPublic, own: boolean): string {
       ${behind ? '' : decorView(stall, own)}
       ${powerView(stall, behind)}
       ${behind ? nailView(s) + mailboxView(s) + deliveriesView(s) : ''}
-      <div class="sign">${esc(stall.name)}</div>
+      <div class="sign"><span>${esc(stall.name)}</span></div>
       ${shopSign(s, stall, behind)}
       ${musicButton(stall.music)}
       ${own ? frontToggle(behind) : sellerView(stall)}
@@ -1648,6 +1650,45 @@ function mirrorButton(typeId: string): string {
 }
 
 /** Konkurs: namsmannen har ingenting mer å ta. Bare «Start på nytt» videre. */
+/** Bodnavnet på skiltet: krymp skriften litt hvis navnet er bredere enn skiltet (mange brede bokstaver som W og M). */
+function fitSign() {
+  const sign = app.querySelector<HTMLElement>('.sign');
+  const text = sign?.querySelector<HTMLElement>('span');
+  if (!sign || !text) return;
+  text.style.fontSize = '';
+  const room = sign.clientWidth - parseFloat(getComputedStyle(sign).paddingLeft) * 2;
+  if (text.offsetWidth > room && room > 0) text.style.fontSize = `${Math.max(0.6, room / text.offsetWidth)}em`;
+}
+
+/** Julaften kl. 12: julemarkedet er over, og vinneren er den med høyest omsetning i hele sesongen. */
+function winnerView(s: GameState): string {
+  const rows = [...s.leaderboard].sort((a, b) => b.total - a.total);
+  const me = rows.findIndex((r) => r.playerId === s.me.playerId);
+  const medal = (i: number) =>
+    i < 3 ? `<img class="tl-medal" src="/art/toppliste/medalje-${i + 1}.png" alt="${i + 1}. plass" draggable="false">` : `<span class="tl-rank">${i + 1}.</span>`;
+  const podium = rows
+    .slice(0, 3)
+    .map(
+      (r, i) => `<div class="winner-place p${i + 1}">${medal(i)}<b>${esc(r.name)}</b><small>${esc(r.stalls.join(' · '))}</small><span>${kr(r.total)}</span></div>`,
+    )
+    .join('');
+  const rest = rows
+    .slice(3)
+    .map((r, i) => `<li class="${r.playerId === s.me.playerId ? 'me' : ''}">${medal(i + 3)}<b>${esc(r.name)}</b><span>${kr(r.total)}</span></li>`)
+    .join('');
+  return `<div class="winner">
+    <div class="winner-card card">
+      <img class="winner-banner" src="/art/toppliste/banner.png" alt="" draggable="false">
+      <h1>🎄 Julemarkedet er over!</h1>
+      <p>Det er julaften kl. 12, og bodene er stengt for i år. Takk for at du var med på ${esc(s.market.name)}!</p>
+      ${rows.length ? `<div class="winner-podium">${podium}</div>` : '<p class="muted">Ingen rakk å selge noe.</p>'}
+      ${rest ? `<ol class="winner-rest">${rest}</ol>` : ''}
+      ${me >= 0 ? `<p class="winner-me">Du kom på <b>${me + 1}. plass</b> med ${kr(rows[me].total)} i omsetning.</p>` : ''}
+      <p class="muted">God jul! 🎅</p>
+    </div>
+  </div>`;
+}
+
 function bankruptView(s: GameState): string {
   const b = s.me.bankrupt!;
   const names = s.slots.filter((sl) => sl.stall && s.me.stalls.includes(sl.stall.id)).map((sl) => `«${esc(sl.stall!.name)}»`).join(' og ');
@@ -3103,7 +3144,7 @@ function mapScreen(s: GameState): string {
             <div class="row">${cancel}</div>`
           : `<h2>Lei plass ${sl.code}</h2>${facts}
             <form data-form="claim" class="stack-form">
-              <label>Navn på boden <input name="stallName" required minlength="2" maxlength="32" placeholder="F.eks. Honning-Hans" data-autofocus></label>
+              <label>Navn på boden <input name="stallName" required minlength="2" maxlength="${STALL_NAME_MAX}" placeholder="F.eks. Honning-Hans" data-autofocus></label>
               <div class="row"><button>Lei boden</button>${cancel}</div>
             </form>`;
     } else {
@@ -3111,7 +3152,7 @@ function mapScreen(s: GameState): string {
       side = `<h2>Kjøp plass ${sl.code}</h2>${facts}
         <p class="muted">Du får en bod til, i tillegg til den du har. Den nye er tom (bare sikringsboks) og har samme kasse som de andre. Kjør dit med bilen (${driveMinutes(myStreet(s), sl.street)} min) – bilen med bagasjerommet og det du bærer, blir med.${afford ? '' : ` Du har ${kr(s.me.cash)} og mangler ${kr(sl.price - s.me.cash)}.`}</p>
         <form data-form="claim" class="stack-form">
-          <label>Navn på den nye boden <input name="stallName" required minlength="2" maxlength="32" value="${esc(myStall(s)?.name ?? '')}" data-autofocus></label>
+          <label>Navn på den nye boden <input name="stallName" required minlength="2" maxlength="${STALL_NAME_MAX}" value="${esc((myStall(s)?.name ?? '').slice(0, STALL_NAME_MAX))}" data-autofocus></label>
           <div class="row"><button ${afford ? '' : 'disabled'}>Kjøp plassen${sl.price ? ` for ${kr(sl.price)}` : ''}</button>${cancel}</div>
         </form>`;
     }

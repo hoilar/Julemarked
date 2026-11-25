@@ -53,6 +53,12 @@ export function phaseOf(hour: number): Phase {
 }
 
 /** Desemberdag 1–24 for et gitt tidspunkt, 0 før sesongen og 25 etter. */
+/**
+ * Julemarkedet stenger julaften kl. 12.00 (norsk tid). Da står klokka stille, ingen handlinger går, og alle
+ * ser vinnersiden (høyest omsetning i hele sesongen).
+ */
+export const SEASON_END = Date.parse('2026-12-24T12:00:00+01:00');
+
 export function seasonDay(parts: OsloParts): number {
   if (parts.month < 12) return 0;
   return Math.min(parts.day, 25);

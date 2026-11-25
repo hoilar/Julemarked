@@ -20,17 +20,19 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
-## Fraktkupong – bestilling (25.11.2026)
+## Fraktkupong – grafikk klar og lagt inn (25.11.2026)
+
+Levert: `client/public/art/verktoy/fraktkupong.png`, transparent PNG i 128 × 128.
+Samme kupongplassering som `kupong.png`, med krem-/gulltopp, varebil og pakke, uten tekst eller tall.
+Original, beskrivelse, liten kopi og kontrollbilde ligger i `GFX_assets/planlagte/fraktkupong/`.
+Vises i varelisten. **Lagt inn i spillet 25.11.2026:** `image` er satt på `fraktkupong` i `shared/products.ts`.
 
 En kupong som dukker opp i postkassa nå og da og gjør én levering gratis (`fraktkupong`, `shared/shop.ts`).
-I spillet nå: emoji 🚚 til bildet kommer.
 
 | Fil | Hva | Størrelse | Merknad |
 |---|---|---|---|
 | `client/public/art/verktoy/fraktkupong.png` | Kupong som `kupong.png` (stiplet klippekant), men med en liten varebil og en pakke i stedet for saksikonet, og gull- eller kremfarget topp så den skiller seg fra rabattkupongen | 2×2 i spillet, lag den som `kupong.png` | Ingen tekst eller tall. Skal kjennes igjen i postkassa |
 
-Når bildet er levert: sett `image: '/art/verktoy/fraktkupong.png'` på `fraktkupong` i `shared/products.ts` og kjør
-`py tools/spillbilder.py`.
 
 ## Butikkhusene på markedskartet – grafikk klar og lagt inn (25.11.2026)
 

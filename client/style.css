@@ -99,6 +99,9 @@ label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
 .join { max-width: 380px; margin: 12vh auto; padding: 0 16px; text-align: center; }
 .join h1 { font-size: 2rem; }
 .tagline { color: var(--muted); margin-top: -0.3rem; }
+/* «Fungerer best på PC eller nettbrett» på innloggingssiden; tydeligere på små skjermer. */
+.device-note { font-size: 0.9rem; color: var(--muted); margin: 0 0 0.8rem; }
+.device-note.small-screen { color: var(--ink); background: rgba(217, 164, 65, 0.18); border: 1px solid var(--gold); border-radius: 8px; padding: 0.5rem 0.7rem; }
 .join form { display: flex; flex-direction: column; gap: 0.8rem; text-align: left; }
 .join-tabs { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.8rem; }
 .join-tabs button { flex: 1; }
@@ -904,7 +907,7 @@ body.night .customers { filter: brightness(0.8) saturate(0.9); }
   padding: 0 0.6cqw;
   color: #4a2410;
   font-weight: 800;
-  font-size: max(11px, 1.45cqw);
+  font-size: max(10px, 1.25cqw); /* plass til STALL_NAME_MAX (12) brede tegn */
   letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
@@ -2085,6 +2088,26 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .welcome-look div { display: grid; gap: 0.35rem; justify-items: start; }
 
 /* Konkurs */
+/* Vinnersiden julaften kl. 12 (winnerView). */
+.winner { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 25%, #2b4a3a, #0b1410); z-index: 1000; overflow: auto; }
+.winner-card { max-width: 620px; width: 100%; text-align: center; padding: 1.4rem 1.4rem 1.6rem; }
+.winner-banner { width: min(100%, 360px); image-rendering: pixelated; }
+.winner-card h1 { font-size: clamp(1.4rem, 5vw, 2rem); margin: 0.4rem 0; }
+.winner-podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: 0.6rem; margin: 1.2rem 0 0.8rem; }
+.winner-place { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.8rem 0.4rem; border-radius: 10px; background: rgba(217, 164, 65, 0.12); border: 1px solid var(--line); min-width: 0; }
+.winner-place.p1 { order: 2; padding-top: 1.4rem; background: rgba(217, 164, 65, 0.28); border-color: var(--gold); }
+.winner-place.p2 { order: 1; }
+.winner-place.p3 { order: 3; }
+.winner-place .tl-medal { width: 48px; image-rendering: pixelated; }
+.winner-place.p1 .tl-medal { width: 64px; }
+.winner-place b { overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
+.winner-place small { color: var(--muted); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
+.winner-place span { font-weight: 800; font-variant-numeric: tabular-nums; }
+.winner-rest { list-style: none; padding: 0; margin: 0 auto 0.8rem; max-width: 380px; text-align: left; }
+.winner-rest li { display: grid; grid-template-columns: 2.2rem 1fr auto; gap: 0.5rem; padding: 0.25rem 0.4rem; border-bottom: 1px dotted var(--line); }
+.winner-rest li.me { background: rgba(217, 164, 65, 0.18); border-radius: 6px; }
+.winner-me { font-size: 1.05rem; }
+@media (max-width: 520px) { .winner-podium { grid-template-columns: 1fr; } .winner-place { order: 0 !important; } }
 .bankrupt { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 30%, #3a1f24, #120a0c); z-index: 1000; overflow: auto; }
 .bankrupt-card { max-width: 520px; width: 100%; text-align: center; padding: 1.6rem 1.4rem; position: relative; }
 .bankrupt-stamp { display: inline-block; font-size: clamp(2rem, 8vw, 3.4rem); font-weight: 900; letter-spacing: 0.08em; color: #c8102e; border: 6px solid #c8102e; border-radius: 10px; padding: 0.1rem 0.8rem; transform: rotate(-6deg); margin-bottom: 0.8rem; }

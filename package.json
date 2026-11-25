@@ -8,9 +8,12 @@
     "dev:client": "vite",
     "build": "vite build",
     "start": "node server/main.ts",
+    "prod": "npm run build && node --disable-warning=ExperimentalWarning --env-file=prod.env server/main.ts",
+    "admin:prod": "node --disable-warning=ExperimentalWarning --env-file=prod.env tools/admin.ts",
     "typecheck": "tsc --noEmit",
     "admin": "node --disable-warning=ExperimentalWarning tools/admin.ts",
-    "vareliste": "node --disable-warning=ExperimentalWarning tools/vareliste.ts"
+    "vareliste": "node --disable-warning=ExperimentalWarning tools/vareliste.ts",
+    "backup:prod": "node --disable-warning=ExperimentalWarning --env-file=prod.env tools/backup.ts"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

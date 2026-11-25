@@ -8,6 +8,9 @@ export { MAP_GLOW, MAP_H, MAP_SLOTS, MAP_TILE, MAP_W } from './marketmap-slots.t
 
 export type Street = 'hovedgate' | 'sidegate' | 'bakgate';
 
+/** Lengste bodnavn (tegn): det må få plass på skiltet over boden. */
+export const STALL_NAME_MAX = 12;
+
 /** Den første boden i bakgata er gratis å ta. Har du alt en bod, koster en ekstra bakgateplass dette. */
 export const EXTRA_BACKSTREET_PRICE = 5_000;
 /** Engangsprisen for en plass: grunnprisen, men aldri gratis når du har en bod fra før. */

@@ -360,8 +360,8 @@ DOCS.push(
   { kind: 'doc', id: 'gavekort_kiwi', name: 'KIWI-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-kiwi.png', size: { w: 2, h: 2 } },
   { kind: 'doc', id: 'gavekort_rema', name: 'REMA 1000-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-rema.png', size: { w: 2, h: 2 } },
   { kind: 'doc', id: 'gavekort_extra', name: 'Extra-gavekort', emoji: '🎁', image: '/art/verktoy/gavekort-extra.png', size: { w: 2, h: 2 } },
-  // Kommer av og til i postkassa: én gratis levering (shared/shop.ts, SHIP_COUPON). Bildet er bestilt (GRAFIKK.md).
-  { kind: 'doc', id: 'fraktkupong', name: 'Fraktkupong (gratis levering)', emoji: '🚚', size: { w: 2, h: 2 } },
+  // Kommer av og til i postkassa: én gratis levering (shared/shop.ts, SHIP_COUPON).
+  { kind: 'doc', id: 'fraktkupong', name: 'Fraktkupong (gratis levering)', emoji: '🚚', image: '/art/verktoy/fraktkupong.png', size: { w: 2, h: 2 } },
 );
 export const COUPON = 'kupong';
 export const RECIPE_NOTE = 'oppskrift';

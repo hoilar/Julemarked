@@ -288,6 +288,10 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- FRAKTKUPONG-START -->[\s\S]*?<!-- FRAKTKUPONG-SLUTT -->', '', html)
+    if (ROOT/'client/public/art/verktoy/fraktkupong.png').exists():
+        panel = (ROOT/'tools/fraktkupong-panel.html').read_text(encoding='utf-8')
+        html = html.replace('<div class="table-wrap">', '<!-- FRAKTKUPONG-START -->'+panel+'<!-- FRAKTKUPONG-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- KART-120-START -->[\s\S]*?<!-- KART-120-SLUTT -->', '', html)
     if (ROOT/'GFX_assets/kart-120-boder-3x3/plasseringer.json').exists():
         panel = (ROOT/'tools/kart-120-panel.html').read_text(encoding='utf-8')

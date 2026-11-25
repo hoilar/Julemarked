@@ -234,7 +234,7 @@ export interface GameState {
   paper: Paper | null; // dagens utgave (null før første)
   papers: Record<number, Paper>; // innholdet i avisene spilleren har (etter utgave)
   shops: ShopView[]; // dagens nettbutikker
-  clock: { gameTime: number; phase: Phase; speed: number; label: string };
+  clock: { gameTime: number; phase: Phase; speed: number; label: string; ended: boolean }; // ended: julaften kl. 12, markedet er stengt
   market: { id: number; name: string };
   /** De siste salgene til NPC-kunder i hele markedet (nyeste først). Klienten viser dem som kunder som betaler. */
   sales: { id: number; stallId: number; productId: string; qty: number; amount: number }[];
