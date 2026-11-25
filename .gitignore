@@ -5,3 +5,5 @@ data/
 *.db-*
 GFX_assets/
 /GFX_assets
+/musikk/
+__pycache__/
