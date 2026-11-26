@@ -2132,3 +2132,55 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .paper-dumps { margin: 0.4rem 0; padding-left: 1.1rem; }
 .paper-dumps li { margin: 0.25rem 0; }
 .paper-dumps li.mine { color: #a31212; }
+
+/* ---------- Julelotteriet (telefonen og avisa) ---------- */
+.lotto-pot { margin-bottom: 8px; text-align: center; }
+.lotto-pot b { font-size: 1.6rem; color: #ffd76a; }
+.lotto-balls { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.lotto-ball {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  font-weight: 800; font-size: 0.8rem; color: #3a2400;
+  background: radial-gradient(circle at 35% 30%, #fffbe8, #f3d27a 55%, #c9962e);
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.25);
+}
+.lotto-ball.hit { color: #fff; background: radial-gradient(circle at 35% 30%, #ff9a8a, #d4322c 55%, #8e1712); }
+.lotto-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 8px; }
+.lotto-num {
+  aspect-ratio: 1; border-radius: 50%; padding: 0; font-weight: 700; min-height: 0;
+  background: rgba(255, 255, 255, 0.14); color: inherit; border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.lotto-num.on { background: radial-gradient(circle at 35% 30%, #ff9a8a, #d4322c 55%, #8e1712); color: #fff; border-color: #ffd76a; }
+.lotto-buy { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.lotto-buy > button:first-child { flex: 1 1 100%; }
+.lotto-tickets { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lotto-tickets li { display: flex; align-items: center; gap: 8px; }
+.lotto-tickets small { opacity: 0.75; }
+.lotto-draw { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; margin-bottom: 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.1); }
+.lotto-draw small { opacity: 0.9; }
+.lotto-mine.won { color: #9fe0a8; font-weight: 700; }
+.lotto-rules { font-size: 0.72rem; }
+/* Grafikken (GRAFIKK.md, «Julelotteriet»), slått på med LOTTO_ART i main.ts */
+.lotto-pot.art {
+  min-height: 92px; padding: 8px 10px 14px 50%; text-align: right; display: flex; flex-direction: column; justify-content: center;
+  background: #262b4d url('/art/lotteri/banner.png') left center / cover no-repeat; image-rendering: pixelated;
+}
+.lotto-pot.art small, .lotto-pot.art b { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+.lotto-pot.art b { font-size: 1.35rem; white-space: nowrap; }
+.lotto-pot.art small { font-size: 0.62rem; }
+.lotto-ball.art, .lotto-num.art.on {
+  background: url('/art/lotteri/kule.png') center / contain no-repeat; image-rendering: pixelated; box-shadow: none;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+}
+.lotto-ball.art { width: 28px; height: 28px; }
+.lotto-ball.art.hit, .lotto-num.art.on { background-image: url('/art/lotteri/kule-treff.png'); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); border-color: transparent; }
+.lotto-lodd {
+  position: relative; flex: 0 0 auto; width: 180px; height: 54px;
+  background: url('/art/lotteri/lodd.png') 0 0 / 100% 100% no-repeat; image-rendering: pixelated;
+}
+.lotto-lodd b { position: absolute; top: 50%; translate: -50% -50%; color: #5a2a16; font-size: 0.95rem; }
+.lotto-lodd b:nth-child(1) { left: 30.6%; }
+.lotto-lodd b:nth-child(2) { left: 56.3%; }
+.lotto-lodd b:nth-child(3) { left: 81.9%; }
+/* I avisa: mørk skrift på papir */
+.paper .lotto-draw { background: rgba(0, 0, 0, 0.05); color: inherit; }
+.paper .lotto-mine.won { color: #2f7d3a; }

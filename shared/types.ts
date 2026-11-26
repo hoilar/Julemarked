@@ -218,6 +218,8 @@ export interface Paper {
   praise?: { stall: string; mine: boolean; text: string; bad?: boolean }[];
   /** «Søppelsaker»: boder som kastet søppel i andres søppelkasse og ble tystet på dagen før. */
   dumps?: { offender: string; victim: string; what: string; mine: boolean; fine: number }[];
+  /** Julelotteriet: trekningen i dag (eller i går kveld), og om det er trekning i kveld. */
+  lotto?: { draw: LottoDrawView | null; tonight: { label: string; pot: number } | null };
   crime: {
     thefts: { stall: string; mine: boolean; lines: string[]; value: number }[];
     log: string;
@@ -230,7 +232,33 @@ export interface Paper {
   unread: boolean; // ikke hentet ennå: flagget på postkassa er oppe
 }
 
+/** Én trekning i julelotteriet (appen og avisa). */
+export interface LottoDrawView {
+  key: number; // ÅÅÅÅMMDD
+  label: string; // «Lørdag 28. november kl. 18.00»
+  nums: number[];
+  pot: number; // potten før trekningen
+  jackpot: { names: string[]; each: number }; // bodene som fikk 3 riktige, og hva hvert lodd fikk
+  second: number; // lodd med 2 riktige (andrepremie)
+  third: number; // lodd med 1 riktig (gratis lodd)
+  carried: number; // overført til neste trekning
+  donated: number; // julaften uten jackpot: til veldedighet
+  final: boolean;
+  mine?: { tickets: number; won: number; free: number; best: number }; // dine lodd i trekningen
+}
+
+/** Julelotteriet på telefonen (shared/lottery.ts). */
+export interface LottoView {
+  pot: number;
+  next: { key: number; label: string; at: number } | null; // null: sesongens siste trekning er over
+  open: boolean; // kan kjøpe lodd nå (til next)
+  opensAt: number | null; // når salget åpner igjen
+  mine: { nums: number[]; free: boolean }[]; // dine lodd til neste trekning
+  draws: LottoDrawView[]; // de siste trekningene, nyeste først
+}
+
 export interface GameState {
+  lotto: LottoView;
   paper: Paper | null; // dagens utgave (null før første)
   papers: Record<number, Paper>; // innholdet i avisene spilleren har (etter utgave)
   shops: ShopView[]; // dagens nettbutikker

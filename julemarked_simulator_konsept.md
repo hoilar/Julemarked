@@ -310,7 +310,19 @@ Mulige kåringer: Årets kremmer, Årets lokalskatt, Årets svindler, Årets nab
 - Kan man selge boden mens det er gjeld eller ubetalte regninger på den?
 - Kan man legge ut en bod for salg til alle, eller bare tilby den til én bestemt spiller?
 
-### 12.2 Julelotteri (planlagt for sesongen 2027)
+### 12.2 Julelotteri (bygd 26.11.2026)
+
+**Bygd for desembertesten** (`shared/lottery.ts`, `buyLotto` og `runLotto` i `server/game.ts`). Telefonen har appen Lotteri, og avisa har siden Julelotteriet.
+
+Med 1× tid gjelder dette:
+- **Trekninger:** hver tirsdag og lørdag kl. 18.00 fra 28. november, og en siste julaftentrekning kl. 11.00 før markedet stenger.
+- **Salg:** stengt kl. 17–20 på trekningsdagene.
+- **Potten:** alle lodd som er kjøpt, pluss alle bøter som er betalt i markedet (regningstypen «bot»). Den regnes ut fra transaksjonene.
+- **Tredjepremie:** et gratis kvikklodd til neste trekning.
+- **Når vinnerne vises:** i hendelsesloggen med en gang. I avisa samme dag (siden er levende) og morgenen etter.
+- **Videresalgsskatt:** fra bodsalg finnes ikke ennå.
+
+Reglene under gjelder.
 
 **Bestemt (12.11.2026):** Spillere kan kjøpe lodd. Jackpotten er summen av:
 
@@ -641,7 +653,7 @@ Appen har to varianter:
 
 - Spillerne kan chatte med hverandre fra telefonen, én til én, og kanskje også i en felles markedskanal.
 - Den erstatter «tilbud og meldinger mellom boder» fra den opprinnelige testplanen.
-- Se designutfordring 10 (chat og moderering): admin må kunne se og slette meldinger.
+- Se designutfordring 10 (chat og moderering): admin må kunne se og slette meldinger. (Ikke i første omgang)
 
 **Julelotteri**
 

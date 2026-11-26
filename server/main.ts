@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
+  buyLotto,
   GameError,
   seasonOver,
   placeKlasOrder,
@@ -266,6 +267,7 @@ const routes: Record<string, Handler> = {
   'POST /api/paper/cut': action((p, b) => cutWanted(p, Number(b.edition))),
   'POST /api/label': action((p, b) => ({ label: relabel(p, Number(b.itemId)) })),
   'POST /api/police/tip': action((p, b) => tipPolice(p, String(b.seed ?? ''))),
+  'POST /api/lotto/buy': action((p, b) => buyLotto(p, b.nums, Number(b.quick ?? 0))),
   'POST /api/price': action((p, b) => setPrice(p, String(b.productId), Number(b.price), b.homemade === true)),
   'POST /api/buy': action((p, b) => buyFromStall(p, Number(b.stallId), String(b.productId), Number(b.qty), typeof b.homemade === 'boolean' ? b.homemade : undefined)),
 };

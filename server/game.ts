@@ -192,6 +192,26 @@ import {
 } from '../shared/power.ts';
 import type { BillView, GameState, Item, LeaderRow, MarketSlot, Paper, Place, Power, ShopView } from '../shared/types.ts';
 import type { SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
+import type { LottoDrawView, LottoView } from '../shared/types.ts';
+import {
+  LOTTO_CHARITY,
+  LOTTO_MAX,
+  LOTTO_NUMBERS,
+  LOTTO_PICK,
+  LOTTO_PRICE,
+  LOTTO_SECOND,
+  cleanNumbers,
+  drawAt,
+  drawLabel,
+  drawTime,
+  hitsOf,
+  isFinalDraw,
+  lottoDayKey,
+  nextDraw,
+  randomNumbers,
+  saleDraw,
+  saleOpensAt,
+} from '../shared/lottery.ts';
 import {
   BLANK_KEY,
   COPY_KEY,
@@ -2932,6 +2952,7 @@ export function getState(player: PlayerRow): GameState {
     .map((r) => ({ id: r.id, stallId: r.from_stall, productId: r.product_id, qty: r.qty, amount: r.amount }));
 
   return {
+    lotto: lottoView(market, player, t),
     clock: { gameTime: t, phase: phaseOf(parts.hour), speed: t >= SEASON_END ? 0 : market.speed, label: formatClock(parts), ended: t >= SEASON_END },
     paper: paperFor(market, player, currentEdition(t).key, mine?.id ?? null),
     shops: shopsFor(market, player, t),
@@ -4273,6 +4294,218 @@ function cookOne(market: MarketRow, s: StallRow, t: number, items: Item[], k: It
   }
 }
 
+// ---------- Julelotteriet (shared/lottery.ts) ----------
+
+interface LottoTicketRow {
+  id: number;
+  draw_key: number;
+  player_id: number;
+  stall_id: number;
+  nums: string;
+  free: number;
+  hits: number | null;
+  prize: number | null;
+}
+interface LottoDrawRow {
+  draw_key: number;
+  nums: string;
+  pot: number;
+  jackpot_each: number;
+  winners: string;
+  second: number;
+  third: number;
+  carried: number;
+  donated: number;
+}
+const numsOf = (s: string) => s.split(',').map(Number);
+
+/**
+ * Potten: alt som er kjøpt lodd for og alle bøter som er betalt i markedet, minus premiene og det som er gitt bort.
+ * Pengene ligger som transaksjoner (lotto_ticket, bot, lotto_prize, lotto_donation), så potten regnes alltid ut på nytt.
+ */
+function lottoPot(marketId: number): number {
+  const sum = (kinds: string[]) =>
+    one<{ n: number }>(db.prepare(`SELECT COALESCE(SUM(amount), 0) AS n FROM transactions WHERE market_id = ? AND kind IN (${kinds.map(() => '?').join(', ')})`), marketId, ...kinds)?.n ?? 0;
+  return Math.max(0, sum(['lotto_ticket', 'bot']) - sum(['lotto_prize', 'lotto_donation']));
+}
+
+const lottoTickets = (marketId: number, key: number) =>
+  all<LottoTicketRow>(db.prepare('SELECT * FROM lotto_tickets WHERE market_id = ? AND draw_key = ? ORDER BY id'), marketId, key);
+
+/** Kjøp lodd til neste trekning: ett med tallene du har valgt, eller `quick` kvikklodd med tilfeldige tall. */
+export function buyLotto(player: PlayerRow, nums: unknown, quick: number) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    const key = saleDraw(t);
+    if (key === null) {
+      const opens = saleOpensAt(t);
+      throw new GameError(
+        nextDraw(t) === null
+          ? 'Årets siste trekning er over. God jul!'
+          : opens
+            ? `Loddsalget er stengt rundt trekningen. Det åpner igjen kl. ${osloParts(opens).hour}.00.`
+            : 'Loddsalget er stengt akkurat nå.',
+      );
+    }
+    let tickets: number[][];
+    if (quick > 0) {
+      if (int(quick, 'antall') > LOTTO_MAX) throw new GameError(`Du kan ha høyst ${LOTTO_MAX} lodd per trekning.`);
+      tickets = Array.from({ length: quick }, () => randomNumbers());
+    } else {
+      const n = cleanNumbers(nums);
+      if (!n) throw new GameError(`Velg ${LOTTO_PICK} ulike tall fra 1 til ${LOTTO_NUMBERS}.`);
+      tickets = [n];
+    }
+    const have = lottoTickets(market.id, key).filter((x) => x.player_id === player.id).length;
+    if (have + tickets.length > LOTTO_MAX)
+      throw new GameError(have >= LOTTO_MAX ? `Du har allerede ${LOTTO_MAX} lodd til denne trekningen.` : `Du kan bare kjøpe ${LOTTO_MAX - have} lodd til denne trekningen.`);
+    const cost = LOTTO_PRICE * tickets.length;
+    if (stall.cash < cost) throw new GameError(`Du har ikke råd. ${tickets.length === 1 ? 'Loddet koster' : `${tickets.length} lodd koster`} ${cost} kr.`);
+    q.addCash.run(-cost, stall.id);
+    const ins = db.prepare('INSERT INTO lotto_tickets (market_id, draw_key, player_id, stall_id, nums, free, bought_at) VALUES (?, ?, ?, ?, ?, 0, ?)');
+    for (const n of tickets) ins.run(market.id, key, player.id, stall.id, n.join(','), t);
+    q.insertTx.run(market.id, t, 'lotto_ticket', stall.id, null, null, tickets.length, cost);
+    const what = tickets.length === 1 ? `lodd med ${tickets[0].join(' · ')}` : `${tickets.length} kvikklodd`;
+    event(market, player.id, t, `🎟️ Du kjøpte ${what} til julelotteriet (${drawLabel(key).toLowerCase()}). ${cost} kr.`);
+    return { tickets: tickets.length, key };
+  });
+}
+
+/** Boden premien går til: boden loddet ble kjøpt fra, eller en annen bod spilleren har (etter konkurs). */
+function lottoStall(tk: LottoTicketRow): StallRow | null {
+  const s = one<StallRow>(q.stallById, tk.stall_id);
+  if (s && s.owner_id === tk.player_id) return s;
+  return all<StallRow>(q.stallsByOwner, tk.player_id)[0] ?? null;
+}
+
+/** Trekningen (kalles fra processHour når timen er en trekningstime). */
+function runLotto(market: MarketRow, t: number) {
+  const key = drawAt(t);
+  if (key === null) return;
+  if (one(db.prepare('SELECT 1 FROM lotto_draws WHERE market_id = ? AND draw_key = ?'), market.id, key)) return;
+  const nums = randomNumbers();
+  const pot = lottoPot(market.id);
+  const tickets = lottoTickets(market.id, key);
+  const hits = new Map(tickets.map((tk) => [tk.id, hitsOf(numsOf(tk.nums), nums)] as const));
+  const prize = new Map<number, number>();
+  let left = pot;
+  const pay = (tk: LottoTicketRow, amount: number) => {
+    const s = lottoStall(tk);
+    if (!s || amount <= 0) return 0;
+    q.addCash.run(amount, s.id);
+    q.insertTx.run(market.id, t, 'lotto_prize', null, s.id, null, 1, amount);
+    prize.set(tk.id, (prize.get(tk.id) ?? 0) + amount);
+    return amount;
+  };
+  // Andrepremie først (fast beløp), så deler jackpotvinnerne resten.
+  const second = tickets.filter((tk) => hits.get(tk.id) === 2);
+  for (const tk of second) left -= pay(tk, Math.min(LOTTO_SECOND, left));
+  const jack = tickets.filter((tk) => hits.get(tk.id) === 3);
+  const each = jack.length ? Math.floor(left / jack.length) : 0;
+  const winners: string[] = [];
+  for (const tk of jack) {
+    left -= pay(tk, each);
+    winners.push(lottoStall(tk)?.name ?? 'En bod som ikke finnes lenger');
+  }
+  // Tredjepremie: et gratis kvikklodd til neste trekning.
+  const after = nextDraw(t);
+  const third = tickets.filter((tk) => hits.get(tk.id) === 1);
+  if (after !== null) {
+    const ins = db.prepare('INSERT INTO lotto_tickets (market_id, draw_key, player_id, stall_id, nums, free, bought_at) VALUES (?, ?, ?, ?, ?, 1, ?)');
+    for (const tk of third) ins.run(market.id, after, tk.player_id, tk.stall_id, randomNumbers().join(','), t);
+  }
+  // Julaften uten jackpot: potten går til veldedighet.
+  let donated = 0;
+  if (isFinalDraw(key) && jack.length === 0 && left > 0) {
+    donated = left;
+    q.insertTx.run(market.id, t, 'lotto_donation', null, null, null, null, donated);
+    left = 0;
+  }
+  const setHit = db.prepare('UPDATE lotto_tickets SET hits = ?, prize = ? WHERE id = ?');
+  for (const tk of tickets) setHit.run(hits.get(tk.id)!, prize.get(tk.id) ?? 0, tk.id);
+  db.prepare(
+    'INSERT INTO lotto_draws (market_id, draw_key, nums, drawn_at, pot, jackpot_each, winners, second, third, carried, donated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  ).run(market.id, key, nums.join(','), t, pot, each, JSON.stringify(winners), second.length, third.length, left, donated);
+
+  // Hendelsesloggen: for alle, og hver spiller får sitt eget resultat.
+  const balls = nums.join(' · ');
+  const jackText = jack.length
+    ? `Jackpot til ${[...new Set(winners)].map((n) => `«${n}»`).join(' og ')}: ${each} kr per lodd!`
+    : donated
+      ? `Ingen fikk jackpot. Potten på ${donated} kr går til ${LOTTO_CHARITY}.`
+      : `Ingen fikk jackpot. Potten på ${left} kr går videre til neste trekning.`;
+  event(market, null, t, `🎟️ Julelotteriet ${drawLabel(key).toLowerCase()}: ${balls}. ${jackText}${second.length ? ` ${second.length} lodd med 2 riktige vant ${LOTTO_SECOND} kr.` : ''}`);
+  const players = new Map<number, LottoTicketRow[]>();
+  for (const tk of tickets) players.set(tk.player_id, [...(players.get(tk.player_id) ?? []), tk]);
+  for (const [pid, list] of players) {
+    const won = list.reduce((n, tk) => n + (prize.get(tk.id) ?? 0), 0);
+    const free = list.filter((tk) => hits.get(tk.id) === 1).length;
+    const best = Math.max(...list.map((tk) => hits.get(tk.id)!));
+    const parts = [
+      won ? `du vant ${won} kr` : '',
+      free && after !== null ? `${free} gratis lodd til neste trekning` : '',
+    ].filter(Boolean);
+    event(
+      market,
+      pid,
+      t,
+      `🎟️ ${list.length === 1 ? 'Loddet ditt' : `Dine ${list.length} lodd`}: ${list.length === 1 ? '' : 'beste var '}${best} riktig${best === 1 ? '' : 'e'}. ${parts.length ? `${parts.join(' og ')[0].toUpperCase()}${parts.join(' og ').slice(1)}!` : 'Ingen premie denne gangen.'}`,
+    );
+  }
+}
+
+function lottoDrawView(r: LottoDrawRow, playerId: number | null, marketId: number): LottoDrawView {
+  const mine = playerId === null ? [] : lottoTickets(marketId, r.draw_key).filter((tk) => tk.player_id === playerId);
+  return {
+    key: r.draw_key,
+    label: drawLabel(r.draw_key),
+    nums: numsOf(r.nums),
+    pot: r.pot,
+    jackpot: { names: JSON.parse(r.winners) as string[], each: r.jackpot_each },
+    second: r.second,
+    third: r.third,
+    carried: r.carried,
+    donated: r.donated,
+    final: isFinalDraw(r.draw_key),
+    ...(mine.length
+      ? {
+          mine: {
+            tickets: mine.length,
+            won: mine.reduce((n, tk) => n + (tk.prize ?? 0), 0),
+            free: mine.filter((tk) => tk.hits === 1).length,
+            best: Math.max(...mine.map((tk) => tk.hits ?? 0)),
+          },
+        }
+      : {}),
+  };
+}
+
+/** Lotteri-appen: potten, neste trekning, loddene dine og de siste trekningene. */
+function lottoView(market: MarketRow, player: PlayerRow, t: number): LottoView {
+  const key = nextDraw(t);
+  const sale = saleDraw(t);
+  const rows = all<LottoDrawRow>(db.prepare('SELECT * FROM lotto_draws WHERE market_id = ? ORDER BY draw_key DESC LIMIT 4'), market.id);
+  return {
+    pot: lottoPot(market.id),
+    next: key === null ? null : { key, label: drawLabel(key), at: drawTime(key) },
+    open: sale !== null,
+    opensAt: sale === null ? saleOpensAt(t) : null,
+    mine: key === null ? [] : lottoTickets(market.id, key).filter((tk) => tk.player_id === player.id).map((tk) => ({ nums: numsOf(tk.nums), free: !!tk.free })),
+    draws: rows.map((r) => lottoDrawView(r, player.id, market.id)),
+  };
+}
+
+/** Avisa: trekningen i dag (eller i går kveld), og om det er trekning i kveld. */
+function lottoForPaper(market: MarketRow, key: number, time: number, playerId: number): NonNullable<Paper['lotto']> {
+  const row = (k: number) => one<LottoDrawRow>(db.prepare('SELECT * FROM lotto_draws WHERE market_id = ? AND draw_key = ?'), market.id, k);
+  const today = row(key);
+  const draw = today ?? row(lottoDayKey(time - 24 * HOUR));
+  const tonight = !today && nextDraw(time) === key ? { label: drawLabel(key), pot: lottoPot(market.id) } : null;
+  return { draw: draw ? lottoDrawView(draw, playerId, market.id) : null, tonight };
+}
+
 // ---------- Avisa «Verdens Undergang» ----------
 
 /** En avisutgave (dagens eller en eldre). Null hvis den er fra før markedet åpnet. */
@@ -4294,6 +4527,7 @@ function paperFor(market: MarketRow, player: PlayerRow, key: number, myStallId: 
   const paper = buildPaper(market.id, key, yesterday, player.paper_read, nightThefts(market, time, myStallId), wantedFor(market, key));
   paper.praise = praiseFor(market, time, myStallId);
   paper.dumps = dumpsFor(market, time, myStallId);
+  paper.lotto = lottoForPaper(market, key, time, player.id);
   return paper;
 }
 
@@ -5801,6 +6035,7 @@ function processHour(market: MarketRow, hour: number) {
   // Leveranser fra nettbutikkene som har kommet fram, og en og annen fraktkupong i postkassa.
   deliverArrived(market, t);
   deliverShipCoupons(market, hour, t);
+  runLotto(market, t); // julelotteriet: tirsdag og lørdag kl. 18, julaften kl. 11
   expireOrders(market, t); // bestillinger som ikke ble hentet
 
   // Kjelene koker og posebrettere bretter døgnet rundt så lenge de står på.

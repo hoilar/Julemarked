@@ -288,6 +288,10 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- JULELOTTERI-START -->[\s\S]*?<!-- JULELOTTERI-SLUTT -->', '', html)
+    if (ROOT/'GFX_assets/planlagte/julelotteri/leveranse.json').exists():
+        panel = (ROOT/'tools/julelotteri-panel.html').read_text(encoding='utf-8')
+        html = html.replace('<div class="table-wrap">', '<!-- JULELOTTERI-START -->'+panel+'<!-- JULELOTTERI-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- FRAKTKUPONG-START -->[\s\S]*?<!-- FRAKTKUPONG-SLUTT -->', '', html)
     if (ROOT/'client/public/art/verktoy/fraktkupong.png').exists():
         panel = (ROOT/'tools/fraktkupong-panel.html').read_text(encoding='utf-8')

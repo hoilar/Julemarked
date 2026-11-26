@@ -76,7 +76,7 @@ import {
   priceIn,
   type Label,
 } from '../shared/products.ts';
-import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
+import type { BillView, GameState, LottoDrawView, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
 import { LOOK_CHOICES, type Look, type LookKey } from '../shared/look.ts';
 import { BALACLAVA_CROWD, BALACLAVA_RISK } from '../shared/balaclava.ts';
 import { DECOR_THEFT_CATCH, DECOR_THEFT_CATCH_ALARM, DECOR_THEFT_FINE } from '../shared/crime.ts';
@@ -123,6 +123,7 @@ import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
 import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
+import { LOTTO_CHARITY, LOTTO_MAX, LOTTO_NUMBERS, LOTTO_PICK, LOTTO_PRICE, LOTTO_SECOND } from '../shared/lottery.ts';
 import { catchChance, dayName, hoursText, orderHomemade, orderNameOk, orderWhat, pickupHours } from '../shared/orders.ts';
 import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
 import { BUILDINGS, EXTRA_BACKSTREET_PRICE, STALL_NAME_MAX, slotPrice, MAP_GLOW, MAP_H, MAP_SLOTS, MAP_TILE, MAP_W, NPC_OPEN, type Building } from '../shared/marketmap.ts';
@@ -201,7 +202,8 @@ let modalBack: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: alltid nede i høyre hjørne (spillerens, ikke en ting i lageret), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' | 'historier' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' | 'historier' | 'lotteri' = 'home';
+let lottoPick: number[] = []; // tallene du har valgt i Lotteri-appen (før du kjøper loddet)
 // Topplisten: omsetning i dag eller hele sesongen.
 let toplistTab: 'today' | 'total' = 'today';
 let dealerCart: Record<string, number> = {}; // det du har tenkt å bestille hos Fyren
@@ -773,6 +775,68 @@ function storiesPage(s: GameState): string {
     <ul class="phone-orders stories">${rows}</ul>`;
 }
 
+// ---------- Julelotteriet (telefonen og avisa) ----------
+
+/** Grafikken til julelotteriet (GRAFIKK.md, «Julelotteriet»). Settes til true når bildene er levert. */
+const LOTTO_ART = true;
+const lottoArt = LOTTO_ART ? ' art' : '';
+const lottoIcon = () => (LOTTO_ART ? appIcon('lotteri') : '<span class="app-emoji">🎟️</span>');
+const lottoBalls = (nums: number[], drawn: number[] = []) =>
+  `<span class="lotto-balls">${nums.map((n) => `<span class="lotto-ball${lottoArt} ${drawn.includes(n) ? 'hit' : ''}">${n}</span>`).join('')}</span>`;
+
+/** Resultatet av én trekning: kulene, jackpot, andre- og tredjepremie og hvordan det gikk med dine lodd. */
+function lottoDrawResult(d: LottoDrawView): string {
+  const jack = d.jackpot.names.length
+    ? `🏆 Jackpot til ${[...new Set(d.jackpot.names)].map((n) => `«${esc(n)}»`).join(' og ')}: <b>${kr(d.jackpot.each)}</b>${d.jackpot.names.length > 1 ? ' per lodd' : ''}`
+    : d.donated
+      ? `Ingen fikk jackpot. ${kr(d.donated)} går til ${esc(LOTTO_CHARITY)}.`
+      : `Ingen fikk jackpot. ${kr(d.carried)} går videre til neste trekning.`;
+  const mine = d.mine
+    ? `<small class="lotto-mine ${d.mine.won ? 'won' : ''}">${d.mine.tickets === 1 ? 'Loddet ditt' : `Dine ${d.mine.tickets} lodd`}: ${
+        d.mine.won ? `du vant ${kr(d.mine.won)}!` : d.mine.free ? `${d.mine.free} gratis lodd til neste trekning.` : `beste var ${d.mine.best} riktig${d.mine.best === 1 ? '' : 'e'}.`
+      }</small>`
+    : '';
+  return `<div class="lotto-draw"><small>${esc(d.label)} · potten var ${kr(d.pot)}</small>${lottoBalls(d.nums, d.nums)}
+    <small>${jack}</small>
+    <small>${d.second} lodd med 2 riktige fikk ${kr(LOTTO_SECOND)} · ${d.third} lodd med 1 riktig fikk et gratis lodd</small>${mine}</div>`;
+}
+
+/** Lotteri-appen: potten, neste trekning, tallvelgeren, loddene dine og de siste trekningene. */
+function lottoPage(s: GameState): string {
+  const L = s.lotto;
+  const head = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${lottoIcon().replace('<img ', '<img class="title-icon" ')} Julelotteriet</b></div>`;
+  const pot = `<div class="phone-widget lotto-pot${lottoArt}"><small>Potten</small><b>${kr(L.pot)}</b><small>${L.next ? `Trekning ${esc(L.next.label.toLowerCase())}` : 'Årets siste trekning er over'}</small></div>`;
+  const left = LOTTO_MAX - L.mine.length;
+  let buy = '';
+  if (!L.next) buy = '';
+  else if (!myStall(s)) buy = '<p class="phone-empty">Du må ha en bod for å kjøpe lodd.</p>';
+  else if (!L.open)
+    buy = `<p class="phone-empty">🔒 Loddsalget er stengt rundt trekningen${L.opensAt ? ` og åpner igjen kl. ${osloParts(L.opensAt).hour}.00` : ''}.</p>`;
+  else if (left <= 0) buy = `<p class="phone-empty">Du har ${LOTTO_MAX} lodd til denne trekningen, som er det meste du kan ha.</p>`;
+  else {
+    const grid = Array.from({ length: LOTTO_NUMBERS }, (_, i) => i + 1)
+      .map((n) => `<button class="lotto-num${lottoArt} ${lottoPick.includes(n) ? 'on' : ''}" data-action="lotto-pick" data-n="${n}" aria-pressed="${lottoPick.includes(n)}">${n}</button>`)
+      .join('');
+    const ready = lottoPick.length === LOTTO_PICK;
+    buy = `<div class="phone-kicker">Velg ${LOTTO_PICK} tall</div>
+      <div class="lotto-grid">${grid}</div>
+      <div class="lotto-buy">
+        <button data-action="lotto-buy" ${ready && s.me.cash >= LOTTO_PRICE ? '' : 'disabled'}>🎟️ Kjøp lodd · ${kr(LOTTO_PRICE)}</button>
+        <button class="ghost small" data-action="lotto-quick" data-n="1" ${s.me.cash >= LOTTO_PRICE ? '' : 'disabled'}>🎲 Kvikklodd</button>
+        ${left >= 5 ? `<button class="ghost small" data-action="lotto-quick" data-n="5" ${s.me.cash >= 5 * LOTTO_PRICE ? '' : 'disabled'}>🎲 5 kvikklodd · ${kr(5 * LOTTO_PRICE)}</button>` : ''}
+      </div>`;
+  }
+  const mine = L.next
+    ? `<div class="phone-kicker">Dine lodd til ${esc(L.next.label.toLowerCase())} (${L.mine.length} av ${LOTTO_MAX})</div>
+       ${L.mine.length ? `<ul class="lotto-tickets">${L.mine.map((t) => `<li>${LOTTO_ART ? `<span class="lotto-lodd">${t.nums.map((n) => `<b>${n}</b>`).join('')}</span>` : lottoBalls(t.nums)}${t.free ? '<small>gratis</small>' : ''}</li>`).join('')}</ul>` : '<p class="phone-empty">Ingen lodd ennå.</p>'}`
+    : '';
+  const draws = L.draws.length ? `<div class="phone-kicker">Siste trekninger</div>${L.draws.map(lottoDrawResult).join('')}` : '';
+  const rules = `<p class="phone-empty lotto-rules">Trekning hver tirsdag og lørdag kl. 18.00, og siste gang julaften kl. 11.00. Loddsalget er stengt kl. 17–20 på trekningsdagene.
+    3 riktige: jackpot (hele potten, delt hvis flere vinner). 2 riktige: ${kr(LOTTO_SECOND)}. 1 riktig: et gratis lodd til neste trekning.
+    Potten er alt som er kjøpt lodd for, pluss alle bøter som er betalt i markedet. Julemarkedet tar ingenting. Blir det ingen jackpot julaften, går potten til ${esc(LOTTO_CHARITY)}.</p>`;
+  return `${head}${pot}${mine}${buy}${draws}${rules}`;
+}
+
 function phoneWindow(s: GameState): string {
   if (!phoneOpen) return '';
   const mine = myStall(s);
@@ -883,6 +947,8 @@ function phoneWindow(s: GameState): string {
       ? toplistPage(s)
       : phonePage === 'historier'
       ? storiesPage(s)
+      : phonePage === 'lotteri' && s.lotto
+      ? lottoPage(s)
       : phonePage === 'events'
       ? `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>Varsler</b></div>
          <ul class="phone-notes all">${list(60) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`
@@ -909,6 +975,7 @@ function phoneWindow(s: GameState): string {
            ${mine ? app('phone-page', appIcon('kommunen'), 'Kommunen', 'data-page="kommunen"') : ''}
            ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length + s.me.dealer.sales.length) : ''}
            ${mine ? app('phone-page', appIcon('historier'), 'Historier', 'data-page="historier"') : ''}
+           ${s.lotto ? app('phone-page', lottoIcon(), 'Lotteri', 'data-page="lotteri"', s.lotto.mine.length) : ''}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -3697,7 +3764,7 @@ function priceFeedback(price: number, cost: number, base: number): string {
     <span>${MOOD_TEXT[moodFor(price / base, 1)]}</span>`;
 }
 
-const PAPER_PAGES = ['Forside', 'Økonomi', 'Eivblås Halvstrøms hjørne', 'Kriminalitet', 'Kuponger', 'Søppelsaker'];
+const PAPER_PAGES = ['Forside', 'Økonomi', 'Eivblås Halvstrøms hjørne', 'Kriminalitet', 'Kuponger', 'Søppelsaker', 'Julelotteriet'];
 
 /** En utgave av morgenavisa, én side om gangen. */
 function paperView(s: GameState, p: Paper | undefined, page: number): string {
@@ -3859,7 +3926,27 @@ function paperView(s: GameState, p: Paper | undefined, page: number): string {
         : '<p>Markedet holdt seg ryddig. Eller så var det ingen som tystet.</p>'
     }
     <p class="paper-small">Har noen kastet noe i søppelkassa di? Trykk på det i søpla for å se hvem, og tyst til avisa.</p>`;
-  const body = [front, economy, recipe, crime, coupons, trashPage][n];
+  // «Julelotteriet»: trekningen i dag eller i går kveld, og potten før kveldens trekning.
+  const lotto = p.lotto;
+  const next = s.lotto?.next ?? null;
+  const lottoPaper = `
+    <div class="paper-kicker">🎟️ Julelotteriet</div>
+    ${LOTTO_ART ? '<img class="paper-art wide" src="/art/avis/lotteri.png" alt="" draggable="false">' : ''}
+    ${
+      lotto?.draw
+        ? `<h3 class="paper-h">${
+            lotto.draw.jackpot.names.length
+              ? `Jackpot! ${[...new Set(lotto.draw.jackpot.names)].map((x) => `«${esc(x)}»`).join(' og ')} vant ${kr(lotto.draw.jackpot.each)}`
+              : lotto.draw.donated
+                ? `Ingen jackpot – ${kr(lotto.draw.donated)} til ${esc(LOTTO_CHARITY)}`
+                : `Ingen jackpot – potten vokser til ${kr(lotto.draw.carried)}`
+          }</h3>${lottoDrawResult(lotto.draw)}`
+        : ''
+    }
+    ${lotto?.tonight ? `<h3 class="paper-h">Trekning i kveld kl. 18.00</h3><p>Potten er på <b>${kr(lotto.tonight.pot)}</b>. Loddsalget stenger kl. 17. Kjøp lodd i Lotteri-appen på telefonen.</p>` : ''}
+    ${!lotto?.draw && !lotto?.tonight ? `<h3 class="paper-h">${next ? `Neste trekning: ${esc(next.label.toLowerCase())}` : s.lotto ? 'Årets lotteri er over' : 'Julelotteriet kommer snart'}</h3><p>${next ? `Potten er på ${kr(s.lotto?.pot ?? 0)}.` : s.lotto ? 'Takk for i år!' : 'Lotteriet starter snart.'}</p>` : ''}
+    <p class="paper-small">Tre tall fra 1 til 20, ${kr(LOTTO_PRICE)} per lodd. Bøtene i markedet går rett i potten.</p>`;
+  const body = [front, economy, recipe, crime, coupons, trashPage, lottoPaper][n];
   return `
   <article class="paper">
     <header class="paper-mast" data-paper-head title="Dra for å flytte avisa">
@@ -5353,6 +5440,26 @@ app.addEventListener('click', (e) => {
     void act('/api/decor/hang', { itemId: Number(el.dataset.item) }, `${d?.emoji ?? '🎄'} ${d?.name ?? 'Pynten'} henger foran på boden. Se fronten for å se den.`);
     return;
   }
+  if (action === 'lotto-pick') {
+    const n = Number(el.dataset.n);
+    lottoPick = lottoPick.includes(n) ? lottoPick.filter((x) => x !== n) : lottoPick.length < LOTTO_PICK ? [...lottoPick, n] : [...lottoPick.slice(1), n];
+    return render();
+  }
+  if (action === 'lotto-buy') {
+    const nums = [...lottoPick].sort((a, b) => a - b);
+    void act('/api/lotto/buy', { nums }, `🎟️ Lodd med ${nums.join(' · ')} er kjøpt. Lykke til!`).then((ok) => {
+      if (ok) {
+        lottoPick = [];
+        render();
+      }
+    });
+    return;
+  }
+  if (action === 'lotto-quick') {
+    const n = Number(el.dataset.n);
+    void act('/api/lotto/buy', { quick: n }, n === 1 ? '🎲 Kvikkloddet er kjøpt. Lykke til!' : `🎲 ${n} kvikklodd er kjøpt. Lykke til!`);
+    return;
+  }
   if (action === 'story-pause') {
     const paused = el.dataset.paused === '1';
     void act('/api/story/pause', { id: el.dataset.story, paused }, paused ? '⏸️ Historien er utsatt. Ta den opp igjen når du vil.' : '▶️ Historien er tatt opp igjen.');
@@ -5360,7 +5467,7 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' || p === 'historier' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' || p === 'historier' || p === 'lotteri' ? p : 'home';
   }
   if (action === 'toplist-tab') {
     toplistTab = el.dataset.tab === 'total' ? 'total' : 'today';

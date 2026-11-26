@@ -51,7 +51,7 @@ Detaljene står i `julemarked_simulator_konsept.md`, avsnitt 12.9. Ingenting er 
 2. **Fant-appen:** handel mellom spillerne med råvarer, kuponger, maskiner og annet. Bygger på Fantdet.no i 12.7.
 3. **MF-appen (markedsføring):** DM-stikk i postkassene og SOME-annonse.
 4. **Chat-appen:** spillerne kan chatte med hverandre.
-5. **Julelotteri:** reglene står i 12.2.
+5. ✅ **Julelotteri:** bygd 26.11.2026 (Lotteri-appen og avissiden; se 12.2). Grafikken er bestilt.
 6. **Brekkjern fra Fyren:** innbrudd i en stengt bod om natta. Det er en sjanse for at alarmen går, og finlandshetta senker den noe.
 7. **Leie av lager:** ekstra lagerplass mot en forholdsvis dyr dagsleie.
 

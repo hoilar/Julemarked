@@ -20,6 +20,48 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
+## Julelotteriet – grafikk klar (26.11.2026)
+
+Alle seks PNG-filer er levert til stiene i tabellen. Originaler, beskrivelser, metadata og
+kontrollark ligger i `GFX_assets/planlagte/julelotteri/`. Appikonet er kontrollert i 128, 64 og
+32 px ved siden av bank, toppliste og historier. Begge kuler er kontrollert med tall i 26 px.
+Varelisten er oppdatert. Grafikken er koblet inn med `LOTTO_ART = true` (26.11.2026).
+
+Telefonen har fått appen **Lotteri** (`lottoPage` i `client/main.ts`, regler i `shared/lottery.ts`), og avisa har fått
+siden **Julelotteriet**.
+- **Appen:** spilleren ser potten og velger tre tall fra 1 til 20 på et rutenett med kuler. Loddene til neste trekning og de siste trekningene står under.
+- **Avisa:** viser trekningen samme dag (og morgenen etter), eller potten før kveldens trekning.
+
+Grafikken er koblet inn med `LOTTO_ART = true` i `client/main.ts`. Uten den brukes 🎟️ og CSS-kuler.
+
+**Stil:**
+- Appikonet følger de andre app-ikonene (`app-historier.png`, `app-toppliste.png`, `app-bank.png`).
+- Resten følger toppliste-grafikken (`GFX_assets/planlagte/toppliste/`): varm pikselstil, mørk kontur, lys fra øvre venstre og juledetaljer uten å bli rotete.
+- Ingen lesbar tekst, bortsett fra der det står i tabellen.
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| L1 | `client/public/art/telefon/app-lotteri.png` | 128×128 | Lodd med avrevet kant og en liten rød lotterikule foran, en gullstjerne i hjørnet | Ikonet på hjemskjermen og i tittellinja |
+| L2 | `client/public/art/lotteri/banner.png` | 640×200 | Lotteritrommel i messing og glass på et lite bord med rød duk, full av gule og røde kuler. Én kule triller ut. Granbar og lys rundt, kveldsblå bakgrunn som går over i gjennomsiktig nederst | Toppen av Lotteri-appen, bak «Potten» |
+| L3 | `client/public/art/lotteri/kule.png` + `kule-treff.png` | 64×64 hver | Én blank lotterikule uten tall: gul/gull (vanlig) og rød (trukket/treff). Midten av kula er lys og jevn, så spillet kan skrive tallet oppå | Kulene i tallvelgeren, på loddene og i trekningene |
+| L4 | `client/public/art/lotteri/lodd.png` | 320×96 | Avlangt papirlodd i kremhvitt med rød kant, perforert venstreside og tre tomme runde felt der tallene står | Bakgrunn for hvert av «Dine lodd» |
+| L5 | `client/public/art/avis/lotteri.png` | 320×200 | Avisvignett i svart-hvitt rasterstil (som en gammel avisillustrasjon): en glad bodeier som holder et stort lodd over hodet, konfetti rundt | Øverst på avissida «Julelotteriet» |
+
+Til sammen 6 filer.
+
+```text
+Pixel art for "Julemarked Simulator", a cozy Norwegian Christmas market game. Match the attached references
+(app icons: app-historier, app-toppliste; toplist banner and medals): same pixel size, dark outline, warm palette,
+light from the upper left. Transparent background unless stated. No readable text.
+Canvas: [W]×[H]. Make: [L-motiv].
+```
+
+For L5: `Black-and-white newspaper illustration in halftone/raster style, like a vintage newspaper drawing, same
+masthead mood as art/avis.png. No text.`
+
+Lever originaler til `GFX_assets/planlagte/julelotteri/originaler/` og ferdige bilder til stiene i tabellen.
+Kontroller L1 i 64 og 32 px ved siden av de andre app-ikonene, og L3 med et tall skrevet oppå i 26 px.
+
 ## Fraktkupong – grafikk klar og lagt inn (25.11.2026)
 
 Levert: `client/public/art/verktoy/fraktkupong.png`, transparent PNG i 128 × 128.
