@@ -2063,6 +2063,7 @@ interface SnoopSession {
   lastAt: number; // ekte ms for siste handling
   unlocked: Set<number>; // safer du har tastet riktig kode på i denne runden
   big: number; // store ting du har tatt (synes når du går)
+  keyed: boolean; // låste deg inn i en stengt bod med kopinøkkel: ingen ser deg, men sporet blir liggende
 }
 const snoops = new Map<number, SnoopSession>(); // spiller → pågående snoke-runde
 const snoopBans = new Map<string, number>(); // «spiller:bod» → spilltid da du kan snoke der igjen
@@ -2275,7 +2276,7 @@ function snoopView(market: MarketRow, mine: StallRow, other: StallRow, sess: Sno
       ...(yours ? { yours } : {}),
     };
   });
-  return { stallId: other.id, stallName: other.name, key: other.sign !== 'closed', since: sess.since, big: sess.big, alarm: alarmOn(market, other, t), items: out };
+  return { stallId: other.id, stallName: other.name, key: other.sign !== 'closed', keyed: sess.keyed, since: sess.since, big: sess.big, alarm: alarmOn(market, other, t), items: out };
 }
 
 /** Hent pågående snoke-runde hos `stallId`, eller kast. */
@@ -2315,7 +2316,7 @@ export function snoopStart(player: PlayerRow, stallId: number): SnoopResult {
   return tx(() => {
     const other = one<StallRow>(q.stallById, stallId);
     if (!other) throw new GameError('Fant ikke boden.');
-    snoopAccess(market, player, mine, other, t);
+    const serving = snoopAccess(market, player, mine, other, t);
     const cur = snoops.get(player.id);
     if (cur && cur.stallId === stallId) {
       cur.lastAt = Date.now();
@@ -2328,7 +2329,7 @@ export function snoopStart(player: PlayerRow, stallId: number): SnoopResult {
       .prepare('INSERT INTO snoop_traces (market_id, stall_id, snooper_stall_id, x, y, created_at) VALUES (?, ?, ?, ?, ?, ?)')
       .run(market.id, other.id, mine.id, x, y, t);
     const now = Date.now();
-    const sess: SnoopSession = { stallId, traceId: Number(res.lastInsertRowid), since: now, lastAt: now, unlocked: new Set(), big: 0 };
+    const sess: SnoopSession = { stallId, traceId: Number(res.lastInsertRowid), since: now, lastAt: now, unlocked: new Set(), big: 0, keyed: serving === 'closed' };
     snoops.set(player.id, sess);
     event(market, player.id, t, `🕵️ Du snek deg inn bak disken hos «${other.name}».`);
     return { view: snoopView(market, mine, other, sess, t) };
@@ -2488,6 +2489,7 @@ export function snoopImprint(player: PlayerRow, stallId: number): SnoopResult {
 /**
  * Går ut fra disken og tilbake til din egen bod. Først nå kan Tyttebærpolitiet se deg: 10 %, pluss 1 % for
  * hvert femte minutt du sto der og litt for hver store ting du bærer ut (alarmsystemet ganger alt).
+ * Låste du deg inn med kopinøkkel, ser ingen deg; bare sporet under disken kan avsløre deg.
  */
 export function snoopLeave(player: PlayerRow): SnoopResult {
   const sess = snoops.get(player.id);
@@ -2500,7 +2502,7 @@ export function snoopLeave(player: PlayerRow): SnoopResult {
     const other = one<StallRow>(q.stallById, sess.stallId);
     if (!other) return {};
     const minutes = (Math.min(Date.now(), sess.lastAt + SNOOP_IDLE_MINUTES * 60_000) - sess.since) / 60_000;
-    const risk = leaveRisk(minutes, sess.big, alarmOn(market, other, t)) * (wearsBalaclava(player.id) ? BALACLAVA_RISK : 1);
+    const risk = sess.keyed ? 0 : leaveRisk(minutes, sess.big, alarmOn(market, other, t)) * (wearsBalaclava(player.id) ? BALACLAVA_RISK : 1);
     if (Math.random() < risk) return snoopCaught(market, player, mine, other, sess, t);
     const text = `🕵️ Du kom deg ut fra disken hos «${other.name}» uten at noen så deg.`;
     event(market, player.id, t, text);

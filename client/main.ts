@@ -2605,8 +2605,8 @@ function snoopModal(s: GameState, view: SnoopView | null, caught?: string): stri
   if (caught) return `<h2>🫐 ${POLICE.name}!</h2><p>${esc(caught.replace(/^🫐 /, ''))}</p><div class="row auto-row"><button data-action="close">Au</button></div>`;
   if (!view) return '<p class="muted">Sniker deg inn bak disken …</p>';
   const minutes = Math.max(0, (Date.now() - view.since) / 60_000);
-  const risk = Math.round(leaveRisk(minutes, view.big, view.alarm) * 100);
-  const why = [`inne i ${Math.floor(minutes)} min`, view.alarm ? 'alarmen er på' : '', view.big ? `${view.big} store ting` : ''].filter(Boolean).join(', ');
+  const risk = view.keyed ? 0 : Math.round(leaveRisk(minutes, view.big, view.alarm) * 100);
+  const why = view.keyed ? 'du låste deg inn med kopinøkkel, men sporet ditt blir liggende' : [`inne i ${Math.floor(minutes)} min`, view.alarm ? 'alarmen er på' : '', view.big ? `${view.big} store ting` : ''].filter(Boolean).join(', ');
   const soap = hasTool(s, SOAP);
   const key = view.key
     ? `<p class="snoop-key"><img class="icon" src="/art/nokkel-krok.png" alt=""> Nøkkelen til hengelåsen henger på plassen sin.

@@ -133,6 +133,7 @@ export interface SnoopView {
   stallId: number;
   stallName: string;
   key: boolean; // nøkkelen henger på plassen sin (boden er ikke stengt)
+  keyed: boolean; // du låste deg inn med kopinøkkel: ingen risiko når du går, bare sporet
   since: number; // ekte ms da du gikk inn bak disken
   big: number; // store ting du har tatt
   alarm: boolean; // alarmsystemet er på
