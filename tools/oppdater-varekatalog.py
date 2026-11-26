@@ -288,6 +288,13 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- HANDBOK-START -->[\s\S]*?<!-- HANDBOK-SLUTT -->', '', html)
+    handbookfile=ROOT/'GFX_assets/planlagte/handbok/leveranse.json'
+    if handbookfile.exists():
+        entries=json.loads(handbookfile.read_text(encoding='utf-8'))['items']
+        links=''.join(f'<li><a href="{escape(item["target"], quote=True)}">{escape(item["id"])}</a> · {item["size"][0]} × {item["size"][1]} px</li>' for item in entries)
+        panel=(ROOT/'tools/handbok-panel.html').read_text(encoding='utf-8').replace('<!-- HANDBOK-FILER -->',f'<details><summary>Alle {len(entries)} filer</summary><ul>{links}</ul></details>')
+        html=html.replace('<div class="table-wrap">','<!-- HANDBOK-START -->'+panel+'<!-- HANDBOK-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- JULELOTTERI-START -->[\s\S]*?<!-- JULELOTTERI-SLUTT -->', '', html)
     if (ROOT/'GFX_assets/planlagte/julelotteri/leveranse.json').exists():
         panel = (ROOT/'tools/julelotteri-panel.html').read_text(encoding='utf-8')

@@ -278,6 +278,7 @@ import { WEATHER, forceWeather, forcedWeather, weatherDemand, weatherFor, type W
 import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
 import { regularChance, regularLikes, regularReputation, regularVisits } from '../shared/regulars.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
+import { HANDBOOK_NAME, handbookUnlocks } from '../shared/handbook.ts';
 import { ORDER_REP_CAUGHT, ORDER_REP_DONE, ORDER_REP_FAILED, catchChance, orderHomemade, orderNameOk, dayName, hoursText, orderDeposit, orderDueDay, orderPrice, orderQty, orderWhat, pickupHours, type CustomerOrder } from '../shared/orders.ts';
 
 export class GameError extends Error {}
@@ -318,6 +319,7 @@ interface MarketRow {
   game_start: number;
   speed: number;
   last_hour: number;
+  last_slice: number | null; // siste salgsrunde (5 min) som er kjørt; null = last_hour × SALE_SLICES
   thief_caught: number; // avisutgaven (ÅÅÅÅMMDD) tyven ble tatt
 }
 interface PlayerRow {
@@ -485,7 +487,29 @@ export function seasonOver(player: PlayerRow): boolean {
 
 function event(m: MarketRow, playerId: number | null, gameTime: number, text: string) {
   q.insertEvent.run(m.id, playerId, gameTime, text);
+  if (playerId !== null) unlockHandbook(m, playerId, gameTime, text);
 }
+
+// ---------- Bodeierhåndboka ----------
+// De hemmelige sidene låses opp av hendelsene spilleren selv får (se `unlock` i shared/handbook.ts).
+
+const insertHandbookPage = db.prepare('INSERT OR IGNORE INTO handbook_pages (player_id, page_id, unlocked_at) VALUES (?, ?, ?)');
+
+function unlockHandbook(m: MarketRow, playerId: number, gameTime: number, text: string) {
+  for (const page of handbookUnlocks(text)) {
+    if (Number(insertHandbookPage.run(playerId, page.id, gameTime).changes) > 0)
+      q.insertEvent.run(m.id, playerId, gameTime, `📖 Ny side i ${HANDBOOK_NAME}: «${page.title}».`);
+  }
+}
+
+/** Ved oppstart: gir sidene til dem som gjorde tingene før håndboka fantes (uten nye varsler). */
+{
+  const rows = db.prepare('SELECT player_id, game_time, text FROM events WHERE player_id IS NOT NULL').iterate() as Iterable<{ player_id: number; game_time: number; text: string }>;
+  for (const r of rows) for (const page of handbookUnlocks(r.text)) insertHandbookPage.run(r.player_id, page.id, r.game_time);
+}
+
+const handbookOf = (playerId: number) =>
+  all<{ page_id: string }>(db.prepare('SELECT page_id FROM handbook_pages WHERE player_id = ? ORDER BY unlocked_at'), playerId).map((r) => r.page_id);
 
 // ---------- Gjenstander ----------
 
@@ -2633,7 +2657,9 @@ function wearsBalaclava(playerId: number): boolean {
 export function setLook(player: PlayerRow, raw: unknown): { look: Look } {
   const look = cleanLook(raw);
   if (look.balaclava && !ownsBalaclava(player.id)) throw new GameError('Du har ingen finlandshette. Fyren bak containeren kan skaffe en.');
+  const had = wearsBalaclava(player.id);
   db.prepare('UPDATE players SET look = ? WHERE id = ?').run(JSON.stringify(look), player.id);
+  if (look.balaclava && !had) event(marketOf(player), player.id, nowFor(marketOf(player)), '🥷 Du trakk finlandshetta over hodet i bilspeilet.');
   return { look };
 }
 
@@ -2955,6 +2981,7 @@ export function getState(player: PlayerRow): GameState {
 
   return {
     lotto: lottoView(market, player, t),
+    handbook: handbookOf(player.id),
     clock: { gameTime: t, phase: phaseOf(parts.hour), speed: t >= SEASON_END ? 0 : market.speed, label: formatClock(parts), ended: t >= SEASON_END },
     paper: paperFor(market, player, currentEdition(t).key, mine?.id ?? null),
     shops: shopsFor(market, player, t),
@@ -3214,7 +3241,8 @@ export function devControl(player: PlayerRow, b: { speed?: unknown; at?: unknown
     if (!Number.isFinite(target)) throw new GameError('Ugyldig tidspunkt.');
     const speed = one<MarketRow>(q.marketById, market.id)!.speed; // kan nettopp ha blitt endret over
     db.prepare('UPDATE markets SET real_start = ? WHERE id = ?').run(realStartFor(market.game_start, target, speed), market.id);
-    if (target < now || b.skip) db.prepare('UPDATE markets SET last_hour = ? WHERE id = ?').run(hourIndex(target), market.id);
+    if (target < now || b.skip)
+      db.prepare('UPDATE markets SET last_hour = ?, last_slice = ? WHERE id = ?').run(hourIndex(target), Math.floor(target / SLICE), market.id);
   }
   if (b.weather !== undefined) {
     const kind = typeof b.weather === 'string' && b.weather in WEATHER ? (b.weather as WeatherKind) : null;
@@ -3453,6 +3481,7 @@ export function rollbackMeter(player: PlayerRow) {
     db.prepare(
       'UPDATE stalls SET power_kwh = power_kwh - ?, power_cost = MAX(0, power_cost - ?), meter_kwh = meter_kwh - ?, meter_tamper = meter_tamper + ?, meter_day = ? WHERE id = ?',
     ).run(kwh, saved, kwh, kwh, today, stall.id);
+    event(market, player.id, t, `🪛 Du skrudde strømmåleren tilbake ${Math.round(kwh * 10) / 10} kWh. Plomberingen er brutt.`);
     return { kwh: Math.round(kwh * 10) / 10, saved: Math.round(saved) };
   });
 }
@@ -6121,6 +6150,70 @@ function processHour(market: MarketRow, hour: number) {
     );
   }
 
+  // Musikken teller timer og kan spise båndet (én gang i timen). Hvor mye den hjelper salget, leses i salgsrundene.
+  for (const s of stalls) musicHour(market, s, t);
+}
+
+// ---------- Salget til kundene (runder på 5 spillminutter) ----------
+// Før gikk salget én gang i timen, på hel time. Nå er timen delt i SALE_SLICES runder. Hver runde har 1/12 av
+// timens etterspørsel, så antall solgte er det samme i snitt, men kundene kommer spredt utover timen.
+// Det som før skjedde én gang i timen (omdømme for tomt bord, klager), er skalert ned tilsvarende.
+
+const SALE_SLICES = 12;
+const SLICE = HOUR / SALE_SLICES;
+
+/**
+ * Omdømmet fra salg ble før gitt én gang per vare og time (når noe ble solgt). Nå kan det komme i flere runder.
+ * Denne faktoren gjør at det i snitt blir like mye per time som før: P(salg i timen) / (forventet antall runder med salg).
+ */
+function sliceRepFactor(lambdaHour: number): number {
+  if (lambdaHour <= 0) return 0;
+  return (1 - Math.exp(-lambdaHour)) / (SALE_SLICES * (1 - Math.exp(-lambdaHour / SALE_SLICES)));
+}
+
+/** Salgsmeldingen samles til én linje per bod og time, som oppdateres (og flyttes øverst) for hver runde med salg. */
+const saleLines = new Map<number, { eventId: number; hour: number; self: boolean; units: Map<string, number>; revenue: number; cash: number; fee: number }>();
+
+function saleEvent(market: MarketRow, s: StallRow, t: number, self: boolean, sold: Map<string, number>, revenue: number, cash: number, fee: number) {
+  const hour = hourIndex(t);
+  let line = saleLines.get(s.id);
+  if (line && (line.hour !== hour || line.self !== self)) line = undefined;
+  if (line) {
+    db.prepare('DELETE FROM events WHERE id = ?').run(line.eventId);
+    for (const [emoji, n] of sold) line.units.set(emoji, (line.units.get(emoji) ?? 0) + n);
+    line.revenue += revenue;
+    line.cash += cash;
+    line.fee += fee;
+  } else line = { eventId: 0, hour, self, units: new Map(sold), revenue, cash, fee };
+  const what = [...line.units].map(([emoji, n]) => `${n} ${emoji}`).join(', ');
+  const how = line.cash > 0 ? `kontant ${line.cash} kr, Bipps ${line.revenue - line.cash} kr – gebyr ${line.fee} kr` : `alt med Bipps – gebyr ${line.fee} kr`;
+  const since = osloParts(hour * HOUR).hour;
+  const text = `${self ? '💳 Selvbetjent: solgte' : 'Solgte'} ${what} for ${line.revenue} kr siden kl. ${String(since).padStart(2, '0')}.00 (${how}).`;
+  line.eventId = Number(q.insertEvent.run(market.id, s.owner_id, t, text).lastInsertRowid);
+  saleLines.set(s.id, line);
+}
+
+/** Hvor mye musikken hjelper akkurat nå (uten å telle timer eller spise bånd; det gjør musicHour). */
+function musicNow(market: MarketRow, s: StallRow, t: number): { boost: number; speakers: boolean } {
+  const m = musicAt(market, s, t);
+  if (!m) return { boost: 1, speakers: false };
+  const st = m.player.player!;
+  const day = currentEdition(t).key;
+  const hours = Math.max(1, st.tape === m.tapeItem.id && st.day === day ? (st.hours ?? 0) : 0);
+  const parts = osloParts(t);
+  const december = parts.month === 12 ? parts.day : 0;
+  return { boost: musicBoost({ speakers: m.speakers, pirate: !!m.tape.pirate, hours }, december), speakers: m.speakers };
+}
+
+function sellSlice(market: MarketRow, slice: number) {
+  const t = slice * SLICE;
+  const parts = osloParts(t);
+  const share = 1 / SALE_SLICES;
+  const firstOfHour = slice % SALE_SLICES === 0;
+  const stalls = all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ?'), market.id);
+  const outage = outageFor(market.id, currentEdition(t).key);
+  const dark = (s: StallRow) =>
+    !!outage && LAYOUT[s.slot_index].street === outage.street && parts.hour >= outage.from && parts.hour < outage.to;
   const night = phaseOf(parts.hour) !== 'day'; // om natta selges bare luguberte varer
 
   // Kundene kjøper bare det som står på bordet. Mer konkurranse gir færre kunder per bod.
@@ -6145,8 +6238,8 @@ function processHour(market: MarketRow, hour: number) {
   const today = dateKey(t);
   const weather = weatherFor(market.id, currentEdition(t).key); // dagens vær (avisdagen)
 
-  // Musikken ved hver bod (teller timer og kan spise båndet), og hvem som spiller høyt.
-  const music = new Map(stalls.map((s) => [s.id, musicHour(market, s, t)]));
+  // Musikken ved hver bod (hvor mye den hjelper nå), og hvem som spiller høyt.
+  const music = new Map(stalls.map((s) => [s.id, musicNow(market, s, t)]));
   const loudAt = new Map(stalls.filter((s) => music.get(s.id)!.speakers).map((s) => [s.slot_index, s]));
   const neighbourFactor = (s: StallRow) => {
     if (music.get(s.id)!.speakers) return 1; // lydkrig: du hører ikke naboen over din egen musikk
@@ -6163,7 +6256,9 @@ function processHour(market: MarketRow, hour: number) {
     let reputation = s.reputation;
     let revenue = 0;
     let shrink = 0;
-    const sold: string[] = [];
+    const sold = new Map<string, number>();
+    // Lys på boden etter mørkets frembrudd (sjekkes én gang per bod og runde).
+    const lit = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
     // Selger i finlandshette: kundene blir skremt.
     const modeFactor = (serving === 'self' ? SELF_CROWD : SERVICE_BOOST) * (serving === 'open' && wearsBalaclava(s.owner_id) ? BALACLAVA_CROWD : 1);
     // Pynten på fronten (shared/decor.ts): flere kunder, mer salg og høyere forventet pris i kategoriene.
@@ -6171,8 +6266,8 @@ function processHour(market: MarketRow, hour: number) {
     // Åpen bod med (nesten) tomt bord: kundene blir skuffet.
     const shown = [...onCounter.get(s.id)!.values()].reduce((n, c) => n + c.home + c.store, 0);
     if (shown <= EMPTY_LIMIT && !night) {
-      reputation -= EMPTY_REP_HIT;
-      if (parts.hour % 3 === 0)
+      reputation -= EMPTY_REP_HIT * share;
+      if (firstOfHour && parts.hour % 3 === 0)
         event(market, s.owner_id, t, `😕 Kundene går skuffet forbi – bordet ditt er ${shown === 0 ? 'tomt' : 'nesten tomt'}. Snu skiltet til Stengt mens du fyller på.`);
     }
     // Feil tips til politiet i går: ryktet holder folk unna i dag.
@@ -6183,7 +6278,7 @@ function processHour(market: MarketRow, hour: number) {
       const d = PRODUCT_BY_ID[pid]?.divisive;
       if (!d || isLuguber(pid) !== night) continue;
       avoid *= 1 - d.avoid;
-      if (Math.random() < d.hateChance) {
+      if (Math.random() < d.hateChance * share) {
         reputation -= d.rep;
         event(market, null, t, `${PRODUCT_BY_ID[pid].emoji} ${pickLine(d.hate).replace('{stall}', `«${s.name}»`)}`);
       }
@@ -6208,16 +6303,15 @@ function processHour(market: MarketRow, hour: number) {
         const competition = 1 / Math.sqrt(sellers.get(pid) ?? 1);
         // Et fullt bord trekker litt flere kunder enn én ensom vare. Etterspørselen deles på etikettene.
         const display = Math.min(1.25, 0.85 + total * 0.04) * (count / total);
-        const lights = parts.hour >= DARK_FROM && !dark(s) && runningDevices(s, itemsOf(s.id)).some((d) => d.light) ? LIGHT_BOOST : 1;
         const hourCurve = evening ? EVENING_SHARE : night ? nightCurve(parts.hour) : curve;
         const wx = weatherDemand(weather, p.category);
         const shy = p.divisive ? 1 : avoid; // fansen kommer uansett; de andre varene merker lukta
-        const lambda = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lights * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
-        const units = takeFromCounter(s.id, pid, Math.min(poisson(lambda), count), homemade);
+        const lambdaHour = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lit * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
+        const units = takeFromCounter(s.id, pid, Math.min(poisson(lambdaHour * share), count), homemade);
         if (units <= 0) continue;
 
         revenue += units * price;
-        sold.push(`${units} ${p.emoji}`);
+        sold.set(p.emoji, (sold.get(p.emoji) ?? 0) + units);
         q.insertTx.run(market.id, t, 'npc_sale', s.id, null, pid, units, units * price);
         // Selvbetjent: noen «glemmer» å betale.
         if (serving === 'self') {
@@ -6230,8 +6324,10 @@ function processHour(market: MarketRow, hour: number) {
           }
         }
 
-        if (price <= expected * 1.15) reputation += 0.3;
-        if (price > expected * 1.6) reputation -= 0.4;
+        // Omdømme for prisen: samme snitt per time som da salget gikk én gang i timen (se sliceRepFactor).
+        const repScale = sliceRepFactor(lambdaHour);
+        if (price <= expected * 1.15) reputation += 0.3 * repScale;
+        if (price > expected * 1.6) reputation -= 0.4 * repScale;
 
         if (p.divisive) {
           for (let i = 0; i < units; i++) {
@@ -6263,8 +6359,7 @@ function processHour(market: MarketRow, hour: number) {
       const cash = serving === 'open' ? Math.round(revenue * CASH_SHARE) : 0;
       const fee = Math.round((revenue - cash) * PAYMENT_FEE);
       q.addCash.run(revenue - fee, s.id);
-      const how = cash > 0 ? `kontant ${cash} kr, Bipps ${revenue - cash} kr – gebyr ${fee} kr` : `alt med Bipps – gebyr ${fee} kr`;
-      event(market, s.owner_id, t, `${serving === 'self' ? '💳 Selvbetjent: solgte' : 'Solgte'} ${sold.join(', ')} for ${revenue} kr (${how}).`);
+      saleEvent(market, s, t, serving === 'self', sold, revenue, cash, fee);
     }
     if (shrink > 0)
       event(market, s.owner_id, t, `🫣 ${shrink} ${shrink === 1 ? 'vare' : 'varer'} forsvant fra bordet uten at noen betalte.`);
@@ -6275,13 +6370,18 @@ function processHour(market: MarketRow, hour: number) {
 export function tick(): number[] {
   const changed: number[] = [];
   for (const market of all<MarketRow>(q.allMarkets)) {
-    const target = hourIndex(nowFor(market));
-    if (market.last_hour >= target) continue;
-    // Ved lange avbrudd tar vi igjen maks 72 spilltimer om gangen.
-    const end = Math.min(target, market.last_hour + 72);
+    // Salgsrundene går hvert 5. spillminutt; timeutregningen kjøres i første runde i hver time, før salget.
+    const target = Math.floor(nowFor(market) / SLICE);
+    const last = market.last_slice ?? market.last_hour * SALE_SLICES;
+    if (last >= target) continue;
+    // Ved lange avbrudd tar vi igjen 6 spilltimer per kall (tick går hvert sekund), så serveren ikke henger lenge.
+    const end = Math.min(target, last + 6 * SALE_SLICES);
     tx(() => {
-      for (let h = market.last_hour + 1; h <= end; h++) processHour(market, h);
-      db.prepare('UPDATE markets SET last_hour = ? WHERE id = ?').run(end, market.id);
+      for (let sl = last + 1; sl <= end; sl++) {
+        if (sl % SALE_SLICES === 0) processHour(market, sl / SALE_SLICES);
+        sellSlice(market, sl);
+      }
+      db.prepare('UPDATE markets SET last_hour = ?, last_slice = ? WHERE id = ?').run(Math.floor(end / SALE_SLICES), end, market.id);
     });
     changed.push(market.id);
   }

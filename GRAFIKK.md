@@ -20,6 +20,78 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
+## Bodeierhåndboka – grafikk klar og lagt inn (26.11.2026)
+
+Alle 33 PNG-filer er levert til stiene under: appikon, forside, låst lapp og 30 sideikoner.
+Originaler, beskrivelser, metadata og kontrollark ligger i `GFX_assets/planlagte/handbok/`.
+Appikonet er kontrollert i 128, 64 og 32 px sammen med de andre appene. Alle 31 småikoner
+er kontrollert i 24 px. Forsikringsskjoldet er blått, safen har blankt tastatur uten tall,
+og finlandshetta er avrundet. Varelisten er oppdatert. **Lagt inn i spillet 26.11.2026** med `HANDBOOK_ART = true`.
+
+Telefonen har fått appen **Håndboka** (`handbookPage` i `client/main.ts`, tekstene i `shared/handbook.ts`).
+- **De offisielle sidene** fra Markedsstyret er åpne fra start. Det er 21 sider om skiltet, kunder, regninger, strøm, avisa og resten.
+- **«Det som ikke står i håndboka»:** 9 lapper som er stukket inn i boka. De låses opp første gang spilleren selv gjør det lyssky (Fyren, snoking, kopinøkkel og så videre). Låste lapper vises som «???» med et hint.
+
+Grafikken er koblet inn med `HANDBOOK_ART = true` i `client/main.ts`. Forsiden vises i sitt eget format med teksten i det tomme feltet nederst, og «Utgitt av Markedsstyret» står under.
+
+**Stil:**
+- Appikonet følger de andre app-ikonene (`app-historier.png`, `app-lotteri.png`, `app-bank.png`).
+- Sideikonene vises i 24 px i lista og øverst på hver side. Lag dem i 64 × 64 med tydelig omriss, så de leses i liten størrelse. Samme varme pikselstil, mørk kontur og lys fra øvre venstre.
+- Lappene (H4.22–H4.30) kan gjerne ha en litt mørkere, nattlig fargepalett enn de offisielle sidene.
+- Ingen lesbar tekst.
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| H1 | `client/public/art/telefon/app-handbok.png` | 128×128 | Tykk rød håndbok med gullkant og et bokmerke, en gul lapp stikker ut mellom sidene | Ikonet på hjemskjermen og i tittellinja |
+| H2 | `client/public/art/handbok/forside.png` | 640×200 | Forsiden av håndboka: rødt skinnomslag med gullornamenter og et lite markedsstyre-segl, granbar i hjørnet. Plass til tekst nederst (spillet skriver «Alt en bodeier trenger å vite» oppå) | Øverst i innholdsfortegnelsen |
+| H3 | `client/public/art/handbok/last.png` | 64×64 | Sammenbrettet gul lapp med en liten hengelås | Låste lapper («???») |
+| H4 | `client/public/art/handbok/<side>.png` | 64×64 hver | Ett ikon per side, se lista under | Lista og toppen av siden |
+
+Til sammen 33 filer (H1, H2, H3 og 30 sideikoner).
+
+| # | Fil | Side | Motiv |
+|---|---|---|---|
+| H4.1 | `client/public/art/handbok/start.png` | Velkommen til markedet | En liten julebod med åpen luke og en vinkende vott foran |
+| H4.2 | `client/public/art/handbok/skiltet.png` | Skiltet og betjening | Det hengende bodskiltet i tre, snudd litt på skrå |
+| H4.3 | `client/public/art/handbok/kunder.png` | Kunder og priser | Handlepose med en prislapp som henger ut |
+| H4.4 | `client/public/art/handbok/stamkunder.png` | Stamkunder og historier | Sammenrullet pergament med rød sløyfe |
+| H4.5 | `client/public/art/handbok/bestillinger.png` | Kundebestillinger | Bestillingslapp med blyant og et lite pakkebånd |
+| H4.6 | `client/public/art/handbok/innkjop.png` | Innkjøp og levering | Pappeske med tape og en liten fartsstripe |
+| H4.7 | `client/public/art/handbok/bilen.png` | Bilen og handleturer | Liten rød gammel bil sett fra siden (som bilen ved boden) |
+| H4.8 | `client/public/art/handbok/produksjon.png` | Produksjon og oppskrifter | Kobberkjele med damp og en tresleiv |
+| H4.9 | `client/public/art/handbok/pynt.png` | Pynt | Grankrans med rød sløyfe og to julekuler |
+| H4.10 | `client/public/art/handbok/regninger.png` | Bodleie og regninger | Giro/regning med rød stempelkant |
+| H4.11 | `client/public/art/handbok/bank.png` | Banken og konkurs | Sparegris med en mynt på vei ned |
+| H4.12 | `client/public/art/handbok/strom.png` | Strøm og sikringer | Gammeldags skrusikring med et lite lyn |
+| H4.13 | `client/public/art/handbok/forsikring.png` | Forsikring | Skjold med et lite hus i midten (blått) |
+| H4.14 | `client/public/art/handbok/alkohol.png` | Alkohol og skjenkebevilling | Vinflaske og et stemplet dokument |
+| H4.15 | `client/public/art/handbok/tilsynet.png` | Tilsynsmannen | Utklippstavle med avkrysningsliste |
+| H4.16 | `client/public/art/handbok/soppel.png` | Søppelkassa | Grønn søppelkasse med lokket litt på gløtt |
+| H4.17 | `client/public/art/handbok/safe.png` | Safe og koder | Liten grå safe med talllås |
+| H4.18 | `client/public/art/handbok/avisa.png` | Avisa, kuponger og gavekort | Brettet avis med en kupong som stikker ut |
+| H4.19 | `client/public/art/handbok/tyven.png` | Nattetyven og etterlysninger | Etterlysningsplakat med silhuett og rød kant |
+| H4.20 | `client/public/art/handbok/lotteriet.png` | Julelotteriet | Lodd med en rød lotterikule (kan gjenbruke stilen fra app-lotteri) |
+| H4.21 | `client/public/art/handbok/omdomme.png` | Omdømme, toppliste og vinneren | Gullpokal med en liten stjerne |
+| H4.22 | `client/public/art/handbok/fyren.png` | Fyren bak containeren (lapp) | Mobiltelefon med en mørk SMS-boble og solbriller |
+| H4.23 | `client/public/art/handbok/luguberte.png` | Luguberte varer (lapp) | Pappeske i mørket med noe som glimter oppi, halvmåne bak |
+| H4.24 | `client/public/art/handbok/snoking.png` | Snoking bak disken (lapp) | Øyne som titter over en diskkant |
+| H4.25 | `client/public/art/handbok/politiet.png` | Tyttebærpolitiet (lapp) | Politilue med et tyttebær som merke |
+| H4.26 | `client/public/art/handbok/spor.png` | Spor og forstørrelsesglass (lapp) | Forstørrelsesglass over et lite fotavtrykk |
+| H4.27 | `client/public/art/handbok/nokler.png` | Såpe og kopinøkkel (lapp) | Såpestykke med nøkkelavtrykk og en messingnøkkel ved siden av |
+| H4.28 | `client/public/art/handbok/finlandshette.png` | Finlandshette (lapp) | Svart finlandshette med øyehull (samme som i spillet) |
+| H4.29 | `client/public/art/handbok/pyntetyveri.png` | Pynt som forsvinner om natta (lapp) | En julekule på vei ut av bildet, stjernehimmel bak |
+| H4.30 | `client/public/art/handbok/stromjuks.png` | Måleren og sikringsboksen (lapp) | Strømmåler med en skrutrekker og en brutt plombering |
+
+```text
+Pixel art for "Julemarked Simulator", a cozy Norwegian Christmas market game. Match the attached references
+(app icons: app-historier, app-lotteri; toplist medals): same pixel size, dark outline, warm palette,
+light from the upper left. Transparent background unless stated. No readable text.
+Canvas: [W]×[H]. Make: [motiv]. It must read clearly when shown at 24 px.
+```
+
+Lever originaler til `GFX_assets/planlagte/handbok/originaler/` og ferdige bilder til stiene i tabellene.
+Kontroller H1 i 64 og 32 px ved siden av de andre app-ikonene, og et utvalg sideikoner i 24 px.
+
 ## Julelotteriet – grafikk klar (26.11.2026)
 
 Alle seks PNG-filer er levert til stiene i tabellen. Originaler, beskrivelser, metadata og

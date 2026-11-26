@@ -123,6 +123,7 @@ import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
 import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
+import { HANDBOOK, HANDBOOK_BY_ID, HANDBOOK_NAME, HANDBOOK_PUBLISHER, HANDBOOK_SECRET_TITLE, type HandbookPage } from '../shared/handbook.ts';
 import { LOTTO_CHARITY, LOTTO_MAX, LOTTO_NUMBERS, LOTTO_PICK, LOTTO_PRICE, LOTTO_SECOND } from '../shared/lottery.ts';
 import { catchChance, dayName, hoursText, orderHomemade, orderNameOk, orderWhat, pickupHours } from '../shared/orders.ts';
 import { CHARACTER_BY_ID, type Character } from '../shared/characters.ts';
@@ -202,7 +203,15 @@ let modalBack: Modal = null;
 let paperWin: { edition: number; page: number } | null = null;
 // Smarttelefonen: alltid nede i høyre hjørne (spillerens, ikke en ting i lageret), åpnes som et vindu som kan dras rundt.
 let phoneOpen = false;
-let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' | 'historier' | 'lotteri' = 'home';
+let phonePage: 'home' | 'events' | 'bank' | 'kommunen' | 'meldinger' | 'toppliste' | 'historier' | 'lotteri' | 'handbok' = 'home';
+let handbookAt: string | null = null; // siden du leser i Bodeierhåndboka (null = innholdsfortegnelsen)
+let handbookSeen: string[] = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('jm_handbook_seen') ?? '[]');
+  } catch {
+    return [];
+  }
+})();
 let lottoPick: number[] = []; // tallene du har valgt i Lotteri-appen (før du kjøper loddet)
 // Topplisten: omsetning i dag eller hele sesongen.
 let toplistTab: 'today' | 'total' = 'today';
@@ -837,6 +846,69 @@ function lottoPage(s: GameState): string {
   return `${head}${pot}${mine}${buy}${draws}${rules}`;
 }
 
+// ---------- Bodeierhåndboka (telefonen) ----------
+
+/** Grafikken til håndboka (GRAFIKK.md, «Bodeierhåndboka»). Settes til true når bildene er levert. */
+const HANDBOOK_ART = true;
+const handbookIcon = () => (HANDBOOK_ART ? appIcon('handbok') : '<span class="app-emoji">📖</span>');
+const pageIcon = (p: HandbookPage) =>
+  HANDBOOK_ART ? `<img class="hb-icon" src="/art/handbok/${p.id}.png" alt="" draggable="false">` : `<span class="hb-emoji">${p.emoji}</span>`;
+const handbookUnlocked = (s: GameState) => new Set(s.handbook ?? []);
+/** Hemmelige sider du har låst opp, men ikke lest ennå (merket på appen). */
+const handbookNew = (s: GameState) => (s.handbook ?? []).filter((id) => !handbookSeen.includes(id)).length;
+
+/** Tekstlinjene på en side: «## » er mellomtittel, «- » er et punkt, resten er avsnitt. */
+function handbookBody(lines: string[]): string {
+  let out = '';
+  let list: string[] = [];
+  const flush = () => {
+    if (list.length) out += `<ul>${list.map((l) => `<li>${l}</li>`).join('')}</ul>`;
+    list = [];
+  };
+  const inline = (t: string) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  for (const l of lines) {
+    if (l.startsWith('- ')) list.push(inline(l.slice(2)));
+    else {
+      flush();
+      out += l.startsWith('## ') ? `<h4>${inline(l.slice(3))}</h4>` : `<p>${inline(l)}</p>`;
+    }
+  }
+  flush();
+  return out;
+}
+
+function handbookPage(s: GameState): string {
+  const open = handbookUnlocked(s);
+  const back = handbookAt
+    ? '<button class="phone-back" data-action="phone-page" data-page="handbok">‹ Innhold</button>'
+    : '<button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button>';
+  const head = `<div class="phone-bar-title">${back}<b>${HANDBOOK_ART ? appIcon('handbok').replace('<img ', '<img class="title-icon" ') : '📖'} ${esc(HANDBOOK_NAME)}</b></div>`;
+  const page = handbookAt ? HANDBOOK_BY_ID[handbookAt] : undefined;
+  if (page && (!page.secret || open.has(page.id))) {
+    return `${head}<article class="hb-page ${page.secret ? 'secret' : ''}">
+      ${page.secret ? '<div class="hb-note">Lapp stukket inn i håndboka</div>' : ''}
+      <h3>${pageIcon(page)} ${esc(page.title)}</h3>${handbookBody(page.body)}</article>`;
+  }
+  const row = (p: HandbookPage) =>
+    `<li><button class="hb-row" data-action="handbook-page" data-id="${p.id}">${pageIcon(p)}<span>${esc(p.title)}</span>${
+      p.secret && !handbookSeen.includes(p.id) ? '<b class="hb-new">Ny</b>' : ''
+    }</button></li>`;
+  const official = HANDBOOK.filter((p) => !p.secret);
+  const secrets = HANDBOOK.filter((p) => p.secret);
+  const found = secrets.filter((p) => open.has(p.id));
+  return `${head}
+    ${
+      HANDBOOK_ART
+        ? `<div class="hb-cover art"><b>Alt en bodeier trenger å vite</b></div><small class="hb-pub">Utgitt av ${esc(HANDBOOK_PUBLISHER)}</small>`
+        : `<div class="hb-cover"><small>Utgitt av ${esc(HANDBOOK_PUBLISHER)}</small><b>Alt en bodeier trenger å vite</b></div>`
+    }
+    <ul class="hb-list">${official.map(row).join('')}</ul>
+    <div class="phone-kicker">${esc(HANDBOOK_SECRET_TITLE)} (${found.length} av ${secrets.length})</div>
+    <ul class="hb-list secret">${secrets
+      .map((p) => (open.has(p.id) ? row(p) : `<li><span class="hb-row locked">${HANDBOOK_ART ? '<img class="hb-icon" src="/art/handbok/last.png" alt="" draggable="false">' : '<span class="hb-emoji">🔒</span>'}<span>???<small>${esc(p.hint ?? '')}</small></span></span></li>`))
+      .join('')}</ul>`;
+}
+
 function phoneWindow(s: GameState): string {
   if (!phoneOpen) return '';
   const mine = myStall(s);
@@ -949,6 +1021,8 @@ function phoneWindow(s: GameState): string {
       ? storiesPage(s)
       : phonePage === 'lotteri' && s.lotto
       ? lottoPage(s)
+      : phonePage === 'handbok'
+      ? handbookPage(s)
       : phonePage === 'events'
       ? `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>Varsler</b></div>
          <ul class="phone-notes all">${list(60) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`
@@ -976,6 +1050,7 @@ function phoneWindow(s: GameState): string {
            ${mine ? app('phone-page', appIcon('meldinger'), 'Meldinger', 'data-page="meldinger"', s.me.dealer.orders.length + s.me.dealer.sales.length) : ''}
            ${mine ? app('phone-page', appIcon('historier'), 'Historier', 'data-page="historier"') : ''}
            ${s.lotto ? app('phone-page', lottoIcon(), 'Lotteri', 'data-page="lotteri"', s.lotto.mine.length) : ''}
+           ${app('phone-page', handbookIcon(), 'Håndboka', 'data-page="handbok"', handbookNew(s))}
          </div>
          <div class="phone-kicker">Siste varsler</div>
          <ul class="phone-notes">${list(4) || '<li class="muted">Ingen varsler ennå.</li>'}</ul>`;
@@ -5467,7 +5542,20 @@ app.addEventListener('click', (e) => {
   }
   if (action === 'phone-page') {
     const p = el.dataset.page;
-    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' || p === 'historier' || p === 'lotteri' ? p : 'home';
+    phonePage = p === 'events' || p === 'bank' || p === 'kommunen' || p === 'meldinger' || p === 'toppliste' || p === 'historier' || p === 'lotteri' || p === 'handbok' ? p : 'home';
+    if (phonePage === 'handbok') handbookAt = null;
+  }
+  if (action === 'handbook-page') {
+    handbookAt = el.dataset.id ?? null;
+    if (handbookAt && !handbookSeen.includes(handbookAt)) {
+      handbookSeen = [...handbookSeen, handbookAt];
+      try {
+        localStorage.setItem('jm_handbook_seen', JSON.stringify(handbookSeen));
+      } catch {}
+    }
+    render();
+    document.querySelector('.phone-screen')?.scrollTo(0, 0);
+    return;
   }
   if (action === 'toplist-tab') {
     toplistTab = el.dataset.tab === 'total' ? 'total' : 'today';

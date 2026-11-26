@@ -24,7 +24,7 @@
   - Handleturer med bil.
   - Sjeldne varer har felles lager for hele markedet.
 - **Produksjon:** Maskiner, kjele, oppskrifter i avisa, og hemmelige oppskrifter fra stamkundene.
-- **Kunder:** NPC-kunder hver spilltime på dagtid, også når eieren er offline. I tillegg kommer nattkunder, stamkunder med historier og kundebestillinger.
+- **Kunder:** NPC-kunder handler i runder hvert 5. spillminutt (fra 26.11.2026, før én gang i timen), også når boden er selvbetjent og eieren er offline. I tillegg kommer nattkunder, stamkunder med historier og kundebestillinger.
 - **Økonomi:** Bodleie, regninger, strøm med sikringer, bank, omdømme og konkurs med ny start.
 - **Pynt med virkning:** Pynt fra Dekoringen. Historiepynten får man fra stamkundene.
 - **Det lyssky:**
@@ -33,7 +33,7 @@
   - Snoking bak disken, kopinøkkel, safe, spor og forstørrelsesglass.
   - Pyntetyveri om natta, finlandshette, Tyttebærpolitiet og den felles tyven.
 - **Søppelkassa:** Folk kan ta fra andres kasse og kaste i den. Eieren kan tyste, og saken havner i avisa.
-- **Telefonen:** Bank, Kommunen, Meldinger (Fyren), Varsler, Historier, Toppliste, Markedet, Min bod og Nettbutikk.
+- **Telefonen:** Bank, Kommunen, Meldinger (Fyren), Varsler, Historier, Toppliste, Markedet, Min bod, Nettbutikk, Lotteri og Håndboka (Bodeierhåndboka med hemmelige lapper som låses opp, bygd 26.11.2026).
 - **Avisa:** Oppskrifter, vær, Ryktebørsen og etterlysninger.
 - **Døgnet:** Dag og natt etter norsk tid. Hendelseslogg og sanntidsoppdatering via WebSocket.
 

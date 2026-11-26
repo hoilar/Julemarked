@@ -260,6 +260,7 @@ export interface LottoView {
 
 export interface GameState {
   lotto: LottoView;
+  handbook?: string[]; // hemmelige sider i Bodeierhåndboka du har låst opp (mangler hos en eldre server)
   paper: Paper | null; // dagens utgave (null før første)
   papers: Record<number, Paper>; // innholdet i avisene spilleren har (etter utgave)
   shops: ShopView[]; // dagens nettbutikker

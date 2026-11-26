@@ -615,6 +615,21 @@ Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke 
 
 Ingen av disse er bestemt for desembertesten ennå. Tallene er forslag.
 
+**Salg i runder på 5 minutter (bygd 26.11.2026)**
+
+- Før gikk salget til kundene én gang i timen, på hel time. Nå er timen delt i 12 runder, og hver runde har 1/12 av timens etterspørsel (`sellSlice` i `server/game.ts`). Resten av timeutregningen (regninger, strøm, kjelen, stamkunder, tyven, Tilsynsmannen) går fortsatt én gang i timen.
+- Det som skjedde én gang i timen, er skalert så snittet blir det samme: omdømme for tomt bord, klager på varer som deler folk, og omdømmet for prisen (`sliceRepFactor`).
+- Salgsmeldingen er én linje per time som oppdateres («Solgte … siden kl. 10.00»).
+- Testet med A/B mot den gamle koden på kopi av prod: samme forventede etterspørsel per døgn (ca. 579 mot 573) og samme endring i omdømmet.
+
+**Bodeierhåndboka (bygd 26.11.2026)**
+
+- Håndboka-appen på telefonen. Tekstene står i `shared/handbook.ts`, og tallene hentes fra reglene.
+- 21 offisielle sider fra Markedsstyret er åpne fra start. De forklarer det nye spillere trenger: skiltet, kunder, regninger, strøm, avisa og resten.
+- 9 hemmelige lapper («Det som ikke står i håndboka») låses opp første gang spilleren selv får en hendelse om det lyssky, for eksempel første SMS til Fyren, første snoking eller første gang hen blir tatt. Lappene er vage og har ingen prosenter.
+- Låste lapper vises som «???» med et hint. Nye lapper merkes på appen. Ved oppstart får spillerne lappene for det de gjorde før håndboka fantes.
+- Grafikken er bestilt i GRAFIKK.md («Bodeierhåndboka»).
+
 **Plassere pynten selv**
 
 - I dag henges pynten opp på første ledige plass av riktig slag når man trykker på pakken. Er plassene fulle, tas den eldste ned.

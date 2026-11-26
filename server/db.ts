@@ -288,8 +288,12 @@ db.exec('CREATE INDEX IF NOT EXISTS stalls_owner ON stalls (owner_id)');
 // Topplisten summerer omsetning per bod (se leaderboard i server/game.ts).
 db.exec('CREATE INDEX IF NOT EXISTS transactions_revenue ON transactions (market_id, kind, from_stall)');
 if (!hasColumn('players', 'stall_at')) db.exec('ALTER TABLE players ADD COLUMN stall_at INTEGER');
+// Salget til kundene går i runder på 5 spillminutter (SALE_SLICES i server/game.ts). NULL = last_hour × 12.
+if (!hasColumn('markets', 'last_slice')) db.exec('ALTER TABLE markets ADD COLUMN last_slice INTEGER');
 // Julelotteriet (shared/lottery.ts). draw_key = trekningsdagen (ÅÅÅÅMMDD). nums = «3,7,15». hits/prize fylles ved trekningen.
 db.exec('CREATE TABLE IF NOT EXISTS lotto_tickets (id INTEGER PRIMARY KEY, market_id INTEGER NOT NULL, draw_key INTEGER NOT NULL, player_id INTEGER NOT NULL, stall_id INTEGER NOT NULL, nums TEXT NOT NULL, free INTEGER NOT NULL DEFAULT 0, bought_at INTEGER NOT NULL, hits INTEGER, prize INTEGER)');
 db.exec('CREATE INDEX IF NOT EXISTS lotto_tickets_draw ON lotto_tickets (market_id, draw_key)');
+// Bodeierhåndboka (shared/handbook.ts): de hemmelige sidene spilleren har låst opp.
+db.exec('CREATE TABLE IF NOT EXISTS handbook_pages (player_id INTEGER NOT NULL, page_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, PRIMARY KEY (player_id, page_id))');
 // Trekningene. winners = JSON-navnene på bodene med jackpot. Pengene ligger i transactions (lotto_ticket, lotto_prize, lotto_donation; bøter er «bot»).
 db.exec(`CREATE TABLE IF NOT EXISTS lotto_draws (market_id INTEGER NOT NULL, draw_key INTEGER NOT NULL, nums TEXT NOT NULL, drawn_at INTEGER NOT NULL, pot INTEGER NOT NULL, jackpot_each INTEGER NOT NULL DEFAULT 0, winners TEXT NOT NULL DEFAULT '[]', second INTEGER NOT NULL DEFAULT 0, third INTEGER NOT NULL DEFAULT 0, carried INTEGER NOT NULL DEFAULT 0, donated INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (market_id, draw_key))`);

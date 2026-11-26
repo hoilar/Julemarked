@@ -2161,6 +2161,35 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .lotto-draw small { opacity: 0.9; }
 .lotto-mine.won { color: #9fe0a8; font-weight: 700; }
 .lotto-rules { font-size: 0.72rem; }
+/* Bodeierhåndboka */
+.hb-cover { margin-bottom: 10px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #7a1f1a, #3d1110); text-align: center; }
+.hb-cover small { display: block; opacity: 0.8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.hb-cover b { font-size: 1.05rem; color: #ffe3a0; }
+.hb-cover.art {
+  aspect-ratio: 640 / 200; margin-bottom: 2px; padding: 0 16% 6% 10%; border-radius: 0; display: flex; align-items: flex-end; justify-content: center;
+  background: url('/art/handbok/forside.png') center / 100% 100% no-repeat; image-rendering: pixelated;
+}
+.hb-cover.art b { font-size: 0.8rem; line-height: 1.15; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85); }
+.hb-pub { display: block; margin-bottom: 10px; text-align: center; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.75; }
+.hb-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.hb-row { width: 100%; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 10px; text-align: left; font-weight: 600; min-height: 0;
+  background: rgba(255, 255, 255, 0.1); color: inherit; border: 1px solid rgba(255, 255, 255, 0.14); }
+.hb-row > span:not(.hb-emoji) { flex: 1; }
+.hb-row small { display: block; font-weight: 400; font-size: 0.7rem; opacity: 0.75; }
+.hb-row.locked { opacity: 0.7; border-style: dashed; }
+.hb-list.secret .hb-row:not(.locked) { background: rgba(255, 236, 170, 0.14); }
+.hb-emoji { width: 24px; text-align: center; font-size: 1.1rem; }
+.hb-icon { width: 24px; height: 24px; image-rendering: pixelated; }
+.hb-new { font-size: 0.66rem; padding: 1px 6px; border-radius: 8px; background: #d4322c; color: #fff; }
+.hb-page { padding: 10px 12px; border-radius: 12px; background: #f6efdf; color: #2b2118; font-size: 0.84rem; line-height: 1.4; }
+.hb-page h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 1.05rem; }
+.hb-page h4 { margin: 10px 0 2px; font-size: 0.88rem; color: #7a1f1a; }
+.hb-page p { margin: 0 0 6px; }
+.hb-page ul { margin: 0 0 6px; padding-left: 18px; }
+.hb-page li { margin-bottom: 2px; }
+.hb-page.secret { background: #fff9c9; transform: rotate(-0.6deg); box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25); font-family: 'Comic Sans MS', 'Segoe Print', cursive; }
+.hb-page.secret h4 { color: #5a3a10; }
+.hb-note { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; margin-bottom: 4px; }
 /* Grafikken (GRAFIKK.md, «Julelotteriet»), slått på med LOTTO_ART i main.ts */
 .lotto-pot.art {
   min-height: 92px; padding: 8px 10px 14px 50%; text-align: right; display: flex; flex-direction: column; justify-content: center;
