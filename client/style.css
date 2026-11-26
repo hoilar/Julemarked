@@ -2161,8 +2161,26 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .lotto-draw small { opacity: 0.9; }
 .lotto-mine.won { color: #9fe0a8; font-weight: 700; }
 .lotto-rules { font-size: 0.72rem; }
-.note-sheet.book .book-pages { margin: 6px 0 8px; padding-left: 18px; text-align: left; line-height: 1.35; }
-.note-sheet.book .book-pages li { margin-bottom: 4px; }
+.book-view { width: min(360px, 84vw); margin: 0 auto; padding: 10px 12px 12px; border-radius: 10px; color: #3a2414;
+  background: #fbf3e2; border-top: 10px solid transparent;
+  border-image: repeating-linear-gradient(90deg, #c8352e 0 10px, #fff 10px 20px) 10 0 0 0; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+.book-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.book-head img, .book-head .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
+.book-head h2 { margin: 0; font-size: 1.05rem; color: #8e1712; }
+.book-tabs { display: flex; gap: 4px; margin-bottom: 8px; padding: 3px; border-radius: 99px; background: rgba(142, 23, 18, 0.12); }
+.book-tabs button { flex: 1; padding: 4px 6px; border: 0; border-radius: 99px; background: none; box-shadow: none; color: #6b2a14; font-size: 0.74rem; cursor: pointer; min-height: 0; }
+.book-tabs button.on { background: #c8352e; color: #fff; font-weight: 700; }
+.book-cards { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.book-card { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; background: #fff; border: 1px solid #ead9b8; }
+.book-pic { flex: 0 0 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, #fdf0d4 55%, #f3dfb8); font-size: 2.2rem; }
+.book-pic img { width: 56px; height: 56px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 2px 2px rgba(60, 35, 20, 0.25)); }
+.book-text { flex: 1; min-width: 0; }
+.book-card p { margin: 2px 0 0; font-size: 0.82rem; line-height: 1.35; }
+.book-card-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; }
+.book-card-head b { flex: 1; }
+.book-card-head small { color: #8a6a4a; font-size: 0.7rem; }
+.book-yield { color: #2f7d3a; }
+.book-note { display: block; color: #8a6a4a; font-size: 0.7rem; }
 /* Bodeierhåndboka */
 .hb-cover { margin-bottom: 10px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #7a1f1a, #3d1110); text-align: center; }
 .hb-cover small { display: block; opacity: 0.8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }

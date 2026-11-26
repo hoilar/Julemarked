@@ -215,6 +215,7 @@ let handbookSeen: string[] = (() => {
     return [];
   }
 })();
+let bookTab = { id: 0, n: 0 }; // fanen du har åpen i et oppskriftshefte
 let lottoPick: number[] = []; // tallene du har valgt i Lotteri-appen (før du kjøper loddet)
 // Topplisten: omsetning i dag eller hele sesongen.
 let toplistTab: 'today' | 'total' = 'today';
@@ -4384,15 +4385,32 @@ function itemView(s: GameState, it: Item): string {
       <small>Skrevet av fra Verdens Undergang.</small></div>`;
   }
   if (bookRecipes(it.typeId).length) {
-    // Oppskriftshefte: alle sidene, slik de står på en avskrevet lapp.
+    // Oppskriftshefte: én fane om gangen, ett kort per oppskrift.
+    const tabs = (t as { tabs?: { title: string; recipes: string[] }[] }).tabs ?? [{ title: t.name, recipes: bookRecipes(it.typeId) }];
+    const n = bookTab.id === it.id ? Math.min(bookTab.n, tabs.length - 1) : 0;
     const list = (m: Record<string, number>) => recipeList(linesOf(m));
-    const pages = bookRecipes(it.typeId)
+    const cards = tabs[n].recipes
       .map((id) => BOOK_BY_ID[id])
       .filter(Boolean)
-      .map((r) => `<li><b>${esc(r.name)}</b>: ${list(r.inputs)}${r.machine ? ` i ${esc(MAKER_BY_ID[r.machine].name.toLowerCase())}, ${r.hours} timer` : ` i kjelen, styrke ${r.level}`} = ${list(r.outputs)}</li>`)
+      .map((r) => {
+        const out = Object.keys(r.outputs)[0];
+        return `<li class="book-card">
+          <span class="book-pic">${out ? icon(ITEM_TYPES[out]) : ''}</span>
+          <div class="book-text">
+            <div class="book-card-head"><b>${esc(r.name)}</b><small>${r.machine ? `${esc(MAKER_BY_ID[r.machine].name)} · ${r.hours} timer` : `Kjelen · styrke ${r.level}`}</small></div>
+            <p>${list(r.inputs)}</p>
+            <p class="book-yield">Gir ${list(r.outputs)}</p>
+          </div>
+        </li>`;
+      })
       .join('');
-    return `<div class="note-sheet book"><h2>${icon(t)} ${esc(t.name)}</h2><ul class="book-pages">${pages}</ul>
-      <small>Så lenge heftet ligger i boden, viser maskinen programmene i det.</small></div>`;
+    return `<div class="book-view">
+      <div class="book-head">${icon(t)}<h2>${esc(t.name)}</h2></div>
+      <div class="book-tabs" role="tablist">${tabs
+        .map((tab, k) => `<button class="${k === n ? 'on' : ''}" role="tab" aria-selected="${k === n}" data-action="book-tab" data-item="${it.id}" data-n="${k}">${esc(tab.title)}</button>`)
+        .join('')}</div>
+      <ul class="book-cards">${cards}</ul>
+      <small class="book-note">Så lenge heftet ligger i boden, viser maskinen programmene i det.</small></div>`;
   }
   if (it.coupon) {
     const c = it.coupon;
@@ -5529,6 +5547,10 @@ app.addEventListener('click', (e) => {
     modal = null;
     void act('/api/decor/hang', { itemId: Number(el.dataset.item) }, `${d?.emoji ?? '🎄'} ${d?.name ?? 'Pynten'} henger foran på boden. Se fronten for å se den.`);
     return;
+  }
+  if (action === 'book-tab') {
+    bookTab = { id: Number(el.dataset.item), n: Number(el.dataset.n) || 0 };
+    return render();
   }
   if (action === 'lotto-pick') {
     const n = Number(el.dataset.n);

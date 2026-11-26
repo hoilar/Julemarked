@@ -76,6 +76,7 @@ export interface Tool {
   dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
   decor?: string; // innpakket pynt fra Dekoringen (shared/decor.ts): trykk for å henge den opp på fronten
   recipes?: string[]; // oppskriftshefte: oppskriftene (BOOK-id) som står i heftet, som om du hadde lapp på hver
+  tabs?: { title: string; recipes: string[] }[]; // oppskriftshefte: fanene når du blar i heftet
 }
 
 /** Et ark du har laget selv: avskrevet oppskrift eller utklipt etterlysning (1×1). */
@@ -313,6 +314,13 @@ export interface Tape {
 export type ItemType = Battery | Charger | Product | Container | Newspaper | Ingredient | Kettle | Folder | FoldedBag | Policy | Tool | Doc | Electric | Maker | Module | Player | Tape;
 
 // Kontorrekvisita hos Klas Olsen.
+/** Fanene i «Julebakst – seks slag». Heftet gir alle oppskriftene i fanene. */
+const JULEBAKST_TABS = [
+  { title: 'Pepperkaker', recipes: ['bakemaskin:stjerner', 'bakemaskin:hjerter'] },
+  { title: 'Småkaker', recipes: ['bakemaskin:sandkaker', 'bakemaskin:serinakaker', 'bakemaskin:berlinerkranser'] },
+  { title: 'Krumkaker og snipper', recipes: ['bakemaskin:krumkaker', 'bakemaskin:snipper'] },
+];
+
 export const TOOLS: Tool[] = [
   { kind: 'tool', id: BALACLAVA_ID, name: 'Finlandshette', emoji: '🥷', image: BALACLAVA_ICON, price: 149, size: { w: 2, h: 2 }, blurb: 'Svart strikk med én sprekk til øynene. Tas på i speilet på bilen.', dealerOnly: true },
   { kind: 'tool', id: 'penn', name: 'Penn', emoji: '🖊️', image: '/art/verktoy/penn.png', price: 29, size: { w: 2, h: 1 }, blurb: 'En helt vanlig kulepenn. Blått blekk.' },
@@ -332,7 +340,8 @@ export const TOOLS: Tool[] = [
     price: 499,
     size: { w: 2, h: 2 },
     blurb: 'Oppskriftshefte med de seks slagene: pepperkaker, sandkaker, serinakaker, berlinerkranser, krumkaker og sirupssnipper.',
-    recipes: ['bakemaskin:stjerner', 'bakemaskin:hjerter', 'bakemaskin:sandkaker', 'bakemaskin:serinakaker', 'bakemaskin:berlinerkranser', 'bakemaskin:krumkaker', 'bakemaskin:snipper'],
+    tabs: JULEBAKST_TABS,
+    recipes: JULEBAKST_TABS.flatMap((t) => t.recipes),
   },
   { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', image: '/art/verktoy/sapestykke.png', price: 19, size: { w: 2, h: 2 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
   // Fra Fyren bak containeren (selges ikke hos Klas Olsen):
