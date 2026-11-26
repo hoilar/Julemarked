@@ -590,13 +590,79 @@ Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke 
 - ✅ Bygd 25.11.2026: **speilet før første bod**. Figuren hører til spilleren og ikke boden, så den kan lages på velkomstsiden før du leier plass.
 - ✅ Bygd 25.11.2026: **felles og eget butikklager** (`shared/shop.ts`). Råvarer og vanlige ferdigvarer har eget lager per spiller. **Sjeldne varer** har felles lager for hele markedet: 1–3 stk (sjeldne råvarer 3–6), maks 1 (råvarer 2) per spiller. De kommer inn på et tilfeldig tidspunkt mellom kl. 9 og 19, og avisas «Ryktebørsen» hinter om når. **Dagens tilbud** har en felles kvote til tilbudspris (3 × det vanlige lageret), maks halvparten av ditt vanlige lager per spiller. Etterpå koster varen vanlig pris fra ditt eget lager. **Gratis ekspress** gjelder de første 24 spilltimene etter spillerens første bod.
 - ✅ Endret 25.11.2026: **levering og kjøring.** Standard levering kommer ved neste hele time og koster 100 kr. Ekspress kommer etter 5 spillminutter og koster 500 kr (gratis den første spilledagen for en ny spiller). En **fraktkupong** dukker opp i postkassa av og til (ca. annenhver dag, bare når du ikke har en fra før) og gjør én levering gratis, standard eller ekspress. Handleturer med bilen tar 15 min (WV Tennis, Toyota HighAss), 12 min (ID Fuzz) og 10 min (Volvo Toførr).
+- ✅ Bygd 26.11.2026: **egen pris for hjemmelaget.** Står både butikkjøpt og hjemmelaget av samme vare i boden, får varevinduet to prisfelt (🏪 butikkjøpt og 🏠 hjemmelaget). Prisen lagres under `<vare>#home` i pristabellen. Er den ikke satt, gjelder den vanlige prisen. «Hjemmelaget» skrevet med penn får hjemmelaget-prisen, siden både kunden og eieren tror den er hjemmelaget. Hver variant har sin egen prislapp på bordet. Har de ulik pris, får hjemmelaget også en egen linje i prislista. Kunder og stamkunder tar en hjemmelaget først når det finnes, og betaler prisen for den. Spillere som handler hos andre, kjøper den varianten de trykker på.
 - ✅ Bygd 25.11.2026: **natta**. Nattkunder (mørke, lyssky, høyst to om gangen) kommer bare når det står noe lugubert på disken og du står bak den. Nattkurven følger døgnet: travelt kl. 21–23, dødt kl. 03–06. Kveldstrafikk kl. 21–23: drikke og mat selges med 25 % av vanlig etterspørsel.
 - ✅ Bygd 25.11.2026: **felles tyv**. Samme etterlyste tyv for hele markedet til noen tar ham. Førstemann som tipser riktig får dusøren: 300 kr + 100 kr per dag han har vært på frifot. Den som tipser etterpå, er bare for sent ute og straffes ikke. Dagen etter kommer en ny tyv. Står du bak disken om natta, stjeler han halvparten så mye.
 - ✅ Bygd 25.11.2026: **søppel i andres søppelkasse**. Det du bærer, kan kastes i andres søppelkasse. Eieren ser hvem det var (trykk på tingen i søpla) og kan tyste: bot på 200 kr og omtale under «Søppelsaker» i avisa dagen etter.
 - ✅ Bygd 25.11.2026: **ryggsekken** tar også tomme pappkartonger. Sammenbrettede poser og flatpakket papp kunne den allerede ta.
-- ✅ Bygd 25.11.2026: **historier** (`shared/stories.ts`, telefonen → Historier). Åtte historier, én per stamkunde, med ett eller to trinn: salg ved disken og bestillinger som leveres. Fullført historie gir **historiepynt**. Den kan ikke kjøpes, er sterkere (+12–25 %) og kommer i tillegg til taket. Ingen historie låser seg: nei betyr at figuren kommer igjen, og feil gir to dagers pause og så en ny sjanse på samme trinn. Spilleren kan utsette en historie og ta den opp igjen, og kaster man historiepynten, kan historien spilles på nytt. Historiepynten mangler tegning og vises som emoji på et lite skilt inntil videre. **Hemmelige oppskrifter** (bygd 25.11.2026): fem av historiene gir også en oppskriftslapp: Fru Kvists fattigmann, Bergs nøtteknekk, Rolfs pendlerkakao, Direktørens julepunsj og Noras nattsnaps (lugubert). De står aldri i avisa, og kjelen lager dem bare når lappen ligger i boden. Lappen kan stjeles når noen snoker. Avisa er fortsatt lik for alle.
+- ✅ Bygd 25.11.2026: **historier** (`shared/stories.ts`, telefonen → Historier). Åtte historier, én per stamkunde, med ett eller to trinn: salg ved disken og bestillinger som leveres. Fullført historie gir **historiepynt**. Den kan ikke kjøpes, er sterkere (+12–25 %) og kommer i tillegg til taket. Ingen historie låser seg: nei betyr at figuren kommer igjen, og feil gir to dagers pause og så en ny sjanse på samme trinn. Spilleren kan utsette en historie og ta den opp igjen, og kaster man historiepynten, kan historien spilles på nytt. Historiepynten har egne tegninger (`art/bodfront/h01–h08`), også som ikon i Dekoringen og i Historier-appen (26.11.2026). **Hemmelige oppskrifter** (bygd 25.11.2026): fem av historiene gir også en oppskriftslapp: Fru Kvists fattigmann, Bergs nøtteknekk, Rolfs pendlerkakao, Direktørens julepunsj og Noras nattsnaps (lugubert). De står aldri i avisa, og kjelen lager dem bare når lappen ligger i boden. Lappen kan stjeles når noen snoker. Avisa er fortsatt lik for alle.
 
 **Åpne spørsmål:** Skal stamkundene huske hvordan du har behandlet dem (et forhold per bod)? ~~Skal historiene følge kalenderen (samme for alle) eller hver bod for seg?~~ Avklart: hver bod for seg.
+
+### 12.9 Nye idéer (26.11.2026)
+
+Ingen av disse er bestemt for desembertesten ennå. Tallene er forslag.
+
+**Plassere pynten selv**
+
+- I dag henges pynten opp på første ledige plass av riktig slag når man trykker på pakken. Er plassene fulle, tas den eldste ned.
+- Ønsket: man åpner pakken og velger selv hvor på fronten pynten skal stå. Man kan også legge den **på disken**, **under disken** eller **i en eske**.
+- **All pynt skal kunne selges**, også historiepynt. I dag kan bare vanlig pynt selges, og bare innpakket på disken.
+- Avklar:
+  - Skal historiepynt ha en egen, høy forventet pris?
+  - Kan historien spilles på nytt når historiepynten er solgt, slik den kan når pynten kastes i dag?
+
+**Fant-appen (handel mellom spillerne)**
+
+- En app på telefonen åpner et eget vindu der spillerne kan handle med hverandre: råvarer, kuponger, maskiner, utstyr og annet.
+- Reglene for Fantdet.no i 12.7 er utgangspunktet:
+  - Gebyr per rute.
+  - Låst vare mens annonsen ligger ute.
+  - Handelen skjer samtidig.
+  - Levering med posten eller med bilen.
+- Avklar: skal det også gå an å bytte vare mot vare? Hvilke ting kan ikke selges (telefon, bevillinger, nøkler)?
+
+**MF-appen (markedsføring)**
+
+Appen har to varianter:
+
+| | DM-stikk | SOME-annonse |
+|---|---|---|
+| Hva | Postkassestikk som når bredt | Annonse på sosiale medier |
+| Gjelder | Dagen etter | Samme dag |
+| Varer | Promoterer 2 varer | Promoterer 1 vare |
+| Grense | – | Én per dag per spiller |
+| Konkurranse | Annonserer flere spillere samme vare, deles effekten mellom dem | Hver vare har én «slot». Har flere brukt samme slot i dag, blir den dyrere neste dag |
+
+- Effekten er flere kunder som spør etter varen hos deg. Kanskje gjelder den bare boder som har varen på disken.
+- Avklar: hva koster det, hvor stor er effekten, og hvor mye dyrere blir SOME-sloten per konkurrent?
+
+**Chat-appen**
+
+- Spillerne kan chatte med hverandre fra telefonen, én til én, og kanskje også i en felles markedskanal.
+- Den erstatter «tilbud og meldinger mellom boder» fra den opprinnelige testplanen.
+- Se designutfordring 10 (chat og moderering): admin må kunne se og slette meldinger.
+
+**Julelotteri**
+
+- Står beskrevet i 12.2. Det er ønsket, og kan tas inn tidligere enn 2027.
+- Med ekte tid (1×) passer trekning hver tirsdag og lørdag kl. 18.00 fint.
+- Potten kan fylles av bøtene som allerede finnes: Tyttebærpolitiet, Tilsynsmannen og søppeltysting.
+
+**Brekkjern fra Fyren bak containeren**
+
+- Fyren selger et brekkjern. Med det kan man bryte seg inn i en **stengt** bod om natta, uten kopinøkkel.
+- Har boden alarm, er det en sjanse for at **alarmen går**. Da blir innbruddet avbrutt, Tyttebærpolitiet kommer, og det står i hendelsesloggen.
+- **Finlandshetta** senker risikoen noe og skjuler hvem det var, som ved snoking.
+- Brekkjernet etterlater tydelige spor (brukket hengelås). Eieren ser at det har vært innbrudd og må kanskje kjøpe ny lås.
+- Avklar: sjansen for at alarmen går med og uten hette. Kan brekkjernet også brukes på safen? I dag kan safer ikke brytes opp.
+
+**Leie av lager**
+
+- Spilleren kan leie et lager med et eget rutenett, for ting som ikke får plass under disken.
+- Dagsleien er forholdsvis dyr. Forslag: 150–300 kr per dag etter størrelse.
+- Tingene hentes med bilen eller ved å bære dem, på samme måte som mellom egne boder.
+- Avklar: kan andre snoke eller bryte seg inn i lageret? Ser Tilsynsmannen etter luguberte varer der? Hva skjer med innholdet hvis leia ikke betales?
 
 ## 13. Teknisk retning (foreløpig forslag)
 

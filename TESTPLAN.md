@@ -1,48 +1,77 @@
 # Testplan – desember 2026
 
-**Mål:** Finn ut om det er morsomt å drive bod, besøke naboen og ta små økonomiske og sosiale valg over flere dager. Alt annet venter til 2027.
+**Mål:** Finn ut om det er morsomt å drive bod, besøke naboen og ta små økonomiske og sosiale valg over flere dager. Det meste annet venter til 2027.
 
-**Format:** Ett privat marked med invitasjonskode og 10–20 venner eller kolleger. Sesongen går i ekte tid fra 1. desember. Før det kjører vi korte interne tester med tidskomprimering (`GAME_SPEED`).
+**Format:** Ett privat marked, «Julemarkedet», med invitasjonskode GLOGG og 10–20 venner eller kolleger. Spillet ligger på https://julemarked.bagel.no (se DRIFT.md).
 
-## Med i testen
+**Status 26.11.2026:** Prod-serveren startet 26. november kl. 00.17 og går i ekte tid (1×), så folk får varmet opp før desember. Spillet stenger julaften kl. 12.00, og da viser det vinnersiden med høyest omsetning.
 
-- Påmelding med brukernavn, passord og invitasjonskode. Innlogging fra hvilken som helst mobil eller PC fortsetter der man slapp. **Ingen tilbakestilling:** spilleren må huske navn og passord selv
-- Klikkbart markedskart med 12 bodplasser: hovedgate, sidegate og bakgate med ulik trafikk og leie
-- Selgervisning (bak disken): kjøp inn fra grossist, plasser varer på disken, sett pris
-- Kjøpervisning (foran disken): besøk andre boder og kjøp varer
-- NPC-kunder som handler hver spilltime på dagtid, også når eieren er offline
-- Daglig bodleie og et betalingsgebyr («Bipps»)
-- Omdømme som påvirker salget
-- Én høyrisikovare: «Ekte gårdsegg» (butikkegg med ny etikett)
-- Dag (08–21) og natt (21–08) etter norsk tid
-- Hendelseslogg med offentlige og private meldinger
-- Sanntidsoppdatering via WebSocket
+## Med i testen (bygd)
 
-## Neste byggesteg (før 1. desember)
+- **Spillere:** Påmelding med brukernavn, passord og invitasjonskode. Man kan logge inn fra hvilken som helst PC eller mobil, men spillet fungerer best på PC eller nettbrett. Det finnes ingen tilbakestilling av passord.
+- **Markedskartet:** 120 bodplasser (24 i hovedgata, 48 i sidegata, 48 i bakgata) på et tegnet kart med zoom.
+  - Bodlista viser leide og ledige plasser.
+  - Det finnes fem NPC-boder i bakgata.
+  - Man kan ha flere boder. En ekstra bod i bakgata koster 5000 kr.
+  - Butikkhusene og historiehusene på kartet kan trykkes på.
+- **Boden fra to sider:**
+  - Selgervisning: kjøp inn, plasser varer, sett pris.
+  - Kjøpervisning: besøk andre boder og handle der.
+- **Innkjøp:**
+  - Nettbutikkene KIWI, REMA 1000, Extra, Klas Olsen og Dekoringen.
+  - Standard levering kommer ved neste hele time (100 kr). Ekspress kommer på 5 minutter (500 kr).
+  - Fraktkuponger dukker opp i postkassa.
+  - Handleturer med bil.
+  - Sjeldne varer har felles lager for hele markedet.
+- **Produksjon:** Maskiner, kjele, oppskrifter i avisa, og hemmelige oppskrifter fra stamkundene.
+- **Kunder:** NPC-kunder hver spilltime på dagtid, også når eieren er offline. I tillegg kommer nattkunder, stamkunder med historier og kundebestillinger.
+- **Økonomi:** Bodleie, regninger, strøm med sikringer, bank, omdømme og konkurs med ny start.
+- **Pynt med virkning:** Pynt fra Dekoringen. Historiepynten får man fra stamkundene.
+- **Det lyssky:**
+  - Fyren bak containeren med luguberte varer.
+  - Alkohol med skjenkebevilling, Tilsynsmannen.
+  - Snoking bak disken, kopinøkkel, safe, spor og forstørrelsesglass.
+  - Pyntetyveri om natta, finlandshette, Tyttebærpolitiet og den felles tyven.
+- **Søppelkassa:** Folk kan ta fra andres kasse og kaste i den. Eieren kan tyste, og saken havner i avisa.
+- **Telefonen:** Bank, Kommunen, Meldinger (Fyren), Varsler, Historier, Toppliste, Markedet, Min bod og Nettbutikk.
+- **Avisa:** Oppskrifter, vær, Ryktebørsen og etterlysninger.
+- **Døgnet:** Dag og natt etter norsk tid. Hendelseslogg og sanntidsoppdatering via WebSocket.
 
-1. Søppelkassen: avfall bygger seg opp, du kan bruke naboens kasse, og naboen kan låse eller flytte den eller kreve betaling
-2. Én planleggbar nattavtale (hemmelig B2B-tilbud som gjøres opp kl. 08)
-3. Tilbud og meldinger mellom boder
-4. Enkel årsrapport på julaften
-5. Utrulling (én liten server med SQLite holder for testen)
+## Ikke bygd fra den opprinnelige planen
+
+- **Nattavtale:** et hemmelig B2B-tilbud som gjøres opp kl. 08. Ikke bygd.
+- **Tilbud og meldinger mellom spillere:** Ikke bygd. Meldinger-appen snakker bare med Fyren. Se Chat og Fant under.
+- **Årsrapport på julaften:** Vinnersiden med pallen dekker det viktigste. En fullstendig rapport er ikke bygd.
+
+## Idéer som venter (lagt inn 26.11.2026)
+
+Detaljene står i `julemarked_simulator_konsept.md`, avsnitt 12.9. Ingenting er bestemt for desembertesten ennå.
+
+1. **Plassere pynt selv:** åpne pakken, velge plass på fronten, eller legge pynten på disken, under disken eller i en eske. All pynt kan selges, også historiepynt.
+2. **Fant-appen:** handel mellom spillerne med råvarer, kuponger, maskiner og annet. Bygger på Fantdet.no i 12.7.
+3. **MF-appen (markedsføring):** DM-stikk i postkassene og SOME-annonse.
+4. **Chat-appen:** spillerne kan chatte med hverandre.
+5. **Julelotteri:** reglene står i 12.2.
+6. **Brekkjern fra Fyren:** innbrudd i en stengt bod om natta. Det er en sjanse for at alarmen går, og finlandshetta senker den noe.
+7. **Leie av lager:** ekstra lagerplass mot en forholdsvis dyr dagsleie.
 
 ## Bevisst utelatt
 
-Flere markeder, roller, markedsmøter, avatarer, strøm, full dekorasjon, inspeksjoner, kjøp mellom markeder.
-Flere boder per spiller, bodsalg mellom spillere, ansatte og julelotteri kommer i 2027 (se `julemarked_simulator_konsept.md`, 12.1 og 12.2).
+Flere markeder, roller, markedsmøter, inspeksjoner, kjøp mellom markeder, bodsalg mellom spillere, ansatte og raskere spilltid (12.7) kommer tidligst i 2027 (se `julemarked_simulator_konsept.md`).
 
 ## Tidslinje
 
-| Uke | Mål |
+| Når | Mål |
 |---|---|
-| 9.–15. nov | Grunnspillet kjører lokalt (dette steget) |
-| 16.–22. nov | Søppelkasse, nattavtale, tilbud. Intern test med `GAME_SPEED=60` |
-| 23.–29. nov | Balansering, utrulling, invitasjoner |
-| 1. des | Markedet åpner |
+| 9.–22. nov | Grunnspillet og de store systemene (✅) |
+| 23.–25. nov | Kart med 120 boder, levering, utrulling (✅) |
+| 26. nov | Prod-serveren starter (1×), oppvarming (✅) |
+| 1. des | Invitasjoner og julekalenderen i gang |
+| 24. des kl. 12.00 | Spillet stenger, vinnersiden |
 
 ## Hva vi måler
 
 - Logger folk inn igjen dag 2, 5 og 10?
-- Hvor mange besøk og handler skjer mellom boder?
+- Hvor mange besøk og handler skjer mellom bodene?
 - Snakker folk om spillet utenfor spillet (rykter, anklager, søppelkassen)?
-- Er ærlig drift en like god strategi som gårdsegg?
+- Er ærlig drift en like god strategi som lyssky varer og snoking?

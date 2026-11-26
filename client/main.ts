@@ -73,6 +73,7 @@ import {
   RECIPE_NOTE,
   WANTED,
   isHomemade,
+  priceIn,
   type Label,
 } from '../shared/products.ts';
 import type { BillView, GameState, Item, MarketSlot, Paper, ShopView, SnoopResult, SnoopView, StallPublic } from '../shared/types.ts';
@@ -168,7 +169,7 @@ type Modal =
   | { kind: 'product'; productId: string; itemId?: number } // itemId: varen du trykket på (da kan etiketten på den skrives om)
   | { kind: 'ingredient'; typeId: string }
   | { kind: 'look'; draft: Look }
-  | { kind: 'buy'; stallId: number; productId: string }
+  | { kind: 'buy'; stallId: number; productId: string; homemade: boolean } // hjemmelaget og butikkjøpt har hver sin pris
   | { kind: 'customer'; seed: string } // kundevinduet (trykk på en kunde ved disken)
   | { kind: 'regular'; visitId: string; charId: string } // en stamkunde (shared/characters.ts) ved disken
   | { kind: 'inspector' }
@@ -343,8 +344,9 @@ function myStall(s: GameState): StallPublic | null {
   return s.slots.find((sl) => sl.stall?.id === s.me.stallId)?.stall ?? null;
 }
 
-function myPrice(s: GameState, productId: string): number {
-  return myStall(s)?.prices[productId] ?? PRODUCT_BY_ID[productId].basePrice;
+/** Prisen din på varen. homemade: hjemmelaget har egen pris (faller tilbake på den vanlige). */
+function myPrice(s: GameState, productId: string, homemade = false): number {
+  return priceIn(myStall(s)?.prices ?? {}, productId, homemade);
 }
 
 // ---------- Data og sanntid ----------
@@ -462,6 +464,9 @@ function expectedHere(s: GameState, p: { basePrice: number; category: Category }
 
 /** Virkningen til en pynt som tekst: «+5 % kunder · +8 % salg av 🍪 kaker». */
 const decorFxText = (d: Decor) => d.fx.map(effectText).join(' · ');
+/** Pynten som lite bilde (tegningen fra bodfronten), eller emojien om den mangler tegning. */
+const decorIcon = (d: Decor, cls = 'decor-icon') =>
+  d.file ? `<img class="${cls}" src="/art/bodfront/${d.file}" alt="" draggable="false">` : d.emoji;
 
 /**
  * Varene på bordet slik kundene ser dem: hver vare og prisen i forhold til det de forventer
@@ -472,7 +477,7 @@ function offersOf(stall: StallPublic): Offer[] {
     const p = PRODUCT_BY_ID[id];
     const front = stall.counter.filter((i) => i.typeId === id).sort((a, b) => b.y - a.y)[0];
     const expected = Math.round(expectedPrice(p.basePrice, stall.reputation, isHomemade(front?.label)) * decorPrice(boostOf(stall.decor), p.category));
-    return { productId: id, icon: icon(p), ratio: (stall.prices[id] ?? p.basePrice) / expected };
+    return { productId: id, icon: icon(p), ratio: priceIn(stall.prices, id, isHomemade(front?.label)) / expected };
   });
 }
 
@@ -743,7 +748,7 @@ function storyRow(s: GameState, st: Story, v: StoryView | undefined): string {
   const step = v?.step ?? 0;
   const cur = st.steps[step];
   let status: string;
-  if (v?.done) status = `✅ Fullført – ${d.emoji} ${esc(d.name)} er din.`;
+  if (v?.done) status = `✅ Fullført – ${decorIcon(d)} ${esc(d.name)} er din.`;
   else if (v?.paused) status = `⏸️ Utsatt. Ta den opp igjen når ${esc(c?.name ?? 'figuren')} kommer innom disken.`;
   else if (v?.retryDay) status = `⏳ På vent etter at noe gikk galt. Ny sjanse ${esc(dayName(v.retryDay))}.`;
   else status = `Trinn ${step + 1} av ${steps}${cur && stepNeed(cur) > 1 ? ` (${v?.count ?? 0} av ${stepNeed(cur)})` : ''}: ${esc(cur?.hint ?? '')}`;
@@ -751,7 +756,7 @@ function storyRow(s: GameState, st: Story, v: StoryView | undefined): string {
     <img src="${c ? characterUrl(c) : ''}" alt="">
     <span><b>${esc(st.title)}</b><small class="story-who">${esc(c?.name ?? '')}</small>
       <small>${status}</small>
-      <small class="decor-fx">${d.emoji} ${esc(d.name)}: ${esc(decorFxText(d))}</small>
+      <small class="decor-fx">${decorIcon(d)} ${esc(d.name)}: ${esc(decorFxText(d))}</small>
       ${st.recipe ? `<small class="story-recipe">📜 Hemmelig oppskrift: ${esc(BOOK_BY_ID[st.recipe]?.name ?? '')}${v?.done ? '' : ' (står ikke i avisa)'}</small>` : ''}
 </span>
   </li>`;
@@ -1353,15 +1358,26 @@ function deliveriesView(s: GameState): string {
 
 // --- Bordet ---
 
-/** Varene på disken med pris, én linje per vare (samme rekkefølge som på bordet sett forfra, fra venstre). */
+/**
+ * Varene på disken med pris, én linje per vare (samme rekkefølge som på bordet sett forfra, fra venstre).
+ * Står både butikkjøpt og hjemmelaget av samme vare der med ulik pris, får hjemmelaget en egen linje.
+ */
 function priceRows(stall: StallPublic): { icon: string; name: string; price: number }[] {
   const seen = new Set<string>();
   const out: { icon: string; name: string; price: number }[] = [];
+  const split = (id: string) => {
+    const on = stall.counter.filter((i) => i.typeId === id);
+    return on.some((i) => isHomemade(i.label)) && on.some((i) => !isHomemade(i.label)) && priceIn(stall.prices, id, true) !== priceIn(stall.prices, id);
+  };
   for (const i of [...stall.counter].sort((a, b) => b.x - a.x)) {
     const p = PRODUCT_BY_ID[i.typeId];
-    if (!p || seen.has(p.id)) continue;
-    seen.add(p.id);
-    out.push({ icon: icon(p), name: p.name, price: stall.prices[p.id] ?? p.basePrice });
+    if (!p) continue;
+    const two = split(p.id);
+    const home = isHomemade(i.label);
+    const key = two ? `${p.id}|${home}` : p.id;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ icon: icon(p), name: two && home ? `${p.name} (hjemmelaget)` : p.name, price: priceIn(stall.prices, p.id, home) });
   }
   return out;
 }
@@ -1394,12 +1410,13 @@ function counterView(stall: StallPublic, own: boolean, shop = !own): string {
   const frontOf = (i: Item) => (mirror ? rows - 1 - i.y : i.y + i.h - 1);
   const a = state ? STALL_AREA[streetOfStall(state, stall.id)].counter : { x: 0, w: COUNTER_GRID.cols };
   const grid = `<div class="table-grid" style="left:${TABLE.left + a.x * CW}%;top:${TABLE.top}%;width:${a.w * CW}%;height:${TABLE.bottom - TABLE.top}%"></div>`;
-  // Pris vises på én enhet per vare (den fremste til venstre).
+  // Pris vises på én enhet per vare og etikett (den fremste til venstre): hjemmelaget har egen pris.
   const tagged = new Set<number>();
   const seen = new Set<string>();
   for (const i of [...stall.counter].sort((a, b) => frontOf(b) - frontOf(a) || left(a) - left(b))) {
-    if (!seen.has(i.typeId)) {
-      seen.add(i.typeId);
+    const key = `${i.typeId}|${isHomemade(i.label)}`;
+    if (!seen.has(key)) {
+      seen.add(key);
       tagged.add(i.id);
     }
   }
@@ -1418,12 +1435,12 @@ function counterView(stall: StallPublic, own: boolean, shop = !own): string {
       const attrs = own
         ? `data-drag="${i.id}"`
         : shop && !isDecorGood(p.id)
-          ? `data-action="buy" data-stall="${stall.id}" data-product="${p.id}"`
+          ? `data-action="buy" data-stall="${stall.id}" data-product="${p.id}" data-home="${isHomemade(i.label) ? 1 : 0}"`
           : '';
       const style = `left:${left(i)}%;width:${i.w * CW}%;top:${rowFoot(front) - 12}%;height:12%;--sp:${p.sprite};--scale:${rowScale(front)};--art:${artScale(i.typeId)};z-index:${3 + front}`;
       return `<div class="citem" style="${style}" ${attrs} title="${esc(p.name)}">
           ${sprite(p)}
-          ${tagged.has(i.id) ? `<span class="tag">${stall.prices[p.id] ?? p.basePrice},-</span>` : ''}
+          ${tagged.has(i.id) ? `<span class="tag">${priceIn(stall.prices, p.id, isHomemade(i.label))},-</span>` : ''}
         </div>`;
     })
     .join('');
@@ -3613,7 +3630,7 @@ function decorShopView(s: GameState): string {
     const c = CHARACTER_BY_ID[st.charId];
     const have = hung.includes(d.id) || packed(d.id) > 0;
     return `<div class="shop-card klas-card story-card ${have ? 'owned' : 'locked'}">
-      <div class="shop-art"><span class="shop-emoji">${d.emoji}</span>${have ? '' : '<span class="story-lock">🔒</span>'}</div>
+      <div class="shop-art">${d.file ? decorIcon(d, '') : `<span class="shop-emoji">${d.emoji}</span>`}${have ? '' : '<span class="story-lock">🔒</span>'}</div>
       <div class="shop-name">${esc(d.name)}</div>
       <div class="shop-sub"><span class="decor-fx">${esc(decorFxText(d))}</span><br>${esc(d.blurb)}</div>
       <div class="shop-price">${have ? '✅ Din' : `Fra ${esc(c?.name ?? '')}`}</div>
@@ -4026,7 +4043,9 @@ function customerView(s: GameState, seed: string): string {
   const lead = info?.lead ?? null;
   const type = customerType(lead ? lead.id : seed);
   const p = info?.want ? PRODUCT_BY_ID[info.want] : undefined;
-  const price = p ? myPrice(s, p.id) : 0;
+  // Kunden tar en hjemmelaget først når det står en på bordet (som på serveren).
+  const home = !!p && s.me.items.some((i) => i.place === 'counter' && i.typeId === p.id && isHomemade(i.label));
+  const price = p ? myPrice(s, p.id, home) : 0;
   const liked = !!p && type.likes.includes(p.category);
   const tags = type.likes.map((c) => `<span class="cust-tag like">${categoryLabel(c)}</span>`).join('') + `<span class="cust-tag dislike">${esc(type.dislikes)}</span>`;
   const looking = p
@@ -4067,6 +4086,8 @@ function counterOffers(s: GameState): CounterOffer[] {
     if (i.label === 'home' || i.label === 'forged') o.homemade = true;
     out.set(i.typeId, o);
   }
+  // Stamkunden tar en hjemmelaget når det finnes, og betaler prisen for den.
+  for (const o of out.values()) if (o.homemade) o.price = myPrice(s, o.productId, true);
   return [...out.values()];
 }
 
@@ -4434,7 +4455,6 @@ function modalView(s: GameState): string {
     const p = PRODUCT_BY_ID[modal.productId];
     const inv = s.me.inventory.find((r) => r.productId === p.id) ?? { qty: 0, onCounter: 0, avgCost: p.wholesale };
     const stored = inv.qty - inv.onCounter;
-    const price = myPrice(s, p.id);
     // Produsent: én linje per etikett (butikkjøpt, hjemmelaget, «hjemmelaget» skrevet med penn).
     const held = s.me.items.filter((i) => i.typeId === p.id && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i));
     const count = (l: Label) => held.filter((i) => i.label === l).length;
@@ -4468,6 +4488,24 @@ function modalView(s: GameState): string {
     // Prisreaksjonen regnes mot etiketten på flest av varene.
     const main: Label = count('store') >= count('home') + count('forged') ? 'store' : 'home';
     const base = expectedHere(s, p, main !== 'store');
+    // Egen pris for butikkjøpt og hjemmelaget («Hjemmelaget» skrevet med penn får hjemmelaget-prisen).
+    // Ett skjema per etikett du har av varen; har du ingen, gjelder det butikkjøpt (hjemmelaget for varer som bare lages).
+    const hasHome = count('home') + count('forged') > 0 || !!p.craftedOnly;
+    const hasStore = count('store') > 0 && !p.craftedOnly;
+    const variants = hasHome && hasStore ? [false, true] : [hasHome];
+    const priceForms = variants
+      .map((home) => {
+        const pr = myPrice(s, p.id, home);
+        const exp = expectedHere(s, p, home);
+        const label = variants.length > 1 ? (home ? '🏠 Pris hjemmelaget' : '🏪 Pris butikkjøpt') : 'Pris per stk';
+        return `<form data-form="price" class="stack-form" data-cost="${inv.avgCost}" data-base="${exp}">
+        <input type="hidden" name="home" value="${home ? 1 : 0}">
+        <label>${label} <input name="price" type="number" min="1" max="9999" value="${pr}"></label>
+        <div class="price-feedback">${priceFeedback(pr, inv.avgCost, exp)}</div>
+        <button>Lagre pris</button>
+      </form>`;
+      })
+      .join('');
     inner = itemCard(
       p,
       `<h2>${esc(p.name)}</h2>
@@ -4483,11 +4521,7 @@ function modalView(s: GameState): string {
       </dl>
       ${thisRow || (groups ? `<div class="label-head">Produsent</div><ul class="label-list">${groups}</ul>` : '')}
       ${nameRow}
-      <form data-form="price" class="stack-form" data-cost="${inv.avgCost}" data-base="${base}">
-        <label>Pris per stk <input name="price" type="number" min="1" max="9999" value="${price}"></label>
-        <div class="price-feedback">${priceFeedback(price, inv.avgCost, base)}</div>
-        <button>Lagre pris</button>
-      </form>
+      ${priceForms}
       ${
         isDecorGood(p.id)
           ? `<p class="muted">🎄 Pynt fra ${esc(DEKORINGEN.name)}. Selges fra bordet bare når du står bak disken, ikke når skiltet står på selvbetjent.</p>
@@ -4498,21 +4532,22 @@ function modalView(s: GameState): string {
   }
 
   if (modal.kind === 'buy') {
-    const { stallId, productId } = modal;
+    const { stallId, productId, homemade } = modal;
     const loupe = hasTool(s, LOUPE)
       ? `<button class="ghost loupe-btn" data-action="loupe" data-stall="${stallId}" data-product="${productId}">🔍 Undersøk med forstørrelsesglasset</button>`
       : '';
     const stall = s.slots.find((x) => x.stall?.id === stallId)?.stall;
     const p = PRODUCT_BY_ID[productId];
-    const count = stall?.counter.filter((i) => i.typeId === productId).length ?? 0;
+    const count = stall?.counter.filter((i) => i.typeId === productId && isHomemade(i.label) === homemade).length ?? 0;
     if (!stall) return '';
-    const price = stall.prices[productId] ?? p.basePrice;
+    const price = priceIn(stall.prices, productId, homemade);
     inner = itemCard(
       p,
       `<h2>${esc(p.name)}</h2>
       <p class="cat-pill">${categoryLabel(p.category)}</p>
       <dl class="item-stats">
         <dt>Pris</dt><dd><strong>${kr(price)}</strong> per stk</dd>
+        <dt>Produsent</dt><dd>${esc(labelText(productId, homemade ? 'home' : 'store', stall.name))}</dd>
         <dt>På bordet</dt><dd>${count} hos «${esc(stall.name)}»</dd>
         <dt>Vanlig pris</dt><dd>~${kr(p.basePrice)}</dd>
       </dl>
@@ -5734,7 +5769,7 @@ app.addEventListener('click', (e) => {
     return;
   }
   if (action === 'modal') modal = { kind: el.dataset.modal as 'wholesale' | 'events' };
-  if (action === 'buy') modal = { kind: 'buy', stallId: Number(el.dataset.stall), productId: el.dataset.product! };
+  if (action === 'buy') modal = { kind: 'buy', stallId: Number(el.dataset.stall), productId: el.dataset.product!, homemade: el.dataset.home === '1' };
   if (action === 'stash' && state) {
     // Varemenyen: flytt så mange som får plass. Vinduet blir stående, så tallene oppdateres.
     const typeId = el.dataset.type!;
@@ -5837,13 +5872,13 @@ app.addEventListener('submit', async (e) => {
       if (modal?.kind !== 'product') return;
       const productId = modal.productId;
       modal = null;
-      await act('/api/price', { productId, price: Number(data.price) }, 'Prisen er oppdatert.');
+      await act('/api/price', { productId, price: Number(data.price), homemade: data.home === '1' }, 'Prisen er oppdatert.');
       break;
     }
     case 'buy': {
       if (modal?.kind !== 'buy') return;
-      const { stallId, productId } = modal;
-      const ok = await act('/api/buy', { stallId, productId, qty: Number(data.qty) }, 'Handelen er gjort.');
+      const { stallId, productId, homemade } = modal;
+      const ok = await act('/api/buy', { stallId, productId, homemade, qty: Number(data.qty) }, 'Handelen er gjort.');
       if (ok) {
         modal = null;
         render();

@@ -266,8 +266,8 @@ const routes: Record<string, Handler> = {
   'POST /api/paper/cut': action((p, b) => cutWanted(p, Number(b.edition))),
   'POST /api/label': action((p, b) => ({ label: relabel(p, Number(b.itemId)) })),
   'POST /api/police/tip': action((p, b) => tipPolice(p, String(b.seed ?? ''))),
-  'POST /api/price': action((p, b) => setPrice(p, String(b.productId), Number(b.price))),
-  'POST /api/buy': action((p, b) => buyFromStall(p, Number(b.stallId), String(b.productId), Number(b.qty))),
+  'POST /api/price': action((p, b) => setPrice(p, String(b.productId), Number(b.price), b.homemade === true)),
+  'POST /api/buy': action((p, b) => buyFromStall(p, Number(b.stallId), String(b.productId), Number(b.qty), typeof b.homemade === 'boolean' ? b.homemade : undefined)),
 };
 
 const MIME: Record<string, string> = {

@@ -23,6 +23,7 @@ import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { HOUR, TIME_ZONE, gameNow, hourIndex } from '../shared/clock.ts';
 import { START_CASH } from '../shared/products.ts';
+import { MAP_SLOTS } from '../shared/marketmap-slots.ts';
 
 const DB_PATH = process.env.DB_PATH ?? 'data/julemarked.db';
 const [cmd, ...args] = process.argv.slice(2);
@@ -66,8 +67,9 @@ function markets(db: DatabaseSync): Market[] {
   return m;
 }
 // Samme plasser som LAYOUT i server/game.ts: 4 i hovedgata (50 000 kr), 4 i sidegata (10 000 kr), 4 i bakgata (gratis).
-const SLOTS = 12;
-const slotPrice = (i: number) => (i < 4 ? 50_000 : i < 8 ? 10_000 : 0);
+// Plassene på kartet (shared/marketmap.ts): H01–H24 (indeks 0–23), S01–S48 (24–71), B01–B48 (72–119).
+const SLOTS = MAP_SLOTS.length;
+const slotPrice = (i: number) => (MAP_SLOTS[i]?.street === 'hovedgate' ? 50_000 : MAP_SLOTS[i]?.street === 'sidegate' ? 10_000 : 0);
 function slotsInfo(db: DatabaseSync, m: Market) {
   const taken = (db.prepare('SELECT slot_index FROM stalls WHERE market_id = ?').all(m.id) as unknown as { slot_index: number }[]).map((r) => r.slot_index);
   const free = [...Array(SLOTS).keys()].filter((i) => !taken.includes(i));
@@ -171,7 +173,7 @@ switch (cmd) {
     const many = allMarkets(db).length > 1;
     for (const r of shown)
       console.log(
-        `${many ? `${r.code.padEnd(8)} ` : ''}#${String(r.id).padEnd(3)} ${r.name.padEnd(16)} ${r.stall ? `«${r.stall}» (plass ${r.slot_index})`.padEnd(28) : 'ingen bod'.padEnd(28)} ${r.cash != null ? kr(r.cash).padStart(12) : ''}  ⭐ ${r.reputation != null ? Math.round(r.reputation) : '–'}${flag('--token') ? `  token ${r.token}` : ''}`,
+        `${many ? `${r.code.padEnd(8)} ` : ''}#${String(r.id).padEnd(3)} ${r.name.padEnd(16)} ${r.stall ? `«${r.stall}» (plass ${MAP_SLOTS[r.slot_index!]?.code ?? r.slot_index})`.padEnd(28) : 'ingen bod'.padEnd(28)} ${r.cash != null ? kr(r.cash).padStart(12) : ''}  ⭐ ${r.reputation != null ? Math.round(r.reputation) : '–'}${flag('--token') ? `  token ${r.token}` : ''}`,
       );
     break;
   }

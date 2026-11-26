@@ -131,6 +131,8 @@ leveransebeskrivelse og kontrollbilder ligger i `GFX_assets/planlagte/historiepy
 De ti filene og forhåndsvisningene er lagt i `vareliste.html`.
 **Lagt inn i spillet 25.11.2026:** `file` og `glow` er satt på linjene med `story:` i `shared/decor.ts`.
 Lyslagene til lykta og ringlyset gløder når det er mørkt, som den vanlige pynten.
+**Ikoner (26.11.2026):** samme bilder brukes som ikon på historiekortene i Dekoringen og i Historier-appen
+(`decorIcon` i `client/main.ts`). Det trengs ingen egne ikonfiler.
 
 Åtte pyntegjenstander som stamkundene gir deg når historien deres er fullført (`shared/stories.ts`).
 De kan ikke kjøpes i Dekoringen, og de er de sterkeste pyntene i spillet.

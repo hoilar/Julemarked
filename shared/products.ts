@@ -52,6 +52,15 @@ export interface Divisive {
  */
 export type Label = 'store' | 'home' | 'forged';
 export const isHomemade = (label: Label | undefined) => label === 'home' || label === 'forged';
+/** Nøkkelen i prislista for hjemmelaget (og «Hjemmelaget» skrevet med penn): egen pris ved siden av den butikkjøpte. */
+export const homePriceKey = (productId: string) => `${productId}#home`;
+/**
+ * Prisen boden tar for varen. Hjemmelaget har egen pris; er den ikke satt, gjelder den vanlige prisen
+ * (som før det fantes egen pris), og ellers grunnprisen.
+ */
+export function priceIn(prices: Record<string, number>, productId: string, homemade = false): number {
+  return (homemade ? prices[homePriceKey(productId)] : undefined) ?? prices[productId] ?? PRODUCT_BY_ID[productId].basePrice;
+}
 
 /** Verktøy fra Klas Olsen (1×1). Ligger under disken; hva de kan brukes til, finner man ut selv. */
 export interface Tool {

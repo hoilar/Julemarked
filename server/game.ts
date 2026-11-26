@@ -114,6 +114,8 @@ import {
   RECIPE_NOTE,
   WANTED,
   isHomemade,
+  homePriceKey,
+  priceIn,
   LOUPE,
   isSafe,
   CODE_NOTE,
@@ -848,8 +850,14 @@ function pricesOf(stallId: number): Record<string, number> {
   return out;
 }
 
-function priceOf(prices: Record<string, number>, productId: string) {
-  return prices[productId] ?? PRODUCT_BY_ID[productId].basePrice;
+/** Prisen på varen i boden. homemade: hjemmelaget (og «Hjemmelaget» skrevet med penn) har egen pris. */
+function priceOf(prices: Record<string, number>, productId: string, homemade = false) {
+  return priceIn(prices, productId, homemade);
+}
+
+/** Står det en hjemmelaget (eller en med «Hjemmelaget» skrevet på) av varen på bordet? */
+function homemadeOnCounter(stallId: number, productId: string): boolean {
+  return !!one(db.prepare("SELECT 1 FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ? AND label IN ('home', 'forged')"), stallId, productId);
 }
 
 // ---------- Oppsett ----------
@@ -933,7 +941,9 @@ export function migrate() {
     const known = Object.keys(ITEM_TYPES);
     const marks = known.map(() => '?').join(', ');
     const gone = db.prepare(`DELETE FROM items WHERE type_id NOT IN (${marks})`).run(...known).changes;
-    db.prepare(`DELETE FROM prices WHERE product_id NOT IN (${marks})`).run(...known);
+    // Prisen på hjemmelaget ligger under «<vare>#home» (homePriceKey).
+    const priceKeys = [...known, ...known.map(homePriceKey)];
+    db.prepare(`DELETE FROM prices WHERE product_id NOT IN (${priceKeys.map(() => '?').join(', ')})`).run(...priceKeys);
     db.prepare(`DELETE FROM costs WHERE product_id NOT IN (${marks})`).run(...known);
     if (Number(gone) > 0) console.log(`Ryddet bort ${gone} gjenstander av varetyper som ikke finnes lenger.`);
 
@@ -1249,7 +1259,9 @@ export function sellLead(player: PlayerRow, leadId: string, pct = 0) {
     const p = PRODUCT_BY_ID[lead.productId];
     const type = customerType(lead.id);
     const chance = haggleChance(lead.kind, pct, stall.reputation, type.likes.includes(p.category));
-    const price = priceOf(pricesOf(stall.id), p.id);
+    // Kunden tar en hjemmelaget først, og betaler prisen for den.
+    const home = homemadeOnCounter(stall.id, p.id);
+    const price = priceOf(pricesOf(stall.id), p.id, home);
     const amount = hagglePrice(price, pct);
     if (Math.random() >= chance) {
       const rep = haggleReputation(pct, false);
@@ -1257,7 +1269,7 @@ export function sellLead(player: PlayerRow, leadId: string, pct = 0) {
       event(market, player.id, t, pct > 0 ? `😤 ${type.name}en syntes ${amount} kr for ${p.name.toLowerCase()} var for drøyt, og gikk.` : `🤷 ${type.name}en takket nei til ${p.name.toLowerCase()} likevel.`);
       return { sold: false, amount: 0, txId: 0, productId: p.id };
     }
-    const took = takeFromCounter(stall.id, p.id, 1, true) || takeFromCounter(stall.id, p.id, 1, false);
+    const took = takeFromCounter(stall.id, p.id, 1, home);
     if (!took) throw new GameError(`Det er ingen ${p.name.toLowerCase()} igjen på bordet.`);
     const cash = Math.random() < CASH_SHARE;
     const fee = cash ? 0 : Math.round(amount * PAYMENT_FEE);
@@ -2727,13 +2739,15 @@ export function stashItems(player: PlayerRow, typeId: string, to: StashTo, boxId
   });
 }
 
-export function setPrice(player: PlayerRow, productId: string, price: number) {
+/** Setter prisen på varen. homemade: prisen på hjemmelaget (og «Hjemmelaget» skrevet med penn), ellers den butikkjøpte. */
+export function setPrice(player: PlayerRow, productId: string, price: number, homemade = false) {
   product(productId);
   if (int(price, 'pris') < 1 || price > 9999) throw new GameError('Prisen må være mellom 1 og 9999 kr.');
-  q.upsertPrice.run(myStall(player).id, productId, price);
+  q.upsertPrice.run(myStall(player).id, homemade ? homePriceKey(productId) : productId, price);
 }
 
-export function buyFromStall(player: PlayerRow, sellerStallId: number, productId: string, qty: number) {
+/** Kjøp fra en annen spillers bord. homemade: hjemmelaget eller butikkjøpt (de har hver sin pris); udefinert = hva som helst. */
+export function buyFromStall(player: PlayerRow, sellerStallId: number, productId: string, qty: number, homemade?: boolean) {
   product(productId);
   if (int(qty, 'antall') < 1 || qty > 200) throw new GameError('Ugyldig antall.');
   const market = marketOf(player);
@@ -2743,10 +2757,10 @@ export function buyFromStall(player: PlayerRow, sellerStallId: number, productId
     if (!seller || seller.market_id !== market.id) throw new GameError('Fant ikke boden.');
     if (seller.id === buyer.id) throw new GameError('Du kan ikke handle i din egen bod.');
     if (isDecorGood(productId)) throw new GameError('Pynten er bare til salgs for kundene.');
-    const price = priceOf(pricesOf(seller.id), productId);
+    const price = priceOf(pricesOf(seller.id), productId, !!homemade);
     const total = price * qty;
     if (buyer.cash < total) throw new GameError(`Du har ikke råd. Det koster ${total} kr.`);
-    const taken = takeFromCounter(seller.id, productId, qty);
+    const taken = takeFromCounter(seller.id, productId, qty, homemade);
     if (taken < qty) throw new GameError(`Det står bare ${taken} på bordet.`);
     const fee = Math.round(total * PAYMENT_FEE);
 
@@ -2851,7 +2865,11 @@ export function getState(player: PlayerRow): GameState {
       .map((i) => (!own && i.label === 'forged' ? { ...i, label: 'home' as const } : i));
     const stored = pricesOf(s.id);
     const prices: Record<string, number> = {};
-    for (const i of counter) if (PRODUCT_BY_ID[i.typeId]) prices[i.typeId] = priceOf(stored, i.typeId);
+    for (const i of counter) {
+      if (!PRODUCT_BY_ID[i.typeId]) continue;
+      prices[i.typeId] = priceOf(stored, i.typeId);
+      if (isHomemade(i.label)) prices[homePriceKey(i.typeId)] = priceOf(stored, i.typeId, true);
+    }
     return {
       ...def,
       stall: {
@@ -4651,8 +4669,8 @@ export function sellToRegular(player: PlayerRow, visitId: string, productId: str
     const c = CHARACTER_BY_ID[here.id];
     const p = PRODUCT_BY_ID[productId];
     if (!c || !p) throw new GameError('Ukjent vare.');
-    const price = priceOf(pricesOf(stall.id), p.id);
-    const homemade = !!one(db.prepare("SELECT 1 FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ? AND label IN ('home', 'forged')"), stall.id, p.id);
+    const homemade = homemadeOnCounter(stall.id, p.id);
+    const price = priceOf(pricesOf(stall.id), p.id, homemade); // hen tar en hjemmelaget når det finnes
     const onCounter = !!one(db.prepare("SELECT 1 FROM items WHERE stall_id = ? AND place = 'counter' AND type_id = ?"), stall.id, p.id);
     if (!onCounter) throw new GameError(`Det er ingen ${p.name.toLowerCase()} på bordet.`);
     if (!regularLikes(c, { productId: p.id, price, homemade })) throw new GameError(`Det vil ikke ${c.name} ha.`);
@@ -4677,7 +4695,7 @@ export function sellToRegular(player: PlayerRow, visitId: string, productId: str
       return { sold: false, amount: 0, txId: 0, line: c.lines?.no ?? '' };
     }
     // «Bare hjemmelaget»: ta en hjemmelaget. Ellers den første som ligger der.
-    const took = c.buy?.homemadeOnly ? takeFromCounter(stall.id, p.id, 1, true) : takeFromCounter(stall.id, p.id, 1, true) || takeFromCounter(stall.id, p.id, 1, false);
+    const took = takeFromCounter(stall.id, p.id, 1, homemade);
     if (!took) throw new GameError(`Det er ingen ${p.name.toLowerCase()} igjen på bordet.`);
     const cash = Math.random() < CASH_SHARE;
     const fee = cash ? 0 : Math.round(amount * PAYMENT_FEE);
@@ -5530,13 +5548,13 @@ function stealHour(market: MarketRow, t: number, hour: number, stalls: StallRow[
         q.deleteItem.run(i.id);
         const id = Number(q.insertItem.run(s.id, GINGER_RUBBLE, 'counter', null, i.x, i.y, null).lastInsertRowid);
         if (i.label) q.setLabel.run(i.label, id);
-        q.insertTx.run(market.id, t, 'smashed', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
+        q.insertTx.run(market.id, t, 'smashed', s.id, null, i.typeId, 1, priceOf(prices, i.typeId, isHomemade(i.label)));
         smashed.push(i.typeId);
         continue;
       }
       if (Math.random() >= chance) continue;
       q.deleteItem.run(i.id);
-      q.insertTx.run(market.id, t, 'theft', s.id, null, i.typeId, 1, priceOf(prices, i.typeId));
+      q.insertTx.run(market.id, t, 'theft', s.id, null, i.typeId, 1, priceOf(prices, i.typeId, isHomemade(i.label)));
       stolen.push(i.typeId);
     }
     if (alarm && hour === thiefVisits(market.id, key, s.id).night[0])
@@ -5940,11 +5958,11 @@ function processHour(market: MarketRow, hour: number) {
       const evening = night && !isLuguber(pid) && eveningSale(p.category, parts.hour);
       if (isLuguber(pid) !== night && !evening) continue;
       if (serving === 'self' && isDecorGood(pid)) continue; // pynt selges bare når noen står bak disken
-      const price = priceOf(prices, pid);
       const total = groups.home + groups.store;
       for (const homemade of [true, false]) {
         const count = homemade ? groups.home : groups.store;
         if (count === 0) continue;
+        const price = priceOf(prices, pid, homemade); // hjemmelaget og butikkjøpt har hver sin pris
         // Samme humørmodell som ansiktene på skjermen (shared/mood.ts). «Hjemmelaget» og godt omdømme
         // gjør at kundene forventer mer; omdømmet styrer også hvor mange som kommer.
         const expected = Math.round(expectedPrice(p.basePrice, reputation, homemade) * decorPrice(boost, p.category));
