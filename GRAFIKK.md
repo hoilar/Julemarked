@@ -20,6 +20,31 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
+## Oppskriftsheftet «Julebakst – seks slag» – grafikk klar og lagt inn (26.11.2026)
+
+Levert: `client/public/art/verktoy/julebakst.png`, transparent PNG i 128 × 128.
+Original, beskrivelse, metadata, liten kopi og kontrollbilde ligger i
+`GFX_assets/planlagte/julebakst/`. Kontrollert ved siden av oppskrift, lupe og papirblokk
+i 128 og 64 px. Varelisten er oppdatert. **Lagt inn i spillet 26.11.2026.**
+
+Nytt verktøy hos Klas Olsen (`julebakst` i `shared/products.ts`, 499 kr). Heftet gir oppskriftene på seks slag
+til bakemaskinen: pepperkaker (stjerner og hjerter), sandkaker, serinakaker, berlinerkranser, krumkaker og
+sirupssnipper. Det ligger under disken som en 2 × 2-gjenstand. Bildet vises under disken, hos Klas Olsen og når du åpner heftet.
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| J1 | `client/public/art/verktoy/julebakst.png` | 128×128 | Et tynt, stiftet oppskriftshefte med rødt og hvitt rutete omslag og et lite bilde av en kakeboks med småkaker. Litt bøyd hjørne, et bokmerke som stikker ut. Ingen lesbar tekst | Under disken, i Klas Olsens nettbutikk og øverst når du åpner heftet |
+
+```text
+Pixel art for "Julemarked Simulator", a cozy Norwegian Christmas market game. Match the attached tool icons
+(oppskrift.png, lupe.png, papirblokk.png): same pixel size, dark outline, warm palette, light from the upper left.
+Transparent background. No readable text.
+Make: a thin stapled recipe booklet with a red-and-white checkered cover showing a small tin of Christmas cookies,
+one dog-eared corner and a ribbon bookmark.
+```
+
+**Lagt inn:** `image: '/art/verktoy/julebakst.png'` er satt på `julebakst` i `shared/products.ts`.
+
 ## Bodeierhåndboka – grafikk klar og lagt inn (26.11.2026)
 
 Alle 33 PNG-filer er levert til stiene under: appikon, forside, låst lapp og 30 sideikoner.

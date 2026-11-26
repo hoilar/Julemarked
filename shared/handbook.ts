@@ -165,6 +165,7 @@ export const HANDBOOK: HandbookPage[] = [
       '- Moduler (Klas Olsen) gjør maskinene raskere, sparsommere eller lar dem gå lenger.',
       '## Oppskriftene',
       '- Avisa har dagens oppskrift hver morgen. Skriv den av, så har du lappen.',
+      '- Klas Olsen selger heftet **«Julebakst – seks slag»** med pepperkaker, sandkaker, serinakaker, berlinerkranser, krumkaker og sirupssnipper til bakemaskinen.',
       '- Stamkundene har hemmelige oppskrifter (se «Stamkunder og historier»).',
     ],
   },

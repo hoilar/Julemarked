@@ -288,6 +288,10 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- JULEBAKST-START -->[\s\S]*?<!-- JULEBAKST-SLUTT -->', '', html)
+    if (ROOT/'GFX_assets/planlagte/julebakst/leveranse.json').exists():
+        panel=(ROOT/'tools/julebakst-panel.html').read_text(encoding='utf-8')
+        html=html.replace('<div class="table-wrap">','<!-- JULEBAKST-START -->'+panel+'<!-- JULEBAKST-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- HANDBOK-START -->[\s\S]*?<!-- HANDBOK-SLUTT -->', '', html)
     handbookfile=ROOT/'GFX_assets/planlagte/handbok/leveranse.json'
     if handbookfile.exists():

@@ -71,6 +71,9 @@ import {
   MODULE_GRID,
   MODULES,
   RECIPE_NOTE,
+  bookRecipes,
+  hasRecipe,
+  recipesOf,
   WANTED,
   isHomemade,
   priceIn,
@@ -2410,7 +2413,7 @@ function makerPanel(s: GameState, m: Item, n: number): string {
   const inside = itemsIn(s.me.items, 'pot_in', m.id);
   const ready = inside.length > 0;
   const known = def.programs.filter((p) =>
-    s.me.items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === makerRecipeId(def.id, p.id) && !isTrashed(s.me.items, i)),
+    s.me.items.some((i) => hasRecipe(i, makerRecipeId(def.id, p.id)) && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i)),
   );
   const knowsCurrent = known.some((p) => p.id === prog.id);
   const grid = (place: 'pot_in' | 'pot_out', size: { cols: number; rows: number }, label: string) => `
@@ -4044,6 +4047,7 @@ function copyRecipeButton(s: GameState, p: Paper, held: boolean, which: 'kettle'
   const id = which === 'machine' ? p.machineRecipe?.id : p.recipe.id;
   const notes = s.me.items.filter((i) => i.typeId === RECIPE_NOTE && !isTrashed(s.me.items, i));
   if (notes.some((i) => i.recipe === id)) return '<p class="paper-tool done">📝 Du har denne oppskriften under disken.</p>';
+  if (id && s.me.items.some((i) => bookRecipes(i.typeId).includes(id) && !isTrashed(s.me.items, i))) return '<p class="paper-tool done">📕 Denne oppskriften står i heftet ditt.</p>';
   const pad = s.me.items.find((i) => i.typeId === PAD && !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i) && (i.sheets ?? 0) > 0);
   const ok = !!hasTool(s, PEN) && !!pad;
   return `<div class="paper-tool">
@@ -4379,6 +4383,17 @@ function itemView(s: GameState, it: Item): string {
       <p>${how}<br>= ${list(r.outputs)}</p>
       <small>Skrevet av fra Verdens Undergang.</small></div>`;
   }
+  if (bookRecipes(it.typeId).length) {
+    // Oppskriftshefte: alle sidene, slik de står på en avskrevet lapp.
+    const list = (m: Record<string, number>) => recipeList(linesOf(m));
+    const pages = bookRecipes(it.typeId)
+      .map((id) => BOOK_BY_ID[id])
+      .filter(Boolean)
+      .map((r) => `<li><b>${esc(r.name)}</b>: ${list(r.inputs)}${r.machine ? ` i ${esc(MAKER_BY_ID[r.machine].name.toLowerCase())}, ${r.hours} timer` : ` i kjelen, styrke ${r.level}`} = ${list(r.outputs)}</li>`)
+      .join('');
+    return `<div class="note-sheet book"><h2>${icon(t)} ${esc(t.name)}</h2><ul class="book-pages">${pages}</ul>
+      <small>Så lenge heftet ligger i boden, viser maskinen programmene i det.</small></div>`;
+  }
   if (it.coupon) {
     const c = it.coupon;
     const st = STORE_BY_ID[c.store];
@@ -4593,7 +4608,7 @@ function modalView(s: GameState): string {
     const mine = s.me.items.filter((i) => !isTrashed(s.me.items, i) && !isUndelivered(s.me.items, i));
     const held = mine.filter((i) => i.typeId === t.id).length;
     // Bare oppskriftene du har skrevet av, så råvarevinduet ikke røper resten.
-    const uses = [...new Set(mine.filter((i) => i.typeId === RECIPE_NOTE && i.recipe).map((i) => i.recipe!))]
+    const uses = [...new Set(mine.flatMap((i) => recipesOf(i)))]
       .map((id) => BOOK_BY_ID[id])
       .filter((r) => r && r.inputs[t.id])
       .map((r) => `<li>${esc(r.name)} <small class="muted">(${r.inputs[t.id]} stk · ${r.machine ? esc(ITEM_TYPES[r.machine]?.name.toLowerCase() ?? '') : 'kjelen'})</small></li>`)

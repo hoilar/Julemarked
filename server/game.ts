@@ -112,6 +112,7 @@ import {
   CHARGE_EFFICIENCY,
   CHARGE_KW,
   RECIPE_NOTE,
+  hasRecipe,
   WANTED,
   isHomemade,
   homePriceKey,
@@ -3987,7 +3988,7 @@ export function setMaker(player: PlayerRow, itemId: number, on: boolean | undefi
   if (on !== undefined) st.on = !!on;
   const items = itemsOf(stall.id);
   const knows = (prog: string) =>
-    items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === makerRecipeId(m.typeId, prog) && !isTrashed(items, i));
+    items.some((i) => hasRecipe(i, makerRecipeId(m.typeId, prog)) && !isTrashed(items, i) && !isUndelivered(items, i));
   if (program !== undefined && program !== st.program) {
     if (!MAKER_BY_ID[m.typeId].programs.some((p) => p.id === program)) throw new GameError('Ukjent program.');
     if (!knows(program)) throw new GameError('Du har ikke den oppskriften. Se etter den i avisa.');
@@ -4679,8 +4680,8 @@ export function copyRecipe(player: PlayerRow, edition: number, which: 'kettle' |
     if (!paper) throw new GameError('Avisa er uleselig.');
     const r = which === 'machine' ? paper.machineRecipe : paper.recipe;
     const id = r.id;
-    if (items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === id && !isTrashed(items, i)))
-      throw new GameError('Du har allerede skrevet av den oppskriften.');
+    if (items.some((i) => hasRecipe(i, id) && !isTrashed(items, i)))
+      throw new GameError(items.some((i) => i.typeId === RECIPE_NOTE && i.recipe === id && !isTrashed(items, i)) ? 'Du har allerede skrevet av den oppskriften.' : 'Den oppskriften står allerede i heftet ditt.');
     const spot = findStorageSpot(items, streetOf(stall.id), RECIPE_NOTE);
     if (!spot) throw new GameError('Det er ikke plass til lappen under disken.');
     const res = q.insertItem.run(stall.id, RECIPE_NOTE, spot.place, spot.boxId, spot.x, spot.y, edition);

@@ -2,6 +2,8 @@
 // Én porsjon tar én spilltime på riktig styrke. For lav styrke: ingenting skjer.
 // For høy styrke: alt i porsjonen blir til en svidd klump.
 
+import { recipesOf } from './products.ts';
+
 export interface Recipe {
   id: string;
   name: string;
@@ -62,5 +64,5 @@ export function cookPlan(counts: Map<string, number>, level: number, known: Read
 
 /** Oppskriftslappene en bod har (ikke i søpla): hemmelige oppskrifter virker bare når lappen er der. */
 export function knownRecipes(items: { typeId: string; recipe?: string; place: string }[]): Set<string> {
-  return new Set(items.filter((i) => i.typeId === 'oppskrift' && i.recipe && i.place !== 'trash').map((i) => i.recipe!));
+  return new Set(items.filter((i) => i.place !== 'trash').flatMap((i) => recipesOf(i)));
 }

@@ -75,6 +75,7 @@ export interface Tool {
   sheets?: number; // papirblokka: antall ark når den er ny
   dealerOnly?: boolean; // selges ikke hos Klas Olsen – bare hos Fyren bak containeren
   decor?: string; // innpakket pynt fra Dekoringen (shared/decor.ts): trykk for å henge den opp på fronten
+  recipes?: string[]; // oppskriftshefte: oppskriftene (BOOK-id) som står i heftet, som om du hadde lapp på hver
 }
 
 /** Et ark du har laget selv: avskrevet oppskrift eller utklipt etterlysning (1×1). */
@@ -321,6 +322,18 @@ export const TOOLS: Tool[] = [
   { kind: 'tool', id: 'lupe', name: 'Forstørrelsesglass', emoji: '🔍', image: '/art/verktoy/lupe.png', price: 129, size: { w: 2, h: 2 }, blurb: 'Gjør små ting store. Nyttig for den som vil se nøyere etter.' },
   { kind: 'tool', id: 'saks', name: 'Saks', emoji: '✂️', image: '/art/verktoy/saks.png', price: 79, size: { w: 2, h: 2 }, blurb: 'Skarp. Pass på fingrene.' },
   { kind: 'tool', id: 'boksinndeler', name: 'Boksinndeler', emoji: '🧱', image: '/art/boksinndeler.png', price: 249, size: { w: 2, h: 1 }, blurb: 'Skillevegg i hard plast med etikettholder. Passer i plastkassa med lokk.' },
+  // Oppskriftshefte: maskinen viser programmene i heftet, akkurat som med avskrevne lapper.
+  {
+    kind: 'tool',
+    id: 'julebakst',
+    name: 'Julebakst – seks slag',
+    emoji: '📕',
+    image: '/art/verktoy/julebakst.png',
+    price: 499,
+    size: { w: 2, h: 2 },
+    blurb: 'Oppskriftshefte med de seks slagene: pepperkaker, sandkaker, serinakaker, berlinerkranser, krumkaker og sirupssnipper.',
+    recipes: ['bakemaskin:stjerner', 'bakemaskin:hjerter', 'bakemaskin:sandkaker', 'bakemaskin:serinakaker', 'bakemaskin:berlinerkranser', 'bakemaskin:krumkaker', 'bakemaskin:snipper'],
+  },
   { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', image: '/art/verktoy/sapestykke.png', price: 19, size: { w: 2, h: 2 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
   // Fra Fyren bak containeren (selges ikke hos Klas Olsen):
   { kind: 'tool', id: 'nokkelmaskin', name: 'Nøkkelmaskin', emoji: '🛠️', image: '/art/verktoy/nokkelmaskin.png', price: 900, size: { w: 3, h: 3 }, blurb: 'Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk.', dealerOnly: true },
@@ -374,6 +387,12 @@ DOCS.push(
 );
 export const COUPON = 'kupong';
 export const RECIPE_NOTE = 'oppskrift';
+/** Oppskriftene i et oppskriftshefte (tom liste for alt annet). */
+export const bookRecipes = (typeId: string): string[] => (ITEM_TYPES[typeId] as { recipes?: string[] } | undefined)?.recipes ?? [];
+/** Gir denne gjenstanden oppskriften: en avskrevet lapp med den, eller et hefte der den står? */
+export const hasRecipe = (i: { typeId: string; recipe?: string }, id: string) => (i.typeId === RECIPE_NOTE && i.recipe === id) || bookRecipes(i.typeId).includes(id);
+/** Alle oppskriftene en gjenstand gir (lapp eller hefte). */
+export const recipesOf = (i: { typeId: string; recipe?: string }): string[] => (i.typeId === RECIPE_NOTE ? (i.recipe ? [i.recipe] : []) : bookRecipes(i.typeId));
 export const WANTED = 'etterlysning';
 
 // Plassholdere med emoji til de får tegning.

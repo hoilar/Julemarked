@@ -2161,6 +2161,8 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .lotto-draw small { opacity: 0.9; }
 .lotto-mine.won { color: #9fe0a8; font-weight: 700; }
 .lotto-rules { font-size: 0.72rem; }
+.note-sheet.book .book-pages { margin: 6px 0 8px; padding-left: 18px; text-align: left; line-height: 1.35; }
+.note-sheet.book .book-pages li { margin-bottom: 4px; }
 /* Bodeierhåndboka */
 .hb-cover { margin-bottom: 10px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #7a1f1a, #3d1110); text-align: center; }
 .hb-cover small { display: block; opacity: 0.8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }
