@@ -983,7 +983,7 @@ export const PRODUCTS: Product[] = [
   }),
   // Drikke
   vare('kakao', 'Varm kakao', '☕', 2, 2, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
-  vare('julebrus', 'Julebrus', '🥤', 2, 3, 12, 35, 1.6, 'Bryggeriet', 'drikke', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
+  vare('julebrus', 'Julebrus', '🥤', 1, 2, 12, 35, 1.6, 'Bryggeriet', 'drikke'),
   // Alkohol (krever skjenkebevilling, se shared/liquor.ts). Vodka og rødvin er også råvarer i kjelen.
   vare('vodka', 'Vodka', '🍸', 2, 3, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
   vare('rodvin', 'Rødvin', '🍷', 2, 3, 90, 229, 0.45, 'Vinkjelleren', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
