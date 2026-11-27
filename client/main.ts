@@ -551,6 +551,10 @@ function playNewSales(s: GameState) {
   });
 }
 
+/** Hvilken telefonside som vises (side + håndboklapp); rulleposisjonen beholdes bare når den er den samme. */
+const phoneScrollKey = () => `${phoneOpen}:${phonePage}:${handbookAt ?? ''}`;
+let lastPhoneScrollKey = '';
+
 function render() {
   holdCustomer(modal?.kind === 'customer' ? modal.seed : null); // kunden venter mens kundevinduet er åpent
   // Ikke tegn på nytt midt i et drag eller mens brukeren skriver i et felt.
@@ -586,6 +590,10 @@ function render() {
     const scroll = app.querySelector('.modal-backdrop .modal')?.scrollTop ?? 0;
     const shopScroll = app.querySelector('.shop-body')?.scrollTop ?? 0;
     const paperScroll = app.querySelector('.paper-window .modal')?.scrollTop ?? 0;
+    // Telefonen (håndboka, banken …) og regningene i postkassa: behold rulleposisjonen så lenge du står på samme side.
+    const phoneScroll = app.querySelector('.phone-screen')?.scrollTop ?? 0;
+    const billScroll = app.querySelector('.mail-bills')?.scrollTop ?? 0;
+    const samePhonePage = phoneScrollKey() === lastPhoneScrollKey;
     app.innerHTML = s.clock.ended ? winnerView(s) : s.me.bankrupt ? bankruptView(s) : body + paperWindow(s) + phoneWindow(s) + modalView(s) + passwordView(s);
     syncMusic(shownStall?.music ?? null);
     if (shownStall && shownStall.id === s.me.stallId) checkOutage(shownStall, s.me.items);
@@ -598,6 +606,11 @@ function render() {
     if (sb) sb.scrollTop = shopScroll;
     const pm = app.querySelector('.paper-window .modal');
     if (pm) pm.scrollTop = paperScroll;
+    const ph = app.querySelector('.phone-screen');
+    if (ph && samePhonePage) ph.scrollTop = phoneScroll;
+    lastPhoneScrollKey = phoneScrollKey();
+    const mb = app.querySelector('.mail-bills');
+    if (mb) mb.scrollTop = billScroll;
   }
   tickClock(); // setter dag/natt før kundene telles
   mountSky(shownStall ? app.querySelector('.stage') : null); // himmelen, røyken og lyktene over torgbildet
