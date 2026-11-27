@@ -136,7 +136,7 @@ let timer = 0;
 export interface ClientLead {
   id: string;
   productId: string;
-  kind: 'eager' | 'curious';
+  kind: 'eager' | 'curious' | 'browsing'; // browsing: «Bare kikker litt» (productId er tom; det er hemmelig)
   icon: string;
   realFrom: number;
   realUntil: number;
@@ -152,21 +152,23 @@ function placeLeads(now: number) {
   for (const l of leads) {
     if (placed.has(l.id) || now < l.realFrom || now >= l.realUntil) continue;
     const c =
-      customers.find((x) => !x.buying && !x.lead && !x.held && x.want === l.productId) ?? customers.find((x) => !x.buying && !x.lead && !x.held) ?? arrive();
+      (l.productId ? customers.find((x) => !x.buying && !x.lead && !x.held && x.want === l.productId) : undefined) ??
+      customers.find((x) => !x.buying && !x.lead && !x.held) ??
+      arrive();
     if (!c) return;
     placed.add(l.id);
     c.lead = l;
-    c.want = l.productId;
+    c.want = l.productId || null;
     c.leaveAt = l.realUntil;
     update(c, offers());
   }
 }
 
 /** Svaret fra serveren etter at du trykket på en kunde. */
-export function leadResult(id: string, sold: boolean, amount: number) {
+export function leadResult(id: string, sold: boolean, amount: number, icon?: string) {
   const c = customers.find((x) => x.lead?.id === id);
   if (!c) return;
-  const icon = c.lead!.icon;
+  icon ??= c.lead!.icon;
   c.lead = null;
   if (sold) {
     c.buying = true;
@@ -200,6 +202,18 @@ function look(c: Customer, list: Offer[]): Offer | null {
 
 function update(c: Customer, list: Offer[]) {
   if (c.buying) return;
+  if (c.lead?.kind === 'browsing') {
+    // Bare kikker: sier ikke hva hen vil ha.
+    if (list.length === 0) c.lead = null; // ingenting å kikke på
+    else {
+      setMood(c, 'noytral');
+      c.bubble.className = 'want lead browsing';
+      c.bubble.removeAttribute('data-action');
+      c.bubble.title = 'Bare kikker litt – trykk for å spørre om hen trenger hjelp';
+      c.bubble.innerHTML = '<span class="browse-text">Bare kikker litt</span>';
+      return;
+    }
+  }
   const o = look(c, list);
   if (c.lead && o?.productId !== c.lead.productId) c.lead = null; // varen er borte fra bordet
   if (c.lead) {
@@ -259,7 +273,7 @@ function arrive(night = false): Customer | null {
     tolerance: randomTolerance(),
     want: null,
     x,
-    leaveAt: Date.now() + 6000 + Math.random() * 9000,
+    leaveAt: Date.now() + 15_000 + Math.random() * 25_000, // blir stående en stund og ser seg rundt
     buying: false,
     lead: null,
     mood: null,

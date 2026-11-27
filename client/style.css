@@ -1477,6 +1477,15 @@ body:has(.world) #toast.show { transform: translate(-50%, 0); opacity: 1; }
 .customer .want.lead.curious { background: #e6f1ff; border-color: #4a7fc1; animation: nudge 2s ease-in-out infinite; }
 .lead-badge { position: absolute; right: -0.5cqw; top: -0.5cqw; min-width: 1.4cqw; height: 1.4cqw; padding: 0 0.2cqw; display: grid; place-items: center; border-radius: 99px; font: 900 max(9px, 0.9cqw)/1 system-ui, sans-serif; color: #fff; border: 0.12cqw solid #1d1a16; }
 .want.eager .lead-badge { background: #e0a800; }
+/* «Bare kikker litt»: en liten snakkeboble i stedet for vareikonet */
+.customer .want.lead.browsing { width: auto; height: auto; padding: 0.35cqw 0.7cqw; border-radius: 1cqw; background: #f4f1ea; border-color: #8a7a62; right: -10%; animation: nudge 2.6s ease-in-out infinite; }
+.browse-text { font: italic 600 max(9px, 0.95cqw)/1.1 system-ui, sans-serif; color: #4a3a28; white-space: nowrap; }
+.browse-ask { width: 100%; background: var(--green); }
+.browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 0.35rem; }
+.browse-pick { display: grid; justify-items: center; gap: 0.15rem; padding: 0.35rem 0.2rem; background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+.browse-pick img, .browse-pick .sprite { width: 40px; height: 40px; font-size: 1.8rem; image-rendering: pixelated; object-fit: contain; }
+.browse-pick small { font-size: 0.7rem; color: var(--muted); }
+.browse-pick:hover { filter: none; background: var(--line); }
 .want.curious .lead-badge { background: #4a7fc1; }
 @keyframes lead-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 

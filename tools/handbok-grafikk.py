@@ -31,7 +31,7 @@ def prepare(partial=False):
  if missing and not partial:raise RuntimeError(f'Missing {len(missing)} images: {missing}')
  if not missing:
   (BASE/'leveranse.json').write_text(json.dumps({'mode':'Built-in image_gen','runtimeIntegration':False,'items':records},ensure_ascii=False,indent=2),encoding='utf-8')
- print(f'{len(records)}/33 bilder klare. Mangler: {missing}')
+ print(f'{len(records)}/{len(TASKS)} bilder klare. Mangler: {missing}')
  return records
 
 def proof(records):
@@ -48,7 +48,7 @@ def proof(records):
   x=680+i*146
   draw.text((x,10),name,fill='white')
   for y,size in [(32,128),(180,64),(265,32)]:paste(f'client/public/art/telefon/app-{name}.png',(x,y),(size,size))
- draw.text((20,278),'Sideikoner: 64 px og 24 px. De siste ni sidene har mørkere aksenter.',fill='white')
+ draw.text((20,278),'Sideikoner: 64 px og 24 px. De hemmelige sidene har mørkere aksenter.',fill='white')
  for i,item in enumerate([t for t in TASKS if t['size']==[64,64]]):
   x=20+(i%8)*157;y=340+(i//8)*160
   draw.text((x,y-22),item['id'],fill='white')

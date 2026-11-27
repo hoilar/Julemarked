@@ -120,6 +120,7 @@ import { DUMP_FINE, INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
+import { BROWSE_BASE, BROWSE_BOOK, SALES_BOOK, browseChance, browseSkill, browseXpBonus } from '../shared/leads.ts';
 import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
@@ -215,6 +216,7 @@ let handbookSeen: string[] = (() => {
     return [];
   }
 })();
+let browseHelp: string | null = null; // kikkeren du har spurt «Trenger du hjelp?»
 let bookTab = { id: 0, n: 0 }; // fanen du har åpen i et oppskriftshefte
 let lottoPick: number[] = []; // tallene du har valgt i Lotteri-appen (før du kjøper loddet)
 // Topplisten: omsetning i dag eller hele sesongen.
@@ -607,7 +609,7 @@ function render() {
   const real = (g: number) => Date.now() + (g - gameNow) / Math.max(1, clockBase.speed);
   setLeads(
     ownView && state
-      ? state.me.leads.map((l) => ({ ...l, icon: icon(PRODUCT_BY_ID[l.productId]), realFrom: real(l.from), realUntil: real(l.until) }))
+      ? state.me.leads.map((l) => ({ ...l, icon: l.productId ? icon(PRODUCT_BY_ID[l.productId]) : '👀', realFrom: real(l.from), realUntil: real(l.until) }))
       : [],
   );
   if (state) playNewSales(state);
@@ -4219,11 +4221,14 @@ function customerView(s: GameState, seed: string): string {
   const tags = type.likes.map((c) => `<span class="cust-tag like">${categoryLabel(c)}</span>`).join('') + `<span class="cust-tag dislike">${esc(type.dislikes)}</span>`;
   const looking = p
     ? `<div class="cust-item">${icon(p)}<div><b>${esc(p.name)}</b><small>Din pris ${kr(price)}${info?.mood ? ` · ${CUSTOMER_MOOD[info.mood] ?? ''}` : ''}${liked ? ' · liker slikt' : ''}</small></div></div>`
-    : '<p class="muted">Ser seg rundt.</p>';
+    : `<p class="muted">${lead?.kind === 'browsing' ? '«Bare kikker litt.»' : 'Ser seg rundt.'}</p>`;
   let offer = '';
-  if (lead && p) {
+  if (lead?.kind === 'browsing') {
+    offer = browseSection(s, lead.id);
+  } else if (lead && p) {
+    const kind = lead.kind;
     const steps = HAGGLE_STEPS.map((pct) => {
-      const ch = haggleChance(lead.kind, pct, s.me.reputation, liked);
+      const ch = haggleChance(kind, pct, s.me.reputation, liked);
       const label = pct === 0 ? 'Din pris' : `${pct > 0 ? '+' : '−'}${Math.abs(pct)} %`;
       return `<button class="haggle ${pct < 0 ? 'down' : pct > 0 ? 'up' : 'even'}" data-action="haggle" data-lead="${esc(lead.id)}" data-pct="${pct}" title="${chanceWord(ch)} (${Math.round(ch * 100)} %)">
         <span class="haggle-label">${label}</span><b>${kr(hagglePrice(price, pct))}</b><small>${Math.round(ch * 100)} %</small></button>`;
@@ -4244,6 +4249,36 @@ function customerView(s: GameState, seed: string): string {
     ${offer}
     <div class="cust-police"><button class="small ghost" data-action="tip" data-seed="${esc(seed)}"><img src="${characterUrl(police)}" alt="">🫐 Meld til Tyttebærpolitiet</button>
       <small>Dusør ${kr(s.paper?.wanted.reward ?? THIEF_REWARD)} til den som først tar den etterlyste. Feil tips gir ${factor} % færre kunder neste dag.</small></div>`;
+}
+
+/**
+ * «Bare kikker litt»: først knappen «Trenger du hjelp?», så varene på bordet som knapper. Pek på det kunden
+ * egentlig ser etter, så er det en sjanse for salg (Kundesalgsboka og erfaring øker den). Én sjanse per kunde.
+ */
+function browseSection(s: GameState, leadId: string): string {
+  const book = s.me.items.some((i) => i.typeId === SALES_BOOK && !isTrashed(s.me.items, i));
+  const skill = browseSkill(s.me.salesXp, book);
+  const xp = browseXpBonus(s.me.salesXp, book);
+  const how = book
+    ? `${Math.round(BROWSE_BASE * 100)} % + boka ${Math.round(BROWSE_BOOK * 100)} % + erfaring ${Math.round(xp * 1000) / 10} % (${s.me.salesXp} kunder)`
+    : `Med Kundesalgsboka fra Klas Olsen blir du flinkere for hver kunde.`;
+  if (browseHelp !== leadId)
+    return `<div class="cust-section"><div class="cust-kicker">👀 Bare kikker litt</div>
+      <button class="browse-ask" data-action="browse-help" data-lead="${esc(leadId)}">🙋 Trenger du hjelp?</button>
+      <p class="cust-hint">Pek på det hen egentlig ser etter. Kundetypen over gir et hint. Treffer du, er sjansen for salg ${Math.round(skill * 100)} %. ${how}</p></div>`;
+  const goods = [...new Set(s.me.items.filter((i) => i.place === 'counter' && PRODUCT_BY_ID[i.typeId] && !isLuguber(i.typeId)).map((i) => i.typeId))];
+  const buttons = goods
+    .map((id) => {
+      const p = PRODUCT_BY_ID[id];
+      const home = s.me.items.some((i) => i.place === 'counter' && i.typeId === id && isHomemade(i.label));
+      const ch = browseChance(s.me.salesXp, book, myPrice(s, id, home) / expectedHere(s, p, home));
+      return `<button class="browse-pick" data-action="browse-guess" data-lead="${esc(leadId)}" data-product="${id}" title="${esc(p.name)} – ${Math.round(ch * 100)} % hvis det er denne">
+        ${icon(p)}<small>${Math.round(ch * 100)} %</small></button>`;
+    })
+    .join('');
+  return `<div class="cust-section"><div class="cust-kicker">Hva ser hen etter?</div>
+    <div class="browse-grid">${buttons}</div>
+    <p class="cust-hint">Prosenten er sjansen for salg hvis det er riktig vare (en stiv pris trekker ned). Feil vare, og kunden går. ${how}</p></div>`;
 }
 
 /** Varene på bordet ditt slik stamkundene ser dem: pris og om det finnes en hjemmelaget. */
@@ -5696,6 +5731,32 @@ app.addEventListener('click', (e) => {
         toast(r.sold ? `😊 Solgt for ${kr(r.amount)}. ${r.line}` : `🙅 ${r.line || 'Nei takk.'}`, !r.sold);
       })
       .catch((err) => toast((err as Error).message, true))
+      .finally(refresh);
+    return;
+  }
+  if (action === 'browse-help' && el.dataset.lead) {
+    browseHelp = el.dataset.lead;
+    return render();
+  }
+  if (action === 'browse-guess' && el.dataset.lead && el.dataset.product) {
+    const id = el.dataset.lead;
+    modal = null;
+    browseHelp = null;
+    api<{ sold: boolean; guessed: boolean; amount: number; txId: number; productId: string }>('/api/browse', { leadId: id, productId: el.dataset.product })
+      .then((r) => {
+        if (r.txId) ownSales.add(r.txId);
+        if (r.sold) playSound('betaling');
+        const want = PRODUCT_BY_ID[r.productId];
+        leadResult(id, r.sold, r.amount, want ? icon(want) : undefined);
+        toast(
+          r.sold ? `🛍️ Riktig! Solgt for ${kr(r.amount)}.` : r.guessed ? '🤔 Riktig vare, men hen lot den ligge.' : `🙂 Hen så egentlig etter ${want ? want.name.toLowerCase() : 'noe annet'}.`,
+          !r.sold,
+        );
+      })
+      .catch((err) => {
+        leadResult(id, false, 0);
+        toast((err as Error).message, true);
+      })
       .finally(refresh);
     return;
   }

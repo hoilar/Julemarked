@@ -343,6 +343,17 @@ export const TOOLS: Tool[] = [
     tabs: JULEBAKST_TABS,
     recipes: JULEBAKST_TABS.flatMap((t) => t.recipes),
   },
+  // Kundesalgsboka: ligger den i boden, selger du lettere til dem som «bare kikker», og du lærer av hver kunde (shared/leads.ts).
+  {
+    kind: 'tool',
+    id: 'kundesalgsboka',
+    name: 'Kundesalgsboka',
+    emoji: '📘',
+    image: '/art/verktoy/kundesalgsboka.png',
+    price: 499,
+    size: { w: 2, h: 2 },
+    blurb: '«Se kunden, still spørsmål, pek på varen.» Med boka i boden blir du flinkere for hver kunde som bare kikker.',
+  },
   { kind: 'tool', id: 'sapestykke', name: 'Såpestykke', emoji: '🧼', image: '/art/verktoy/sapestykke.png', price: 19, size: { w: 2, h: 2 }, blurb: 'Myk, hvit såpe i en blokk. Lukter rent.' },
   // Fra Fyren bak containeren (selges ikke hos Klas Olsen):
   { kind: 'tool', id: 'nokkelmaskin', name: 'Nøkkelmaskin', emoji: '🛠️', image: '/art/verktoy/nokkelmaskin.png', price: 900, size: { w: 3, h: 3 }, blurb: 'Fil, klemme og sveiv. Lager en nøkkel etter et avtrykk.', dealerOnly: true },

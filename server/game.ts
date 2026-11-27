@@ -173,7 +173,12 @@ import {
   CURIOUS_YES,
   EAGER_MARKUP,
   EAGER_RATE,
+  BROWSE_LIKED_WEIGHT,
+  BROWSE_MINUTES,
+  BROWSE_PER_HOUR,
   LEAD_MINUTES,
+  SALES_BOOK,
+  browseChance,
   type Lead,
   type LeadKind,
 } from '../shared/leads.ts';
@@ -277,7 +282,7 @@ import {
 import { BAG_PRICE, FREE_EXPRESS_HOURS, KLAS, SHIP_COUPON, SHIP_COUPON_CHANCE, arrivesAt, PLACE_BY_ID, SHIPPING, STORES, STORE_BY_ID, catalog, expressPrice, lineCost, packBags, rareArrived, type ShopItem } from '../shared/shop.ts';
 import { PAPER_HOUR, buildPaper, currentEdition, editionTime, powerPrice } from './paper.ts';
 import { WEATHER, forceWeather, forcedWeather, weatherDemand, weatherFor, type WeatherKind } from '../shared/weather.ts';
-import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation } from '../shared/haggle.ts';
+import { HAGGLE_STEPS, customerType, haggleChance, hagglePrice, haggleReputation, type HaggleKind } from '../shared/haggle.ts';
 import { regularChance, regularLikes, regularReputation, regularVisits } from '../shared/regulars.ts';
 import { CHARACTER_BY_ID } from '../shared/characters.ts';
 import { HANDBOOK_NAME, handbookUnlocks } from '../shared/handbook.ts';
@@ -332,6 +337,7 @@ interface PlayerRow {
   pass_hash: string | null;
   paper_read: number; // siste avisutgave spilleren har lest (ÅÅÅÅMMDD)
   stall_at: number | null; // boden spilleren er i nå (eier hen flere); null = den første
+  sales_xp: number; // kikkere du har hjulpet med Kundesalgsboka i boden (shared/leads.ts)
 }
 interface StallRow {
   id: number;
@@ -1279,7 +1285,80 @@ function leadsFor(market: MarketRow, s: StallRow, t: number): Lead[] {
       }
     }
   }
+  // «Bare kikker litt»: 2–3 i timen når det står noe på bordet. Hva de vil ha, er hemmelig (se browseWant).
+  if (onTable.length) {
+    const n = hashPoisson(BROWSE_PER_HOUR, 'kikker', market.id, s.id, start);
+    for (let j = 0; j < n; j++) {
+      const id = `${start}:browse${j}`;
+      if (used.has(id)) continue;
+      const from = start + Math.floor(hash01('kunde-tid', s.id, id) * 0.9 * HOUR);
+      const minutes = BROWSE_MINUTES.min + hash01('kikker-tid', s.id, id) * (BROWSE_MINUTES.max - BROWSE_MINUTES.min);
+      out.push({ id, productId: '', kind: 'browsing', from, until: from + Math.round(minutes * 60_000) });
+    }
+  }
   return out.sort((a, b) => a.from - b.from);
+}
+
+/**
+ * Det en kikker egentlig ser etter blant varene på bordet: helst noe kundetypen liker. Fast for hver kikker
+ * (samme vare så lenge den står ute), så det ikke hjelper å spørre på nytt.
+ */
+function browseWant(leadId: string, onTable: string[]): string | null {
+  const likes = customerType(leadId).likes;
+  let best: string | null = null;
+  let top = -1;
+  for (const pid of onTable) {
+    const w = likes.includes(PRODUCT_BY_ID[pid].category) ? BROWSE_LIKED_WEIGHT : 1;
+    const score = hash01('kikker-vil', leadId, pid) ** (1 / w); // vektet trekning som er lik hver gang
+    if (score > top) [top, best] = [score, pid];
+  }
+  return best;
+}
+
+/**
+ * «Trenger du hjelp?»: du peker på en vare på bordet for en kikker. Riktig vare gir sjansen i browseChance
+ * (Kundesalgsboka og erfaring øker den, en stiv pris trekker ned). Feil vare: kunden går. Én sjanse per kunde.
+ */
+export function helpBrowser(player: PlayerRow, leadId: string, productId: string) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  return tx(() => {
+    const stall = myStall(player);
+    if (servingOf(stall) !== 'open') throw new GameError('Du må stå bak disken med skiltet på Åpent for å hjelpe kunder.');
+    const lead = leadsFor(market, stall, t).find((l) => l.id === leadId && l.kind === 'browsing');
+    const wait = Math.max(5 * 60_000, 5 * 60_000 * market.speed);
+    if (!lead || t < lead.from - 60_000 || t > lead.until + wait) throw new GameError('Kunden har gått videre.');
+    const items = itemsOf(stall.id);
+    const onTable = [...new Set(items.filter((i) => i.place === 'counter' && PRODUCT_BY_ID[i.typeId] && !isLuguber(i.typeId)).map((i) => i.typeId))];
+    if (!onTable.includes(productId)) throw new GameError('Den varen står ikke på bordet.');
+    db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, lead.id);
+    const want = browseWant(lead.id, onTable)!;
+    const type = customerType(lead.id);
+    const wanted = PRODUCT_BY_ID[want];
+    // Erfaring: hver kikker du hjelper med boka i boden.
+    const book = !!holds(items, SALES_BOOK);
+    const xp = player.sales_xp ?? 0;
+    if (book) db.prepare('UPDATE players SET sales_xp = sales_xp + 1 WHERE id = ?').run(player.id);
+    if (productId !== want) {
+      event(market, player.id, t, `🙂 ${type.name}en så egentlig etter ${wanted.name.toLowerCase()}, og gikk videre.`);
+      return { sold: false, guessed: false, amount: 0, txId: 0, productId: want };
+    }
+    const p = wanted;
+    const home = homemadeOnCounter(stall.id, p.id);
+    const price = priceOf(pricesOf(stall.id), p.id, home);
+    const expected = Math.round(expectedPrice(p.basePrice, stall.reputation, home) * decorPrice(decorBoost(Object.values(decorOf(stall)), { dark: isDarkHour(osloParts(t).hour), weather: weatherFor(market.id, currentEdition(t).key).kind }), p.category));
+    if (Math.random() >= browseChance(xp, book, price / expected)) {
+      event(market, player.id, t, `🤔 ${type.name}en kikket lenge på ${p.name.toLowerCase()}, men lot den ligge.`);
+      return { sold: false, guessed: true, amount: 0, txId: 0, productId: want };
+    }
+    if (!takeFromCounter(stall.id, p.id, 1, home)) throw new GameError(`Det er ingen ${p.name.toLowerCase()} igjen på bordet.`);
+    const cash = Math.random() < CASH_SHARE;
+    const fee = cash ? 0 : Math.round(price * PAYMENT_FEE);
+    q.addCash.run(price - fee, stall.id);
+    const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, 1, price);
+    event(market, player.id, t, `🛍️ Du hjalp en ${type.name.toLowerCase()} som bare kikket, og solgte ${p.emoji} ${p.name.toLowerCase()} for ${price} kr (${cash ? 'kontant' : `Bipps, gebyr ${fee} kr`}).`);
+    return { sold: true, guessed: true, amount: price, txId: Number(res.lastInsertRowid), productId: want };
+  });
 }
 
 /**
@@ -1297,7 +1376,7 @@ export function sellLead(player: PlayerRow, leadId: string, pct = 0) {
   return tx(() => {
     const stall = myStall(player);
     if (servingOf(stall) !== 'open') throw new GameError('Du må stå bak disken med skiltet på Åpent for å selge selv.');
-    const lead = leadsFor(market, stall, t).find((l) => l.id === leadId);
+    const lead = leadsFor(market, stall, t).find((l) => l.id === leadId && l.kind !== 'browsing') as (Lead & { kind: HaggleKind }) | undefined;
     // Kunden venter omtrent 5 ekte minutter mens kundevinduet er åpent (konseptet 12.5).
     const wait = Math.max(5 * 60_000, 5 * 60_000 * market.speed);
     if (!lead || t < lead.from - 60_000 || t > lead.until + wait) throw new GameError('Kunden har gått videre.');
@@ -3004,6 +3083,7 @@ export function getState(player: PlayerRow): GameState {
       stalls: all<StallRow>(q.stallsByOwner, player.id).map((x) => x.id),
       cash: mine?.cash ?? 0,
       reputation: Math.round(mine?.reputation ?? 0),
+      salesXp: player.sales_xp ?? 0,
       inventory,
       items,
       bills: mine ? billsFor(mine.id, currentEdition(t).key) : [],

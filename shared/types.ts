@@ -277,6 +277,8 @@ export interface GameState {
     stalls: number[]; // alle bodene du eier (du er i én om gangen)
     cash: number;
     reputation: number;
+    /** Kikkere du har hjulpet med Kundesalgsboka i boden (shared/leads.ts). */
+    salesXp: number;
     inventory: InventoryRow[];
     items: Item[]; // alle egne gjenstander (lager, esker, bord og søppelkasse)
     bills: BillView[]; // ubetalte regninger i postkassa

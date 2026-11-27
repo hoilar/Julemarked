@@ -90,6 +90,8 @@ export const HANDBOOK: HandbookPage[] = [
       '## Hjemmelaget og butikkjøpt',
       '- Har du samme vare både hjemmelaget og butikkjøpt, kan du sette egen pris på hver.',
       '## Kunder ved disken',
+      '- Noen «bare kikker litt». Spør om de trenger hjelp, og pek på det du tror de ser etter. Kundetypen er et godt hint. Treffer du, kan det bli salg.',
+      '- **Kundesalgsboka** fra Klas Olsen gjør deg flinkere, og med den i boden lærer du av hver kunde du hjelper.',
       '- På dagtid stopper noen kunder ved disken og vil prute. Du får ett forsøk per kunde: gi rabatt, ta full pris eller be om mer.',
       '- Ivrige kunder tåler et påslag. Interesserte kunder vil helst ha litt avslag.',
     ],

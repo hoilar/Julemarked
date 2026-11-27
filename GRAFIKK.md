@@ -20,7 +20,23 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
-## Ny lapp i håndboka: «Samlerne» – grafikk klar (27.11.2026)
+## Kundesalgsboka – grafikk klar og lagt inn (27.11.2026)
+
+Levert: `client/public/art/verktoy/kundesalgsboka.png`, transparent PNG i 128 × 128.
+Original, beskrivelse, metadata, liten kopi og kontrollbilde ligger i
+`GFX_assets/planlagte/kundesalgsboka/`. Kontrollert i 128 og 64 px ved siden av
+oppskriften og Julebakst. Varelisten er oppdatert. Spillkoblingen er ikke endret.
+
+Ny gjenstand hos Klas Olsen: **Kundesalgsboka** (`kundesalgsboka` i `shared/products.ts`, 499 kr, 2×2 ruter). Med boka i
+boden blir du flinkere til å selge til kunder som «bare kikker litt». **Lagt inn i spillet 27.11.2026** (`image` på verktøyet).
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| K1 | `client/public/art/verktoy/kundesalgsboka.png` | 128×128 | En blå, litt slitt salgshåndbok med et smilende ansikt og en handlepose på omslaget, en gul post-it stikker ut | Lager, bord og nettbutikken til Klas Olsen |
+
+Samme stil som `julebakst.png` (oppskriftsheftet): varm pikselstil, mørk kontur, lys fra øvre venstre, ingen lesbar tekst.
+
+## Ny lapp i håndboka: «Samlerne» – grafikk klar og lagt inn (27.11.2026)
 
 Levert: `client/public/art/handbok/samlere.png`, transparent PNG i 64 × 64, kontrollert i 24 px.
 Original, beskrivelse, metadata og sammenligning ligger i `GFX_assets/planlagte/handbok-samlere/`.

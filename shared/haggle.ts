@@ -4,6 +4,9 @@ import { hash01 } from './hash.ts';
 import type { Category } from './categories.ts';
 import type { LeadKind } from './leads.ts';
 
+/** Kundene du kan prute med (kikkerne har sitt eget vindu). */
+export type HaggleKind = Exclude<LeadKind, 'browsing'>;
+
 export interface CustomerType {
   id: string;
   name: string;
@@ -29,11 +32,11 @@ export function customerType(key: string): CustomerType {
 /** Avslag (negativt) og påslag (positivt) i prosent som kan velges. 0 = din pris. */
 export const HAGGLE_STEPS = [-25, -10, 0, 10, 25, 50];
 
-const BASE: Record<LeadKind, number> = { eager: 0.92, curious: 0.5 }; // sjansen for ja til din pris
-const SLOPE: Record<LeadKind, number> = { eager: 1.0, curious: 1.4 }; // hvor mye sjansen endres per 100 % avslag/påslag
+const BASE: Record<HaggleKind, number> = { eager: 0.92, curious: 0.5 }; // sjansen for ja til din pris
+const SLOPE: Record<HaggleKind, number> = { eager: 1.0, curious: 1.4 }; // hvor mye sjansen endres per 100 % avslag/påslag
 
 /** Sjansen (0–1) for at kunden sier ja til prisen din justert med `pct` prosent. */
-export function haggleChance(kind: LeadKind, pct: number, reputation: number, liked: boolean): number {
+export function haggleChance(kind: HaggleKind, pct: number, reputation: number, liked: boolean): number {
   const c = BASE[kind] - (SLOPE[kind] * pct) / 100 + (reputation - 50) / 300 + (liked ? 0.08 : 0);
   return Math.max(0.02, Math.min(0.98, c));
 }
