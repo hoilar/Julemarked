@@ -54,6 +54,7 @@ Detaljene står i `julemarked_simulator_konsept.md`, avsnitt 12.9. Ingenting er 
 5. ✅ **Julelotteri:** bygd 26.11.2026 (Lotteri-appen og avissiden; se 12.2). Grafikken er bestilt.
 6. **Brekkjern fra Fyren:** innbrudd i en stengt bod om natta. Det er en sjanse for at alarmen går, og finlandshetta senker den noe.
 7. **Leie av lager:** ekstra lagerplass mot en forholdsvis dyr dagsleie.
+8. **Framdriftslinje på alle maskiner:** bare bake-, strikke- og dekormaskinen har en i dag. Kjelen, posebretteren, laderen og nøkkelmaskinen mangler (se 12.9).
 
 ## Bevisst utelatt
 

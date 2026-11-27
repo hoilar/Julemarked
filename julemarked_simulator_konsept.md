@@ -615,6 +615,13 @@ Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke 
 
 Ingen av disse er bestemt for desembertesten ennå. Tallene er forslag.
 
+**Framdriftslinje på alle maskiner (lagt inn 26.11.2026)**
+
+- I dag har bare maskinene med programmer (bakemaskin, strikkemaskin, dekormaskin) en framdriftslinje (`maker-bar` i `makerPanel`).
+- Mangler: **kjelen** (én time per porsjon), **posebretteren**, **laderen** (hvor langt batteriet har kommet, og når det er fullt) og **nøkkelmaskinen** (viser bare «Ferdig kl. …» som tekst).
+- Bruk samme linje overalt, gjerne med «ferdig kl. …» under.
+- Maskinenes framdrift telles i hele timer, så linja hopper én gang i timen. Den kan glide jevnt hvis den regnes ut fra klokka i stedet for timetelleren.
+
 **Salg i runder på 5 minutter (bygd 26.11.2026)**
 
 - Før gikk salget til kundene én gang i timen, på hel time. Nå er timen delt i 12 runder, og hver runde har 1/12 av timens etterspørsel (`sellSlice` i `server/game.ts`). Resten av timeutregningen (regninger, strøm, kjelen, stamkunder, tyven, Tilsynsmannen) går fortsatt én gang i timen.

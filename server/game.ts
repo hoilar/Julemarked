@@ -247,7 +247,8 @@ import {
   stageForDaysOverdue,
   type BillKind,
 } from '../shared/bills.ts';
-import { START_REPUTATION, expectedPrice, priceAppeal, reputationCrowd } from '../shared/mood.ts';
+import { START_REPUTATION, buyShare, expectedPrice, lureBoost, priceAppeal, priceWarShare, reputationCrowd } from '../shared/mood.ts';
+import { IMPULSE_CHANCE, IMPULSE_FROM, isSnack, pairBoost, snackBasket } from '../shared/basket.ts';
 import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, dealerOffer, eveningSale, EVENING_SHARE, isLuguber, nightCurve } from '../shared/dealer.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
 import { BURNT, cookPlan, knownRecipes } from '../shared/recipes.ts';
@@ -6217,27 +6218,53 @@ function sellSlice(market: MarketRow, slice: number) {
     !!outage && LAYOUT[s.slot_index].street === outage.street && parts.hour >= outage.from && parts.hour < outage.to;
   const night = phaseOf(parts.hour) !== 'day'; // om natta selges bare luguberte varer
 
-  // Kundene kjøper bare det som står på bordet. Mer konkurranse gir færre kunder per bod.
-  // Per bod og vare: hvor mange som står ute med «hjemmelaget»-etikett og hvor mange butikkjøpte.
-  const onCounter = new Map<number, Map<string, { home: number; store: number }>>();
-  const sellers = new Map<string, number>();
-  for (const s of stalls) {
-    const counts = new Map<string, { home: number; store: number }>();
-    for (const i of itemsOf(s.id)) {
-      if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
-      const c = counts.get(i.typeId) ?? { home: 0, store: 0 };
-      if (isHomemade(i.label)) c.home++;
-      else c.store++;
-      counts.set(i.typeId, c);
-    }
-    onCounter.set(s.id, counts);
-    for (const pid of counts.keys()) sellers.set(pid, (sellers.get(pid) ?? 0) + 1);
-  }
-
   const season = seasonFactor(seasonDay(parts));
   const curve = HOUR_CURVE[parts.hour] ?? 1;
   const today = dateKey(t);
   const weather = weatherFor(market.id, currentEdition(t).key); // dagens vær (avisdagen)
+
+  // Luguberte varer om natta, alt annet om dagen. Kveldstrafikk: litt drikke og mat de første nattetimene.
+  const eveningOf = (pid: string) => night && !isLuguber(pid) && eveningSale(PRODUCT_BY_ID[pid].category, parts.hour);
+  const sellable = (pid: string, serving: Serving) =>
+    (isLuguber(pid) === night || eveningOf(pid)) && !(serving === 'self' && isDecorGood(pid)); // pynt selges bare når noen står bak disken
+
+  // Kundene kjøper bare det som står på bordet. Per bod og vare: hvor mange som står ute med
+  // «hjemmelaget»-etikett og hvor mange butikkjøpte. Bare boder som selger nå, og varer som selges nå.
+  type Shelf = { home: number; store: number; ratio: number; saving: number };
+  const onCounter = new Map<number, Map<string, Shelf>>();
+  const servingAt = new Map<number, Serving>();
+  const boostAt = new Map<number, ReturnType<typeof decorBoost>>();
+  const ratiosOf = new Map<string, number[]>(); // vare → prisforholdet hos hver bod som selger den (priskrig)
+  const shownAt = new Map<number, number>(); // varer på bordet (også de som ikke selges akkurat nå)
+  for (const s of stalls) {
+    const serving = servingOf(s);
+    servingAt.set(s.id, serving);
+    if (serving === 'closed' || serving === 'away') continue;
+    const boost = decorBoost(Object.values(decorOf(s)), { dark: isDarkHour(parts.hour), weather: weather.kind });
+    boostAt.set(s.id, boost);
+    const prices = pricesOf(s.id);
+    const counts = new Map<string, Shelf>();
+    for (const i of itemsOf(s.id)) {
+      if (i.place !== 'counter' || !PRODUCT_BY_ID[i.typeId]) continue;
+      shownAt.set(s.id, (shownAt.get(s.id) ?? 0) + 1);
+      if (!sellable(i.typeId, serving)) continue;
+      const c = counts.get(i.typeId) ?? { home: 0, store: 0, ratio: 1, saving: 0 };
+      if (isHomemade(i.label)) c.home++;
+      else c.store++;
+      counts.set(i.typeId, c);
+    }
+    for (const [pid, c] of counts) {
+      // Bodens pris mot det kundene forventer, snittet over etikettene (vektet med antallet).
+      const p = PRODUCT_BY_ID[pid];
+      const exp = (home: boolean) => Math.round(expectedPrice(p.basePrice, s.reputation, home) * decorPrice(boost, p.category));
+      const r = (home: boolean) => priceOf(prices, pid, home) / exp(home);
+      const avg = (f: (home: boolean) => number) => (c.home * (c.home ? f(true) : 0) + c.store * (c.store ? f(false) : 0)) / (c.home + c.store);
+      c.ratio = avg(r);
+      c.saving = avg((home) => exp(home) - priceOf(prices, pid, home)); // kroner kunden sparer (lokketilbud)
+      ratiosOf.set(pid, [...(ratiosOf.get(pid) ?? []), c.ratio]);
+    }
+    onCounter.set(s.id, counts);
+  }
 
   // Musikken ved hver bod (hvor mye den hjelper nå), og hvem som spiller høyt.
   const music = new Map(stalls.map((s) => [s.id, musicNow(market, s, t)]));
@@ -6249,7 +6276,7 @@ function sellSlice(market: MarketRow, slice: number) {
   };
 
   for (const s of stalls) {
-    const serving = servingOf(s);
+    const serving = servingAt.get(s.id)!;
     if (serving === 'closed' || serving === 'away') continue; // ingen bak disken, ingen salg
     const sound = night ? 1 : music.get(s.id)!.boost * neighbourFactor(s);
     const traffic = LAYOUT[s.slot_index].traffic;
@@ -6263,9 +6290,9 @@ function sellSlice(market: MarketRow, slice: number) {
     // Selger i finlandshette: kundene blir skremt.
     const modeFactor = (serving === 'self' ? SELF_CROWD : SERVICE_BOOST) * (serving === 'open' && wearsBalaclava(s.owner_id) ? BALACLAVA_CROWD : 1);
     // Pynten på fronten (shared/decor.ts): flere kunder, mer salg og høyere forventet pris i kategoriene.
-    const boost = decorBoost(Object.values(decorOf(s)), { dark: isDarkHour(parts.hour), weather: weather.kind });
+    const boost = boostAt.get(s.id)!;
     // Åpen bod med (nesten) tomt bord: kundene blir skuffet.
-    const shown = [...onCounter.get(s.id)!.values()].reduce((n, c) => n + c.home + c.store, 0);
+    const shown = shownAt.get(s.id) ?? 0;
     if (shown <= EMPTY_LIMIT && !night) {
       reputation -= EMPTY_REP_HIT * share;
       if (firstOfHour && parts.hour % 3 === 0)
@@ -6285,13 +6312,24 @@ function sellSlice(market: MarketRow, slice: number) {
       }
     }
 
+    let bigBuys = 0; // dyre varer solgt denne runden (kan gi småsnop ved kassa)
+    // Lokketilbud: den billigste varen (mot forventet pris) trekker folk som også ser på resten av bordet.
+    let lurePid = '';
+    let lure = 1;
+    for (const [pid, c] of onCounter.get(s.id)!) {
+      const b = lureBoost(c.saving, c.home + c.store);
+      if (b > lure) [lure, lurePid] = [b, pid];
+    }
+
     for (const [pid, groups] of onCounter.get(s.id)!) {
       const p = PRODUCT_BY_ID[pid];
-      // Luguberte varer om natta, alt annet om dagen. Kveldstrafikk: litt drikke og mat de første nattetimene.
-      const evening = night && !isLuguber(pid) && eveningSale(p.category, parts.hour);
-      if (isLuguber(pid) !== night && !evening) continue;
-      if (serving === 'self' && isDecorGood(pid)) continue; // pynt selges bare når noen står bak disken
+      const evening = eveningOf(pid); // sellable() er allerede sjekket da bordet ble talt opp
       const total = groups.home + groups.store;
+      // Flere boder med samme vare deler kundene (1/√n), og den som er billigst mot forventet pris får mest.
+      const rivals = ratiosOf.get(pid) ?? [];
+      const competition = priceWarShare(groups.ratio, rivals) / Math.sqrt(Math.max(1, rivals.length));
+      const lured = pid === lurePid ? 1 : lure;
+      const paired = pairBoost(pid, onCounter.get(s.id)!); // varepar: gløgg og pepperkaker osv.
       for (const homemade of [true, false]) {
         const count = homemade ? groups.home : groups.store;
         if (count === 0) continue;
@@ -6301,15 +6339,22 @@ function sellSlice(market: MarketRow, slice: number) {
         const expected = Math.round(expectedPrice(p.basePrice, reputation, homemade) * decorPrice(boost, p.category));
         const priceFactor = priceAppeal(price / expected);
         const repFactor = reputationCrowd(reputation);
-        const competition = 1 / Math.sqrt(sellers.get(pid) ?? 1);
         // Et fullt bord trekker litt flere kunder enn én ensom vare. Etterspørselen deles på etikettene.
         const display = Math.min(1.25, 0.85 + total * 0.04) * (count / total);
         const hourCurve = evening ? EVENING_SHARE : night ? nightCurve(parts.hour) : curve;
         const wx = weatherDemand(weather, p.category);
         const shy = p.divisive ? 1 : avoid; // fansen kommer uansett; de andre varene merker lukta
-        const lambdaHour = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * display * lit * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
-        const units = takeFromCounter(s.id, pid, Math.min(poisson(lambdaHour * share), count), homemade);
+        const lambdaHour = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * lured * paired * display * lit * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
+        // Småsnop: hver kunde tar en neve (1–3).
+        const buyers = poisson(lambdaHour * share);
+        let want = buyers;
+        if (isSnack(pid)) {
+          want = 0;
+          for (let k = 0; k < buyers; k++) want += snackBasket();
+        }
+        const units = takeFromCounter(s.id, pid, Math.min(want, count), homemade);
         if (units <= 0) continue;
+        if (price >= IMPULSE_FROM) bigBuys += units;
 
         revenue += units * price;
         sold.set(p.emoji, (sold.get(p.emoji) ?? 0) + units);
@@ -6351,6 +6396,23 @@ function sellSlice(market: MarketRow, slice: number) {
           }
         }
       }
+    }
+
+    // Småsnop ved kassa: den som kjøper noe dyrt, tar kanskje med seg drops eller karameller (hvis prisen er grei).
+    const snacks = [...onCounter.get(s.id)!].filter(([pid]) => isSnack(pid));
+    for (let k = 0; k < bigBuys && snacks.length; k++) {
+      if (Math.random() >= IMPULSE_CHANCE) continue;
+      const [pid, c] = snacks[Math.floor(Math.random() * snacks.length)];
+      if (Math.random() >= buyShare(c.ratio)) continue;
+      let homemade = false; // butikkjøpt først, så hjemmelaget
+      if (!takeFromCounter(s.id, pid, 1, false)) {
+        if (!takeFromCounter(s.id, pid, 1, true)) continue; // tomt for den sorten
+        homemade = true;
+      }
+      const price = priceOf(prices, pid, homemade);
+      revenue += price;
+      sold.set(PRODUCT_BY_ID[pid].emoji, (sold.get(PRODUCT_BY_ID[pid].emoji) ?? 0) + 1);
+      q.insertTx.run(market.id, t, 'npc_sale', s.id, null, pid, 1, price);
     }
 
     reputation = Math.max(0, Math.min(100, reputation));
