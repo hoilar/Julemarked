@@ -47,3 +47,28 @@ export const snackBasket = (rand: () => number = Math.random) => 1 + Math.floor(
 export const IMPULSE_FROM = 100;
 /** Sjansen per slik vare for at kunden tar med ett småsnop (hvis prisen på snopet er grei). */
 export const IMPULSE_CHANCE = 0.3;
+
+// ---------- Blikkfang ----------
+
+/**
+ * En sjelden vare på bordet er som designersofaen i utstillingsvinduet: få kjøper den, men folk stikker innom
+ * for å se. Hver sjelden sort gir de andre varene i boden flere kunder, uansett hva du tar for den.
+ */
+export const SHOWPIECE_EACH = 0.1;
+export const SHOWPIECE_MAX = 0.25;
+export const showpieceBoost = (rareKinds: number) => 1 + Math.min(SHOWPIECE_MAX, SHOWPIECE_EACH * rareKinds);
+
+// ---------- Samlere ----------
+
+/**
+ * Hver dag kommer én samler per sjelden vare på et tilfeldig tidspunkt på dagtid. Hen kjøper én hos boden
+ * med best pris (mot forventet pris), men ikke over denne grensen. Ingen bod med varen ute til en grei pris? Da går hen.
+ */
+export const COLLECTOR_MAX_RATIO = 1.3;
+export const COLLECTOR_HOURS = { from: 10, to: 19 }; // samleren kommer mellom kl. 10.00 og 18.55
+
+/** Når samleren etter `pid` kommer i dag: [time, femminutt (0–11)]. Samme svar hele dagen. */
+export function collectorAt(hash: (...k: (string | number)[]) => number, marketId: number, day: string | number, pid: string): [number, number] {
+  const n = Math.floor(hash('samler', marketId, day, pid) * (COLLECTOR_HOURS.to - COLLECTOR_HOURS.from) * 12);
+  return [COLLECTOR_HOURS.from + Math.floor(n / 12), n % 12];
+}

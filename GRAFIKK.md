@@ -20,6 +20,22 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
+## Ny lapp i håndboka: «Samlerne» – grafikk klar (27.11.2026)
+
+Levert: `client/public/art/handbok/samlere.png`, transparent PNG i 64 × 64, kontrollert i 24 px.
+Original, beskrivelse, metadata og sammenligning ligger i `GFX_assets/planlagte/handbok-samlere/`.
+Håndbokoversikten og varelisten er oppdatert. Spillkoden er ikke endret.
+
+Håndboka har fått en ny hemmelig lapp, **Samlerne** (`samlere` i `shared/handbook.ts`). Den låses opp første gang en
+samler kjøper en sjelden vare hos spilleren. Ikonet er levert til den forventede filstien; emojien 🧐 er fortsatt reservebilde i spillet.
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| H5 | `client/public/art/handbok/samlere.png` | 64×64 | En monokkel med gullkjede foran en liten antikk julekule, i lappenes mørkere, nattlige palett | Lista og toppen av lappen |
+
+Samme stil som de andre sideikonene (se «Bodeierhåndboka» under): tydelig omriss, varm pikselstil, mørk kontur,
+lys fra øvre venstre, ingen lesbar tekst. Kontroller i 24 px.
+
 ## Oppskriftsheftet «Julebakst – seks slag» – grafikk klar og lagt inn (26.11.2026)
 
 Levert: `client/public/art/verktoy/julebakst.png`, transparent PNG i 128 × 128.

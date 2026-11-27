@@ -892,6 +892,8 @@ const vare = (
 const crafted = { craftedOnly: true } as const;
 /** Luguber vare: høy margin, men kundene sladrer av og til (se `shady` over). */
 const shady = (lines: string[], exposeChance = 0.03, reputationHit = 3) => ({ shady: { exposeChance, reputationHit, lines } });
+/** Sjelden vare: butikkene har den bare noen dager. Kundene vet det, så basisprisen har et sjeldenhetstillegg
+ *  (ca. 0,3 / sjansen, mellom 1,5× og 2,5× det en vanlig vare ville kostet), og en samler kommer hver dag (shared/basket.ts). */
 const rare = (chance: number) => ({ rare: chance });
 
 export const PRODUCTS: Product[] = [
@@ -915,9 +917,9 @@ export const PRODUCTS: Product[] = [
   // --- Nyere varer ---
   //   id                 navn                       emoji w  h  inn  pris  ettersp.  produsent           kategori
   // Dekor
-  vare('antikk_julekule', 'Antikk julekule', '🏺', 1, 1, 90, 249, 0.25, 'Loppemarkedet', 'dekor', rare(0.12)),
-  vare('snokule', 'Snøkule med landsby', '❄️', 2, 2, 60, 179, 0.35, 'Pynt Import AS', 'dekor', rare(0.2)),
-  vare('musikkboks', 'Musikkboks med nisse', '🎶', 2, 2, 220, 599, 0.15, 'Spilledåsen', 'dekor', rare(0.08)),
+  vare('antikk_julekule', 'Antikk julekule', '🏺', 1, 1, 90, 599, 0.25, 'Loppemarkedet', 'dekor', rare(0.12)),
+  vare('snokule', 'Snøkule med landsby', '❄️', 2, 2, 60, 279, 0.35, 'Pynt Import AS', 'dekor', rare(0.2)),
+  vare('musikkboks', 'Musikkboks med nisse', '🎶', 2, 2, 220, 1490, 0.15, 'Spilledåsen', 'dekor', rare(0.08)),
   vare('glasshjerte', 'Glasshjerte', '💖', 1, 1, 5, 49, 0.9, 'Hjemmelaget', 'dekor', crafted),
   vare('trenisse', 'Malt trenisse', '🎅', 1, 2, 8, 69, 0.7, 'Hjemmelaget', 'dekor', crafted),
   vare('gullkule', 'Gullkule', '🟡', 1, 1, 25, 199, 0.35, 'Hjemmelaget', 'dekor', crafted),
@@ -928,13 +930,13 @@ export const PRODUCTS: Product[] = [
   vare('pulsvarmere', 'Pulsvarmere', '🧶', 1, 1, 13, 99, 0.6, 'Hjemmelaget', 'klaer', crafted),
   vare('alpakkaskjerf', 'Alpakkaskjerf', '🦙', 2, 2, 140, 699, 0.2, 'Hjemmelaget', 'klaer', crafted),
   vare('julegenser', 'Stygg julegenser', '👕', 2, 2, 150, 449, 0.3, 'Festlig AS', 'klaer'),
-  vare('lusekofte', 'Lusekofte', '🧥', 2, 2, 900, 2490, 0.06, 'Husfliden', 'klaer', rare(0.08)),
+  vare('lusekofte', 'Lusekofte', '🧥', 2, 2, 900, 4990, 0.06, 'Husfliden', 'klaer', rare(0.08)),
   // Leketøy
   vare('snurrebass', 'Snurrebass', '🌀', 1, 1, 5, 39, 1.0, 'Hjemmelaget', 'leketoy', crafted),
   vare('tretog', 'Tretog', '🚂', 2, 1, 27, 249, 0.35, 'Hjemmelaget', 'leketoy', crafted),
   vare('bamse', 'Strikket bamse', '🧸', 2, 2, 55, 229, 0.45, 'Hjemmelaget', 'leketoy', crafted),
   vare('puslespill', 'Julepuslespill', '🧩', 2, 2, 55, 169, 0.5, 'Spillfabrikken', 'leketoy'),
-  vare('blikkbil', 'Blikkbil fra 50-tallet', '🚗', 2, 1, 180, 499, 0.12, 'Loppemarkedet', 'leketoy', rare(0.1)),
+  vare('blikkbil', 'Blikkbil fra 50-tallet', '🚗', 2, 1, 180, 1290, 0.12, 'Loppemarkedet', 'leketoy', rare(0.1)),
   // Kaker
   vare('krumkake', 'Krumkake', '🍦', 1, 1, 10, 29, 1.6, 'Hjemmelaget', 'kaker', crafted),
   vare('sirupssnipp', 'Sirupssnipp', '🍪', 1, 1, 6, 15, 2.0, 'Hjemmelaget', 'kaker', crafted),
@@ -969,8 +971,8 @@ export const PRODUCTS: Product[] = [
   vare('rommegrot', 'Rømmegrøt', '🥣', 1, 1, 6, 59, 0.9, 'Hjemmelaget', 'mat', crafted),
   vare('risengrynsgrot', 'Risengrynsgrøt', '🍚', 2, 2, 12, 69, 1.1, 'Hjemmelaget', 'mat', crafted), // i bolle med smør og kanel
   vare('lefse', 'Lefse', '🫓', 1, 1, 10, 35, 1.2, 'Hjemmelaget', 'mat', crafted),
-  vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 799, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
-  vare('lutefisk', 'Lutefisk', '🐟', 1, 2, 70, 189, 0.25, 'Fiskemottaket', 'mat', {
+  vare('fenalaar', 'Fenalår', '🍖', 1, 3, 300, 1490, 0.1, 'Fjellspekeriet', 'mat', rare(0.1)),
+  vare('lutefisk', 'Lutefisk', '🐟', 1, 2, 70, 349, 0.25, 'Fiskemottaket', 'mat', {
     ...rare(0.15),
     divisive: {
       avoid: 0.12,

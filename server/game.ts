@@ -247,8 +247,8 @@ import {
   stageForDaysOverdue,
   type BillKind,
 } from '../shared/bills.ts';
-import { START_REPUTATION, buyShare, expectedPrice, lureBoost, priceAppeal, priceWarShare, reputationCrowd } from '../shared/mood.ts';
-import { IMPULSE_CHANCE, IMPULSE_FROM, isSnack, pairBoost, snackBasket } from '../shared/basket.ts';
+import { START_REPUTATION, buyShare, expectedPrice, lureBoost, priceAppeal, competitionShare, reputationCrowd } from '../shared/mood.ts';
+import { COLLECTOR_MAX_RATIO, IMPULSE_CHANCE, IMPULSE_FROM, collectorAt, isSnack, pairBoost, showpieceBoost, snackBasket } from '../shared/basket.ts';
 import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, dealerOffer, eveningSale, EVENING_SHARE, isLuguber, nightCurve } from '../shared/dealer.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
 import { BURNT, cookPlan, knownRecipes } from '../shared/recipes.ts';
@@ -6234,7 +6234,7 @@ function sellSlice(market: MarketRow, slice: number) {
   const onCounter = new Map<number, Map<string, Shelf>>();
   const servingAt = new Map<number, Serving>();
   const boostAt = new Map<number, ReturnType<typeof decorBoost>>();
-  const ratiosOf = new Map<string, number[]>(); // vare → prisforholdet hos hver bod som selger den (priskrig)
+  const sellersOf = new Map<string, { stall: number; ratio: number; count: number }[]>(); // vare → bodene som selger den nå (konkurranse)
   const shownAt = new Map<number, number>(); // varer på bordet (også de som ikke selges akkurat nå)
   for (const s of stalls) {
     const serving = servingOf(s);
@@ -6261,10 +6261,21 @@ function sellSlice(market: MarketRow, slice: number) {
       const avg = (f: (home: boolean) => number) => (c.home * (c.home ? f(true) : 0) + c.store * (c.store ? f(false) : 0)) / (c.home + c.store);
       c.ratio = avg(r);
       c.saving = avg((home) => exp(home) - priceOf(prices, pid, home)); // kroner kunden sparer (lokketilbud)
-      ratiosOf.set(pid, [...(ratiosOf.get(pid) ?? []), c.ratio]);
+      sellersOf.set(pid, [...(sellersOf.get(pid) ?? []), { stall: s.id, ratio: c.ratio, count: c.home + c.store }]);
     }
     onCounter.set(s.id, counts);
   }
+
+  // Samlere: én per sjelden vare og dag, på et fast tidspunkt. Hen kjøper én hos boden med best pris (mot forventet pris).
+  const collectorsAt = new Map<number, string[]>(); // bod → sjeldne varer en samler kjøper der denne runden
+  if (!night)
+    for (const [pid, list] of sellersOf) {
+      if (!PRODUCT_BY_ID[pid].rare) continue;
+      const [h, m] = collectorAt(hash01, market.id, today, pid);
+      if (parts.hour !== h || Math.floor(parts.minute / 5) !== m) continue;
+      const best = list.filter((o) => o.ratio <= COLLECTOR_MAX_RATIO).sort((a, b) => a.ratio - b.ratio)[0];
+      if (best) collectorsAt.set(best.stall, [...(collectorsAt.get(best.stall) ?? []), pid]);
+    }
 
   // Musikken ved hver bod (hvor mye den hjelper nå), og hvem som spiller høyt.
   const music = new Map(stalls.map((s) => [s.id, musicNow(market, s, t)]));
@@ -6320,15 +6331,17 @@ function sellSlice(market: MarketRow, slice: number) {
       const b = lureBoost(c.saving, c.home + c.store);
       if (b > lure) [lure, lurePid] = [b, pid];
     }
+    // Blikkfang: sjeldne varer på bordet trekker folk som kjøper andre ting.
+    const showcase = showpieceBoost([...onCounter.get(s.id)!.keys()].filter((pid) => PRODUCT_BY_ID[pid].rare).length);
 
     for (const [pid, groups] of onCounter.get(s.id)!) {
       const p = PRODUCT_BY_ID[pid];
       const evening = eveningOf(pid); // sellable() er allerede sjekket da bordet ble talt opp
       const total = groups.home + groups.store;
       // Flere boder med samme vare deler kundene (1/√n), og den som er billigst mot forventet pris får mest.
-      const rivals = ratiosOf.get(pid) ?? [];
-      const competition = priceWarShare(groups.ratio, rivals) / Math.sqrt(Math.max(1, rivals.length));
-      const lured = pid === lurePid ? 1 : lure;
+      const others = (sellersOf.get(pid) ?? []).filter((o) => o.stall !== s.id);
+      const competition = competitionShare(groups.ratio, others);
+      const lured = (pid === lurePid ? 1 : lure) * (p.rare ? 1 : showcase);
       const paired = pairBoost(pid, onCounter.get(s.id)!); // varepar: gløgg og pepperkaker osv.
       for (const homemade of [true, false]) {
         const count = homemade ? groups.home : groups.store;
@@ -6413,6 +6426,20 @@ function sellSlice(market: MarketRow, slice: number) {
       revenue += price;
       sold.set(PRODUCT_BY_ID[pid].emoji, (sold.get(PRODUCT_BY_ID[pid].emoji) ?? 0) + 1);
       q.insertTx.run(market.id, t, 'npc_sale', s.id, null, pid, 1, price);
+    }
+
+    for (const pid of collectorsAt.get(s.id) ?? []) {
+      let homemade = false;
+      if (!takeFromCounter(s.id, pid, 1, false)) {
+        if (!takeFromCounter(s.id, pid, 1, true)) continue; // solgt til en vanlig kunde rett før
+        homemade = true;
+      }
+      const p = PRODUCT_BY_ID[pid];
+      const price = priceOf(prices, pid, homemade);
+      revenue += price;
+      sold.set(p.emoji, (sold.get(p.emoji) ?? 0) + 1);
+      q.insertTx.run(market.id, t, 'npc_sale', s.id, null, pid, 1, price);
+      event(market, s.owner_id, t, `🧐 En samler kom innom og kjøpte ${p.name.toLowerCase()} for ${price} kr uten å blunke.`);
     }
 
     reputation = Math.max(0, Math.min(100, reputation));

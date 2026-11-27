@@ -4,6 +4,7 @@
 // Tallene hentes fra reglene der det går, så håndboka følger med når noe justeres.
 // De hemmelige lappene skal være vage: ingen prosenter, bare hint.
 
+import { COLLECTOR_HOURS } from './basket.ts';
 import { BAG_FEE, INKASSO_MIN, INKASSO_PCT, PURRING_FEE, RENOVASJON_DAILY, RENT_REVENUE_PCT } from './bills.ts';
 import { DUMP_FINE, FINDER_REWARD, INSPECTOR, THIEF_REWARD, THIEF_REWARD_PER_DAY } from './crime.ts';
 import { COUPON_DAYS, COUPON_MAX, COUPON_MIN, COUPONS_PER_PAPER, GIFT_HOURS } from './deals.ts';
@@ -79,6 +80,7 @@ export const HANDBOOK: HandbookPage[] = [
       '- Langt over: sure kunder og dårligere omdømme. Sjokkpriser selger ingenting.',
       '- Selger flere boder det samme, går kundene helst dit det er billigst.',
       '- Et godt tilbud på én vare lokker folk til boden, og noen av dem kjøper noe annet også. Det er kronene folk sparer som teller: en billig genser lokker mer enn billige karameller. Det virker best med en god stabel av tilbudsvaren.',
+      '- En sjelden vare på bordet får folk til å stikke innom for å se, og da kjøper de gjerne noe annet.',
       '- Noen varer selger bedre sammen. Gløgg uten pepperkaker? Det er nesten ikke jul.',
       '- Småsnop (drops, karameller, fudge og snipper) kjøpes i never, ikke én og én. Og den som har brukt hundrelappen på noe dyrt, tar gjerne med seg en pose ved kassa.',
       '## Når kommer kundene?',
@@ -481,6 +483,20 @@ export const HANDBOOK: HandbookPage[] = [
       'Med skrutrekker kan du skru strømmåleren litt tilbake, én gang om dagen. Plomberingen ryker.',
       `- ${INSPECTOR.name} ser etter brutte plomberinger. Det blir bot og dårligere omdømme.`,
       '- Fyren har innimellom en forbikoblet sikringsboks: ingenting ryker, og måleren står stille. Blir den oppdaget, er boten stor og boksen beslaglagt.',
+    ],
+  },
+  {
+    id: 'samlere',
+    title: 'Samlerne',
+    emoji: '🧐',
+    secret: true,
+    hint: 'Noen leter etter noe helt spesielt …',
+    unlock: [/^🧐 En samler/],
+    body: [
+      'Sjeldne varer (antikke julekuler, musikkbokser, blikkbiler, lusekofter, fenalår …) har butikkene bare noen dager, og bare én eller to. Kundene vet det, og betaler deretter.',
+      `- Hver dag kommer det en samler etter hver sjelden vare, en gang mellom kl. ${COLLECTOR_HOURS.from} og ${COLLECTOR_HOURS.to}. Hen kjøper én uten å blunke.`,
+      '- Samleren går dit prisen er best. Er prisen helt urimelig, går hen tomhendt hjem.',
+      '- Står den sjeldne varen der, trekker den folk som kjøper andre ting. Selg den, eller sett en stiv pris og la den stå som blikkfang?',
     ],
   },
 ];

@@ -67,15 +67,26 @@ export function priceAppeal(ratio: number): number {
 export const PRICE_WAR = 3; // hvor hardt kundene sammenligner priser
 export const PRICE_WAR_SHARE = { min: 0.4, max: 2 }; // grensene for hvor mye en bod kan vinne eller tape
 
+/** En konkurrent teller fullt først med så mange av varen på bordet; 1 stk. teller som 1/10 konkurrent. */
+export const COMPETE_FULL = 10;
+export const competeWeight = (count: number) => Math.min(1, count / COMPETE_FULL);
+
+/** En annen bod som selger samme vare: prisforholdet (pris / forventet pris) og hvor mye de har på bordet. */
+export type Rival = { ratio: number; count: number };
+
 /**
- * Bodens del av kundene for en vare når `ratios` er prisforholdet (pris / forventet pris) hos hver bod som selger den,
- * og `mine` er bodens eget. 1 når alle tar like mye (eller du er alene); samlet over bodene blir det omtrent det samme.
+ * Hvor stor del av kundene til en vare boden får, med `mine` som eget prisforhold og `others` som de andre bodene
+ * som selger den nå. 1 når du er alene. Flere selgere deler kundene (1/√n, der n teller konkurrentene etter hvor
+ * mye de har på bordet), og den som er billigst mot forventet pris, får mest.
  */
-export function priceWarShare(mine: number, ratios: number[]): number {
-  if (ratios.length < 2) return 1;
+export function competitionShare(mine: number, others: Rival[]): number {
+  const weights = others.map((o) => competeWeight(o.count));
+  const rivals = weights.reduce((n, w) => n + w, 0);
+  if (rivals <= 0) return 1;
   const w = (r: number) => (1 / Math.max(0.1, r)) ** PRICE_WAR;
-  const mean = ratios.reduce((n, r) => n + w(r), 0) / ratios.length;
-  return Math.min(PRICE_WAR_SHARE.max, Math.max(PRICE_WAR_SHARE.min, w(mine) / mean));
+  const mean = (w(mine) + others.reduce((n, o, i) => n + weights[i] * w(o.ratio), 0)) / (1 + rivals);
+  const war = Math.min(PRICE_WAR_SHARE.max, Math.max(PRICE_WAR_SHARE.min, w(mine) / mean));
+  return war / Math.sqrt(1 + rivals);
 }
 
 /**

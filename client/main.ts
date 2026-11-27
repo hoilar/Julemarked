@@ -856,7 +856,9 @@ function lottoPage(s: GameState): string {
 const HANDBOOK_ART = true;
 const handbookIcon = () => (HANDBOOK_ART ? appIcon('handbok') : '<span class="app-emoji">📖</span>');
 const pageIcon = (p: HandbookPage) =>
-  HANDBOOK_ART ? `<img class="hb-icon" src="/art/handbok/${p.id}.png" alt="" draggable="false">` : `<span class="hb-emoji">${p.emoji}</span>`;
+  HANDBOOK_ART
+    ? `<img class="hb-icon" src="/art/handbok/${p.id}.png" alt="" draggable="false" onerror="this.outerHTML='<span class=&quot;hb-emoji&quot;>${p.emoji}</span>'">` // nye sider før ikonet er levert
+    : `<span class="hb-emoji">${p.emoji}</span>`;
 const handbookUnlocked = (s: GameState) => new Set(s.handbook ?? []);
 /** Hemmelige sider du har låst opp, men ikke lest ennå (merket på appen). */
 const handbookNew = (s: GameState) => (s.handbook ?? []).filter((id) => !handbookSeen.includes(id)).length;
