@@ -786,10 +786,15 @@ function storyRow(s: GameState, st: Story, v: StoryView | undefined): string {
   else if (v?.paused) status = `⏸️ Utsatt. Ta den opp igjen når ${esc(c?.name ?? 'figuren')} kommer innom disken.`;
   else if (v?.retryDay) status = `⏳ På vent etter at noe gikk galt. Ny sjanse ${esc(dayName(v.retryDay))}.`;
   else status = `Trinn ${step + 1} av ${steps}${cur && stepNeed(cur) > 1 ? ` (${v?.count ?? 0} av ${stepNeed(cur)})` : ''}: ${esc(cur?.hint ?? '')}`;
+  // Bestillingen du har sagt ja til hos figuren: hva og når, så du slipper å lete på hjemskjermen.
+  const ord = c && s.me.orders.find((o) => o.charId === c.id && o.status === 'open');
+  const ordLine = ord && PRODUCT_BY_ID[ord.productId]
+    ? `<small class="story-order">📝 Du har lovet ${esc(orderWhat(ord.productId, ord.qty))}: henter ${esc(dayName(ord.dueDay))} ${hoursText(pickupHours(c))} · ${kr(ord.price)}</small>`
+    : '';
   return `<li class="story ${v?.done ? 'done' : v?.paused ? 'paused' : ''}">
     <img src="${c ? characterUrl(c) : ''}" alt="">
     <span><b>${esc(st.title)}</b><small class="story-who">${esc(c?.name ?? '')}</small>
-      <small>${status}</small>
+      <small>${status}</small>${ordLine}
       <small class="decor-fx">${decorIcon(d)} ${esc(d.name)}: ${esc(decorFxText(d))}</small>
       ${st.recipe ? `<small class="story-recipe">📜 Hemmelig oppskrift: ${esc(BOOK_BY_ID[st.recipe]?.name ?? '')}${v?.done ? '' : ' (står ikke i avisa)'}</small>` : ''}
 </span>

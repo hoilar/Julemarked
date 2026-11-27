@@ -2154,6 +2154,7 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .bankrupt-restart { font-size: 1.1rem; padding: 0.7rem 1.4rem; margin-top: 0.6rem; }
 
 .story-recipe { color: #f0d58a; font-weight: 600; }
+.story-order { color: #ffd0a0; font-weight: 700; }
 
 /* Historien i kundevinduet (utsett / ta opp igjen), som «Nei takk» til forsikringsselgeren. */
 .cust-story { border-top: 1px dashed rgba(0, 0, 0, 0.15); padding-top: 0.5rem; }

@@ -4946,11 +4946,20 @@ export function answerOrder(player: PlayerRow, visitId: string, accept: boolean)
     db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(stall.id, visitId); // hen går fornøyd
     if (a.deposit > 0) q.addCash.run(a.deposit, stall.id); // forskudd, kontant
     const what = orderWhat(a.productId, a.qty);
+    // Bestillingslapp under disken, så du ser hva og når uten telefonen. Ingen plass: bare telefonen.
+    const items = itemsOf(stall.id);
+    const spot = findStorageSpot(items, streetOf(stall.id), TEXT_NOTE);
+    if (spot) {
+      const extra = [c.order.name ? `Skriv «${c.order.name}» på.` : '', orderHomemade(c) ? 'Hjemmelaget!' : ''].filter(Boolean).join(' ');
+      const text = `${c.name}: ${what}, ${dayName(a.dueDay)} ${hoursText(pickupHours(c))}. ${a.price} kr.${extra ? ` ${extra}` : ''}`;
+      insertItem(stall.id, items, TEXT_NOTE, spot);
+      q.setState.run(JSON.stringify({ text: text.slice(0, NOTE_MAX) }), items[items.length - 1].id);
+    }
     event(
       market,
       player.id,
       t,
-      `📝 Bestilling: ${c.name} henter ${what} ${dayName(a.dueDay)} ${hoursText(pickupHours(c))} og betaler ${a.price} kr${a.deposit ? ` (${a.deposit} kr i forskudd nå)` : ''}.`,
+      `📝 Bestilling: ${c.name} henter ${what} ${dayName(a.dueDay)} ${hoursText(pickupHours(c))} og betaler ${a.price} kr${a.deposit ? ` (${a.deposit} kr i forskudd nå)` : ''}.${spot ? ' Lappen ligger under disken.' : ''}`,
     );
     return { accepted: true, line: c.order.thanks, deposit: a.deposit };
   });
