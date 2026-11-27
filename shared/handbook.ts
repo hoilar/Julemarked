@@ -5,6 +5,7 @@
 // De hemmelige lappene skal være vage: ingen prosenter, bare hint.
 
 import { COLLECTOR_HOURS } from './basket.ts';
+import { CREDIT_BASE, CREDIT_PER_REP, CREDIT_RATE, SAVINGS_RATE, XMAS_LAST_DEPOSIT_DAY, XMAS_RATE, pctText } from './bank.ts';
 import { BAG_FEE, INKASSO_MIN, INKASSO_PCT, PURRING_FEE, RENOVASJON_DAILY, RENT_REVENUE_PCT } from './bills.ts';
 import { DUMP_FINE, FINDER_REWARD, INSPECTOR, THIEF_REWARD, THIEF_REWARD_PER_DAY } from './crime.ts';
 import { COUPON_DAYS, COUPON_MAX, COUPON_MIN, COUPONS_PER_PAPER, GIFT_HOURS } from './deals.ts';
@@ -198,7 +199,7 @@ export const HANDBOOK: HandbookPage[] = [
       '## Bodleie',
       '- Fast leie etter gata: hovedgata 350 kr, sidegata 220 kr, bakgata 120 kr.',
       '- Et risikotillegg som vokser utover i desember (bare i hovedgata og sidegata).',
-      `- ${pct(RENT_REVENUE_PCT)} av omsetningen i går.`,
+      `- En del av omsetningen i går: ${pct(RENT_REVENUE_PCT.hovedgate)} i hovedgata, ${pct(RENT_REVENUE_PCT.sidegate)} i sidegata og ${pct(RENT_REVENUE_PCT.bakgate)} i bakgata.`,
       '## Andre regninger',
       `- Renovasjon: ${RENOVASJON_DAILY} kr per dag.`,
       `- Posegebyr: ${BAG_FEE} kr per pose søppelbilen henter kl. 03.`,
@@ -217,7 +218,14 @@ export const HANDBOOK: HandbookPage[] = [
     title: 'Banken og konkurs',
     emoji: '🏦',
     body: [
-      'Du har én lommebok, felles for alle bodene dine. Saldoen står i Bank-appen og på telefonens hjemskjerm.',
+      'Du har én lommebok, felles for alle bodene dine: **brukskontoen**. Saldoen står i Bank-appen og på telefonens hjemskjerm.',
+      '## Kontoene',
+      'Trykk på en konto i Bank-appen for å flytte penger til eller fra brukskontoen.',
+      '- **Regningskonto:** AvtaleGiro trekker herfra først, så fra brukskontoen. Fint for å sette av til regningene.',
+      `- **Sparekonto:** ${pctText(SAVINGS_RATE)} rente hver morgen kl. 08. Det du sparer, kan du ikke handle for.`,
+      `- **Kassekreditt:** lån når du trenger det, opptil ${CREDIT_BASE} kr pluss ${CREDIT_PER_REP} kr per omdømmepoeng. Renta er ${pctText(CREDIT_RATE)} per dag og kommer som regning kl. 08.`,
+      `- **Julesparing:** ${pctText(XMAS_RATE)} rente per dag. Pengene er låst til julaften kl. 08, da kommer alt på brukskontoen. Innskudd til og med ${XMAS_LAST_DEPOSIT_DAY}. desember.`,
+      '- Namsmannen kan ta penger fra alle kontoene i banken, ikke bare fra brukskontoen.',
       '## Konkurs',
       '- Du går konkurs når namsmannen har vært på besøk, pengene er brukt opp og det ikke er noen varer igjen å ta.',
       '- Da kan du starte på nytt: bodene og gjelda forsvinner, og du velger en ny plass. Figuren din beholder du.',
@@ -485,6 +493,18 @@ export const HANDBOOK: HandbookPage[] = [
       'Med skrutrekker kan du skru strømmåleren litt tilbake, én gang om dagen. Plomberingen ryker.',
       `- ${INSPECTOR.name} ser etter brutte plomberinger. Det blir bot og dårligere omdømme.`,
       '- Fyren har innimellom en forbikoblet sikringsboks: ingenting ryker, og måleren står stille. Blir den oppdaget, er boten stor og boksen beslaglagt.',
+    ],
+  },
+  {
+    id: 'madrassen',
+    title: 'Madrassen',
+    emoji: '🛏️',
+    secret: true,
+    hint: 'Ikke alle penger trenger å stå i banken …',
+    unlock: [/^🛏️ Du stappet/],
+    body: [
+      'Penger i madrassen ser ingen: verken namsmannen, bostyret når du går konkurs, eller politiet. Men de gir heller ingen rente.',
+      '- Det som ligger i madrassen, hjelper deg ikke med regningene. Du må ta det ut selv.',
     ],
   },
   {

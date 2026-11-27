@@ -279,6 +279,17 @@ export interface GameState {
     reputation: number;
     /** Kikkere du har hjulpet med Kundesalgsboka i boden (shared/leads.ts). */
     salesXp: number;
+    /** Kontoene i banken utenom brukskontoen (cash). kreditt = det du skylder. */
+    bank: {
+      regning: number;
+      spare: number;
+      kreditt: number;
+      jul: number;
+      madrass: number;
+      creditLimit: number; // hvor mye du kan låne totalt (etter omdømmet)
+      xmasOpen: boolean; // julesparingen tar imot innskudd
+      madrassKnown: boolean; // madrassen vises (lappen om luguberte varer er låst opp)
+    };
     /** Kikkerne du har hjulpet: feil vare, riktig vare uten salg, salg, og hva de kjøpte for (kr). */
     browse: { miss: number; near: number; sold: number; kr: number };
     inventory: InventoryRow[];

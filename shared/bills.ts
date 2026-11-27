@@ -4,7 +4,8 @@
 
 export const RENT_RISK_PER_DAY = 15; // kr risikotillegg per sesongdag
 export const RENT_RISK_CAP = 300; // tak på risikotillegget
-export const RENT_REVENUE_PCT = 0.05; // andel av gårsdagens omsetning (5 %)
+/** Andel av gårsdagens omsetning i bodleia, etter gata: dyrest der kundene er. */
+export const RENT_REVENUE_PCT: Record<import('./marketmap.ts').Street, number> = { hovedgate: 0.1, sidegate: 0.05, bakgate: 0.01 };
 export const RENOVASJON_DAILY = 40; // fast renovasjon per dag
 export const BAG_FEE = 2; // kr per kastet pose (byråkratifond)
 
@@ -16,7 +17,7 @@ export const PURRING_DAY = 1; // dager forfalt → purring
 export const INKASSO_DAY = 2; // dager forfalt → inkasso
 export const NAMSMANN_DAY = 7; // dager forfalt → namsmann
 
-export type BillKind = 'rent' | 'power' | 'renovasjon' | 'byrakratifond' | 'forsikring' | 'bot' | 'bipps';
+export type BillKind = 'rent' | 'power' | 'renovasjon' | 'byrakratifond' | 'forsikring' | 'bot' | 'bipps' | 'renter';
 
 export const BILL_META: Record<BillKind, { label: string; emoji: string }> = {
   rent: { label: 'Bodleie', emoji: '🏠' },
@@ -26,6 +27,7 @@ export const BILL_META: Record<BillKind, { label: string; emoji: string }> = {
   forsikring: { label: 'Forsikring', emoji: '🛡️' },
   bot: { label: 'Bot fra Markedstilsynet', emoji: '⚖️' },
   bipps: { label: 'Bipps-terminal', emoji: '💳' },
+  renter: { label: 'Renter på kassekreditten', emoji: '📈' },
 };
 
 /** 0 = forfaller i dag, 1 = purret, 2 = inkasso, 3 = namsmann. */

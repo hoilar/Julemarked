@@ -2200,6 +2200,21 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .sales-big { font-size: 1.6rem !important; font-weight: 800; color: #24406a; margin: 0 !important; }
 .sales-bar { height: 8px; margin: 4px 0; border-radius: 99px; background: #e4dccb; overflow: hidden; }
 .sales-bar span { display: block; height: 100%; background: linear-gradient(90deg, #4a7fc1, #2f7d3a); }
+
+/* Bank-appen: kontoene */
+.bank-accounts { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.bank-acc { border-radius: 10px; background: rgba(255, 255, 255, 0.92); border: 1px solid #d8dee8; overflow: hidden; }
+.bank-acc.open { border-color: #4a7fc1; }
+.bank-acc-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.45rem 0.55rem; background: none; border: 0; box-shadow: none; color: #1d2a3a; text-align: left; min-height: 0; }
+.bank-acc-row:hover { filter: none; background: rgba(74, 127, 193, 0.08); }
+.bank-acc-icon { width: 30px; height: 30px; flex: none; display: grid; place-items: center; font-size: 1.35rem; image-rendering: pixelated; object-fit: contain; }
+.bank-acc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bank-acc-text small { color: #5b6878; font-size: 0.68rem; line-height: 1.25; }
+.bank-acc-bal { white-space: nowrap; font-size: 0.9rem; }
+.bank-acc-bal.neg { color: #c0392b; }
+.bank-acc.madrass { background: rgba(250, 244, 232, 0.95); border-style: dashed; }
+.bank-move { display: flex; gap: 0.3rem; padding: 0 0.55rem 0.5rem; }
+.bank-move input { flex: 1; min-width: 0; }
 /* Bodeierhåndboka */
 .hb-cover { margin-bottom: 10px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #7a1f1a, #3d1110); text-align: center; }
 .hb-cover small { display: block; opacity: 0.8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }

@@ -289,6 +289,13 @@ db.exec('CREATE INDEX IF NOT EXISTS stalls_owner ON stalls (owner_id)');
 db.exec('CREATE INDEX IF NOT EXISTS transactions_revenue ON transactions (market_id, kind, from_stall)');
 if (!hasColumn('players', 'stall_at')) db.exec('ALTER TABLE players ADD COLUMN stall_at INTEGER');
 // Salget til kundene går i runder på 5 spillminutter (SALE_SLICES i server/game.ts). NULL = last_hour × 12.
+// Banken (shared/bank.ts): kontoene utenom brukskontoen. kreditt = det du skylder på kassekreditten.
+db.exec(`CREATE TABLE IF NOT EXISTS accounts (
+  player_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  balance INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (player_id, kind)
+)`);
 if (!hasColumn('players', 'sales_xp')) db.exec('ALTER TABLE players ADD COLUMN sales_xp INTEGER NOT NULL DEFAULT 0');
 // Kundesalgsboka: tallene for kikkerne du har hjulpet (bom, riktig vare uten salg, salg og hva de kjøpte for).
 for (const col of ['browse_miss', 'browse_near', 'browse_sold', 'browse_kr'])

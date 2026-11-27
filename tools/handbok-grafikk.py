@@ -35,7 +35,8 @@ def prepare(partial=False):
  return records
 
 def proof(records):
- sheet=Image.new('RGB',(1280,1020),'#505769');draw=ImageDraw.Draw(sheet)
+ icon_count=sum(t['size']==[64,64] for t in TASKS)
+ sheet=Image.new('RGB',(1280,max(1020,380+((icon_count+7)//8)*160)),'#505769');draw=ImageDraw.Draw(sheet)
  def paste(path,xy,size=None):
   path=ROOT/path
   if not path.exists():return

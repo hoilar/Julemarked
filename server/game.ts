@@ -263,6 +263,7 @@ import type { Module } from '../shared/products.ts';
 import { CASSETTE_PLAYER, SPEAKERS, TAPE_BY_ID, TAPE_SALAD } from '../shared/products.ts';
 import { EAT_CHANCE, NEIGHBOUR_HIT, PIRATE_FINE, PIRATE_REP_HIT, musicBoost, playerReady, songOf, tapeIn } from '../shared/music.ts';
 import { hash01 } from '../shared/hash.ts';
+import { ACCOUNTS, ACCOUNT_BY_KIND, CREDIT_RATE, SAVINGS_RATE, XMAS_PAYOUT_DAY, XMAS_RATE, creditLimit, pctText, xmasOpen, type StoredAccount } from '../shared/bank.ts';
 import { MAP_SLOTS, STALL_NAME_MAX, slotPrice, NPCS, NPC_BY_CODE, NPC_OPEN, neighbourSlots, npcCounter, slotCode } from '../shared/marketmap.ts';
 import { DECOR_BY_ID, DECOR_SLOTS, DEKORINGEN, decorBoost, decorDemand, decorOfPack, decorPackOf, decorPrice, isDarkHour } from '../shared/decor.ts';
 import { STORIES, STORY_BY_ID, STORY_OF_CHAR, STORY_RETRY_DAYS, stepNeed, type StoryView } from '../shared/stories.ts';
@@ -3091,6 +3092,7 @@ export function getState(player: PlayerRow): GameState {
       cash: mine?.cash ?? 0,
       reputation: Math.round(mine?.reputation ?? 0),
       salesXp: player.sales_xp ?? 0,
+      bank: bankView(player, mine, t),
       browse: { miss: player.browse_miss ?? 0, near: player.browse_near ?? 0, sold: player.browse_sold ?? 0, kr: player.browse_kr ?? 0 },
       inventory,
       items,
@@ -5064,6 +5066,119 @@ export function sellToRegular(player: PlayerRow, visitId: string, productId: str
   });
 }
 
+// ---------- Banken (shared/bank.ts) ----------
+
+/** Kontoene utenom brukskontoen (0 for dem som ikke finnes ennå). kreditt = det du skylder. */
+function accountsOf(playerId: number): Record<StoredAccount, number> {
+  const out: Record<StoredAccount, number> = { regning: 0, spare: 0, kreditt: 0, jul: 0, madrass: 0 };
+  for (const r of all<{ kind: StoredAccount; balance: number }>(db.prepare('SELECT kind, balance FROM accounts WHERE player_id = ?'), playerId))
+    if (r.kind in out) out[r.kind] = r.balance;
+  return out;
+}
+
+function addAccount(playerId: number, kind: StoredAccount, delta: number) {
+  if (!delta) return;
+  db.prepare('INSERT INTO accounts (player_id, kind, balance) VALUES (?, ?, ?) ON CONFLICT(player_id, kind) DO UPDATE SET balance = balance + excluded.balance').run(
+    playerId,
+    kind,
+    delta,
+  );
+}
+
+/** Madrassen vises i banken først når du har vært borti det luguberte (lappen «Luguberte varer» i håndboka). */
+const knowsMadrass = (playerId: number) => !!one(db.prepare("SELECT 1 FROM handbook_pages WHERE player_id = ? AND page_id = 'luguberte'"), playerId);
+
+/** Det Bank-appen viser utenom brukskontoen. */
+function bankView(player: PlayerRow, mine: StallRow | undefined, t: number): GameState['me']['bank'] {
+  const p = osloParts(t);
+  return { ...accountsOf(player.id), creditLimit: creditLimit(mine?.reputation ?? 0), xmasOpen: xmasOpen(p.month, p.day), madrassKnown: knowsMadrass(player.id) };
+}
+
+/**
+ * Flytt penger mellom brukskontoen og en annen konto. Til kassekreditten = betal ned; fra kassekreditten = lån.
+ * Julesparingen tar imot til og med 23. desember og er låst til julaften.
+ */
+export function bankTransfer(player: PlayerRow, from: string, to: string, amount: number) {
+  const market = marketOf(player);
+  const t = nowFor(market);
+  const kinds = ACCOUNTS.map((a) => a.kind as string);
+  if (!kinds.includes(from) || !kinds.includes(to) || from === to) throw new GameError('Ukjent konto.');
+  if (from !== 'bruk' && to !== 'bruk') throw new GameError('Flytt pengene via brukskontoen.');
+  const sum = Math.floor(Number(amount));
+  if (!(sum > 0)) throw new GameError('Skriv inn et beløp.');
+  return tx(() => {
+    const stall = myStall(player);
+    const cash = one<StallRow>(q.stallById, stall.id)!.cash;
+    const acc = accountsOf(player.id);
+    const parts = osloParts(t);
+    const other = (from === 'bruk' ? to : from) as StoredAccount;
+    if (other === 'madrass' && !knowsMadrass(player.id)) throw new GameError('Ukjent konto.');
+    let moved = sum;
+    let text: string;
+    if (from === 'bruk') {
+      if (other === 'kreditt') {
+        if (acc.kreditt <= 0) throw new GameError('Du skylder ikke noe på kassekreditten.');
+        moved = Math.min(sum, acc.kreditt);
+      }
+      if (moved > cash) throw new GameError('Du har ikke så mye på brukskontoen.');
+      if (other === 'jul' && !xmasOpen(parts.month, parts.day)) throw new GameError('Julesparingen tar ikke imot mer i år. Den utbetales julaften.');
+      q.addCash.run(-moved, stall.id);
+      addAccount(player.id, other, other === 'kreditt' ? -moved : moved);
+      text =
+        other === 'kreditt'
+          ? `🏦 Du betalte ned ${moved} kr på kassekreditten.${acc.kreditt - moved > 0 ? ` Du skylder ${acc.kreditt - moved} kr.` : ' Den er nedbetalt.'}`
+          : other === 'madrass'
+            ? `🛏️ Du stappet ${moved} kr inn i madrassen.`
+            : `🏦 Du satte ${moved} kr på ${ACCOUNT_BY_KIND[other].name.toLowerCase()}en.`;
+    } else {
+      if (other === 'jul') throw new GameError('Julesparingen er låst til julaften kl. 08.');
+      if (other === 'kreditt') {
+        const room = creditLimit(stall.reputation) - acc.kreditt;
+        if (room <= 0) throw new GameError('Kassekreditten er brukt opp. Omdømmet ditt bestemmer hvor mye banken låner deg.');
+        if (sum > room) throw new GameError(`Du kan låne ${room} kr til.`);
+        addAccount(player.id, 'kreditt', sum);
+        text = `🏦 Du lånte ${sum} kr på kassekreditten. Du skylder ${acc.kreditt + sum} kr (${pctText(CREDIT_RATE)} rente per dag).`;
+      } else {
+        if (sum > acc[other]) throw new GameError(`Det er ikke så mye på ${ACCOUNT_BY_KIND[other].name.toLowerCase()}en.`);
+        addAccount(player.id, other, -sum);
+        text = other === 'madrass' ? `🛏️ Du tok ${sum} kr ut av madrassen.` : `🏦 Du tok ${sum} kr fra ${ACCOUNT_BY_KIND[other].name.toLowerCase()}en.`;
+      }
+      q.addCash.run(sum, stall.id);
+    }
+    event(market, player.id, t, text);
+    return { ok: true, moved };
+  });
+}
+
+/** Kl. 08: renter på sparing og julesparing, renteregning på kassekreditten, og julesparingen utbetales julaften. */
+function bankMorning(market: MarketRow, t: number) {
+  const parts = osloParts(t);
+  const dueDay = currentEdition(t).key;
+  const payout = parts.month === 12 && parts.day >= XMAS_PAYOUT_DAY;
+  const rows = all<{ player_id: number; kind: StoredAccount; balance: number }>(
+    db.prepare('SELECT a.player_id, a.kind, a.balance FROM accounts a JOIN players p ON p.id = a.player_id WHERE p.market_id = ? AND a.balance > 0'),
+    market.id,
+  );
+  for (const r of rows) {
+    const stall = one<StallRow>(q.stallsByOwner, r.player_id); // første bod: der lommeboka og regningene er
+    if (r.kind === 'spare') {
+      const interest = Math.floor(r.balance * SAVINGS_RATE);
+      if (interest > 0) {
+        addAccount(r.player_id, 'spare', interest);
+        event(market, r.player_id, t, `🐷 Renter på sparekontoen: +${interest} kr. Saldo ${r.balance + interest} kr.`);
+      }
+    } else if (r.kind === 'jul') {
+      if (payout && stall) {
+        addAccount(r.player_id, 'jul', -r.balance);
+        q.addCash.run(r.balance, stall.id);
+        event(market, r.player_id, t, `🎄 God jul! Julesparingen er utbetalt: ${r.balance} kr på brukskontoen.`);
+      } else if (!payout) addAccount(r.player_id, 'jul', Math.floor(r.balance * XMAS_RATE));
+    } else if (r.kind === 'kreditt' && stall) {
+      issueBill(market, stall, t, 'renter', dueDay, Math.ceil(r.balance * CREDIT_RATE));
+    }
+  }
+}
+
 // ---------- Konkurs ----------
 
 /**
@@ -5077,6 +5192,8 @@ function bankruptcyOf(player: PlayerRow, t: number): GameState['me']['bankrupt']
   for (const st of stalls) for (const b of all<BillRow>(q.billsForStall, st.id)) if (b.stage >= 3) debt += b.amount + b.surcharge;
   if (debt <= 0) return null;
   if (stalls.some((st) => st.cash > 0)) return null;
+  const acc = accountsOf(player.id);
+  if (acc.regning > 0 || acc.spare > 0 || acc.jul > 0) return null; // namsmannen tar det først
   for (const st of stalls) {
     const items = itemsOf(st.id);
     if (items.some((i) => PRODUCT_BY_ID[i.typeId] && !isTrashed(items, i))) return null;
@@ -5103,6 +5220,7 @@ export function restartAfterBankruptcy(player: PlayerRow) {
       db.prepare('DELETE FROM stalls WHERE id = ?').run(st.id);
     }
     db.prepare('UPDATE players SET stall_at = NULL WHERE id = ?').run(player.id);
+    db.prepare("DELETE FROM accounts WHERE player_id = ? AND kind <> 'madrass'").run(player.id); // gjelda forsvinner; madrassen fant ingen
     snoops.delete(player.id);
     const names = stalls.map((st) => `«${st.name}»`).join(' og ');
     event(market, null, t, `📉 ${names} er slått konkurs. Namsmannen fant ingenting mer å ta, og plassen${stalls.length > 1 ? 'ene' : ''} står ledig.`);
@@ -5440,7 +5558,7 @@ function issueBills(market: MarketRow, t: number, s: StallRow, yesterdayRevenue:
   const slot = LAYOUT[s.slot_index];
   const fixed = slot.rent;
   const risk = Math.min(Math.max(0, day) * RENT_RISK_PER_DAY, RENT_RISK_CAP) * slot.risk;
-  const share = yesterdayRevenue * RENT_REVENUE_PCT;
+  const share = yesterdayRevenue * RENT_REVENUE_PCT[slot.street];
   issueBill(market, s, t, 'rent', dueDay, fixed + risk + share);
 
   issueBill(market, s, t, 'power', dueDay, s.power_cost);
@@ -5491,6 +5609,18 @@ function namsmann(market: MarketRow, t: number, s: StallRow, b: BillRow) {
     q.addCash.run(-seizedCash, s.id);
     debt -= seizedCash;
   }
+  // Så kontoene namsmannen kan se (ikke madrassen).
+  let seizedBank = 0;
+  if (debt > 0) {
+    const acc = accountsOf(s.owner_id);
+    for (const k of ['regning', 'spare', 'jul'] as const) {
+      const take = Math.min(Math.max(0, acc[k]), debt);
+      if (take <= 0) continue;
+      addAccount(s.owner_id, k, -take);
+      seizedBank += take;
+      debt -= take;
+    }
+  }
 
   let goodsValue = 0;
   let goodsCount = 0;
@@ -5508,7 +5638,7 @@ function namsmann(market: MarketRow, t: number, s: StallRow, b: BillRow) {
     }
   }
 
-  const collected = seizedCash + goodsValue;
+  const collected = seizedCash + seizedBank + goodsValue;
   if (debt <= 0) q.deleteBill.run(b.id);
   else q.setBillAmount.run(debt, 0, b.id); // behold resten, ingen nye påslag
 
@@ -5518,6 +5648,7 @@ function namsmann(market: MarketRow, t: number, s: StallRow, b: BillRow) {
   const meta = BILL_META[b.kind];
   const parts: string[] = [];
   if (seizedCash > 0) parts.push(`${seizedCash} kr fra kassa`);
+  if (seizedBank > 0) parts.push(`${seizedBank} kr fra kontoene i banken`);
   if (goodsCount > 0) parts.push(`${goodsCount} ${goodsCount === 1 ? 'vare' : 'varer'} (verdt ${goodsValue} kr)`);
   const took = parts.length ? parts.join(' og ') : 'ingenting å hente';
   const rest = debt > 0 ? ` Fortsatt ${debt} kr i gjeld – namsmannen kommer igjen.` : ' Gjelda er gjort opp.';
@@ -5818,19 +5949,27 @@ export function payBill(player: PlayerRow, billId: number) {
 /** Betaler alle regninger boden har råd til (billigste først). Brukes av «Betal alt» og AvtaleGiro. */
 function payWhatWeCan(market: MarketRow, stall: StallRow, t: number) {
   let cash = one<StallRow>(q.stallById, stall.id)!.cash; // fersk: felles lommebok med andre boder
+  let reg = Math.max(0, accountsOf(stall.owner_id).regning); // regningskontoen brukes først
+  let fromReg = 0;
   let paid = 0;
   let total = 0;
   const bills = all<BillRow>(q.billsForStall, stall.id).sort((a, b) => a.amount + a.surcharge - (b.amount + b.surcharge));
   for (const b of bills) {
     const sum = b.amount + b.surcharge;
-    if (sum > cash) continue;
-    cash -= sum;
+    if (sum > cash + reg) continue;
+    const r = Math.min(reg, sum);
+    reg -= r;
+    fromReg += r;
+    cash -= sum - r;
     total += sum;
     paid++;
     q.deleteBill.run(b.id);
     q.insertTx.run(market.id, t, b.kind, stall.id, null, null, null, sum);
   }
-  if (paid > 0) q.addCash.run(-total, stall.id);
+  if (paid > 0) {
+    q.addCash.run(-(total - fromReg), stall.id);
+    addAccount(stall.owner_id, 'regning', -fromReg);
+  }
   return { paid, total, left: bills.length - paid };
 }
 
@@ -6179,6 +6318,7 @@ function processHour(market: MarketRow, hour: number) {
       all<{ from_stall: number; amount: number }>(q.salesBetween, market.id, t - 24 * HOUR, t).map((r) => [r.from_stall, r.amount]),
     );
     for (const s of stalls) issueBills(market, t, s, revenue.get(s.id) ?? 0);
+    bankMorning(market, t); // renter, renteregning på kassekreditten og julesparingen
     // AvtaleGiro: betal det som er mulig med en gang.
     for (const s of all<StallRow>(db.prepare('SELECT * FROM stalls WHERE market_id = ? AND autogiro = 1'), market.id)) {
       const r = payWhatWeCan(market, s, t);

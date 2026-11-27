@@ -20,6 +20,29 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
+## Kontoer i banken – grafikk lagt inn (27.11.2026)
+
+Alle sju PNG-filer er levert til stiene i tabellen i 64 × 64, med transparent bakgrunn.
+Originaler, beskrivelser, metadata og kontrollark ligger i `GFX_assets/planlagte/bank-kontoer/`.
+Kontrollert i 30 og 24 px. Begge madrassvariantene har samme plassering og ytre størrelse.
+
+Bank-appen har fått seks kontoer (`shared/bank.ts`, `bankAccounts` i `client/main.ts`). Ikonene er koblet inn
+med `BANK_ART = true` i `client/main.ts`. Håndboklappen **Madrassen** henter ikonet sitt automatisk.
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| B1 | `client/public/art/bank/bruk.png` | 64×64 | Et bankkort i julerødt med en liten gullchip | Brukskonto (reserve; vises ikke i lista i dag) |
+| B2 | `client/public/art/bank/regning.png` | 64×64 | En liten bunke regninger med binders og et grønt hake-stempel | Regningskonto |
+| B3 | `client/public/art/bank/spare.png` | 64×64 | En rosa sparegris med nisselue og en mynt på vei ned i sprekken | Sparekonto |
+| B4 | `client/public/art/bank/kreditt.png` | 64×64 | Et bankkort med en rød pil oppover og et lite lodd i kjetting | Kassekreditt (lån) |
+| B5 | `client/public/art/bank/jul.png` | 64×64 | En julepakke med hengelås og et lite «24»-merke uten lesbar tekst (bare en rød sirkel) | Julesparing |
+| B6 | `client/public/art/bank/madrass.png` | 64×64 | En stripete madrass med en sprekk der sedler stikker ut | Madrassen |
+| H6 | `client/public/art/handbok/madrassen.png` | 64×64 | Samme madrass, i lappenes mørkere, nattlige palett | Lappen «Madrassen» i håndboka |
+
+**Stil:** Ikonene vises i 30 px i Bank-appen, ved siden av saldoen. Samme varme pikselstil som app-ikonene, mørk kontur,
+lys fra øvre venstre, transparent bakgrunn, ingen lesbar tekst. B1–B6 bør henge sammen som et sett (samme vinkel og størrelse).
+Kontroller i 30 og 24 px.
+
 ## Kundesalgsboka – grafikk klar og lagt inn (27.11.2026)
 
 Levert: `client/public/art/verktoy/kundesalgsboka.png`, transparent PNG i 128 × 128.

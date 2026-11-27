@@ -288,6 +288,13 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- BANK-KONTOER-START -->[\s\S]*?<!-- BANK-KONTOER-SLUTT -->', '', html)
+    bankfile=ROOT/'GFX_assets/planlagte/bank-kontoer/leveranse.json'
+    if bankfile.exists():
+        entries=json.loads(bankfile.read_text(encoding='utf-8'))['items']
+        links=''.join(f'<li><a href="{escape(item["target"], quote=True)}">{escape(item["id"])}</a> · 64 × 64 px</li>' for item in entries)
+        panel=(ROOT/'tools/bank-kontoer-panel.html').read_text(encoding='utf-8').replace('<!-- BANK-KONTOER-FILER -->',f'<details><summary>Alle sju filer</summary><ul>{links}</ul></details>')
+        html=html.replace('<div class="table-wrap">','<!-- BANK-KONTOER-START -->'+panel+'<!-- BANK-KONTOER-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- KUNDESALGSBOKA-START -->[\s\S]*?<!-- KUNDESALGSBOKA-SLUTT -->', '', html)
     if (ROOT/'GFX_assets/planlagte/kundesalgsboka/leveranse.json').exists():
         panel=(ROOT/'tools/kundesalgsboka-panel.html').read_text(encoding='utf-8')

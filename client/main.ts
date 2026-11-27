@@ -120,6 +120,7 @@ import { DUMP_FINE, INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
+import { ACCOUNTS, CREDIT_RATE, pctText, type AccountDef, type AccountKind } from '../shared/bank.ts';
 import { BROWSE_BASE, BROWSE_BOOK, BROWSE_XP_MAX, BROWSE_XP_STEP, SALES_BOOK, browseChance, browseSkill, browseXpBonus } from '../shared/leads.ts';
 import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
@@ -216,6 +217,7 @@ let handbookSeen: string[] = (() => {
     return [];
   }
 })();
+let bankOpen: string | null = null; // kontoen du har åpnet i Bank-appen
 let browseHelp: string | null = null; // kikkeren du har spurt «Trenger du hjelp?»
 let bookTab = { id: 0, n: 0 }; // fanen du har åpen i et oppskriftshefte
 let lottoPick: number[] = []; // tallene du har valgt i Lotteri-appen (før du kjøper loddet)
@@ -933,7 +935,9 @@ function phoneWindow(s: GameState): string {
       .join('');
   const stage = (st: number) => (st >= 3 ? 'namsmann' : st === 2 ? 'inkasso' : st === 1 ? 'purret' : 'due');
   const bank = `<div class="phone-bar-title"><button class="phone-back" data-action="phone-page" data-page="home">‹ Hjem</button><b>${appIcon('bank').replace('<img ', '<img class="title-icon" ')} Banken</b></div>
-    <div class="phone-widget bank-saldo"><small>Disponibelt</small><b class="${s.me.cash < 0 ? 'neg' : ''}">${kr(s.me.cash)}</b></div>
+    <div class="phone-widget bank-saldo"><small>Brukskonto · disponibelt</small><b class="${s.me.cash < 0 ? 'neg' : ''}">${kr(s.me.cash)}</b></div>
+    <div class="phone-kicker">Kontoer</div>
+    ${bankAccounts(s)}
     <label class="bank-giro"><input type="checkbox" data-action="autogiro" ${s.me.autogiro ? 'checked' : ''}>
       <span><b>AvtaleGiro</b><small>Regningene betales automatisk kl. 08 når det er dekning på konto.</small></span></label>
     <div class="phone-kicker">Regninger til betaling</div>
@@ -4281,6 +4285,43 @@ function browseSection(s: GameState, leadId: string): string {
     <p class="cust-hint">Prosenten er sjansen for salg hvis det er riktig vare (en stiv pris trekker ned). Feil vare, og kunden går. ${how}</p></div>`;
 }
 
+/** Grafikken til kontoene (GRAFIKK.md, «Kontoer i banken»). */
+const BANK_ART = true;
+const accountIcon = (a: AccountDef) =>
+  BANK_ART ? `<img class="bank-acc-icon" src="/art/bank/${a.kind}.png" alt="" draggable="false">` : `<span class="bank-acc-icon">${a.emoji}</span>`;
+
+/** Kontoene i Bank-appen (utenom brukskontoen øverst). Trykk på en konto for å flytte penger til eller fra brukskontoen. */
+function bankAccounts(s: GameState): string {
+  const B = s.me.bank;
+  if (!B) return ''; // eldre server uten kontoer
+  return `<ul class="bank-accounts">${ACCOUNTS.filter((a) => a.kind !== 'bruk' && (a.kind !== 'madrass' || B.madrassKnown))
+    .map((a) => {
+      const k = a.kind as Exclude<AccountKind, 'bruk'>;
+      const room = Math.max(0, B.creditLimit - B.kreditt);
+      const info =
+        k === 'kreditt'
+          ? `${pctText(CREDIT_RATE)} rente per dag · du kan låne ${kr(room)} til`
+          : k === 'jul' && !B.xmasOpen
+            ? 'Låst til julaften kl. 08'
+            : a.blurb;
+      const bal = k === 'kreditt' ? (B.kreditt > 0 ? `−${kr(B.kreditt)}` : kr(0)) : kr(B[k]);
+      const open = bankOpen === k;
+      const buttons =
+        k === 'kreditt'
+          ? `<button class="small" data-dir="out" ${room > 0 ? '' : 'disabled'}>Lån</button><button class="small" data-dir="in" ${B.kreditt > 0 ? '' : 'disabled'}>Betal ned</button>`
+          : k === 'jul'
+            ? `<button class="small" data-dir="in" ${B.xmasOpen ? '' : 'disabled'}>Sett inn</button>`
+            : `<button class="small" data-dir="in">Sett inn</button><button class="small" data-dir="out" ${B[k] > 0 ? '' : 'disabled'}>Ta ut</button>`;
+      return `<li class="bank-acc ${k}${open ? ' open' : ''}">
+        <button class="bank-acc-row" data-action="bank-open" data-kind="${k}">${accountIcon(a)}
+          <span class="bank-acc-text"><b>${a.name}</b><small>${esc(info)}</small></span>
+          <b class="bank-acc-bal${k === 'kreditt' && B.kreditt > 0 ? ' neg' : ''}">${bal}</b></button>
+        ${open ? `<form data-form="bank" data-kind="${k}" class="bank-move"><input name="amount" type="number" min="1" inputmode="numeric" placeholder="Kr" required data-autofocus>${buttons}</form>` : ''}
+      </li>`;
+    })
+    .join('')}</ul>`;
+}
+
 /** Kundesalgsboka: tallene dine, kundetypene (hva de liker) og tips, i faner som Julebakst-heftet. */
 function salesBookView(s: GameState, it: Item, t: { name: string; emoji: string; image?: string }): string {
   const tabs = ['Dine tall', 'Kundetypene', 'Tips'];
@@ -5783,6 +5824,10 @@ app.addEventListener('click', (e) => {
       .finally(refresh);
     return;
   }
+  if (action === 'bank-open' && el.dataset.kind) {
+    bankOpen = bankOpen === el.dataset.kind ? null : el.dataset.kind;
+    return render();
+  }
   if (action === 'browse-help' && el.dataset.lead) {
     browseHelp = el.dataset.lead;
     return render();
@@ -6212,6 +6257,21 @@ app.addEventListener('submit', async (e) => {
     case 'note':
       await act('/api/note/write', { kind: data.kind === 'code' ? 'code' : 'text', text: data.text }, '✏️ Lappen ligger under disken.');
       break;
+    case 'bank': {
+      const kind = form.dataset.kind ?? '';
+      const dir = ((e as SubmitEvent).submitter as HTMLElement | null)?.dataset.dir;
+      if (!dir) break;
+      const [from, to] = dir === 'in' ? ['bruk', kind] : [kind, 'bruk'];
+      const name = ACCOUNTS.find((a) => a.kind === kind)?.name ?? 'kontoen';
+      const ok =
+        kind === 'kreditt'
+          ? dir === 'out' ? '🏦 Lånt. Pengene står på brukskontoen.' : '🏦 Betalt ned.'
+          : kind === 'madrass'
+            ? dir === 'in' ? '🛏️ Stappet inn i madrassen.' : '🛏️ Tatt ut av madrassen.'
+            : `🏦 ${dir === 'in' ? 'Satt inn på' : 'Tatt ut fra'} ${name.toLowerCase()}en.`;
+      if (await act('/api/bank', { from, to, amount: Number(data.amount) }, ok)) bankOpen = null;
+      break;
+    }
     case 'price': {
       if (modal?.kind !== 'product') return;
       const productId = modal.productId;
