@@ -338,6 +338,10 @@ interface PlayerRow {
   paper_read: number; // siste avisutgave spilleren har lest (ÅÅÅÅMMDD)
   stall_at: number | null; // boden spilleren er i nå (eier hen flere); null = den første
   sales_xp: number; // kikkere du har hjulpet med Kundesalgsboka i boden (shared/leads.ts)
+  browse_miss: number; // kikkere der du pekte på feil vare
+  browse_near: number; // riktig vare, men ikke salg
+  browse_sold: number; // salg til kikkere
+  browse_kr: number; // det kikkerne har kjøpt for
 }
 interface StallRow {
   id: number;
@@ -1340,6 +1344,7 @@ export function helpBrowser(player: PlayerRow, leadId: string, productId: string
     const xp = player.sales_xp ?? 0;
     if (book) db.prepare('UPDATE players SET sales_xp = sales_xp + 1 WHERE id = ?').run(player.id);
     if (productId !== want) {
+      db.prepare('UPDATE players SET browse_miss = browse_miss + 1 WHERE id = ?').run(player.id);
       event(market, player.id, t, `🙂 ${type.name}en så egentlig etter ${wanted.name.toLowerCase()}, og gikk videre.`);
       return { sold: false, guessed: false, amount: 0, txId: 0, productId: want };
     }
@@ -1348,6 +1353,7 @@ export function helpBrowser(player: PlayerRow, leadId: string, productId: string
     const price = priceOf(pricesOf(stall.id), p.id, home);
     const expected = Math.round(expectedPrice(p.basePrice, stall.reputation, home) * decorPrice(decorBoost(Object.values(decorOf(stall)), { dark: isDarkHour(osloParts(t).hour), weather: weatherFor(market.id, currentEdition(t).key).kind }), p.category));
     if (Math.random() >= browseChance(xp, book, price / expected)) {
+      db.prepare('UPDATE players SET browse_near = browse_near + 1 WHERE id = ?').run(player.id);
       event(market, player.id, t, `🤔 ${type.name}en kikket lenge på ${p.name.toLowerCase()}, men lot den ligge.`);
       return { sold: false, guessed: true, amount: 0, txId: 0, productId: want };
     }
@@ -1356,6 +1362,7 @@ export function helpBrowser(player: PlayerRow, leadId: string, productId: string
     const fee = cash ? 0 : Math.round(price * PAYMENT_FEE);
     q.addCash.run(price - fee, stall.id);
     const res = q.insertTx.run(market.id, t, 'npc_sale', stall.id, null, p.id, 1, price);
+    db.prepare('UPDATE players SET browse_sold = browse_sold + 1, browse_kr = browse_kr + ? WHERE id = ?').run(price, player.id);
     event(market, player.id, t, `🛍️ Du hjalp en ${type.name.toLowerCase()} som bare kikket, og solgte ${p.emoji} ${p.name.toLowerCase()} for ${price} kr (${cash ? 'kontant' : `Bipps, gebyr ${fee} kr`}).`);
     return { sold: true, guessed: true, amount: price, txId: Number(res.lastInsertRowid), productId: want };
   });
@@ -3084,6 +3091,7 @@ export function getState(player: PlayerRow): GameState {
       cash: mine?.cash ?? 0,
       reputation: Math.round(mine?.reputation ?? 0),
       salesXp: player.sales_xp ?? 0,
+      browse: { miss: player.browse_miss ?? 0, near: player.browse_near ?? 0, sold: player.browse_sold ?? 0, kr: player.browse_kr ?? 0 },
       inventory,
       items,
       bills: mine ? billsFor(mine.id, currentEdition(t).key) : [],

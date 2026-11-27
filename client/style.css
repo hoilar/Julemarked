@@ -2190,6 +2190,16 @@ body:not([data-daypart="dag"]) .decor-glow { opacity: 1; animation: decor-flicke
 .book-card-head small { color: #8a6a4a; font-size: 0.7rem; }
 .book-yield { color: #2f7d3a; }
 .book-note { display: block; color: #8a6a4a; font-size: 0.7rem; }
+/* Kundesalgsboka: blått omslag i stedet for rødt, og stats */
+.book-view.sales-book { border-image: repeating-linear-gradient(90deg, #2f4f7f 0 10px, #fff 10px 20px) 10 0 0 0; }
+.sales-book .book-head h2 { color: #24406a; }
+.sales-book .book-tabs { background: rgba(36, 64, 106, 0.12); }
+.sales-book .book-tabs button { color: #24406a; }
+.sales-book .book-tabs button.on { background: #2f4f7f; color: #fff; }
+.sales-book .book-pic { font-size: 1.9rem; }
+.sales-big { font-size: 1.6rem !important; font-weight: 800; color: #24406a; margin: 0 !important; }
+.sales-bar { height: 8px; margin: 4px 0; border-radius: 99px; background: #e4dccb; overflow: hidden; }
+.sales-bar span { display: block; height: 100%; background: linear-gradient(90deg, #4a7fc1, #2f7d3a); }
 /* Bodeierhåndboka */
 .hb-cover { margin-bottom: 10px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #7a1f1a, #3d1110); text-align: center; }
 .hb-cover small { display: block; opacity: 0.8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }

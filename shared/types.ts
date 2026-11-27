@@ -279,6 +279,8 @@ export interface GameState {
     reputation: number;
     /** Kikkere du har hjulpet med Kundesalgsboka i boden (shared/leads.ts). */
     salesXp: number;
+    /** Kikkerne du har hjulpet: feil vare, riktig vare uten salg, salg, og hva de kjøpte for (kr). */
+    browse: { miss: number; near: number; sold: number; kr: number };
     inventory: InventoryRow[];
     items: Item[]; // alle egne gjenstander (lager, esker, bord og søppelkasse)
     bills: BillView[]; // ubetalte regninger i postkassa

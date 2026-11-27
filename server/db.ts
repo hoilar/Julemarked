@@ -290,6 +290,9 @@ db.exec('CREATE INDEX IF NOT EXISTS transactions_revenue ON transactions (market
 if (!hasColumn('players', 'stall_at')) db.exec('ALTER TABLE players ADD COLUMN stall_at INTEGER');
 // Salget til kundene går i runder på 5 spillminutter (SALE_SLICES i server/game.ts). NULL = last_hour × 12.
 if (!hasColumn('players', 'sales_xp')) db.exec('ALTER TABLE players ADD COLUMN sales_xp INTEGER NOT NULL DEFAULT 0');
+// Kundesalgsboka: tallene for kikkerne du har hjulpet (bom, riktig vare uten salg, salg og hva de kjøpte for).
+for (const col of ['browse_miss', 'browse_near', 'browse_sold', 'browse_kr'])
+  if (!hasColumn('players', col)) db.exec(`ALTER TABLE players ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
 if (!hasColumn('markets', 'last_slice')) db.exec('ALTER TABLE markets ADD COLUMN last_slice INTEGER');
 // Julelotteriet (shared/lottery.ts). draw_key = trekningsdagen (ÅÅÅÅMMDD). nums = «3,7,15». hits/prize fylles ved trekningen.
 db.exec('CREATE TABLE IF NOT EXISTS lotto_tickets (id INTEGER PRIMARY KEY, market_id INTEGER NOT NULL, draw_key INTEGER NOT NULL, player_id INTEGER NOT NULL, stall_id INTEGER NOT NULL, nums TEXT NOT NULL, free INTEGER NOT NULL DEFAULT 0, bought_at INTEGER NOT NULL, hits INTEGER, prize INTEGER)');

@@ -120,12 +120,12 @@ import { DUMP_FINE, INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
-import { BROWSE_BASE, BROWSE_BOOK, SALES_BOOK, browseChance, browseSkill, browseXpBonus } from '../shared/leads.ts';
+import { BROWSE_BASE, BROWSE_BOOK, BROWSE_XP_MAX, BROWSE_XP_STEP, SALES_BOOK, browseChance, browseSkill, browseXpBonus } from '../shared/leads.ts';
 import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
 import { BOOK_BY_ID, makerRecipeId } from '../shared/cookbook.ts';
 import { couponValid, dayRange, isSeasonCoupon } from '../shared/deals.ts';
 import { WEATHER, tempText } from '../shared/weather.ts';
-import { HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
+import { CUSTOMER_TYPES, HAGGLE_STEPS, chanceWord, customerType, haggleChance, hagglePrice } from '../shared/haggle.ts';
 import { regularChance, regularWants, type CounterOffer } from '../shared/regulars.ts';
 import { HANDBOOK, HANDBOOK_BY_ID, HANDBOOK_NAME, HANDBOOK_PUBLISHER, HANDBOOK_SECRET_TITLE, type HandbookPage } from '../shared/handbook.ts';
 import { LOTTO_CHARITY, LOTTO_MAX, LOTTO_NUMBERS, LOTTO_PICK, LOTTO_PRICE, LOTTO_SECOND } from '../shared/lottery.ts';
@@ -4260,7 +4260,7 @@ function browseSection(s: GameState, leadId: string): string {
   const skill = browseSkill(s.me.salesXp, book);
   const xp = browseXpBonus(s.me.salesXp, book);
   const how = book
-    ? `${Math.round(BROWSE_BASE * 100)} % + boka ${Math.round(BROWSE_BOOK * 100)} % + erfaring ${Math.round(xp * 1000) / 10} % (${s.me.salesXp} kunder)`
+    ? `${Math.round(BROWSE_BASE * 100)} % + boka ${Math.round(BROWSE_BOOK * 100)} % + erfaring ${(Math.round(xp * 1000) / 10).toLocaleString('nb-NO')} % (${s.me.salesXp} kunder)`
     : `Med Kundesalgsboka fra Klas Olsen blir du flinkere for hver kunde.`;
   if (browseHelp !== leadId)
     return `<div class="cust-section"><div class="cust-kicker">👀 Bare kikker litt</div>
@@ -4279,6 +4279,54 @@ function browseSection(s: GameState, leadId: string): string {
   return `<div class="cust-section"><div class="cust-kicker">Hva ser hen etter?</div>
     <div class="browse-grid">${buttons}</div>
     <p class="cust-hint">Prosenten er sjansen for salg hvis det er riktig vare (en stiv pris trekker ned). Feil vare, og kunden går. ${how}</p></div>`;
+}
+
+/** Kundesalgsboka: tallene dine, kundetypene (hva de liker) og tips, i faner som Julebakst-heftet. */
+function salesBookView(s: GameState, it: Item, t: { name: string; emoji: string; image?: string }): string {
+  const tabs = ['Dine tall', 'Kundetypene', 'Tips'];
+  const n = bookTab.id === it.id ? Math.min(bookTab.n, tabs.length - 1) : 0;
+  const b = s.me.browse;
+  const helped = b.miss + b.near + b.sold;
+  const hits = b.near + b.sold;
+  const pct = (x: number) => `${(Math.round(x * 1000) / 10).toLocaleString('nb-NO')} %`;
+  const card = (pic: string, head: string, body: string) =>
+    `<li class="book-card"><span class="book-pic">${pic}</span><div class="book-text">${head}${body}</div></li>`;
+  let cards = '';
+  if (n === 0) {
+    const xp = browseXpBonus(s.me.salesXp, true);
+    const full = Math.ceil(BROWSE_XP_MAX / BROWSE_XP_STEP);
+    const left = Math.max(0, full - s.me.salesXp);
+    cards =
+      card('🎯', `<div class="book-card-head"><b>Sjansen nå</b><small>når du peker på riktig vare</small></div>`,
+        `<p class="sales-big">${Math.round(browseSkill(s.me.salesXp, true) * 100)} %</p>
+         <p>Grunn ${Math.round(BROWSE_BASE * 100)} % + boka ${Math.round(BROWSE_BOOK * 100)} % + erfaring ${pct(xp)}</p>
+         <div class="sales-bar" title="Erfaring ${pct(xp)} av ${Math.round(BROWSE_XP_MAX * 100)} %"><span style="width:${(xp / BROWSE_XP_MAX) * 100}%"></span></div>
+         <p class="book-note">${left ? `${left} kunder til før du er utlært (100 %).` : 'Du er utlært: riktig vare til fornuftig pris er alltid salg.'}</p>`) +
+      card('🙋', `<div class="book-card-head"><b>Kunder du har hjulpet</b><small>${helped} totalt</small></div>`,
+        `<p>Riktig vare: <b>${hits}</b>${helped ? ` (${Math.round((hits / helped) * 100)} %)` : ''} · feil vare: ${b.miss}</p>
+         <p class="book-yield">Salg: <b>${b.sold}</b>${hits ? ` av ${hits} treff` : ''} · ${kr(b.kr)}</p>`);
+  } else if (n === 1) {
+    cards = CUSTOMER_TYPES.map((c) =>
+      card(c.emoji, `<div class="book-card-head"><b>${esc(c.name)}</b></div>`,
+        `<p>Liker: ${c.likes.map((l) => categoryLabel(l)).join(', ')}</p><p class="book-note">Liker ikke: ${esc(c.dislikes)}</p>`),
+    ).join('');
+  } else {
+    cards = [
+      ['👀', 'Se kunden', 'Kundetypen står øverst når du trykker på kunden. Den som «bare kikker», ser som regel etter noe i det hen liker.'],
+      ['🏷️', 'Fornuftig pris', 'En stiv pris gjør at kunden lar varen ligge, selv om du pekte riktig.'],
+      ['🧺', 'Bredt bord', 'Jo flere ulike varer, jo vanskeligere å treffe, men jo større sjanse for at det hen vil ha, står der.'],
+      ['📘', 'Ha boka i boden', 'Erfaringen teller bare når boka ligger i boden. Én sjanse per kunde, så tenk deg om.'],
+    ]
+      .map(([pic, head, body]) => card(pic, `<div class="book-card-head"><b>${head}</b></div>`, `<p>${body}</p>`))
+      .join('');
+  }
+  return `<div class="book-view sales-book">
+    <div class="book-head">${icon(t)}<h2>${esc(t.name)}</h2></div>
+    <div class="book-tabs" role="tablist">${tabs
+      .map((title, k) => `<button class="${k === n ? 'on' : ''}" role="tab" aria-selected="${k === n}" data-action="book-tab" data-item="${it.id}" data-n="${k}">${title}</button>`)
+      .join('')}</div>
+    <ul class="book-cards">${cards}</ul>
+    <small class="book-note">Erfaringen teller bare når boka ligger i boden.</small></div>`;
 }
 
 /** Varene på bordet ditt slik stamkundene ser dem: pris og om det finnes en hjemmelaget. */
@@ -4421,6 +4469,7 @@ function itemView(s: GameState, it: Item): string {
       <p>${how}<br>= ${list(r.outputs)}</p>
       <small>Skrevet av fra Verdens Undergang.</small></div>`;
   }
+  if (it.typeId === SALES_BOOK) return salesBookView(s, it, t);
   if (bookRecipes(it.typeId).length) {
     // Oppskriftshefte: én fane om gangen, ett kort per oppskrift.
     const tabs = (t as { tabs?: { title: string; recipes: string[] }[] }).tabs ?? [{ title: t.name, recipes: bookRecipes(it.typeId) }];
