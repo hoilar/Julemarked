@@ -4895,6 +4895,7 @@ function modalView(s: GameState): string {
       ${
         isDecorGood(p.id)
           ? `<p class="muted">🎄 Pynt fra ${esc(DEKORINGEN.name)}. Selges fra bordet bare når du står bak disken, ikke når skiltet står på selvbetjent.</p>
+             ${stashMenu(s, p.id, true)}
              ${modal.itemId !== undefined ? `<button data-action="decor-hang" data-item="${modal.itemId}">🎄 Heng den opp på boden i stedet</button>` : ''}`
           : stashMenu(s, p.id, true)
       }`,
@@ -5229,8 +5230,8 @@ function endDrag(cancelled = false) {
     // Trykk: eske åpnes/lukkes, vare åpner pris og masseflytting.
     // Innpakket apparat fra Klas Olsen (lyslenke, alarm …): heng det opp på boden.
     if (t.kind === 'electric' && t.hangs) act('/api/device/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger på boden.`);
-    // Pynt på bordet er til salgs: trykk åpner varekortet (pris og «Heng opp»). Under disken henges den opp.
-    else if (t.kind === 'tool' && t.decor && d.item.place === 'counter' && PRODUCT_BY_ID[t.id]) modal = { kind: 'product', productId: t.id, itemId: d.item.id };
+    // Pynt som kan selges: trykk åpner varekortet (pris, «Legg på bordet» og «Heng opp»), uansett hvor den ligger.
+    else if (t.kind === 'tool' && t.decor && PRODUCT_BY_ID[t.id]) modal = { kind: 'product', productId: t.id, itemId: d.item.id };
     else if (t.kind === 'tool' && t.decor) act('/api/decor/hang', { itemId: d.item.id }, `${t.emoji} ${t.name} henger foran på boden. Se fronten for å se den.`);
     else if (t.kind === 'container' && d.item.safe?.locked) modal = { kind: 'safe', itemId: d.item.id };
     else if (t.kind === 'container' || t.kind === 'kettle' || t.kind === 'folder' || t.kind === 'electric' || t.kind === 'maker' || t.kind === 'charger' || t.kind === 'player') togglePanel(d.item.id);

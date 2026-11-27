@@ -2859,7 +2859,8 @@ export function discardItem(player: PlayerRow, itemId: number): string {
  */
 export function stashItems(player: PlayerRow, typeId: string, to: StashTo, boxId: number | null, qty: number, tab: number | null = null): number {
   const t = ITEM_TYPES[typeId];
-  if (!t || (t.kind !== 'product' && t.kind !== 'ingredient')) throw new GameError('Ukjent vare.');
+  // Pynt fra Dekoringen er også en vare (kan selges fra bordet).
+  if (!t || (t.kind !== 'product' && t.kind !== 'ingredient' && !(t.kind === 'tool' && t.decor && PRODUCT_BY_ID[typeId]))) throw new GameError('Ukjent vare.');
   if (!['counter', 'storage', 'box'].includes(to)) throw new GameError('Ugyldig sted.');
   if (int(qty, 'antall') < 1) throw new GameError('Ugyldig antall.');
   if (to === 'counter' && t.kind === 'ingredient') throw new GameError('Råvarer selges ikke – kok noe av dem først.');
