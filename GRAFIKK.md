@@ -20,6 +20,23 @@ på nytt når kartet endres. Husene på kartet har fått roller (`BUILDINGS` i `
 butikkene under, juletreet, kirka, inngangen og åtte historiehus (der stamkundene med historier bor).
 Garasjene venter.
 
+## Sorteringsknappen på disken – grafikk lagt inn (27.11.2026)
+
+Levert: `client/public/art/sorter-knapp.png`, transparent PNG i 32 × 32.
+Motiv 28 × 28, kontrollert i 28 og 20 px, innenfor sargens cirka 34 px høyde.
+Original, beskrivelse, metadata og kontrollark ligger i `GFX_assets/planlagte/sorter-knapp/`.
+
+En liten knapp på bordkanten (sargen), rett til høyre for nøkkelkroken. Trykk åpner vinduet «Sorter bordet»
+(`keyHookView` og `sortPanel` i `client/main.ts`). Koblet inn med `SORT_ART = true` i `client/main.ts`.
+
+| # | Fil | Størrelse | Motiv | Brukes |
+|---|---|---|---|---|
+| S1 | `client/public/art/sorter-knapp.png` | 32×32 | En liten firkantet treknott eller messingplate skrudd fast i bordkanten, med to små piler (opp og ned) brent eller preget inn | Knappen på disken (vises i ca. 28 px) og ikonet i vinduets tittel (ca. 20 px) |
+
+**Stil:** Samme varme pikselstil som nøkkelkroken ved siden av (`nokkel-krok.png`), mørk kontur, lys fra øvre venstre,
+transparent bakgrunn, ingen tekst. Den skal se ut som en del av bordet: brunt tre eller mørk messing som passer
+mot sargen, ikke en app-knapp. Den må være lesbar i 28 og 20 px. Høyden må ikke gå utenfor sargen (ca. 34 px høy i 1600 px bredde).
+
 ## Kontoer i banken – grafikk lagt inn (27.11.2026)
 
 Alle sju PNG-filer er levert til stiene i tabellen i 64 × 64, med transparent bakgrunn.

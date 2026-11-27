@@ -288,6 +288,10 @@ def main():
     if (ROOT/'GFX_assets/planlagte/hemmelige-oppskrifter/leveranse.json').exists():
         panel = (ROOT/'tools/hemmelige-varer-panel.html').read_text(encoding='utf-8')
         html = html.replace('<div class="table-wrap">', '<!-- HEMMELIGE-VARER-START -->'+panel+'<!-- HEMMELIGE-VARER-SLUTT --><div class="table-wrap">')
+    html = re.sub(r'<!-- SORTER-KNAPP-START -->[\s\S]*?<!-- SORTER-KNAPP-SLUTT -->', '', html)
+    if (ROOT/'GFX_assets/planlagte/sorter-knapp/leveranse.json').exists():
+        panel=(ROOT/'tools/sorter-knapp-panel.html').read_text(encoding='utf-8')
+        html=html.replace('<div class="table-wrap">','<!-- SORTER-KNAPP-START -->'+panel+'<!-- SORTER-KNAPP-SLUTT --><div class="table-wrap">')
     html = re.sub(r'<!-- BANK-KONTOER-START -->[\s\S]*?<!-- BANK-KONTOER-SLUTT -->', '', html)
     bankfile=ROOT/'GFX_assets/planlagte/bank-kontoer/leveranse.json'
     if bankfile.exists():

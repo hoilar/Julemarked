@@ -10,7 +10,7 @@ import { BAG_FEE, INKASSO_MIN, INKASSO_PCT, PURRING_FEE, RENOVASJON_DAILY, RENT_
 import { DUMP_FINE, FINDER_REWARD, INSPECTOR, THIEF_REWARD, THIEF_REWARD_PER_DAY } from './crime.ts';
 import { COUPON_DAYS, COUPON_MAX, COUPON_MIN, COUPONS_PER_PAPER, GIFT_HOURS } from './deals.ts';
 import { INSURER, INSURANCES } from './insurance.ts';
-import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR } from './liquor.ts';
+import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_DEMAND, LIQUOR_FROM_HOUR } from './liquor.ts';
 import { LOTTO_CHARITY, LOTTO_PRICE, LOTTO_SECOND } from './lottery.ts';
 import { EXTRA_BACKSTREET_PRICE } from './marketmap.ts';
 import { START_REPUTATION } from './mood.ts';
@@ -267,6 +267,7 @@ export const HANDBOOK: HandbookPage[] = [
       'Vin, sprit, cider og sterk gløgg krever skjenkebevilling.',
       `- Søk og betal i Kommunen-appen (${LICENSE_PRICE} kr, én gang). Bevillingen kommer i postkassa kl. 07.`,
       `- Alkohol er bare lov å selge etter kl. ${LIQUOR_FROM_HOUR}.`,
+      `- Til gjengjeld er det mange som vil ha det: rundt ${Math.round((LIQUOR_DEMAND - 1) * 100)} % flere kunder enn ellers for slike varer, og de er villige til å betale godt.`,
       `- Står det alkohol på bordet før kl. ${LIQUOR_FROM_HOUR}, inndrar ${INSPECTOR.name} bevillingen i ${LICENSE_BAN_DAYS} dager.`,
       '- Uten bevilling blir alkoholen beslaglagt, og du får bot på det dobbelte av verdien.',
       '- Kaster du bevillingsdokumentet, er bevillingen borte.',

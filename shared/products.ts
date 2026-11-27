@@ -998,12 +998,12 @@ export const PRODUCTS: Product[] = [
   vare('kakao', 'Varm kakao', '☕', 2, 2, 6, 39, 2.0, 'Hjemmelaget', 'drikke', crafted),
   vare('julebrus', 'Julebrus', '🥤', 1, 2, 12, 35, 1.6, 'Bryggeriet', 'drikke'),
   // Alkohol (krever skjenkebevilling, se shared/liquor.ts). Vodka og rødvin er også råvarer i kjelen.
-  vare('vodka', 'Vodka', '🍸', 2, 3, 180, 399, 0.3, 'Nordlys Brenneri', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
-  vare('rodvin', 'Rødvin', '🍷', 2, 3, 90, 229, 0.45, 'Vinkjelleren', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
-  vare('eplecider', 'Eplecider', '🍏', 2, 3, 25, 69, 1.0, 'Fjordsideriet', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
-  vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 49, 1.4, 'Hjemmelaget', 'alkohol', crafted),
-  vare('koseglogg', 'Kosegløgg', '🍷', 2, 2, 24, 69, 1.6, 'Hjemmelaget', 'alkohol', crafted),
-  vare('styrkeglogg', 'Styrkegløgg', '🔥', 2, 2, 40, 89, 1.3, 'Hjemmelaget', 'alkohol', crafted),
+  vare('vodka', 'Vodka', '🍸', 2, 3, 180, 499, 0.3, 'Nordlys Brenneri', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
+  vare('rodvin', 'Rødvin', '🍷', 2, 3, 90, 289, 0.45, 'Vinkjelleren', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
+  vare('eplecider', 'Eplecider', '🍏', 2, 3, 25, 89, 1.0, 'Fjordsideriet', 'alkohol', { sprite: 1.15 }), // bildet på bordet som før (1 rute bred)
+  vare('varm_cider', 'Varm eplecider', '🍯', 1, 1, 7, 65, 1.4, 'Hjemmelaget', 'alkohol', crafted),
+  vare('koseglogg', 'Kosegløgg', '🍷', 2, 2, 24, 89, 1.6, 'Hjemmelaget', 'alkohol', crafted),
+  vare('styrkeglogg', 'Styrkegløgg', '🔥', 2, 2, 40, 119, 1.3, 'Hjemmelaget', 'alkohol', crafted),
   // Lugubert: selges bare om natta, skaffes av Fyren bak containeren (se shared/dealer.ts).
   vare('smuglersigaretter', 'Smuglersigaretter', '🚬', 1, 1, 40, 129, 1.2, 'Uten avgiftsmerke', 'lugubert', {
     ...shady(['Noen la merke til at sigarettene hos {stall} mangler avgiftsmerke.', 'Det går rykter om billige sigaretter fra {stall}.']),
@@ -1037,7 +1037,7 @@ export const PRODUCTS: Product[] = [
   vare('fattigmann', 'Fru Kvists fattigmann', '🥨', 1, 1, 5, 39, 1.6, 'Hjemmelaget', 'kaker', crafted),
   vare('bergs_knekk', 'Bergs nøtteknekk', '🥜', 1, 1, 8, 49, 1.4, 'Hjemmelaget', 'godteri', crafted),
   vare('rolfs_kakao', 'Rolfs pendlerkakao', '☕', 2, 2, 6, 55, 1.8, 'Hjemmelaget', 'drikke', crafted),
-  vare('direktorpunsj', 'Direktørens julepunsj', '🥃', 2, 2, 40, 129, 1.0, 'Hjemmelaget', 'alkohol', crafted),
+  vare('direktorpunsj', 'Direktørens julepunsj', '🥃', 2, 2, 40, 169, 1.0, 'Hjemmelaget', 'alkohol', crafted),
   vare('noras_snaps', 'Noras nattsnaps', '🌙', 1, 2, 30, 349, 0.5, 'Hjemmelaget', 'lugubert', {
     ...crafted,
     ...shady(['Noen våknet med hodepine etter «bærsaften» fra {stall}.'], 0.04, 4),

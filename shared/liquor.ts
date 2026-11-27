@@ -12,5 +12,12 @@ export const LICENSE_BAN_DAYS = 2; // inndratt: så mange døgn før du kan kjø
 export const LIQUOR_FINE_FACTOR = 2; // bot = 2 × varens verdi (det kundene forventer å betale)
 export const LIQUOR_REP_HIT = 15; // omdømme ved salg uten bevilling
 export const LICENSE_REVOKE_REP_HIT = 5; // omdømme når bevillingen inndras
+/**
+ * Flere kunder vil ha alkohol enn varens grunnetterspørsel tilsier (julebord-stemning etter jobb). Veier opp for at
+ * den bare kan selges noen timer om dagen og krever bevilling. Prisene folk forventer, er også satt høyere.
+ */
+export const LIQUOR_DEMAND = 1.5;
 
 export const isAlcohol = (typeId: string) => PRODUCT_BY_ID[typeId]?.category === 'alkohol';
+/** Ekstra etterspørsel for varen (alkohol: LIQUOR_DEMAND, ellers 1). */
+export const liquorDemand = (typeId: string) => (isAlcohol(typeId) ? LIQUOR_DEMAND : 1);

@@ -34,6 +34,7 @@ import {
   restartAfterBankruptcy,
   deliverOrder,
   stashItems,
+  sortCounter,
   noteClock,
   setClock,
   devControl,
@@ -98,6 +99,7 @@ import {
   tick,
 } from './game.ts';
 import type { Place } from '../shared/types.ts';
+import { isCounterSort } from '../shared/countersort.ts';
 
 // I dev proxer Vite til 8787, uansett hva PORT er satt til.
 const PORT = process.argv.includes('--dev') ? 8787 : Number(process.env.PORT ?? 8787);
@@ -261,6 +263,10 @@ const routes: Record<string, Handler> = {
   'POST /api/bag/unfold': action((p, b) => unfoldBag(p, Number(b.itemId))),
   'POST /api/item/discard': action((p, b) => {
     discardItem(p, Number(b.itemId));
+  }),
+  'POST /api/counter/sort': action((p, b) => {
+    if (!isCounterSort(b.by)) throw new GameError('Ukjent sortering.');
+    return sortCounter(p, b.by);
   }),
   'POST /api/item/stash': action((p, b) => ({
     moved: stashItems(p, String(b.typeId ?? ''), b.to === 'storage' ? 'storage' : b.to === 'box' ? 'box' : 'counter', b.boxId == null ? null : Number(b.boxId), b.qty == null ? 9999 : Number(b.qty), b.tab == null ? null : Number(b.tab)),

@@ -120,6 +120,7 @@ import { DUMP_FINE, INSPECTOR, THIEF_REWARD, WRONG_TIP_FACTOR } from '../shared/
 import { RECIPES } from '../shared/recipes.ts';
 import { CATEGORIES, categoryLabel } from '../shared/categories.ts';
 import { LICENSE_BAN_DAYS, LICENSE_PRICE, LIQUOR_FROM_HOUR, isAlcohol } from '../shared/liquor.ts';
+import { COUNTER_SORTS } from '../shared/countersort.ts';
 import { ACCOUNTS, CREDIT_RATE, pctText, type AccountDef, type AccountKind } from '../shared/bank.ts';
 import { BROWSE_BASE, BROWSE_BOOK, BROWSE_XP_MAX, BROWSE_XP_STEP, SALES_BOOK, browseChance, browseSkill, browseXpBonus } from '../shared/leads.ts';
 import { DEALER, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_TIPS, isLuguber } from '../shared/dealer.ts';
@@ -242,8 +243,8 @@ function markPhoneSeen(s: GameState) {
 let paperPos: { x: number; y: number } | null = null; // px fra øvre venstre hjørne, huskes
 let paperDrag: { dx: number; dy: number; el: HTMLElement } | null = null;
 // Åpne eske-/pose-vinduer (og søppelkassa). Rekkefølgen er stablingen: sist = øverst.
-type PanelKey = number | 'trash' | 'mail';
-const panelKeyOf = (v: string | undefined): PanelKey => (v === 'trash' || v === 'mail' ? v : Number(v));
+type PanelKey = number | 'trash' | 'mail' | 'sort';
+const panelKeyOf = (v: string | undefined): PanelKey => (v === 'trash' || v === 'mail' || v === 'sort' ? v : Number(v));
 let openPanels: PanelKey[] = [];
 const panelPos = new Map<PanelKey, { x: number; y: number }>(); // venstre/topp i % av scenen, huskes
 const isOpen = (k: PanelKey) => openPanels.includes(k);
@@ -396,7 +397,7 @@ async function refresh() {
     clockBase = { game: state.clock.gameTime, real: Date.now(), speed: state.clock.speed };
     if (state.me.stallId === null && screen.kind === 'stall') screen = { kind: 'map' };
     const items = state.me.items;
-    openPanels = openPanels.filter((k) => k === 'trash' || k === 'mail' || items.some((i) => i.id === k));
+    openPanels = openPanels.filter((k) => k === 'trash' || k === 'mail' || k === 'sort' || items.some((i) => i.id === k));
   } catch (err) {
     if ((err as Error).message === 'Ikke innlogget.') {
       token = null;
@@ -1977,6 +1978,7 @@ function carryView(s: GameState): string {
 
 function boxPanel(s: GameState, key: PanelKey, n: number): string {
   if (key === 'mail') return mailPanel(s, n);
+  if (key === 'sort') return sortPanel(s, n);
   let title: string, grid: string, extra = '', cls = '', headBtn = '', tabBar = '', dividerBtn = '';
   let yoff = 0; // plastkasse med faner: første rad i fanen som vises
   let cols: number, rows: number;
@@ -2976,7 +2978,31 @@ function keyHookView(s: GameState): string {
   // Henger på venstre bordkant, under postkassa (Ny Layout: krok-bildet ved x 240, y 581 i boden).
   return `<div class="key-hook" style="left:15.64%;top:56.77%">
     <div class="key-slot ${hasKey ? 'has' : ''}" title="${hasKey ? 'Nøkkelen til hengelåsen. Den henger her så lenge boden er åpen.' : 'Boden er stengt og låst – nøkkelen har du med deg.'}"><img src="/art/${hasKey ? 'nokkel-krok' : 'nokkel-krok-tom'}.png" alt="${hasKey ? 'Nøkkel' : 'Låst'}"></div>
-</div>`;
+</div>
+  <button class="sort-knob ${isOpen('sort') ? 'open' : ''}" data-action="toggle-sort" style="left:${SORT_KNOB.x}%;top:${SORT_KNOB.y}%" title="Sorter varene på bordet" aria-label="Sorter varene på bordet">${
+    SORT_ART ? '<img src="/art/sorter-knapp.png" alt="" draggable="false">' : '<span>⇅</span>'
+  }</button>`;
+}
+
+/** Sorteringsknappen sitter på bordkanten til høyre for nøkkelen (Ny Layout). Bildet: GRAFIKK.md, «Sorteringsknappen». */
+const SORT_KNOB = { x: 20.2, y: 57.2 };
+const SORT_ART = true;
+
+/** Sorteringsvinduet: velg hvordan varene på bordet skal ligge. */
+function sortPanel(s: GameState, n: number): string {
+  const count = itemsIn(s.me.items, 'counter', null).length;
+  if (!panelPos.has('sort')) panelPos.set('sort', { x: 23, y: 22 });
+  const pos = panelPos.get('sort')!;
+  const rows = COUNTER_SORTS.map(
+    (o) => `<li><button class="sort-opt" data-action="counter-sort" data-by="${o.id}" ${count ? '' : 'disabled'}>
+      <span class="sort-emoji">${o.emoji}</span><span class="sort-text"><b>${esc(o.label)}</b><small>${esc(o.note)}</small></span></button></li>`,
+  ).join('');
+  return `
+  <div class="box-panel sort-panel" data-panel="sort" style="left:${pos.x}%;top:${pos.y}%;z-index:${20 + n}">
+    <div class="box-head" data-panel-head title="Dra for å flytte"><span>${SORT_ART ? '<img class="sort-head-icon" src="/art/sorter-knapp.png" alt="">' : '⇅'} Sorter bordet</span><button class="small ghost" data-action="close-box" data-panel-key="sort" aria-label="Lukk">✕</button></div>
+    <div class="pot-label">${count ? `${count} ting på bordet · fylles fra venstre, kolonne for kolonne` : 'Det står ingenting på bordet.'}</div>
+    <ul class="sort-list">${rows}</ul>
+  </div>`;
 }
 
 /** En rute i lageret ditt under disken (koordinater i hele rutenettet; panelet kan være forskjøvet). */
@@ -5612,7 +5638,7 @@ app.addEventListener('click', (e) => {
   if (action === 'pricelist') modal = { kind: 'pricelist', stallId: Number(el.dataset.stall) };
   if (action === 'own-front') {
     ownFront = !ownFront;
-    openPanels = openPanels.filter((k) => k !== 'trash' && k !== 'mail'); // vinduene bak disken lukkes
+    openPanels = openPanels.filter((k) => k !== 'trash' && k !== 'mail' && k !== 'sort'); // vinduene bak disken lukkes
   }
   if (action === 'drive' && el.dataset.stall) {
     // Kjør til en annen av dine boder.
@@ -5802,6 +5828,15 @@ app.addEventListener('click', (e) => {
     }
   }
   if (action === 'mail') togglePanel('mail');
+  if (action === 'toggle-sort') {
+    togglePanel('sort');
+    return render();
+  }
+  if (action === 'counter-sort' && el.dataset.by) {
+    const o = COUNTER_SORTS.find((x) => x.id === el.dataset.by);
+    void act('/api/counter/sort', { by: el.dataset.by }, `${o?.emoji ?? '⇅'} Bordet er sortert: ${(o?.label ?? '').toLowerCase()}.`);
+    return;
+  }
   if (action === 'paper-page' && paperWin) paperWin = { ...paperWin, page: Number(el.dataset.page) };
   if (action === 'close-paper') paperWin = null;
   if (action === 'copy-recipe') {

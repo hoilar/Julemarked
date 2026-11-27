@@ -253,9 +253,10 @@ import {
   type BillKind,
 } from '../shared/bills.ts';
 import { START_REPUTATION, buyShare, expectedPrice, lureBoost, priceAppeal, competitionShare, reputationCrowd } from '../shared/mood.ts';
+import { planCounterSort, type CounterSort } from '../shared/countersort.ts';
 import { COLLECTOR_MAX_RATIO, IMPULSE_CHANCE, IMPULSE_FROM, collectorAt, isSnack, pairBoost, showpieceBoost, snackBasket } from '../shared/basket.ts';
 import { DEALER, DEALER_BUYS, DEALER_HOUR, DEALER_PICKUP_HOUR, DEALER_SELL_MAX, LUGUBER_FINE_FACTOR, LUGUBER_REP_HIT, dealerOffer, eveningSale, EVENING_SHARE, isLuguber, nightCurve } from '../shared/dealer.ts';
-import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol } from '../shared/liquor.ts';
+import { LICENSE_BAN_DAYS, LICENSE_PRICE, LICENSE_REVOKE_REP_HIT, LIQUOR_FINE_FACTOR, LIQUOR_FROM_HOUR, LIQUOR_REP_HIT, isAlcohol, liquorDemand } from '../shared/liquor.ts';
 import { BURNT, cookPlan, knownRecipes } from '../shared/recipes.ts';
 import { findFree, fits, type GridSize } from '../shared/grid.ts';
 import { LANGTID, TERMOSTAT, TURBO, machineWaiting, moduleIn, moduleSpeed, workUnits } from '../shared/modules.ts';
@@ -1279,7 +1280,7 @@ function leadsFor(market: MarketRow, s: StallRow, t: number): Lead[] {
   const base = LAYOUT[s.slot_index].traffic * (HOUR_CURVE[parts.hour] ?? 1) * seasonFactor(seasonDay(parts)) * reputationCrowd(s.reputation);
   const out: Lead[] = [];
   for (const pid of onTable) {
-    const demand = PRODUCT_BY_ID[pid].baseDemand * base;
+    const demand = PRODUCT_BY_ID[pid].baseDemand * liquorDemand(pid) * base;
     for (const [kind, rate] of [['eager', EAGER_RATE], ['curious', CURIOUS_RATE]] as [LeadKind, number][]) {
       const n = hashPoisson(demand * rate, 'kunde', market.id, s.id, start, pid, kind);
       for (let j = 0; j < n; j++) {
@@ -2874,6 +2875,20 @@ export function stashItems(player: PlayerRow, typeId: string, to: StashTo, boxId
     if (moves.length === 0)
       throw new GameError(to === 'counter' ? 'Det er ikke plass på bordet.' : to === 'storage' ? 'Det er ikke plass under disken.' : 'Det er ikke plass i eska.');
     return moves.length;
+  });
+}
+
+/** Sorteringsknappen på disken: legger alt på bordet i ny rekkefølge (like varer sammen). */
+export function sortCounter(player: PlayerRow, by: CounterSort) {
+  const stall = myStall(player);
+  return tx(() => {
+    const items = itemsOf(stall.id);
+    if (!items.some((i) => i.place === 'counter')) throw new GameError('Det står ingenting på bordet.');
+    const prices = pricesOf(stall.id);
+    const moves = planCounterSort(items, streetOf(stall.id), by, (t) => (PRODUCT_BY_ID[t] ? priceOf(prices, t) : 0));
+    if (!moves) throw new GameError('Det ble ikke plass til alt i den rekkefølgen. Ta noe av bordet og prøv igjen.');
+    for (const { item, spot } of moves) q.moveItem.run(spot.place, spot.boxId, spot.x, spot.y, item.id);
+    return { moved: moves.length };
   });
 }
 
@@ -6586,7 +6601,7 @@ function sellSlice(market: MarketRow, slice: number) {
         const hourCurve = evening ? EVENING_SHARE : night ? nightCurve(parts.hour) : curve;
         const wx = weatherDemand(weather, p.category);
         const shy = p.divisive ? 1 : avoid; // fansen kommer uansett; de andre varene merker lukta
-        const lambdaHour = p.baseDemand * traffic * repFactor * priceFactor * hourCurve * season * competition * lured * paired * display * lit * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
+        const lambdaHour = p.baseDemand * liquorDemand(pid) * traffic * repFactor * priceFactor * hourCurve * season * competition * lured * paired * display * lit * rumour * modeFactor * wx * sound * shy * decorDemand(boost, p.category);
         // Småsnop: hver kunde tar en neve (1–3).
         const buyers = poisson(lambdaHour * share);
         let want = buyers;

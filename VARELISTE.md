@@ -104,12 +104,12 @@ Størrelse er i ruter (bredde×høyde). Bildestiene er under `client/public/art/
 
 | Vare | id | Str. | Innkjøp | Kundepris | Ettersp. | Produsent | Skaffes | Merknad | Bilde |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 🍸 Vodka | `vodka` | 2×3 | 180 kr | 399 kr | 0.3 | Nordlys Brenneri | Nettbutikkene |  | `goods/vodka.png` ↓ |
-| 🍷 Rødvin | `rodvin` | 2×3 | 90 kr | 229 kr | 0.45 | Vinkjelleren | Nettbutikkene |  | `goods/rodvin.png` ↓ |
-| 🍏 Eplecider | `eplecider` | 2×3 | 25 kr | 69 kr | 1 | Fjordsideriet | Nettbutikkene |  | `goods/eplecider.png` ↓ |
-| 🍯 Varm eplecider | `varm_cider` | 1×1 | 7 kr | 49 kr | 1.4 | Hjemmelaget | Lages: Kokeplate med kjele (Varm eplecider, 4 stk) | kan bare lages | `goods/varm-cider.png` ↓ |
-| 🍷 Kosegløgg | `koseglogg` | 2×2 | 24 kr | 69 kr | 1.6 | Hjemmelaget | Lages: Kokeplate med kjele (Kosegløgg, 6 stk) | kan bare lages | `goods/koseglogg.png` |
-| 🔥 Styrkegløgg | `styrkeglogg` | 2×2 | 40 kr | 89 kr | 1.3 | Hjemmelaget | Lages: Kokeplate med kjele (Styrkegløgg, 8 stk) | kan bare lages | `goods/styrkeglogg.png` |
+| 🍸 Vodka | `vodka` | 2×3 | 180 kr | 499 kr | 0.3 | Nordlys Brenneri | Nettbutikkene |  | `goods/vodka.png` ↓ |
+| 🍷 Rødvin | `rodvin` | 2×3 | 90 kr | 289 kr | 0.45 | Vinkjelleren | Nettbutikkene |  | `goods/rodvin.png` ↓ |
+| 🍏 Eplecider | `eplecider` | 2×3 | 25 kr | 89 kr | 1 | Fjordsideriet | Nettbutikkene |  | `goods/eplecider.png` ↓ |
+| 🍯 Varm eplecider | `varm_cider` | 1×1 | 7 kr | 65 kr | 1.4 | Hjemmelaget | Lages: Kokeplate med kjele (Varm eplecider, 4 stk) | kan bare lages | `goods/varm-cider.png` ↓ |
+| 🍷 Kosegløgg | `koseglogg` | 2×2 | 24 kr | 89 kr | 1.6 | Hjemmelaget | Lages: Kokeplate med kjele (Kosegløgg, 6 stk) | kan bare lages | `goods/koseglogg.png` |
+| 🔥 Styrkegløgg | `styrkeglogg` | 2×2 | 40 kr | 119 kr | 1.3 | Hjemmelaget | Lages: Kokeplate med kjele (Styrkegløgg, 8 stk) | kan bare lages | `goods/styrkeglogg.png` |
 
 ### 🕶️ Lugubert (7)
 
