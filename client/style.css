@@ -1442,6 +1442,16 @@ body:has(.world) #toast.show { transform: translate(-50%, 0); opacity: 1; }
 .maker-prog.on { background: #e8dc9a; color: #3b2a10; box-shadow: 0 0 0.5cqw rgba(255, 230, 140, 0.6); }
 .maker-bar { flex: 1; height: 0.8cqw; min-height: 6px; border-radius: 1cqw; background: rgba(0, 0, 0, 0.4); overflow: hidden; }
 .maker-bar span { display: block; height: 100%; background: linear-gradient(90deg, #e0b02c, #7fe0a0); transition: width 0.3s; }
+/* Framdriftslinja under maskinene (glir med klokka mens maskinen jobber) */
+.work-bar { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.35rem 0 0.1rem; }
+.work-bar .maker-bar { flex: none; width: 100%; }
+.work-bar .maker-bar.live span { transition: width 0.5s linear; }
+.work-bar small { font-size: max(10px, 0.75cqw); opacity: 0.85; }
+.box-panel .work-bar small, .box-panel .charge-row > span { color: #f5d9b0; }
+.item-card .work-bar .maker-bar, .item-modal .work-bar .maker-bar { background: rgba(0, 0, 0, 0.15); }
+.charge-bars { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.3rem; }
+.charge-row > span { font-size: max(10px, 0.75cqw); opacity: 0.85; }
+.charge-row .work-bar { margin: 0.05rem 0 0; }
 .gitem.running .sprite, .citem.running .sprite { filter: drop-shadow(0 0 0.5cqw rgba(255, 210, 120, 0.9)); }
 
 /* Batterier: batteriplass i maskinene, ladebar og ladestasjon */

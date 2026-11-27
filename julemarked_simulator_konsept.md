@@ -615,12 +615,13 @@ Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke 
 
 Ingen av disse er bestemt for desembertesten ennå. Tallene er forslag.
 
-**Framdriftslinje på alle maskiner (lagt inn 26.11.2026)**
+**Framdriftslinje på alle maskiner (lagt inn 26.11.2026, bygd 27.11.2026)**
 
 - I dag har bare maskinene med programmer (bakemaskin, strikkemaskin, dekormaskin) en framdriftslinje (`maker-bar` i `makerPanel`).
 - Mangler: **kjelen** (én time per porsjon), **posebretteren**, **laderen** (hvor langt batteriet har kommet, og når det er fullt) og **nøkkelmaskinen** (viser bare «Ferdig kl. …» som tekst).
 - Bruk samme linje overalt, gjerne med «ferdig kl. …» under.
 - Maskinenes framdrift telles i hele timer, så linja hopper én gang i timen. Den kan glide jevnt hvis den regnes ut fra klokka i stedet for timetelleren.
+- **Bygd:** `workBar` i `client/main.ts` regner linja ut fra spillklokka (oppdateres i `tickClock`). Kjelen og posebretteren viser «neste kl. …», maskinene med programmer «ferdig ca. kl. …», ladestasjonen én linje per batteri («fullt ca. kl. …») og nøkkelmaskinen «ferdig kl. …». Står maskinen stille, står linja stille. Turbo og strømsparing gjør tidene omtrentlige.
 
 **Salg i runder på 5 minutter (bygd 26.11.2026)**
 

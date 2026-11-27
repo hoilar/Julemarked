@@ -1,4 +1,4 @@
-import { formatClock, osloParts, phaseOf } from '../shared/clock.ts';
+import { HOUR, formatClock, osloParts, phaseOf } from '../shared/clock.ts';
 import { moduleEffectText, moduleFitsText, moduleIn } from '../shared/modules.ts';
 import { FATIGUE, fatigue, tapeIn } from '../shared/music.ts';
 import { findTrashSpot, gridOf, isTrashed, isTwoHanded, isUndelivered, itemsIn, placementError, boxTabs, planBoxToBox, planStash, tabContents, stashBoxes, stashSources, STALL_AREA, type Spot, type StashTo, type Street } from '../shared/items.ts';
@@ -83,7 +83,7 @@ import type { BillView, GameState, LottoDrawView, Item, MarketSlot, Paper, ShopV
 import { LOOK_CHOICES, type Look, type LookKey } from '../shared/look.ts';
 import { BALACLAVA_CROWD, BALACLAVA_RISK } from '../shared/balaclava.ts';
 import { DECOR_THEFT_CATCH, DECOR_THEFT_CATCH_ALARM, DECOR_THEFT_FINE } from '../shared/crime.ts';
-import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS, disguisesFor, leaveRisk } from '../shared/snoop.ts';
+import { BLANK_KEY, COPY_KEY, IMPRINT, KEY_COPY_HOURS, KEY_MACHINE, POLICE, SOAP, TRACE_HOURS, disguisesFor, leaveRisk } from '../shared/snoop.ts';
 import {
   avatarFor,
   customerInfo,
@@ -431,6 +431,7 @@ function tickClock() {
   const parts = osloParts(game);
   const hhmm = formatClock(parts).replace(/^.* kl\. /, '');
   for (const el of document.querySelectorAll('#phone-clock, .phone-clock-small, .clock-digits:not(.blink)')) el.textContent = hhmm;
+  for (const el of document.querySelectorAll<HTMLElement>('[data-bar-from]')) el.style.width = `${barPct(Number(el.dataset.barFrom), Number(el.dataset.barTo), game)}%`;
   document.body.classList.toggle('night', phaseOf(parts.hour) === 'night');
   document.body.dataset.daypart = daypart(parts.hour);
   // Været (fra dagens avis) velger torgbildet: snø, sludd, storm eller vanlig.
@@ -1745,6 +1746,30 @@ function dumpButton(s: GameState): string {
 
 const hhmm = (t: number) => formatClock(osloParts(t)).replace(/^.* kl\. /, '');
 
+// ---------- Framdriftslinjer på maskinene ----------
+
+/** Spilltida akkurat nå. */
+const gameTime = () => clockBase.game + (Date.now() - clockBase.real) * clockBase.speed;
+/** Starten på spilltimen vi er i (maskinene jobber i hele timer, på timeslaget). */
+const hourStart = (t = gameTime()) => Math.floor(t / HOUR) * HOUR;
+const barPct = (from: number, to: number, t: number) => Math.round(Math.max(0, Math.min(1, (t - from) / Math.max(1, to - from))) * 1000) / 10;
+
+/**
+ * Framdriftslinja under en maskin. Med `live` glir linja med klokka fra `from` til `to` (spilltid), ellers står den
+ * på `pct`. `note` står under (f.eks. «Ferdig ca. kl. 14:00»).
+ */
+function workBar(live: { from: number; to: number } | null, pct: number, note = ''): string {
+  const width = live ? barPct(live.from, live.to, gameTime()) : Math.max(0, Math.min(100, pct));
+  const data = live ? ` data-bar-from="${live.from}" data-bar-to="${live.to}"` : '';
+  return `<div class="work-bar"><div class="maker-bar ${live ? 'live' : ''}"><span${data} style="width:${width}%"></span></div>${note ? `<small>${esc(note)}</small>` : ''}</div>`;
+}
+/** Linja for én omgang som tar én time (kjelen, posebretteren): fra timeslaget til neste. */
+function hourBar(running: boolean, what: string): string {
+  if (!running) return workBar(null, 0);
+  const from = hourStart();
+  return workBar({ from, to: from + HOUR }, 0, `${what} kl. ${hhmm(from + HOUR)}`);
+}
+
 /** Bilen bakfra: med åpent bagasjerom når vinduet for bagasjerommet er åpent. */
 function carSprite(t: (typeof ITEM_TYPES)[string], open: boolean): string {
   const img = t.kind === 'container' && open && t.imageOpen ? t.imageOpen : t.image;
@@ -2148,6 +2173,7 @@ function kettlePanel(s: GameState, k: Item, n: number): string {
         .map((l) => `<button class="pot-level ${st.level === l ? 'on' : ''}" data-action="kettle-level" data-kettle="${k.id}" data-level="${l}" aria-pressed="${st.level === l}">${l}</button>`)
         .join('')}
     </div>
+    ${hourBar(st.on && hot && !feedProblem(k, stall) && itemsIn(s.me.items, 'pot_in', k.id).length > 0, 'Neste porsjon')}
     <div class="pot-status">${plugIcon(k, stall)}<span>${status}</span></div>
   </div>`;
 }
@@ -2251,10 +2277,25 @@ function chargerPanel(s: GameState, c: Item, n: number): string {
         ? '✅ Alle batteriene er fulle'
         : 'Legg batterier her for å lade dem';
   const { cols, rows } = CHARGER.input;
+  const rate = CHARGE_KW * CHARGE_EFFICIENCY; // kWh per time
+  const bars = itemsIn(items, 'pot_in', c.id)
+    .filter((b) => capacityOf(b.typeId) > 0)
+    .map((b) => {
+      const cap = capacityOf(b.typeId);
+      const have = b.charge ?? 0;
+      const full = have >= cap - 0.001;
+      const name = ITEM_TYPES[b.typeId]?.name ?? 'Batteri';
+      if (full || !fed) return `<div class="charge-row"><span>${esc(name)}</span>${workBar(null, (have / cap) * 100, full ? 'Fullt' : `${batteryPct(b)} %`)}</div>`;
+      const from = hourStart() - (have / rate) * HOUR;
+      const fullAt = hourStart() + Math.ceil((cap - have) / rate - 1e-9) * HOUR;
+      return `<div class="charge-row"><span>${esc(name)}</span>${workBar({ from, to: from + (cap / rate) * HOUR }, 0, `Fullt ca. kl. ${hhmm(fullAt)}`)}</div>`;
+    })
+    .join('');
   return smallPanel(c.id, n, 'charger-panel', `${icon(CHARGER)} ${esc(entryName(itemSocket(CHARGER.id, c.id), items).name)}`, `
     <div class="grid box-grid charger-grid" data-grid="pot_in" data-box="${c.id}" style="width:${cols * 3.75}cqw;height:${rows * 3.75}cqw;--cols:${cols};--rows:${rows}">
       ${itemsIn(items, 'pot_in', c.id).map((i) => gridItemView(i, cols, rows)).join('')}
     </div>
+    ${bars ? `<div class="charge-bars">${bars}</div>` : ''}
     <div class="pot-status">${plugIcon(c, stall)}<span>${status}</span></div>`, 14, 26);
 }
 
@@ -2449,7 +2490,12 @@ function makerPanel(s: GameState, m: Item, n: number): string {
       ? 'Av'
       : (feedProblem(m, stall) ??
         (!ready ? '⏳ Tom' : `${def.emoji} ${def.verb} · ${kwStr(machineKw(m, s.me.items))} kW · ${st.progress}/${prog.hours} t`));
-  const pct = Math.round((Math.min(st.progress, prog.hours) / prog.hours) * 100);
+  const done = Math.min(st.progress, prog.hours);
+  const working = knowsCurrent && st.on && hot && ready && !feedProblem(m, stall) && done < prog.hours;
+  const from = hourStart() - done * HOUR;
+  const bar = working
+    ? workBar({ from, to: from + prog.hours * HOUR }, 0, `Ferdig ca. kl. ${hhmm(from + prog.hours * HOUR)}`)
+    : workBar(null, (done / prog.hours) * 100, done > 0 && done < prog.hours ? `${done} av ${prog.hours} t · står stille` : '');
   if (!panelPos.has(m.id)) {
     const w = (def.input.cols + def.output.cols) * BOX_CELL + 6;
     const h = (def.input.rows * BOX_CELL + 21) * 1.5;
@@ -2469,8 +2515,8 @@ function makerPanel(s: GameState, m: Item, n: number): string {
     <div class="slot-row">${cellView(s, m)}${moduleView(s, m)}</div>
     <div class="pot-controls">
       <button class="pot-power ${st.on ? 'on' : ''}" data-action="maker-power" data-maker="${m.id}" aria-pressed="${st.on}" title="${st.on ? 'Slå av' : 'Slå på'}">⏻</button>
-      <div class="maker-bar"><span style="width:${pct}%"></span></div>
     </div>
+    ${bar}
     <div class="pot-status">${plugIcon(m, stall)}<span>${status}</span></div>
   </div>`;
 }
@@ -2515,6 +2561,7 @@ function folderPanel(s: GameState, m: Item, n: number): string {
     <div class="pot-controls">
       <button class="fold-run ${on ? 'on' : ''}" data-action="folder-power" data-folder="${m.id}" aria-pressed="${on}">${on ? 'Stopp' : shred ? 'Makuler' : 'Brett sammen'}</button>
     </div>
+    ${hourBar(on && hot && !feedProblem(m, stall) && !inputEmpty, shred ? 'Makulerer neste gang' : 'Neste pose ferdig')}
     <div class="pot-status">${plugIcon(m, stall)}<span>${status}</span></div>
   </div>`;
 }
@@ -4583,7 +4630,8 @@ function itemView(s: GameState, it: Item): string {
       <p class="muted">Når boden er stengt, kan du låse deg inn og snoke bak disken. Eieren vet ingenting – med mindre noen finner sporet.</p>`);
   if (it.typeId === KEY_MACHINE && it.keyJob)
     return itemCard(t, `<h2>${esc(t.name)}</h2><p>🛠️ Filer en kopinøkkel til «${esc(it.keyJob.stallName)}».</p>
-      <p class="muted">Ferdig kl. ${hhmm(it.keyJob.until)}. Kopinøkkelen legges under disken.</p>`);
+      ${workBar({ from: it.keyJob.until - KEY_COPY_HOURS * HOUR, to: it.keyJob.until }, 0, `Ferdig kl. ${hhmm(it.keyJob.until)}`)}
+      <p class="muted">Kopinøkkelen legges under disken når den er ferdig.</p>`);
   if (it.typeId === KEY_MACHINE) {
     const imprints = s.me.items.filter((i) => i.typeId === IMPRINT && i.key && !isTrashed(s.me.items, i));
     const list = imprints.length
