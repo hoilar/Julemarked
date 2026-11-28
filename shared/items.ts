@@ -386,9 +386,12 @@ export function stashSources(items: Item[], typeId: string, to: StashTo, boxId: 
   const counter = mine.filter((i) => i.place === 'counter');
   const loose = mine.filter((i) => i.place === 'storage');
   const boxed = mine.filter((i) => i.place === 'box' && underCounter(items, i));
-  if (to === 'counter') return [...loose, ...boxed];
-  if (to === 'storage') return [...counter, ...boxed];
-  return [...loose, ...counter, ...boxed.filter((i) => i.boxId !== boxId)];
+  // Ferdige varer i maskinene under disken (kjelen, bakemaskinen …) og det som står ved boden: tas først,
+  // så maskinene får plass til neste omgang.
+  const ready = mine.filter((i) => i.place === 'ground' || (i.place === 'pot_out' && items.find((m) => m.id === i.boxId)?.place === 'storage'));
+  if (to === 'counter') return [...ready, ...loose, ...boxed];
+  if (to === 'storage') return [...ready, ...counter, ...boxed];
+  return [...ready, ...loose, ...counter, ...boxed.filter((i) => i.boxId !== boxId)];
 }
 
 /** Neste ledige plass for én gjenstand: på bordet (kolonnevis), løst under disken, eller i eska (ev. én fane). */

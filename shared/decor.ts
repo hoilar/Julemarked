@@ -4,7 +4,7 @@
 // Virkning: hver pynt gir én eller to multiplikatorer (flere kunder, mer salg eller høyere forventet pris i en
 // kategori, noen bare når det er mørkt eller kaldt). Samme pynt to ganger teller én gang, og vanlig pynt har et tak
 // (DECOR_CAP). Historiepynt (story) kjøpes ikke: den får du av en figur når historien er fullført (shared/stories.ts),
-// er sterkere og kommer i tillegg til taket.
+// er sterkere og kommer i tillegg til taket. Den kan selges til kundene (høy pris), og da kan historien spilles på nytt.
 // Grafikk: client/public/art/bodfront/ (GFX_assets/planlagte/bodfront/LEVERANSE.md). Koordinater i bodpiksler
 // (bodfronten er 1536×1024, som bod/<gate>-front.png).
 

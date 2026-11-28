@@ -15,6 +15,7 @@ import { LOTTO_CHARITY, LOTTO_PRICE, LOTTO_SECOND } from './lottery.ts';
 import { EXTRA_BACKSTREET_PRICE } from './marketmap.ts';
 import { START_REPUTATION } from './mood.ts';
 import { ORDER_REP_DONE, ORDER_REP_FAILED } from './orders.ts';
+import { STORY_DECOR_PRICE } from './products.ts';
 import { BIPPS_DAILY, SELF_CROWD } from './sign.ts';
 import { EXPRESS_MINUTES, FREE_EXPRESS_HOURS, RARE_FROM, RARE_TO, SHIPPING } from './shop.ts';
 import { POLICE } from './snoop.ts';
@@ -110,6 +111,7 @@ export const HANDBOOK: HandbookPage[] = [
       '- Stamkundene har historier i flere steg. Du kommer videre ved å selge dem det de trenger, eller levere en bestilling.',
       '- Går et steg galt, tar historien en pause i et par dager. Du mister ingenting.',
       '- En fullført historie gir **historiepynt** (sterkere enn vanlig pynt) og noen ganger en **hemmelig oppskrift**.',
+      `- Historiepynt kan selges fra bordet som annen pynt, og kundene betaler godt for den (rundt ${STORY_DECOR_PRICE} kr). Selger du den, kan du spille historien på nytt for å få den tilbake.`,
       '- Hemmelige oppskrifter virker bare så lenge lappen ligger i boden din.',
       'Se Historier-appen for hvor langt du har kommet.',
     ],

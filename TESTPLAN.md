@@ -40,17 +40,17 @@
 ## Ikke bygd fra den opprinnelige planen
 
 - **Nattavtale:** et hemmelig B2B-tilbud som gjøres opp kl. 08. Ikke bygd.
-- **Tilbud og meldinger mellom spillere:** Ikke bygd. Meldinger-appen snakker bare med Fyren. Se Chat og Fant under.
+- **Tilbud og meldinger mellom spillere:** Ikke bygd. Meldinger-appen snakker bare med Fyren. Se Chat og Fantdet under.
 - **Årsrapport på julaften:** Vinnersiden med pallen dekker det viktigste. En fullstendig rapport er ikke bygd.
 
 ## Idéer som venter (lagt inn 26.11.2026)
 
 Detaljene står i `julemarked_simulator_konsept.md`, avsnitt 12.9. Ingenting er bestemt for desembertesten ennå.
 
-1. **Plassere pynt selv:** åpne pakken, velge plass på fronten, eller legge pynten på disken, under disken eller i en eske. All pynt kan selges, også historiepynt.
-2. **Fant-appen:** handel mellom spillerne med råvarer, kuponger, maskiner og annet. Bygger på Fantdet.no i 12.7.
+1. **Plassere pynt selv:** åpne pakken, velge plass på fronten, eller legge pynten på disken, under disken eller i en eske. All pynt kan selges, også historiepynt (egen høy pris, og historien kan spilles på nytt når pynten er solgt).
+2. **Fantdet-appen:** handel mellom spillerne med råvarer, kuponger, maskiner og annet. Fant-appen og Fantdet.no i 12.7 er slått sammen til én app.
 3. **MF-appen (markedsføring):** DM-stikk i postkassene og SOME-annonse.
-4. **Chat-appen:** spillerne kan chatte med hverandre.
+4. **Chat-appen:** spillerne kan chatte med hverandre, både én til én og i en felles kanal for markedet.
 5. ✅ **Julelotteri:** bygd 26.11.2026 (Lotteri-appen og avissiden; se 12.2). Grafikken er bestilt.
 6. **Brekkjern fra Fyren:** innbrudd i en stengt bod om natta. Det er en sjanse for at alarmen går, og finlandshetta senker den noe.
 7. **Leie av lager:** ekstra lagerplass mot en forholdsvis dyr dagsleie.

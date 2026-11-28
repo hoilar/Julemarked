@@ -1,4 +1,4 @@
-import { DECOR, DECOR_FOR_SALE, decorOfPack, decorPackOf } from './decor.ts';
+import { DECOR, decorOfPack, decorPackOf } from './decor.ts';
 import { BALACLAVA_ICON, BALACLAVA_ID } from './balaclava.ts';
 import type { Category } from './categories.ts';
 import type { GridSize } from './grid.ts';
@@ -1250,17 +1250,20 @@ export const LIGHT_BOOST = 1.3;
 /**
  * Pynt fra Dekoringen kan også selges: legg pakken på bordet, så kan kundene kjøpe den (kategori dekor).
  * Bare når du står bak disken, ikke selvbetjent (se isDecorGood). Kundene forventer litt over Dekoringens pris,
- * og dyr pynt selges sjeldnere. Historiepynt selges ikke. Gjenstanden er fortsatt pakken (ITEM_TYPES: tool),
- * så den kan henges opp; denne varen finnes bare i PRODUCT_BY_ID, ikke i PRODUCTS (ikke i nettbutikkene).
+ * og dyr pynt selges sjeldnere. Historiepynt kan også selges, med en egen høy pris (STORY_DECOR_PRICE); da kan
+ * historien spilles på nytt for å få den tilbake. Gjenstanden er fortsatt pakken (ITEM_TYPES: tool), så den kan
+ * henges opp; denne varen finnes bare i PRODUCT_BY_ID, ikke i PRODUCTS (ikke i nettbutikkene).
  */
-export const DECOR_GOODS: Product[] = DECOR_FOR_SALE.map((d) => ({
+export const STORY_DECOR_PRICE = 1200; // kr kundene forventer å betale for historiepynt (unik, kan ikke kjøpes)
+export const STORY_DECOR_DEMAND = 0.15;
+export const DECOR_GOODS: Product[] = DECOR.map((d) => ({
   kind: 'product',
   id: decorPackOf(d.id),
   name: d.name,
   emoji: d.emoji,
   wholesale: d.price,
-  basePrice: Math.round(d.price * 1.6),
-  baseDemand: Math.max(0.12, Math.min(0.6, 30 / d.price)),
+  basePrice: d.story ? STORY_DECOR_PRICE : Math.round(d.price * 1.6),
+  baseDemand: d.story ? STORY_DECOR_DEMAND : Math.max(0.12, Math.min(0.6, 30 / d.price)),
   image: d.packFile || d.file ? `/art/bodfront/${d.packFile ?? d.file}` : undefined,
   size: d.pack,
   sprite: 1,
@@ -1269,7 +1272,7 @@ export const DECOR_GOODS: Product[] = DECOR_FOR_SALE.map((d) => ({
 }));
 
 /** Er varen pynt fra Dekoringen (selges bare når du står bak disken)? */
-export const isDecorGood = (id: string) => !!decorOfPack(id) && !decorOfPack(id)?.story;
+export const isDecorGood = (id: string) => !!decorOfPack(id);
 
 export const PRODUCT_BY_ID: Record<string, Product> = Object.fromEntries([...PRODUCTS, ...DECOR_GOODS].map((p) => [p.id, p]));
 /** Pynt fra Dekoringen kommer innpakket (pynt_<id>) i pappkartongen. Trykk på en, så henges den opp på bodfronten. */

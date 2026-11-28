@@ -542,7 +542,7 @@ Forskuddet kommer i kassa når du sier ja, og resten ved henting. Er varen ikke 
 - Gir et gulv for inntekten mens man er borte. Egne varer og handel på Fantdet skal gi klart bedre fortjeneste.
 - Forslag: provisjonen må være liten og ha et tak (ellers blir «velg sortiment og logg av» beste strategi). Lemu-varer kan gi litt lavere omdømme («masseprodusert juleskrot») og konkurrere med egne varer i samme kategori.
 
-**Fantdet.no – markedsplassen mellom spillerne** (parodi på en kjent annonseside), en nettside som åpnes fra spilltelefonen:
+**Fantdet.no – markedsplassen mellom spillerne** (parodi på en kjent annonseside), en nettside som åpnes fra spilltelefonen. Samme som Fant-appen i 12.9 (slått sammen 28.11.2026):
 
 - Spillerne handler med hverandre: varer, råvarer, utstyr og restpartier.
 - Gir rom for spesialisering: noen produserer, andre kjøper inn og driver bod.
@@ -640,17 +640,18 @@ Ingen av disse er bestemt for desembertesten ennå. Tallene er forslag.
 
 **Plassere pynten selv**
 
-- I dag henges pynten opp på første ledige plass av riktig slag når man trykker på pakken. Er plassene fulle, tas den eldste ned.
+- I dag henges pynten opp på første ledige plass av riktig slag når man trykker på pakken. Er plassene fulle, tas den eldste ned. Siden 27.11.2026 kan pynten også legges på disken eller under disken fra varekortet.
 - Ønsket: man åpner pakken og velger selv hvor på fronten pynten skal stå. Man kan også legge den **på disken**, **under disken** eller **i en eske**.
 - **All pynt skal kunne selges**, også historiepynt. I dag kan bare vanlig pynt selges, og bare innpakket på disken.
-- Avklar:
-  - Skal historiepynt ha en egen, høy forventet pris?
-  - Kan historien spilles på nytt når historiepynten er solgt, slik den kan når pynten kastes i dag?
+- **Bestemt 28.11.2026:**
+  - Historiepynt får en egen, høy forventet pris.
+  - Historien kan spilles på nytt når historiepynten er solgt, slik den kan når pynten kastes i dag.
 
-**Fant-appen (handel mellom spillerne)**
+**Fantdet-appen (handel mellom spillerne)**
 
-- En app på telefonen åpner et eget vindu der spillerne kan handle med hverandre: råvarer, kuponger, maskiner, utstyr og annet.
-- Reglene for Fantdet.no i 12.7 er utgangspunktet:
+- **Bestemt 28.11.2026:** Fant-appen og Fantdet.no (12.7) er det samme. Det blir én app på telefonen, Fantdet, med reglene i 12.7.
+- Appen åpner et eget vindu der spillerne kan handle med hverandre: råvarer, kuponger, maskiner, utstyr og annet.
+- Reglene fra 12.7:
   - Gebyr per rute.
   - Låst vare mens annonsen ligger ute.
   - Handelen skjer samtidig.
@@ -674,7 +675,7 @@ Appen har to varianter:
 
 **Chat-appen**
 
-- Spillerne kan chatte med hverandre fra telefonen, én til én, og kanskje også i en felles markedskanal.
+- Spillerne kan chatte med hverandre fra telefonen. **Bestemt 28.11.2026:** både én til én og en felles kanal for hele markedet.
 - Den erstatter «tilbud og meldinger mellom boder» fra den opprinnelige testplanen.
 - Se designutfordring 10 (chat og moderering): admin må kunne se og slette meldinger. (Ikke i første omgang)
 

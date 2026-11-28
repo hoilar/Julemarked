@@ -4938,7 +4938,11 @@ function modalView(s: GameState): string {
       ${priceForms}
       ${
         isDecorGood(p.id)
-          ? `<p class="muted">🎄 Pynt fra ${esc(DEKORINGEN.name)}. Selges fra bordet bare når du står bak disken, ikke når skiltet står på selvbetjent.</p>
+          ? `<p class="muted">${
+              decorOfPack(p.id)?.story
+                ? '📖 Historiepynt. Kundene betaler godt for den, men selger du den, er virkningen borte til du har spilt historien på nytt.'
+                : `🎄 Pynt fra ${esc(DEKORINGEN.name)}.`
+            } Selges fra bordet bare når du står bak disken, ikke når skiltet står på selvbetjent.</p>
              ${stashMenu(s, p.id, true)}
              ${modal.itemId !== undefined ? `<button data-action="decor-hang" data-item="${modal.itemId}">🎄 Heng den opp på boden i stedet</button>` : ''}`
           : stashMenu(s, p.id, true)
