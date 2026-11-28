@@ -6171,17 +6171,7 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fant ${n} merket «Hjemmelaget» som er kjøpt i butikk. Bot ${fine} kr og omdømme −${hit}.`);
     event(market, null, t, `📋 ${INSPECTOR.office} avslørte falske «hjemmelaget»-etiketter hos «${s.name}».`);
   }
-  if (liquorIllegal) {
-    // Beslag, bot på 2 × det kundene forventer å betale, avisoppslag og mindre omdømme.
-    const value = liquor.reduce((n, i) => n + expectedPrice(PRODUCT_BY_ID[i.typeId].basePrice, fresh.reputation, isHomemade(i.label)), 0);
-    const fine = Math.round(value * LIQUOR_FINE_FACTOR);
-    for (const i of liquor) q.deleteItem.run(i.id);
-    rep = Math.max(0, rep - LIQUOR_REP_HIT);
-    issueBill(market, fresh, t, 'bot', currentEdition(t).key, fine);
-    const n = `${liquor.length} ${liquor.length === 1 ? 'alkoholvare' : 'alkoholvarer'}`;
-    event(market, s.owner_id, t, `📋 ${INSPECTOR.name} fant ${n} på bordet uten skjenkebevilling. Alt ble beslaglagt. Bot ${fine} kr og omdømme −${LIQUOR_REP_HIT}.`);
-    event(market, null, t, `📋 ${INSPECTOR.office} beslagla alkohol hos «${s.name}», som solgte uten skjenkebevilling.`);
-  }
+  if (liquorIllegal) rep = liquorBust(market, t, fresh, liquor, rep, '');
   if (shadyFound.length > 0) {
     const value = shadyFound.reduce((n, i) => n + expectedPrice(PRODUCT_BY_ID[i.typeId].basePrice, fresh.reputation, isHomemade(i.label)), 0);
     const fine = Math.round(value * LUGUBER_FINE_FACTOR);
@@ -6191,19 +6181,7 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
     event(market, s.owner_id, t, `📋 ${INSPECTOR.name} rotet under disken og fant ${shadyFound.length} luguberte ${shadyFound.length === 1 ? 'vare' : 'varer'}. Alt ble beslaglagt. Bot ${fine} kr og omdømme −${LUGUBER_REP_HIT}.`);
     event(market, null, t, `📋 ${INSPECTOR.office} beslagla luguberte varer hos «${s.name}».`);
   }
-  if (liquorEarly) {
-    const until = t + LICENSE_BAN_DAYS * 24 * HOUR;
-    db.prepare('UPDATE stalls SET liquor_ban = ? WHERE id = ?').run(until, s.id);
-    for (const i of itemsOf(s.id).filter((i) => i.typeId === LICENSE_DOC)) q.deleteItem.run(i.id); // han tar med seg dokumentet
-    rep = Math.max(0, rep - LICENSE_REVOKE_REP_HIT);
-    event(
-      market,
-      s.owner_id,
-      t,
-      `📋 ${INSPECTOR.name} så alkohol til salgs før kl. ${LIQUOR_FROM_HOUR}. Skjenkebevillingen er inndratt – du kan søke om ny om ${LICENSE_BAN_DAYS} dager. Omdømme −${LICENSE_REVOKE_REP_HIT}.`,
-    );
-    event(market, null, t, `📋 Kommunen har inndratt skjenkebevillingen til «${s.name}» etter salg før kl. ${LIQUOR_FROM_HOUR}.`);
-  }
+  if (liquorEarly) rep = liquorRevoke(market, t, fresh, liquor, rep, '');
   if (bypassCaught && bypassBox) {
     // Boksen beslaglegges (strømmen går nå rett på hovedsikringen), og den umålte strømmen kommer på boten.
     const kwh = Math.round(fresh.bypass_kwh);
@@ -6224,6 +6202,70 @@ function inspect(market: MarketRow, t: number, s: StallRow, hour: number) {
     event(market, null, t, `📋 ${INSPECTOR.office} tok «${s.name}» i å skru tilbake strømmåleren.`);
   }
   q.setReputation.run(rep, s.id);
+}
+
+/**
+ * Alkohol på bordet uten skjenkebevilling: beslag, bot på 2 × det kundene forventer å betale, avisoppslag og
+ * mindre omdømme. `tip` er tekst foran meldingene når det var et tips som sendte tilsynsmannen. Gir nytt omdømme.
+ */
+function liquorBust(market: MarketRow, t: number, s: StallRow, liquor: Item[], rep: number, tip: string): number {
+  const value = liquor.reduce((n, i) => n + expectedPrice(PRODUCT_BY_ID[i.typeId].basePrice, s.reputation, isHomemade(i.label)), 0);
+  const fine = Math.round(value * LIQUOR_FINE_FACTOR);
+  for (const i of liquor) q.deleteItem.run(i.id);
+  issueBill(market, s, t, 'bot', currentEdition(t).key, fine);
+  const n = `${liquor.length} ${liquor.length === 1 ? 'alkoholvare' : 'alkoholvarer'}`;
+  event(market, s.owner_id, t, `📋 ${tip}${INSPECTOR.name} fant ${n} på bordet uten skjenkebevilling. Alt ble beslaglagt. Bot ${fine} kr og omdømme −${LIQUOR_REP_HIT}.`);
+  event(market, null, t, `📋 ${INSPECTOR.office} beslagla alkohol hos «${s.name}», som solgte uten skjenkebevilling${tip ? ' (etter et tips)' : ''}.`);
+  return Math.max(0, rep - LIQUOR_REP_HIT);
+}
+
+/** Alkohol til salgs før kl. 15 med bevilling: alkoholen beslaglegges, og bevillingen inndras i LICENSE_BAN_DAYS dager. Gir nytt omdømme. */
+function liquorRevoke(market: MarketRow, t: number, s: StallRow, liquor: Item[], rep: number, tip: string): number {
+  for (const i of liquor) q.deleteItem.run(i.id);
+  const until = t + LICENSE_BAN_DAYS * 24 * HOUR;
+  db.prepare('UPDATE stalls SET liquor_ban = ? WHERE id = ?').run(until, s.id);
+  for (const i of itemsOf(s.id).filter((i) => i.typeId === LICENSE_DOC)) q.deleteItem.run(i.id); // han tar med seg dokumentet
+  event(
+    market,
+    s.owner_id,
+    t,
+    `📋 ${tip}${INSPECTOR.name} så alkohol til salgs før kl. ${LIQUOR_FROM_HOUR}. ${liquor.length} ${liquor.length === 1 ? 'alkoholvare' : 'alkoholvarer'} ble beslaglagt, og skjenkebevillingen er inndratt – du kan søke om ny om ${LICENSE_BAN_DAYS} dager. Omdømme −${LICENSE_REVOKE_REP_HIT}.`,
+  );
+  event(market, null, t, `📋 Kommunen har inndratt skjenkebevillingen til «${s.name}» etter salg før kl. ${LIQUOR_FROM_HOUR}${tip ? ' (etter et tips)' : ''}.`);
+  return Math.max(0, rep - LICENSE_REVOKE_REP_HIT);
+}
+
+/**
+ * Tyster til kommunen på en bod som har alkohol på bordet før kl. 15. Tilsynsmannen kommer med en gang og sjekker
+ * bordet: uten bevilling beslag og bot, med bevilling inndras den. Tipset er anonymt, og stemmer det, får du dusør
+ * etter gata. Én gang per bod per dag, så det ikke kan brukes til å plage noen.
+ */
+export function reportLiquor(player: PlayerRow, stallId: number): { caught: boolean; reward: number } {
+  const market = marketOf(player);
+  const mine = myStall(player);
+  const t = nowFor(market);
+  if (stallId === mine.id) throw new GameError('Du kan ikke tyste på deg selv.');
+  if (osloParts(t).hour >= LIQUOR_FROM_HOUR) throw new GameError(`Det er lov å selge alkohol etter kl. ${LIQUOR_FROM_HOUR}.`);
+  return tx(() => {
+    const other = one<StallRow>(q.stallById, stallId);
+    if (!other || other.market_id !== market.id) throw new GameError('Fant ikke boden.');
+    const lead = `tyst-alkohol:${other.id}:${currentEdition(t).key}`;
+    if (one(db.prepare('SELECT 1 FROM leads_used WHERE stall_id = ? AND lead = ?'), mine.id, lead)) throw new GameError(`Du har allerede tipset kommunen om «${other.name}» i dag.`);
+    db.prepare('INSERT INTO leads_used (stall_id, lead) VALUES (?, ?)').run(mine.id, lead);
+    const items = itemsOf(other.id);
+    const liquor = items.filter((i) => i.place === 'counter' && isAlcohol(i.typeId));
+    if (liquor.length === 0) {
+      event(market, player.id, t, `📞 Du tipset kommunen om «${other.name}», men ${INSPECTOR.name} fant ingen alkohol på bordet.`);
+      return { caught: false, reward: 0 };
+    }
+    const tip = 'Kommunen fikk et anonymt tips. ';
+    const rep = hasLicense(items) ? liquorRevoke(market, t, other, liquor, other.reputation, tip) : liquorBust(market, t, other, liquor, other.reputation, tip);
+    q.setReputation.run(rep, other.id);
+    const reward = FINDER_REWARD[LAYOUT[other.slot_index].street];
+    q.addCash.run(reward, mine.id);
+    event(market, player.id, t, `📞 Du tipset kommunen om alkohol hos «${other.name}» før kl. ${LIQUOR_FROM_HOUR}. ${INSPECTOR.name} rykket ut. Dusør ${reward} kr!`);
+    return { caught: true, reward };
+  });
 }
 
 // ---------- Strømbrudd ----------

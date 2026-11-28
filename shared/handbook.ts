@@ -268,9 +268,10 @@ export const HANDBOOK: HandbookPage[] = [
       `- Søk og betal i Kommunen-appen (${LICENSE_PRICE} kr, én gang). Bevillingen kommer i postkassa kl. 07.`,
       `- Alkohol er bare lov å selge etter kl. ${LIQUOR_FROM_HOUR}.`,
       `- Til gjengjeld er det mange som vil ha det: rundt ${Math.round((LIQUOR_DEMAND - 1) * 100)} % flere kunder enn ellers for slike varer, og de er villige til å betale godt.`,
-      `- Står det alkohol på bordet før kl. ${LIQUOR_FROM_HOUR}, inndrar ${INSPECTOR.name} bevillingen i ${LICENSE_BAN_DAYS} dager.`,
+      `- Står det alkohol på bordet før kl. ${LIQUOR_FROM_HOUR}, beslaglegger ${INSPECTOR.name} alkoholen på bordet og inndrar bevillingen i ${LICENSE_BAN_DAYS} dager. Det koster også omdømme.`,
       '- Uten bevilling blir alkoholen beslaglagt, og du får bot på det dobbelte av verdien.',
       '- Kaster du bevillingsdokumentet, er bevillingen borte.',
+      `- Ser du alkohol på bordet til en annen bod før kl. ${LIQUOR_FROM_HOUR}, kan du tyste til kommunen (trykk på varen). Tipset er anonymt, ${INSPECTOR.name} rykker ut med en gang, og stemmer det, får du dusør. Én gang per bod per dag.`,
     ],
   },
   {

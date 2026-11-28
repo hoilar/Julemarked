@@ -4953,6 +4953,11 @@ function modalView(s: GameState): string {
       : '';
     const stall = s.slots.find((x) => x.stall?.id === stallId)?.stall;
     const p = PRODUCT_BY_ID[productId];
+    // Alkohol til salgs før skjenketid: tyst til kommunen (anonymt, dusør hvis det stemmer).
+    const tattle =
+      s.me.stallId !== null && isAlcohol(productId) && osloParts(gameTime()).hour < LIQUOR_FROM_HOUR
+        ? `<button class="ghost loupe-btn" data-action="liquor-report" data-stall="${stallId}">📞 Tyst til kommunen: alkohol før kl. ${LIQUOR_FROM_HOUR}</button>`
+        : '';
     const count = stall?.counter.filter((i) => i.typeId === productId && isHomemade(i.label) === homemade).length ?? 0;
     if (!stall) return '';
     const price = priceIn(stall.prices, productId, homemade);
@@ -4976,7 +4981,7 @@ function modalView(s: GameState): string {
                  <button>Kjøp</button>
                  <p class="muted">Varene må få plass under disken din.</p>
                </form>`
-      }${loupe}`,
+      }${loupe}${tattle}`,
     );
   }
 
@@ -6016,6 +6021,19 @@ app.addEventListener('click', (e) => {
       try {
         const r = (await api('/api/loupe', { stallId: Number(el.dataset.stall), productId: el.dataset.product })) as { forged: number; reward: number };
         toast(r.forged ? `🔍 Falsk «Hjemmelaget»-etikett! Dusør ${kr(r.reward)}.` : '🔍 Alt ser ekte ut.');
+      } catch (err) {
+        toast((err as Error).message, true);
+      }
+      await refresh();
+    })();
+    return;
+  }
+  if (action === 'liquor-report') {
+    void (async () => {
+      try {
+        const r = (await api('/api/liquor/report', { stallId: Number(el.dataset.stall) })) as { caught: boolean; reward: number };
+        toast(r.caught ? `📞 Tilsynsmannen rykket ut. Dusør ${kr(r.reward)}!` : '📞 Tilsynsmannen fant ingen alkohol på bordet.');
+        if (r.caught) modal = null;
       } catch (err) {
         toast((err as Error).message, true);
       }
